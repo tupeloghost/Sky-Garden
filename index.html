@@ -1510,8 +1510,9 @@ function snapCam() { camera.position.copy(player.position).add(camOffset()); }
 const clock = new THREE.Clock(); let playing = false, hudTick = 0, stepDist = 0;
 function tick() {
   const dt = Math.min(.05, clock.getDelta()), now = clock.elapsedTime;
+  const menuOpen = $('veil').classList.contains('show') || $('dialog').classList.contains('show');
   if (playing) {
-    S.t += dt / DAY_LEN;
+    if (!menuOpen) S.t += dt / DAY_LEN; // the clock stops while any menu or conversation is open
     if (S.t >= 1) sleep(true);
     if ((hudTick += dt) > .5) { hudTick = 0; drawHud(); ambience(); }
     playMusic(dt);
