@@ -6,6 +6,7 @@ import { FINDS } from '../data/finds.js';
 import { FISH } from '../data/fish.js';
 import { icon } from '../data/icons.js';
 import { FEATURES } from '../data/features.js';
+import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
@@ -120,6 +121,12 @@ const tint = c => LOOK === 'c' ? new THREE.Color(c).lerp(CREAM, .16) : new THREE
 const NO_OUTLINE = { visible:false };
 const mat = (c, o={}) => { if (!RAMP) return new THREE.MeshStandardMaterial({ color:c, roughness:.85, ...o }); const { roughness, metalness, ...rest } = o; return new THREE.MeshToonMaterial({ color:tint(c), gradientMap:RAMP, ...rest }); };
 const glow = (c) => { const m = new THREE.MeshBasicMaterial({ color:c }); m.userData.outlineParameters = NO_OUTLINE; return m; };
+// things you can tap that do something small: deco(obj, fn) makes obj tappable, fn runs when you get there
+const decos = [], pulsers = new Set(); let gardenFenceMat = null;
+function applyFenceColor() { if (gardenFenceMat && S.fenceColor != null) gardenFenceMat.color.set(S.fenceColor); }
+function pulse(h, amt) { if (h.userData.base == null) h.userData.base = h.scale.x; h.userData.pulse = amt; pulsers.add(h); }
+const deco = (o, use) => { o.userData.kind = 'deco'; o.userData.use = use; decos.push(o); return o; };
+const hitBox = (w, h, d) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ visible:false })); return m; };
 const mesh = (g, m, x=0, y=0, z=0) => { const o = new THREE.Mesh(g, m); o.position.set(x,y,z); o.castShadow = o.receiveShadow = true; return o; };
 const sph = (r) => new THREE.SphereGeometry(r, 24, 16);
 const walkables = [];
@@ -339,7 +346,8 @@ const sunflowers = new THREE.Group(); sunflowers.position.copy(WIND_POS); scene.
 for (let i=0;i<9;i++){ const a = i*.7 + 2.2, r = 4.5 + (i%3)*.8, x = Math.cos(a)*r, z = Math.sin(a)*r;
   sunflowers.add(mesh(new THREE.CylinderGeometry(.04,.05,1.3,6), mat(0x4fb46a), x, .65, z));
   const head = mesh(new THREE.CylinderGeometry(.28,.28,.08,16), mat(0xffc857), x, 1.35, z); head.rotation.x = 1.2; sunflowers.add(head);
-  sunflowers.add(mesh(new THREE.CylinderGeometry(.14,.14,.1,12), mat(0x7a5236), x, 1.37, z + .03).rotateX(1.2)); }
+  sunflowers.add(mesh(new THREE.CylinderGeometry(.14,.14,.1,12), mat(0x7a5236), x, 1.37, z + .03).rotateX(1.2));
+  const h = hitBox(.7, 1.6, .7); h.position.set(x, .8, z); sunflowers.add(h); deco(h, () => sunflowerSeeds(i)); }
 const boulder = new THREE.Group(); boulder.position.set(WIND_POS.x + 4.5, WIND_POS.y, WIND_POS.z + 3.2);
 const rock = mesh(new THREE.DodecahedronGeometry(.9), mat(0x9a93a8), 0, .7, 0); rock.scale.set(1.2,.9,1); boulder.add(rock);
 const rosettaStone = mesh(new THREE.BoxGeometry(.6,.8,.15), mat(0x4a4458), 0, .4, 0); rosettaStone.visible = false; boulder.add(rosettaStone);
@@ -360,7 +368,8 @@ function drawLightBridge(on) {
 const nightStuff = new THREE.Group(); nightStuff.position.copy(NIGHT_POS); scene.add(nightStuff);
 for (let i=0;i<14;i++){ const a = i*2.4, r = 2 + (i*1.7)%4.5, x = Math.cos(a)*r, z = Math.sin(a)*r, c = [0x9fe7e0, 0xff9fe0, 0xfff3a0][i%3];
   nightStuff.add(mesh(new THREE.CylinderGeometry(.05,.07,.3,8), mat(0xfff1d6), x, .15, z));
-  nightStuff.add(mesh(new THREE.SphereGeometry(.18,14,8,0,Math.PI*2,0,Math.PI/2), glow(c), x, .28, z)); const mh = halo(c, .9, .55); mh.position.set(x, .35, z); nightStuff.add(mh); }
+  nightStuff.add(mesh(new THREE.SphereGeometry(.18,14,8,0,Math.PI*2,0,Math.PI/2), glow(c), x, .28, z)); const mh = halo(c, .9, .55); mh.position.set(x, .35, z); nightStuff.add(mh);
+  const h = hitBox(.5, .5, .5); h.position.set(x, .25, z); nightStuff.add(h); deco(h, () => glowMushroom(mh)); }
 const easel = new THREE.Group(); easel.position.set(NIGHT_POS.x, NIGHT_POS.y, NIGHT_POS.z - 1.8);
 [-.35,.35].forEach(x => { const l = mesh(new THREE.CylinderGeometry(.04,.04,1.6,6), mat(0x9b6b4a), x, .8, 0); l.rotation.z = -x*.3; easel.add(l); });
 easel.add(mesh(new THREE.BoxGeometry(1,.8,.06), mat(0xfff6e6), 0, 1.25, .08));
@@ -380,7 +389,7 @@ const OH = new THREE.Vector3(-2, -1, -48);
 const OLD = island(11, OH.x, OH.y, OH.z);
 const heart = new THREE.Group(); heart.position.copy(OH); scene.add(heart);
 for (let i=0;i<9;i++){ const a = i/9*Math.PI*2 + .2, r = 9, broken = i%3 === 1;
-  heart.add(mesh(new THREE.CylinderGeometry(.35,.4, broken ? 1.1 : 2.6, 12), mat(0xe8e0d0), Math.cos(a)*r, broken ? .55 : 1.3, Math.sin(a)*r)); }
+  deco(heart.add(mesh(new THREE.CylinderGeometry(.35,.4, broken ? 1.1 : 2.6, 12), mat(0xe8e0d0), Math.cos(a)*r, broken ? .55 : 1.3, Math.sin(a)*r)).children.at(-1), () => factCard('THE OLD HEART', 'Old columns', TAP_FACTS.column, 'col')); }
 heart.add(mesh(new THREE.CylinderGeometry(3,3.2,.2,40), mat(0xd8cfc0), 0, .1, 0));
 const greatBell = new THREE.Group(); greatBell.position.set(OH.x, OH.y, OH.z);
 const gbBody = mesh(new THREE.CylinderGeometry(.55,1.1,1.4,28, 1, true), mat(0xd9a441, { metalness:.55, roughness:.35, side:THREE.DoubleSide }), 0, 0, 0);
@@ -489,19 +498,22 @@ const dressing = new THREE.Group(); scene.add(dressing); const grassPatches = []
   // flower beds hugging the hut and along the path
   const bed = (x, z, n, rx, rz) => { for (let i=0;i<n;i++){ const fx = x + (rnd(i+x*13)-.5)*rx, fz = z + (rnd(i*3+z*7)-.5)*rz, c = [0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b][i%5];
     dressing.add(mesh(new THREE.CylinderGeometry(.015,.015,.22,4), mat(0x4fb46a), fx, .11, fz)); dressing.add(mesh(sph(.075), mat(c), fx, .24, fz)); } };
+  const bedAt = (x, z, rx, rz, i) => { const h = hitBox(rx + .3, .5, rz + .3); h.position.set(x, .25, z); dressing.add(h); deco(h, () => pickSeeds('bed' + i)); };
+  [[-5.1,-1.25,.8,.35],[-2.9,-1.25,.8,.35],[-5.55,-3,.35,1.8],[-2.45,-3,.35,1.8],[-.9,-.1,.7,.5],[6.3,.3,.8,.6]].forEach(([x,z,rx,rz], i) => bedAt(x, z, rx, rz, i));
   bed(-5.1, -1.25, 7, .8, .35); bed(-2.9, -1.25, 7, .8, .35); bed(-5.55, -3, 8, .35, 1.8); bed(-2.45, -3, 8, .35, 1.8); bed(-.9, -.1, 6, .7, .5); bed(6.3, .3, 6, .8, .6);
   // a low picket fence around the garden, open on the side facing the hut
-  const fenceMat = mat(0xfff1d6);
+  const fenceMat = gardenFenceMat = mat(0xfff1d6);
   const fence = (x0, z0, x1, z1) => { const n = Math.round(Math.hypot(x1-x0, z1-z0) / .4);
     for (let i=0;i<=n;i++){ const k = i/n; dressing.add(mesh(new THREE.BoxGeometry(.07,.5,.07), fenceMat, x0+(x1-x0)*k, .25, z0+(z1-z0)*k)); }
-    const rail = mesh(new THREE.BoxGeometry(Math.hypot(x1-x0, z1-z0), .05, .04), fenceMat, (x0+x1)/2, .36, (z0+z1)/2); rail.rotation.y = -Math.atan2(z1-z0, x1-x0); dressing.add(rail); };
-  fence(.45, -1.75, 4.45, -1.75); fence(4.45, -1.75, 4.45, 3.5); fence(.45, 3.5, 4.45, 3.5); fence(.45, -1.75, .45, -.2); fence(.45, 1.6, .45, 3.5);
+    const rail = mesh(new THREE.BoxGeometry(Math.hypot(x1-x0, z1-z0), .05, .04), fenceMat, (x0+x1)/2, .36, (z0+z1)/2); rail.rotation.y = -Math.atan2(z1-z0, x1-x0); dressing.add(rail);
+    const h = hitBox(Math.hypot(x1-x0, z1-z0) + .2, .7, .4); h.position.copy(rail.position).setY(.3); h.rotation.y = rail.rotation.y; dressing.add(h); deco(h, () => paintGardenFence()); };
+  applyFenceColor(); fence(.45, -1.75, 4.45, -1.75); fence(4.45, -1.75, 4.45, 3.5); fence(.45, 3.5, 4.45, 3.5); fence(.45, -1.75, .45, -.2); fence(.45, 1.6, .45, 3.5);
 }
 const sprinkler = new THREE.Group(); sprinkler.position.set(.15, 0, .25); sprinkler.visible = false;
 sprinkler.add(mesh(new THREE.CylinderGeometry(.06,.06,.5,8), mat(0x8a8f99, { metalness:.4 }), 0, .25, 0));
 const sprHead = new THREE.Group(); sprHead.position.y = .52; sprinkler.add(sprHead);
 sprHead.add(mesh(new THREE.BoxGeometry(.5,.06,.06), mat(0x7ec8e3), 0, 0, 0)); sprHead.add(mesh(sph(.08), mat(0x7ec8e3)));
-scene.add(sprinkler);
+scene.add(sprinkler); deco(sprinkler, () => toast('Your sprinkler waters every plant in your garden each morning. No watering can needed.'));
 
 // --- sundial: its shadow is really cast by the sun, shortest at noon ---
 const sundial = new THREE.Group(); sundial.position.set(-1.6,0,1.2);
@@ -516,6 +528,7 @@ bell.add(mesh(new THREE.CylinderGeometry(.06,.06,2.4,8), mat(0x9b6b4a), -.7, 1.2
 bell.add(mesh(new THREE.CylinderGeometry(.06,.06,2.4,8), mat(0x9b6b4a), .7, 1.2, 0));
 bell.add(mesh(new THREE.BoxGeometry(1.6,.12,.12), mat(0x9b6b4a), 0, 2.4, 0));
 const bellBody = mesh(new THREE.CylinderGeometry(.22,.42,.6,24), mat(0xffc857, { metalness:.5, roughness:.35 }), 0, 1.95, 0); bell.add(bellBody);
+deco(bell, () => { [523,659,784,1047].forEach((f,i) => setTimeout(() => chime(f), i*180)); bell.userData.ring = 1.5; toast('Ding! Your Wind Bell rings out across the sky.'); });
 scene.add(bell);
 
 // --- festival lanterns ---
@@ -523,7 +536,8 @@ const lanterns = new THREE.Group(); lanterns.visible = false; scene.add(lanterns
 const lanternMat = glow(0xffb45c);
 for (let i=0;i<8;i++){ const a = i/8*Math.PI*2 + .3, x = Math.cos(a)*7.2, z = Math.sin(a)*7.2;
   lanterns.add(mesh(new THREE.CylinderGeometry(.05,.05,1.8,6), mat(0x9b6b4a), x, .9, z));
-  const l = mesh(sph(.22), lanternMat, x, 1.9, z); l.scale.y = 1.25; lanterns.add(l); const lh = halo(0xffb45c, 1.6, .7); lh.position.set(x, 1.9, z); lanterns.add(lh); }
+  const l = mesh(sph(.22), lanternMat, x, 1.9, z); l.scale.y = 1.25; lanterns.add(l); const lh = halo(0xffb45c, 1.6, .7); lh.position.set(x, 1.9, z); lanterns.add(lh);
+  const h = hitBox(.6, 2.2, .6); h.position.set(x, 1.1, z); lanterns.add(h); deco(h, () => { pulse(lh, 1.2); chime(880); toast('You made a wish on the lantern. People light lanterns at festivals all over the world.'); }); }
 
 // --- dig spots ---
 const DIG_SPOTS = [[-6.5,2],[2.5,6],[-2.5,-7.2],[7,-1.5],[.5,-3.8],[-3.5,5.8],[4.2,3.8],[-7.5,-3.5]];
@@ -933,7 +947,7 @@ for (let i=0;i<9;i++){
   const l = new THREE.Mesh(wingGeo, m), r = new THREE.Mesh(wingGeo, m); r.scale.x = -1; g.add(l, r);
   const home3 = [new THREE.Vector3(), ORCH_POS, WIND_POS][i%3];
   g.userData = { l, r, ph:Math.random()*10, cx:home3.x + (Math.random()*6-3), cz:home3.z + (Math.random()*6-3), cy:home3.y };
-  scene.add(g); butterflies.push(g);
+  const hb = hitBox(.6, .6, .6); g.add(hb); g.userData.sp = BUTTERFLIES[i%4]; scene.add(g); butterflies.push(g); deco(g, () => spotButterfly(g));
 }
 const fireflies = [], ffMat = glow(0xeaff8a);
 for (let i=0;i<30;i++){ const f = mesh(sph(.05), ffMat); f.castShadow = false; const onO = i%3===0;
@@ -1166,6 +1180,7 @@ function collectionCats() {
     { name:'Crops', ids:Object.keys(CROPS), has:k => S.found.includes(k), label:k => CROPS[k].name, open:k => itemCard(k, 'Crops'), hint:k => FINDS[k].hint },
     { name:'Fruit', ids:['apple','peach'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fruit'), hint:k => FINDS[k].hint },
     { name:'Fish', ids:['minnow','trout','koi','sunfish','frostchar','guppy','lanterneel','puffer','moonray'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fish'), hint:k => FINDS[k].hint },
+    { name:'Butterflies', ids:BUTTERFLIES.map(b => b.id), has:k => (S.bugs || []).includes(k), label:k => BUTTERFLIES.find(b => b.id === k).name, open:k => () => { const b = BUTTERFLIES.find(x => x.id === k); showCard(`<div class="kicker">BUTTERFLIES</div><h2>${b.name}</h2><h4>In real life</h4><p>${b.fact}</p>`, 'Back', () => openCategory('Butterflies')); }, hint:() => 'Tap a butterfly when you see one flying on the islands.' },
     { name:'Furniture', ids:Object.keys(FURN), has:k => S.found.includes(k), label:k => FURN[k].name, open:k => itemCard(k, 'Furniture'), hint:k => FINDS[k].hint },
     { name:'Memories', ids:AHA_ORDER, has:k => S.aha.includes(k), label:k => AHA[k].title + (S.used.includes(k) ? ' ★' : ''), open:k => () => showCard(ahaHtml(k), 'Back', () => openCategory('Memories')), hint:() => 'Keep playing the story, digging, and celebrating festivals.' },
     { name:'Dishes', ids:RECIPES.map(r => r.id), has:k => S.cooked.includes(k), label:k => RECIPES.find(r => r.id === k).name, open:k => () => showCard(lessonHtml(RECIPES.find(r => r.id === k).aha), 'Back', () => openCategory('Dishes')), hint:k => `Cook it at the Bakery. Needs ${Object.entries(RECIPES.find(r => r.id === k).needs).map(([i,n]) => `${n} ${ITEMS[i].name}`).join(' and ')}.` },
@@ -1177,7 +1192,7 @@ function collectionCats() {
 }
 function openCategory(name) {
   const c = collectionCats().find(x => x.name === name), got = c.ids.filter(c.has).length;
-  showCard(`<div class="kicker">COLLECTIONS</div><h2>${name}: ${got} of ${c.ids.length}</h2><div class="jlist">${c.ids.map(k => c.has(k) ? `<button data-ck="${k}">${['Crops','Fruit','Fish','Furniture','Dishes'].includes(name) ? icon(k, ITEMS[k]?.kind) + ' ' : ''}${c.label(k)}</button>` : `<button class="locked">??? <span class="sub">${c.hint(k)}</span></button>`).join('')}</div>`, 'Back', openJournal);
+  showCard(`<div class="kicker">COLLECTIONS</div><h2>${name}: ${got} of ${c.ids.length}</h2><div class="jlist">${c.ids.map(k => c.has(k) ? `<button data-ck="${k}">${name === 'Butterflies' ? '🦋 ' : ['Crops','Fruit','Fish','Furniture','Dishes'].includes(name) ? icon(k, ITEMS[k]?.kind) + ' ' : ''}${c.label(k)}</button>` : `<button class="locked">??? <span class="sub">${c.hint(k)}</span></button>`).join('')}</div>`, 'Back', openJournal);
   document.querySelectorAll('[data-ck]').forEach(b => b.onclick = c.open(b.dataset.ck));
 }
 const MONTH_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1218,6 +1233,7 @@ const balloons = new THREE.Group(); balloons.visible = false; scene.add(balloons
 [[-5.6,-1.6],[-2.4,-1.6],[-5.6,-4.4],[-2.4,-4.4],[-4,-1.2],[-1.2,-2.4]].forEach(([x,z], i) => {
   const c = [0xff8fa3,0x7ec8e3,0xffc857,0x8fdc8a,0xc9b6ff,0xff9a3c][i];
   const b = mesh(sph(.26), new THREE.MeshStandardMaterial({ color:c, roughness:.3 }), x, 2.6 + (i%2)*.3, z); b.scale.y = 1.2; balloons.add(b);
+  deco(b, () => { if (b.userData.fly) return; b.userData.fly = 1; tone(700, { to:1400, dur:.4, vol:.05 }); toast('Whoosh! The balloon floats up into the sky.'); });
   balloons.add(mesh(new THREE.CylinderGeometry(.008,.008,2.4,4), mat(0xffffff), x, 1.3 + (i%2)*.15, z)); });
 function birthdayParty() {
   S.lastParty = dayKey(today());
@@ -2679,7 +2695,7 @@ function sleep(passedOut) {
 // ============ INPUT ============
 const ray = new THREE.Raycaster(), down = new THREE.Raycaster(), ptr = new THREE.Vector2(), DOWN = new THREE.Vector3(0,-1,0);
 let target = null, pending = null;
-const clickables = [...nodes, kiln, furnace, pickupGroup, buildSite, workbench, campfire, ...woodTrees, ...rocks, ...bushes, ...(ownerNpc ? [ownerNpc] : []), mailbox, homeDock, greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
+const clickables = [...decos, ...nodes, kiln, furnace, pickupGroup, buildSite, workbench, campfire, ...woodTrees, ...rocks, ...bushes, ...(ownerNpc ? [ownerNpc] : []), mailbox, homeDock, greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
 // ============ FREE BUILDING ============
 const PIECES = [
   { id:'path',    name:'Stone Path',     cost:{ stone:2 } },
@@ -2726,6 +2742,47 @@ function pieceModel(id) {
   return g;
 }
 const buildGroup = new THREE.Group(); scene.add(buildGroup); lateClicks.push(buildGroup);
+// --- tap actions for decorations and build pieces ---
+const PAINTS = [0xfff1d6, 0xff8fa3, 0x7ec8e3, 0xffc857, 0x8fdc8a, 0xc9b6ff, 0x9b6b4a];
+const daily = key => { if (S.chopped[key] === S.day) return false; S.chopped[key] = S.day; return true; };
+function pickSeeds(key) {
+  if (!daily(key)) { toast('You already saved seeds here today. The flowers make more by tomorrow.'); return; }
+  const s = season(), pool = Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(s) && !CROPS[k].locked), k = pool[Math.floor(Math.random()*pool.length)] || 'cloudberry';
+  S.seeds[k] = (S.seeds[k] || 0) + 1; sfx('plant'); floatText(`+1 ${icon(k)} ${CROPS[k].name.toLowerCase()} seed`, player.position.clone()); save(); drawHud();
+  toast(`You saved a ${CROPS[k].name.toLowerCase()} seed from the flowers. ${TAP_FACTS.seeds}`);
+}
+function sunflowerSeeds(i) {
+  if (!daily('sunseed' + i)) { toast('You already took seeds from this sunflower today.'); return; }
+  S.seeds.sunbell = (S.seeds.sunbell || 0) + 2; sfx('plant'); floatText(`+2 ${icon('sunbell')} sunflower seeds`, player.position.clone()); save(); drawHud();
+  toast(`+2 sunflower seeds. ${TAP_FACTS.sunflower}`);
+}
+function glowMushroom(h) { pulse(h, 1.5); tone(1047, { type:'triangle', dur:.6, vol:.03 }); tone(1568, { type:'triangle', t:.12, dur:.6, vol:.02 });
+  if (!S.aha.includes('mush') && !(S.tapped || []).includes('mush')) { S.tapped = [...(S.tapped || []), 'mush']; save(); toast(TAP_FACTS.mushroom); } else toast('The mushroom glows brighter when you tap it.'); }
+function factCard(kicker, title, text, id) { S.tapped = S.tapped || []; if (!S.tapped.includes(id)) { S.tapped.push(id); save(); }
+  showCard(`<div class="kicker">${kicker}</div><h2>${title}</h2><h4>In real life</h4><p>${text}</p>`); }
+function paintGardenFence() { S.fenceColor = PAINTS[(PAINTS.indexOf(S.fenceColor ?? PAINTS[0]) + 1) % PAINTS.length]; applyFenceColor(); sfx('click'); save(); toast('You painted the garden fence. Tap again for another color.'); }
+function spotButterfly(g) {
+  const sp = g.userData.sp; S.bugs = S.bugs || []; const first = !S.bugs.includes(sp.id);
+  g.userData.flee = 1.2; tone(1760, { dur:.12, vol:.03 }); tone(2093, { t:.08, dur:.12, vol:.03 });
+  if (first) { S.bugs.push(sp.id); save(); drawHud(); showCard(`<div class="kicker">NEW BUTTERFLY ${S.bugs.length} of ${BUTTERFLIES.length}</div><h2>${sp.name}</h2><h4>In real life</h4><p>${sp.fact}</p><p>Saved to Collections.</p>`); }
+  else toast(`A ${sp.name}! You already have this one in Collections.`);
+}
+let sitting = null, danceT = 0;
+const onPath = () => S.where === 'home' && (S.builds || []).some(b => (b.p === 'path' || b.p === 'bpath') && Math.abs(player.position.x - b.x) < .5 && Math.abs(player.position.z - b.z) < .5);
+function usePiece(o) {
+  const b = o.userData.b, p = PIECES.find(x => x.id === b.p);
+  if (b.p === 'path' || b.p === 'bpath') return toast(TAP_FACTS.path);
+  if (b.p === 'bench') { sitting = o; player.position.set(b.x, 0, b.z); player.rotation.y = (b.r || 0) * Math.PI/2; toast('You sit and rest. Time passes 3 times faster. Tap anywhere to get up.'); return; }
+  if (b.p === 'lamp' || b.p === 'blamp') { b.off = !b.off; drawBuilds(); save(); sfx('click'); toast(b.off ? 'Lamp off.' : 'Lamp on. It glows at night.'); return; }
+  if (b.p === 'planter' || b.p === 'potplant') return pickSeeds(`pl${b.x},${b.z}`);
+  if (b.p === 'hedge') { if (!daily(`hg${b.x},${b.z}`)) { toast('You already trimmed this hedge today.'); return; }
+    gain('fiber', 1, o.position.clone(), true); sfx('swish'); toast(`You trimmed the hedge. +1 grass fiber. ${TAP_FACTS.hedge}`); return; }
+  if (['fence','wallw','walls','bwall'].includes(b.p)) { b.c = PAINTS[(b.c == null ? 0 : PAINTS.indexOf(b.c)) + 1 === PAINTS.length ? 0 : (b.c == null ? 1 : PAINTS.indexOf(b.c) + 1)]; drawBuilds(); save(); sfx('click'); toast(`You painted the ${p.name.toLowerCase()}. Tap again for another color.`); return; }
+  if (b.p === 'deck') { danceT = 2.4; player.position.set(b.x, 0, b.z); [523,659,784,659].forEach((f,i) => setTimeout(() => chime(f), i*280)); toast('You dance on the floor!'); return; }
+  if (b.p === 'arch') return factCard('YOUR ISLAND', 'The arch', TAP_FACTS.arch, 'arch');
+  if (b.p === 'statue') return factCard('YOUR ISLAND', 'Statue of Pip', TAP_FACTS.statue, 'statue');
+  toast(`Your ${p.name.toLowerCase()}.`);
+}
 // every chest you build shares one storage, so your things are in any chest you open
 function openChest() {
   S.chest = S.chest || {}; sfx('chest');
@@ -2744,7 +2801,10 @@ function openChest() {
 }
 function drawBuilds() {
   buildGroup.clear(); lampLights.length = 0;
-  (S.builds || []).forEach(b => { const m = pieceModel(b.p); m.position.set(b.x, 0, b.z); m.rotation.y = (b.r || 0) * Math.PI/2; buildGroup.add(m); });
+  (S.builds || []).forEach(b => { const m = pieceModel(b.p); m.position.set(b.x, 0, b.z); m.rotation.y = (b.r || 0) * Math.PI/2; buildGroup.add(m);
+    if (!m.userData.kind) m.userData = { kind:'piece', b };
+    if (b.c) m.traverse(o => { if (o.isMesh && o.material?.color && !o.material.isMeshBasicMaterial) { o.material = o.material.clone(); o.material.color.lerp(new THREE.Color(b.c), .7); } });
+    if (b.off) m.traverse(o => { if (lampLights.includes(o)) { o.visible = false; lampLights.splice(lampLights.indexOf(o), 1); } else if (o.isMesh && o.material?.isMeshBasicMaterial && o.material.visible !== false) { o.material = o.material.clone(); o.material.color.set(0x8a8290); } }); });
   if (typeof tameOutlines === 'function' && outline) tameOutlines();
 }
 // places you can't build over, so the important things stay reachable
@@ -2875,6 +2935,8 @@ function arrive(o) {
   if (k === 'bush') return cutBush(o);
   if (k === 'workbench') return useWorkbench();
   if (k === 'chest') return openChest();
+  if (k === 'deco') return o.userData.use(o);
+  if (k === 'piece') return usePiece(o);
   if ((k === 'claypit' || k === 'ore') && o.visible) return gatherNode(o);
   if (k === 'kiln') return useKiln();
   if (k === 'furnace') return useFurnace();
@@ -2948,7 +3010,7 @@ function tick() {
   const dt = Math.min(.05, clock.getDelta()), now = clock.elapsedTime;
   const menuOpen = $('veil').classList.contains('show') || $('dialog').classList.contains('show');
   if (playing) {
-    if (!menuOpen) S.t += dt * (window.__sgSpeed || 1) / (DAY_LEN * (S.mode === 'cozy' ? 2 : 1)); // the clock stops while any menu or conversation is open
+    if (!menuOpen) S.t += dt * (window.__sgSpeed || 1) * (sitting ? 3 : 1) / (DAY_LEN * (S.mode === 'cozy' ? 2 : 1)); // the clock stops while any menu or conversation is open
     if (S.t >= 1) sleep(true);
     if ((hudTick += dt) > .5) { hudTick = 0; drawHud(); ambience(); cloudPush(); }
     playMusic(dt);
@@ -2981,6 +3043,7 @@ function tick() {
   winMat.emissiveIntensity = night * 1.4 + (h > 18 ? .3 : 0);
   lampLights.forEach(l => l.material.opacity = night * .8);
   // movement
+  if (sitting && (target || keys.w || keys.a || keys.s || keys.d || keys.arrowup || keys.arrowdown || keys.arrowleft || keys.arrowright)) sitting = null;
   let mv = new THREE.Vector3((keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0), 0, (keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0));
   if (mv.lengthSq()) { target = null; pending = null; }
   else if (target) {
@@ -2989,7 +3052,7 @@ function tick() {
   }
   const inner = player.userData.inner;
   if (mv.lengthSq() && !$('veil').classList.contains('show')) {
-    mv.normalize().multiplyScalar((S.mode === 'explorer' ? 5.25 : 4.2)*dt);
+    mv.normalize().multiplyScalar((S.mode === 'explorer' ? 5.25 : 4.2) * (onPath() ? 1.35 : 1) * dt);
     const nx = player.position.x + mv.x, nz = player.position.z + mv.z;
     let gy = groundAt(nx, player.position.y, nz);
     if (gy === null) { gy = groundAt(nx, player.position.y, player.position.z); if (gy !== null) mv.z = 0; else { gy = groundAt(player.position.x, player.position.y, nz); if (gy !== null) mv.x = 0; } }
@@ -3030,7 +3093,13 @@ function tick() {
   const bflyOn = !inside && h < 18.5 && season() < 3 && !(raining && S.t < .5);
   butterflies.forEach((b, i) => { b.visible = bflyOn; if (!bflyOn) return; const u = b.userData, t = now*.4 + u.ph;
     b.position.set(u.cx + Math.sin(t)*3 + Math.sin(t*2.3)*.8, u.cy + .8 + Math.sin(t*3.1)*.4, u.cz + Math.cos(t*.8)*3);
-    b.rotation.y = Math.atan2(Math.cos(t), -Math.sin(t*.8)); const f = Math.sin(now*18 + i)*1.1; u.l.rotation.z = f; u.r.rotation.z = -f; });
+    b.rotation.y = Math.atan2(Math.cos(t), -Math.sin(t*.8)); const f = Math.sin(now*18 + i)*1.1; u.l.rotation.z = f; u.r.rotation.z = -f;
+    if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
+  pulsers.forEach(h => { h.userData.pulse = Math.max(0, h.userData.pulse - dt); h.scale.setScalar(h.userData.base * (1 + h.userData.pulse)); if (!h.userData.pulse) pulsers.delete(h); });
+  if (bell.userData.ring > 0) { bell.userData.ring = Math.max(0, bell.userData.ring - dt); bellBody.rotation.z = Math.sin(now*12) * .35 * bell.userData.ring; }
+  balloons.children.forEach(b => { if (b.userData.fly) { b.position.y += dt * 1.6; b.position.x += Math.sin(now*2) * dt * .3; if (b.position.y > 25) b.visible = false; } });
+  if (sitting) { inner.position.y = -.28; }
+  if (danceT > 0) { danceT = Math.max(0, danceT - dt); inner.rotation.y = danceT ? danceT * 6 : 0; inner.position.y = Math.abs(Math.sin(now*10)) * .18 * (danceT ? 1 : 0); }
   const ffOn = !inside && night > .3 && season() < 3;
   fireflies.forEach(f => { f.visible = ffOn; if (!ffOn) return; const u = f.userData, t = now*.3 + u.ph;
     f.position.set(u.cx + Math.sin(t)*1.5, u.cy + .6 + Math.sin(t*1.7)*.5, u.cz + Math.cos(t*1.3)*1.5); f.scale.setScalar(.5 + Math.max(0, Math.sin(now*2 + u.ph*3))*1.2); });
@@ -3193,7 +3262,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
