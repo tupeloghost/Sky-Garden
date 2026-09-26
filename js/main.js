@@ -1242,8 +1242,9 @@ function openBag() {
     <div class="jlist">${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}</div>
     <h4>Furniture</h4><div class="jlist">${furn || '<p>None yet. Pip sells furniture.</p>'}</div>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
-    <button id="lookBtn" class="ghost">Change my look</button> <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+    <button id="lookBtn" class="ghost">Change my look</button> ${PLAYTEST ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
   $('lookBtn').onclick = () => openLookEditor(openBag);
+  if ($('modeBtn')) $('modeBtn').onclick = () => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); openBag(); }, { switching:true }); };
   $('bdBtn').onclick = () => birthdayPicker(openBag);
   $('moveBtn').onclick = () => openMoveGame(openBag);
 }
@@ -2549,30 +2550,38 @@ function lookPicker(title, done, withName) {
   upd0(); draw();
   function upd0() { S.look = { ...lk }; dressPlayer(); }
 }
-function modePicker(done) {
-  let pick = null;
+const PLAYTEST = true; // while testing, players may switch islands from the Bag
+function modePicker(done, o = {}) {
+  let pick = o.switching ? S.mode : null;
   const draw = () => {
-    showCard(`<div class="kicker">NEW GAME</div><h2>Choose your island</h2><p>Each island has its own perks. You pick once, at the start.</p>
+    showCard(`<div class="kicker">${o.returning ? 'WELCOME BACK' : o.switching ? 'YOUR ISLAND' : 'NEW GAME'}</div><h2>Choose your island</h2><p>${o.returning || o.switching ? 'Each island has its own perks. Your progress, coins, and collections stay exactly as they are. The perks are added on top.' : 'Each island has its own perks. You pick once, at the start.'}</p>
       <div class="jlist">${MODES.map(m => `<button data-md="${m.id}" style="${pick === m.id ? 'background:#ffc857' : ''}">${pick === m.id ? '✓ ' : ''}${m.name} <span class="sub">${m.blurb}</span><span class="sub" style="display:block;margin-top:2px">${m.perks.map(x => '• ' + x).join('<br>')}</span></button>`).join('')}</div>
       <p id="mdMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
-      <button id="mdGo">Start my adventure</button> <button id="mdBack" class="ghost">Back</button>`, null);
+      <button id="mdGo">${o.switching ? 'Switch to this island' : o.returning ? 'Keep playing' : 'Start my adventure'}</button> <button id="mdBack" class="ghost">${o.switching ? 'Never mind' : 'Back'}</button>`, null);
     document.querySelectorAll('[data-md]').forEach(b => b.onclick = () => { pick = b.dataset.md; draw(); });
-    $('mdBack').onclick = () => lookPicker('NEW GAME', () => modePicker(done), true);
-    $('mdGo').onclick = () => { if (!pick) { $('mdMsg').textContent = 'Pick an island first.'; return; } S.mode = pick; applyModeStart(); done(); };
+    $('mdBack').onclick = () => o.switching ? (endSetup(), done()) : lookPicker(o.returning ? 'WELCOME BACK' : 'NEW GAME', () => modePicker(done, o), true);
+    $('mdGo').onclick = () => { if (!pick) { $('mdMsg').textContent = 'Pick an island first.'; return; } S.mode = pick; applyModeStart(); if (o.switching || o.returning) toast(`Welcome to ${MODES.find(m => m.id === pick).name}! Everything you had is still here.`); done(); };
   };
   draw();
 }
 function applyModeStart() {
   if (S.mode === 'garden' && !S.bigGarden) { S.bigGarden = true; for (let i=0;i<3;i++){ S.tiles.push({ s:0 }); addTileGroup(S.tiles.length-1); } stakes.visible = false; }
-  if (S.mode === 'scholar') S.furn.bookshelf = (S.furn.bookshelf || 0) + 1;
+  S.modeGifts = S.modeGifts || [];
+  if (S.mode === 'scholar' && !S.modeGifts.includes('scholar')) { S.furn.bookshelf = (S.furn.bookshelf || 0) + 1; S.modeGifts.push('scholar'); }
   homeDock.visible = S.mode === 'fisher';
-  S.created = true; save();
+  S.created = true; S.setupDone = true; save();
 }
 function openLookEditor(back) { lookPicker('YOUR LOOK', () => { endSetup(); if (back) back(); else toast('Looking good!'); }, true); }
 function endSetup() { setupCam = false; document.getElementById('veil').classList.remove('setup'); document.body.classList.remove('in-setup'); hideCard(); }
 $('start').onclick = () => { $('title').style.display = 'none'; document.body.classList.remove('on-title'); playing = true; snapCam(); startAudio();
   { const turned = seasonCheck(); applySeason(); if (turned && S.letter) toast(turned); }
   { const fz = festival(); if (fz && S.letter && !S.fests[fz.id + fz.year]) setTimeout(() => toast(`Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`), 800); }
+  if (S.created && S.letter && !S.setupDone && !VISIT) {
+    const toIsland = () => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); $('start').onclick(); }, { returning:true }); };
+    showCard(`<div class="kicker">WELCOME BACK</div><h2>New in Sky Garden!</h2><p>You can now make your own character, add your birthday, and choose an island with its own perks.</p><h4>Your progress is safe</h4><p>Your coins, collections, memories, story progress, garden, and hut all stay exactly as they are.</p>`, "Let's set it up", () =>
+      lookPicker('WELCOME BACK', () => { endSetup(); if (!S.birthdayAsked && !S.birthday) birthdayPicker(toIsland); else toIsland(); }, true));
+    return;
+  }
   if (!S.created) { lookPicker('NEW GAME', () => { endSetup(); birthdayPicker(() => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); $('start').onclick(); }); }); }, true); return; }
   if (isPartyDay() && S.lastParty !== dayKey(today()) && S.letter) setTimeout(birthdayParty, 900);
   else if (S.tut === 9 && !S.birthdayAsked && !S.birthday && S.letter) setTimeout(() => birthdayPicker(null, true), 1200);
