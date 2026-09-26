@@ -17,7 +17,7 @@ for (const id of Object.keys(FESTIVAL_AHA)) if (!AHA_ORDER.includes(id)) AHA_ORD
 const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, skywheat:0, moonpumpkin:0, frostmint:0, kale:0 }, bag:{},
   tiles:Array.from({length:9},()=>({s:0})), sel:'cloudberry', hearts:{ nana:0, pip:0, drizzle:0, twins:0, lumen:0, mabel:0, hoot:0, allegra:0, sage:0 }, talked:{}, gifted:{}, scenes:[],
   bridge:false, pos:[0,0,2], where:'home', quest:0, aha:[], relics:0, digs:[], asked:-1, qi:0, letter:false,
-  order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, home:0, tools:{}, pickups:[], chopped:{}, created:false, birthday:null, startedAt:null, lastParty:null, partyHat:false, name:'', look:null, mode:null, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
+  order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, home:0, builds:[], tools:{}, pickups:[], chopped:{}, created:false, birthday:null, startedAt:null, lastParty:null, partyHat:false, name:'', look:null, mode:null, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
 let S;
 try {
   const saved = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
@@ -1007,6 +1007,7 @@ function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add
 const hex = c => '#' + c.toString(16).padStart(6,'0');
 const ICON = {
   coin:'<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#ffc857" stroke="#d99a2b" stroke-width="2"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="#d99a2b" stroke-width="1.6"/></svg>',
+  hammer:'<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="10" height="5" rx="1.5" fill="#8a8290"/><rect x="8" y="8" width="3" height="10" rx="1.2" fill="#c98f58"/></svg>',
   goal:'<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#8fdc8a"/><path d="M6 10.5l2.7 2.7L14 7.8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   bag:'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7h12l-1 10H5z" fill="#d9a066"/><path d="M7 7V5.5a3 3 0 016 0V7" fill="none" stroke="#9b6b4a" stroke-width="1.8"/></svg>',
   book:'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4.5c2.5-1 5-1 7 .5v11c-2-1.5-4.5-1.5-7-.5z" fill="#ff8fa3"/><path d="M17 4.5c-2.5-1-5-1-7 .5v11c2-1.5 4.5-1.5 7-.5z" fill="#7ec8e3"/></svg>',
@@ -1030,7 +1031,8 @@ function drawHud() {
   drawQuest();
   const s = season(), shown = Object.entries(CROPS).filter(([k,c]) => (c.seasons.includes(s) && (!c.locked || S.q4 >= 5)) || S.seeds[k] > 0);
   if (!shown.some(([k]) => k === S.sel) && shown.length) S.sel = shown[0][0];
-  $('bar').style.display = S.where === 'hut' ? 'none' : 'flex';
+  $('bar').style.display = S.where === 'hut' || buildMode ? 'none' : 'flex';
+  $('buildBtn').hidden = VISIT || (S.home || 0) < 3 || S.where !== 'home'; $('buildBtn').innerHTML = `${ICON.hammer}<span class="lbl">${buildMode ? 'Building' : 'Build'}</span>`;
   $('bar').innerHTML = shown.map(([k,c]) => `<div class="slot ${S.sel===k?'on':''}" data-k="${k}"><span class="dot" style="background:${hex(c.color)}"></span>${c.name}<small>${S.seeds[k] || 0} seeds${c.seasons.includes(s) ? '' : ', out of season'}</small></div>`).join('');
   document.querySelectorAll('.slot').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); });
 }
@@ -1271,6 +1273,7 @@ function openBag() {
 }
 $('journalBtn').onclick = openJournal;
 $('bagBtn').onclick = openBag;
+$('buildBtn').onclick = () => setBuildMode(!buildMode);
 // --- daily goals: three small tasks each morning ---
 const GOAL_TYPES = {
   water: n => `Water ${n} plants`, pick: n => `Pick ${n} crops`, sell: n => `Sell ${n} coins of stuff`,
@@ -2488,8 +2491,101 @@ function sleep(passedOut) {
 const ray = new THREE.Raycaster(), down = new THREE.Raycaster(), ptr = new THREE.Vector2(), DOWN = new THREE.Vector3(0,-1,0);
 let target = null, pending = null;
 const clickables = [pickupGroup, buildSite, workbench, campfire, ...woodTrees, ...rocks, ...bushes, ...(ownerNpc ? [ownerNpc] : []), mailbox, homeDock, greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
+// ============ FREE BUILDING ============
+const PIECES = [
+  { id:'path',    name:'Stone Path',     cost:{ stone:2 } },
+  { id:'deck',    name:'Wood Floor',     cost:{ log:1 } },
+  { id:'fence',   name:'Fence',          cost:{ log:1 } },
+  { id:'hedge',   name:'Hedge',          cost:{ fiber:2 } },
+  { id:'wallw',   name:'Wood Wall',      cost:{ log:2 } },
+  { id:'walls',   name:'Stone Wall',     cost:{ stone:3 } },
+  { id:'lamp',    name:'Lamp Post',      cost:{ log:1, stone:1 } },
+  { id:'bench',   name:'Bench',          cost:{ log:2 } },
+  { id:'planter', name:'Flower Planter', cost:{ log:1, fiber:1 } },
+  { id:'arch',    name:'Garden Arch',    cost:{ log:3, fiber:2 } },
+];
+const lampLights = [];
+function pieceModel(id) {
+  const g = new THREE.Group(), wood = mat(0xc98f58), dark = mat(0x9b6b4a), stoneM = mat(0xc9c1d0);
+  if (id === 'path') for (let i=0;i<4;i++){ const st = mesh(new THREE.CylinderGeometry(.24,.26,.06,7), stoneM, (i%2-.5)*.48, .03, (Math.floor(i/2)-.5)*.48); st.rotation.y = i; g.add(st); }
+  if (id === 'deck') for (let i=0;i<4;i++) g.add(mesh(new THREE.BoxGeometry(.98,.08,.23), i%2 ? wood : mat(0xd9a066), 0, .04, -.37 + i*.245));
+  if (id === 'fence') { [-.45,0,.45].forEach(x => g.add(mesh(new THREE.BoxGeometry(.08,.6,.08), mat(0xfff1d6), x, .3, 0))); [.2,.45].forEach(y => g.add(mesh(new THREE.BoxGeometry(1,.06,.05), mat(0xfff1d6), 0, y, 0))); }
+  if (id === 'hedge') { const hm = mat(0x4fb46a); g.add(mesh(new THREE.BoxGeometry(.95,.7,.5), hm, 0, .35, 0)); [-.3,.3].forEach(x => g.add(mesh(sph(.3), hm, x, .62, 0))); }
+  if (id === 'wallw') for (let k=0;k<3;k++) g.add(mesh(new THREE.BoxGeometry(1,.36,.14), k%2 ? wood : mat(0xd9a066), 0, .18 + k*.37, 0));
+  if (id === 'walls') for (let k=0;k<3;k++) for (let j=0;j<2;j++) g.add(mesh(new THREE.BoxGeometry(.48,.32,.3), stoneM, -.25 + j*.5 + (k%2)*.08, .16 + k*.33, 0));
+  if (id === 'lamp') { g.add(mesh(new THREE.CylinderGeometry(.05,.07,1.5,8), dark, 0, .75, 0)); g.add(mesh(new THREE.BoxGeometry(.28,.3,.28), glow(0xffe0a8), 0, 1.6, 0)); g.add(mesh(new THREE.ConeGeometry(.24,.18,4), dark, 0, 1.84, 0).rotateY(Math.PI/4));
+    const lh = halo(0xffc46b, 2.2, 0); lh.position.y = 1.6; g.add(lh); lampLights.push(lh); }
+  if (id === 'bench') { g.add(mesh(new THREE.BoxGeometry(.95,.08,.38), wood, 0, .4, 0)); g.add(mesh(new THREE.BoxGeometry(.95,.3,.06), wood, 0, .62, -.18)); [-.4,.4].forEach(x => g.add(mesh(new THREE.BoxGeometry(.08,.4,.34), dark, x, .2, 0))); }
+  if (id === 'planter') { g.add(mesh(new THREE.BoxGeometry(.8,.3,.5), wood, 0, .15, 0)); for (let i=0;i<6;i++) g.add(mesh(sph(.08), mat([0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b,0xff8fa3][i]), -.28 + (i%3)*.28, .36, -.1 + Math.floor(i/3)*.2)); }
+  if (id === 'arch') { [-.45,.45].forEach(x => g.add(mesh(new THREE.BoxGeometry(.1,1.6,.1), mat(0xfff1d6), x, .8, 0))); const top = mesh(new THREE.TorusGeometry(.45,.05,6,16,Math.PI), mat(0xfff1d6), 0, 1.6, 0); g.add(top);
+    for (let i=0;i<8;i++){ const a = i/7*Math.PI; g.add(mesh(sph(.07), mat([0xff8fa3,0x8fdc8a,0xfff3a0][i%3]), Math.cos(a)*.45, 1.6 + Math.sin(a)*.45, .05)); } }
+  return g;
+}
+const buildGroup = new THREE.Group(); scene.add(buildGroup);
+function drawBuilds() {
+  buildGroup.clear(); lampLights.length = 0;
+  (S.builds || []).forEach(b => { const m = pieceModel(b.p); m.position.set(b.x, 0, b.z); m.rotation.y = (b.r || 0) * Math.PI/2; buildGroup.add(m); });
+  if (typeof tameOutlines === 'function' && outline) tameOutlines();
+}
+// places you can't build over, so the important things stay reachable
+function blockedAt(x, z) {
+  if (Math.hypot(x, z) > 8.2) return 'That is too close to the edge.';
+  const circles = [[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
+  if (circles.some(([cx,cz,r]) => Math.hypot(x-cx, z-cz) < r)) return 'That spot is taken by something important.';
+  if (x > .2 && x < 4.8 && z > -2 && z < (S.bigGarden ? 3.9 : 2.6)) return 'That is your garden.';
+  return null;
+}
+let buildMode = false, buildSel = 'path', buildRot = 0, removing = false;
+const ghost = new THREE.Mesh(new THREE.PlaneGeometry(.96,.96), new THREE.MeshBasicMaterial({ color:0x8fdc8a, transparent:true, opacity:.45, depthWrite:false })); ghost.rotation.x = -Math.PI/2; ghost.visible = false; scene.add(ghost);
+const gridLines = (() => { const pts = []; for (let i=-8;i<=8;i++){ pts.push(i,0.015,-8, i,0.015,8, -8,0.015,i, 8,0.015,i); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  const l = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:.22 })); l.visible = false; scene.add(l); return l; })();
+function drawBuildBar() {
+  const bar = $('buildbar');
+  bar.innerHTML = `<p class="bhelp">${removing ? 'Tap a piece to pick it up. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
+    <div class="bpieces">${PIECES.map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
+    <div class="bctl"><button id="bRot">Rotate</button><button id="bRem" class="${removing ? 'on' : ''}">Remove</button><button id="bDone" class="done">Done</button></div>`;
+  bar.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { buildSel = b.dataset.pc; removing = false; drawBuildBar(); });
+  $('bRot').onclick = () => { buildRot = (buildRot + 1) % 4; toast('Turned. Pieces you place now face the new way.'); };
+  $('bRem').onclick = () => { removing = !removing; drawBuildBar(); };
+  $('bDone').onclick = () => setBuildMode(false);
+}
+function setBuildMode(on) {
+  if (on && ((S.home || 0) < 3 || S.where !== 'home' || VISIT)) { toast((S.home || 0) < 3 ? 'Finish building your home first.' : 'You can build on your home island.'); return; }
+  buildMode = on; removing = false; gridLines.visible = on; ghost.visible = false; document.body.classList.toggle('building', on);
+  if (on) { closeDialog(); drawBuildBar(); if (player.position.distanceTo(new THREE.Vector3(0,0,0)) > 10) { player.position.set(0,0,2); } }
+  drawHud();
+}
+function cellAt(e) {
+  ptr.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1); ray.setFromCamera(ptr, camera);
+  const h = ray.intersectObject(HOME.top, false)[0]; if (!h) return null;
+  return { x: Math.floor(h.point.x) + .5, z: Math.floor(h.point.z) + .5 };
+}
+function buildTap(e) {
+  const c = cellAt(e); if (!c) return;
+  const idx = S.builds.findIndex(b => b.x === c.x && b.z === c.z);
+  if (removing) {
+    if (idx < 0) { toast('Nothing built there.'); return; }
+    const b = S.builds.splice(idx, 1)[0], p = PIECES.find(x => x.id === b.p); Object.entries(p.cost).forEach(([k,n]) => bagAdd(k, n));
+    sfx('dig'); burst(new THREE.Vector3(c.x, 0, c.z), 0xc98f58, 10); drawBuilds(); save(); drawBuildBar(); drawHud(); return;
+  }
+  const why = blockedAt(c.x, c.z); if (why) { toast(why); return; }
+  if (idx >= 0) { toast('Something is already built there. Use Remove first.'); return; }
+  const p = PIECES.find(x => x.id === buildSel);
+  if (!enough(p.cost)) { toast(`Not enough materials for a ${p.name.toLowerCase()}. Chop trees, break rocks, and cut bushes.`); return; }
+  Object.entries(p.cost).forEach(([k,n]) => bagAdd(k, -n)); S.builds.push({ p:p.id, x:c.x, z:c.z, r:buildRot });
+  sfx(p.id === 'path' || p.id === 'walls' ? 'dig' : 'till'); burst(new THREE.Vector3(c.x, 0, c.z), 0xffc857, 10); drawBuilds(); save(); drawBuildBar(); drawHud();
+  if (p.id === 'path' && !S.aha.includes('roads')) showAha('roads');
+}
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!buildMode) return; const c = cellAt(e); if (!c) { ghost.visible = false; return; }
+  ghost.visible = true; ghost.position.set(c.x, .03, c.z);
+  const bad = !removing && (blockedAt(c.x, c.z) || S.builds.some(b => b.x === c.x && b.z === c.z));
+  ghost.material.color.set(removing ? 0xffc857 : bad ? 0xff5a5a : 0x8fdc8a);
+});
 renderer.domElement.addEventListener('pointerdown', e => {
   if ($('title').style.display !== 'none' || $('veil').classList.contains('show')) return;
+  if (buildMode) return buildTap(e);
   closeDialog();
   ptr.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1);
   ray.setFromCamera(ptr, camera);
@@ -2640,6 +2736,7 @@ function tick() {
     const img = mc.getImageData(0,0,128,128); for (let i=0;i<img.data.length;i+=4) if (img.data[i] < 40 && img.data[i+2] > 40 && img.data[i+2] < 70) img.data[i+3] = 0; mc.putImageData(img,0,0); moonTex.needsUpdate = true; }
   moonSprite.visible = !inside && night > 0; moonSprite.material.opacity = night; moonSprite.position.set(player.position.x - 30, player.position.y + 32, player.position.z - 70);
   winMat.emissiveIntensity = night * 1.4 + (h > 18 ? .3 : 0);
+  lampLights.forEach(l => l.material.opacity = night * .8);
   // movement
   let mv = new THREE.Vector3((keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0), 0, (keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0));
   if (mv.lengthSq()) { target = null; pending = null; }
@@ -2723,13 +2820,14 @@ function tick() {
   if (setupCam) { const wide = innerWidth >= 760, off = wide ? new THREE.Vector3(1.25, 1, 0) : new THREE.Vector3(0, .15, 0);
     camera.position.lerp(player.position.clone().add(new THREE.Vector3(off.x, 2.2, 4.6)), 1 - Math.pow(.001, dt)); camera.lookAt(player.position.x + off.x, player.position.y + off.y + .15 + (wide ? 0 : -.9), player.position.z); player.rotation.y = Math.sin(now*.6)*.5; }
   else if (!playing) { const a = now*.07; camera.position.set(Math.sin(a)*17, 9.5, Math.cos(a)*17); camera.lookAt(0, .5, 0); }
+  else if (buildMode) { camera.position.lerp(new THREE.Vector3(0, 17, 13), 1 - Math.pow(.02, dt)); camera.lookAt(0, 0, 1); }
   else { camera.position.lerp(player.position.clone().add(camOffset()), 1 - Math.pow(.02, dt));
   camera.lookAt(player.position.x, player.position.y + .6, player.position.z - ahead()); }
   if (outline) outline.render(scene, camera); else renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
 snapCam(); tameOutlines();
-bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); drawHome(); if (!(S.pickups || []).length) spawnPickups(); else drawPickups(); homeDock.visible = S.mode === 'fisher'; if (lowGfx) setLowGfx(true);
+bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); drawHome(); drawBuilds(); if (!(S.pickups || []).length) spawnPickups(); else drawPickups(); homeDock.visible = S.mode === 'fisher'; if (lowGfx) setLowGfx(true);
 drawHud(); tick();
 $('moveTitle').onclick = () => openMoveGame();
 const localAt = S.savedAt || 0; save();
@@ -2848,7 +2946,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }

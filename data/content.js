@@ -171,6 +171,10 @@ const AHA = {
     today:'Close your eyes for a second. You still know you are here. That is his whole argument.' },
 };
 Object.assign(AHA, {
+  roads: { kicker:'MEMORY FOUND', title:'All Roads Lead to Rome',
+    did:'You laid a path of flat stones so your feet stay out of the mud.',
+    real:'The ancient Romans built tens of thousands of kilometers of paved roads. They dug a trench and filled it with layers: big stones, then gravel, then fitted paving stones on top, curved so rain ran off to the sides. Some Roman roads are still walked on today, about 2,000 years later.',
+    today:'Modern roads still use the same idea: layers underneath, and a surface shaped to shed water.' },
   tools: { kicker:'MEMORY FOUND', title:'The First Tools',
     did:'You tied a sharp stone to a stick with grass and made an axe.',
     real:'People have been shaping stone into tools for more than 3 million years, long before our own species existed. Tying stones onto wooden handles came later, at least 300,000 years ago. A handle lets you swing with much more force, the same idea as the lever.',
@@ -228,7 +232,7 @@ Object.assign(AHA, {
     real:'In 1666, Isaac Newton split sunlight with a glass prism into a band of colors. Then he used a second prism to mix the colors back into white. That showed white light is not pure. It is every color at once.',
     today:'Every rainbow is sunlight being split by raindrops, which act like tiny prisms.' },
 });
-const AHA_ORDER = ['tools','thatch','bone','temple','tablet','sundial','bell','still','rope','stars','gears','lever','bread','rosetta','moon','optics','loom','migration','worldtree','fibonacci','prism','harvest','theseus','zeno','cave','river','floating','stoic','golden'];
+const AHA_ORDER = ['tools','thatch','roads','bone','temple','tablet','sundial','bell','still','rope','stars','gears','lever','bread','rosetta','moon','optics','loom','migration','worldtree','fibonacci','prism','harvest','theseus','zeno','cave','river','floating','stoic','golden'];
 const RELICS = [ { id:'bone', name:'a notched bone' }, { id:'temple', name:'a carved stone' }, { id:'tablet', name:'a clay tablet' } ];
 const LAYERS = ['Topsoil. Roots and worms.', 'A dark layer of ash. Something burned here long ago.', 'Old clay. The deeper you dig, the older it gets.'];
 const QUESTIONS = [

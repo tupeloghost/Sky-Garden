@@ -17,7 +17,7 @@ const CODE_RE = /^[A-F0-9]{6}$/;
 const GOAL_RE = /^[a-z0-9-]{3,40}$/;
 const ITEM_RE = /^[a-z]{2,20}$/;
 // what a visitor is allowed to see of someone's island
-const PUBLIC = ['name','look','mode','tiles','placed','roof','wall','bigGarden','bridge','bridge2','quest','q2','q3','q4','q5','built','sprinklers','boulder','relics','aha'];
+const PUBLIC = ['builds','home','name','look','mode','tiles','placed','roof','wall','bigGarden','bridge','bridge2','quest','q2','q3','q4','q5','built','sprinklers','boulder','relics','aha'];
 const friendCode = id => id.slice(0, 6).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const cleanName = n => String(n || '').replace(/[^\p{L}\p{N} '._-]/gu, '').trim().slice(0, 16) || 'A friend';

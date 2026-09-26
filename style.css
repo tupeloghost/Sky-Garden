@@ -103,3 +103,14 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .veil.setup .card { max-height:58vh; }
 @media (min-width:760px) { .veil.setup { justify-content:flex-end; align-items:center; padding-right:4vw; } .veil.setup .card { max-height:88vh; } }
 .in-setup .top, .in-setup .bar, .in-setup #devBtn { visibility:hidden; }
+
+.buildbar { display:none; position:fixed; left:10px; right:10px; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); background:#fff8ee; border-radius:20px; padding:10px; box-shadow:0 6px 18px #3b2f4a33; z-index:3; }
+.building .buildbar { display:block; }
+.buildbar .bhelp { margin:0 0 6px; font-size:14px; font-weight:700; }
+.bpieces { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+.bpieces button, .bctl button { flex:none; border:3px solid transparent; background:#f3e8d8; border-radius:14px; padding:6px 10px; font:700 13px 'Baloo 2',sans-serif; color:#3b2f4a; cursor:pointer; line-height:1.1; }
+.bpieces button small { display:block; font-weight:500; opacity:.7; }
+.bpieces button.on, .bctl button.on { border-color:#ff8fa3; background:#fff; }
+.bctl { display:flex; gap:6px; margin-top:6px; }
+.bctl .done { margin-left:auto; background:#ffc857; }
+.building .quest { display:none; }

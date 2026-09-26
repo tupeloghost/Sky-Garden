@@ -165,4 +165,4 @@ Everything you grow, pick, catch, cook, and collect is a real thing with its rea
 
 **Crafting follows real human history:** stone tools and fire, pottery, bronze (copper plus tin), glass, iron, windmills. Each new material is a real "aha."
 
-**Rollout:** (1) start from nothing and build your home [built], (2) free building anywhere on a snap grid, (3) the history tech tree, (4) exploration: wild islands and caves opened by tools.
+**Rollout:** (1) start from nothing and build your home [built], (2) free building anywhere on a snap grid [built], (3) the history tech tree, (4) exploration: wild islands and caves opened by tools.
