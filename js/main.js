@@ -1,4 +1,5 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from 'three';
+import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { HOWTO, QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES } from '../data/content.js';
 import { CONSTELLATIONS } from '../data/stars.js';
 import { FINDS } from '../data/finds.js';
@@ -85,8 +86,15 @@ function setLowGfx(on) {
 Object.assign(sun.shadow.camera, { left:-14, right:14, top:14, bottom:-14 });
 scene.add(sun); scene.add(sun.target);
 
-const mat = (c, o={}) => new THREE.MeshStandardMaterial({ color:c, roughness:.85, ...o });
-const glow = (c) => new THREE.MeshBasicMaterial({ color:c });
+// --- art style: a = original, b = diorama (cel shading + outlines), c = storybook (soft, pastel, paper grain) ---
+const LOOK = (() => { const q = new URLSearchParams(location.search).get('look'); if (q) { try { localStorage.setItem('sg.look', q); } catch {} return q; } try { return localStorage.getItem('sg.look') || 'a'; } catch { return 'a'; } })();
+const makeRamp = (steps, lo) => { const d = new Uint8Array(steps); for (let i=0;i<steps;i++) d[i] = Math.round(255 * (lo + (1-lo) * i/(steps-1))); const t = new THREE.DataTexture(d, steps, 1, THREE.RedFormat); t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t; };
+const RAMP = LOOK === 'b' ? makeRamp(3, .5) : LOOK === 'c' ? makeRamp(5, .62) : null;
+const CREAM = new THREE.Color(0xfff4e6);
+const tint = c => LOOK === 'c' ? new THREE.Color(c).lerp(CREAM, .16) : new THREE.Color(c);
+const NO_OUTLINE = { visible:false };
+const mat = (c, o={}) => { if (!RAMP) return new THREE.MeshStandardMaterial({ color:c, roughness:.85, ...o }); const { roughness, metalness, ...rest } = o; return new THREE.MeshToonMaterial({ color:tint(c), gradientMap:RAMP, ...rest }); };
+const glow = (c) => { const m = new THREE.MeshBasicMaterial({ color:c }); m.userData.outlineParameters = NO_OUTLINE; return m; };
 const mesh = (g, m, x=0, y=0, z=0) => { const o = new THREE.Mesh(g, m); o.position.set(x,y,z); o.castShadow = o.receiveShadow = true; return o; };
 const sph = (r) => new THREE.SphereGeometry(r, 24, 16);
 const walkables = [];
@@ -95,7 +103,7 @@ const haloTex = (() => { const c = document.createElement('canvas'); c.width = c
   const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.35,'rgba(255,255,255,.45)'); gr.addColorStop(1,'rgba(255,255,255,0)');
   g.fillStyle = gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
 function halo(color, size, opacity = .8, additive = true) {
-  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:haloTex, color, transparent:true, opacity, depthWrite:false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending }));
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ userData:{ outlineParameters:NO_OUTLINE }, map:haloTex, color, transparent:true, opacity, depthWrite:false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending }));
   sp.scale.setScalar(size); return sp;
 }
 
@@ -384,6 +392,29 @@ const marker = new THREE.Group(); scene.add(marker);
 const markerMat = new THREE.MeshBasicMaterial({ color:0xffc857, fog:false });
 const mCone = new THREE.Mesh(new THREE.ConeGeometry(.28,.55,16), markerMat); mCone.rotation.x = Math.PI; marker.add(mCone);
 const mRing = new THREE.Mesh(new THREE.TorusGeometry(.2,.06,8,20), markerMat); mRing.position.y = .45; mRing.rotation.x = Math.PI/2; marker.add(mRing);
+const dressing = new THREE.Group(); scene.add(dressing); const grassPatches = [];
+if (LOOK !== 'a') {
+  // soft light and dark patches in the grass, so the ground isn't one flat color
+  const rnd = (i) => { const x = Math.sin(i*127.1)*43758.5; return x - Math.floor(x); };
+  [[0,0,0,8.4],[ORCH_POS.x,ORCH_POS.y,ORCH_POS.z,7.4],[WIND_POS.x,WIND_POS.y,WIND_POS.z,7.4],[OH.x,OH.y,OH.z,10.2]].forEach(([cx,cy,cz,R], k) => {
+    for (let i=0;i<14;i++){ const a = rnd(i+k*50)*Math.PI*2, r = Math.sqrt(rnd(i*3+k*70))*R*.85, f = rnd(i*7+k) > .5 ? 1.12 : .88;
+      const pm = new THREE.MeshToonMaterial({ color:0x8fdc8a, gradientMap:RAMP, transparent:true, opacity:.55 }); pm.userData.outlineParameters = NO_OUTLINE; pm.userData.f = f;
+      const p = new THREE.Mesh(new THREE.CircleGeometry(.9 + rnd(i*11+k)*1.4, 20), pm); p.rotation.x = -Math.PI/2; p.position.set(cx + Math.cos(a)*r, cy + .012 + i*.0005, cz + Math.sin(a)*r); p.scale.set(1, .6 + rnd(i*5)*.5, 1);
+      p.receiveShadow = true; dressing.add(p); grassPatches.push(p); } });
+  // bushes in little groups
+  const bush = (x, z, s=1, c=0x4fb46a) => { const g = new THREE.Group(); g.position.set(x, 0, z); [[0,0,0,.45],[.35,-.05,.1,.34],[-.32,-.07,.08,.32],[.05,.15,-.15,.3]].forEach(([bx,by,bz,br]) => g.add(mesh(sph(br*s), mat(c), bx*s, br*s*.8 + by, bz*s))); dressing.add(g); return g; };
+  [[-6.2,-2.6],[-5.6,-3.4,.8],[-2.2,-4.2,.9],[-6.9,2.6,.8],[5.9,-4.4],[6.7,-3.6,.7],[-1.6,6.6],[1.2,7.4,.8],[7.2,3.6,.8],[-4.8,5.2,.7]].forEach(([x,z,s]) => bush(x, z, s || 1));
+  // flower beds hugging the hut and along the path
+  const bed = (x, z, n, rx, rz) => { for (let i=0;i<n;i++){ const fx = x + (rnd(i+x*13)-.5)*rx, fz = z + (rnd(i*3+z*7)-.5)*rz, c = [0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b][i%5];
+    dressing.add(mesh(new THREE.CylinderGeometry(.015,.015,.22,4), mat(0x4fb46a), fx, .11, fz)); dressing.add(mesh(sph(.075), mat(c), fx, .24, fz)); } };
+  bed(-4, -1.55, 14, 2.4, .35); bed(-5.55, -3, 8, .35, 1.8); bed(-2.45, -3, 8, .35, 1.8); bed(-.9, -.1, 6, .7, .5); bed(6.3, .3, 6, .8, .6);
+  // a low picket fence around the garden, open on the side facing the hut
+  const fenceMat = mat(0xfff1d6);
+  const fence = (x0, z0, x1, z1) => { const n = Math.round(Math.hypot(x1-x0, z1-z0) / .4);
+    for (let i=0;i<=n;i++){ const k = i/n; dressing.add(mesh(new THREE.BoxGeometry(.07,.5,.07), fenceMat, x0+(x1-x0)*k, .25, z0+(z1-z0)*k)); }
+    const rail = mesh(new THREE.BoxGeometry(Math.hypot(x1-x0, z1-z0), .05, .04), fenceMat, (x0+x1)/2, .36, (z0+z1)/2); rail.rotation.y = -Math.atan2(z1-z0, x1-x0); dressing.add(rail); };
+  fence(.45, -1.75, 4.45, -1.75); fence(4.45, -1.75, 4.45, 3.5); fence(.45, 3.5, 4.45, 3.5); fence(.45, -1.75, .45, -.2); fence(.45, 1.6, .45, 3.5);
+}
 const sprinkler = new THREE.Group(); sprinkler.position.set(.15, 0, .25); sprinkler.visible = false;
 sprinkler.add(mesh(new THREE.CylinderGeometry(.06,.06,.5,8), mat(0x8a8f99, { metalness:.4 }), 0, .25, 0));
 const sprHead = new THREE.Group(); sprHead.position.y = .52; sprinkler.add(sprHead);
@@ -664,6 +695,7 @@ function applySeason() {
   HOME.top.material.color.set(GRASS[s]); ORCH.top.material.color.set(GRASS[s]); WIND.top.material.color.set(GRASS[s]);
   tuftMat.color.set([0x6cc26a, 0x5fb85c, 0xc9a24f, 0xdfe8f5][s]);
   trees.forEach(t => t.userData.cm.color.set(CANOPY[s]));
+  grassPatches.forEach(p => p.material.color.set(GRASS[s]).multiplyScalar(p.material.userData.f));
   flowers.visible = s < 2; tufts.visible = s !== 3 && !lowGfx;
   rainMat.color.set(s === 3 ? 0xffffff : 0xdfeaff); rainMat.size = s === 3 ? .14 : .08;
   const fz = festival(); lanterns.visible = !!fz; if (fz) lanternMat.color.set(fz.color);
@@ -2002,6 +2034,12 @@ const ahead = () => innerHeight > innerWidth * 1.2 ? 2.2 : 0; // on tall phone s
 function camOffset() { return S.where === 'hut' ? new THREE.Vector3(0, 7.5, 7.8 - ahead()) : new THREE.Vector3(0, 10.5, 11 - ahead()); }
 function snapCam() { camera.position.copy(player.position).add(camOffset()); }
 const perfCheck = { n:0, sum:0 };
+const outline = LOOK === 'a' ? null : new OutlineEffect(renderer, { defaultThickness: LOOK === 'b' ? .0035 : .005, defaultColor: LOOK === 'b' ? [.23,.18,.29] : [.45,.33,.25], defaultAlpha: LOOK === 'b' ? .9 : .7 });
+// only solid shaded things get outlines: no glows, sprites, sky, grass blades, or see-through parts
+function tameOutlines() { scene.traverse(o => { const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+  ms.forEach(m => { if (!m.isMeshToonMaterial || m.transparent || o.isInstancedMesh || o.isPoints || o.isSprite) m.userData.outlineParameters = NO_OUTLINE; }); }); }
+if (LOOK === 'b') renderer.domElement.style.filter = 'saturate(1.12) contrast(1.04)';
+if (LOOK === 'c') { renderer.domElement.style.filter = 'saturate(.88) brightness(1.04) sepia(.08)'; document.body.classList.add('paper'); }
 const clock = new THREE.Clock(); let playing = false, hudTick = 0, stepDist = 0;
 function tick() {
   const dt = Math.min(.05, clock.getDelta()), now = clock.elapsedTime;
@@ -2117,10 +2155,10 @@ function tick() {
   if (!playing) { const a = now*.07; camera.position.set(Math.sin(a)*17, 9.5, Math.cos(a)*17); camera.lookAt(0, .5, 0); }
   else { camera.position.lerp(player.position.clone().add(camOffset()), 1 - Math.pow(.02, dt));
   camera.lookAt(player.position.x, player.position.y + .6, player.position.z - ahead()); }
-  renderer.render(scene, camera);
+  if (outline) outline.render(scene, camera); else renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
-snapCam();
+snapCam(); tameOutlines();
 bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); if (lowGfx) setLowGfx(true);
 drawHud(); tick();
 $('moveTitle').onclick = () => openMoveGame();

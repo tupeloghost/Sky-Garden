@@ -49,6 +49,7 @@ function draw() {
   const d = g.dateOverride ? new Date(g.dateOverride) : new Date();
   panel.innerHTML = `
     <b>Developer mode</b> <span style="opacity:.7">Cloud sync is paused.</span>
+    <h5>LOOK (art style)</h5><div class="row">${[['a','A: Original'],['b','B: Diorama'],['c','C: Storybook']].map(([k,l]) => `<button data-look="${k}" style="${(localStorage.getItem('sg.look')||'a') === k ? 'background:#ffc857;color:#3b2f4a' : ''}">${l}</button>`).join('')}</div>
     <h5>JUMP TO</h5><div class="row" id="dvJump"></div>
     <h5>TIME</h5><div class="row">
       ${[['6 AM',0],['Noon',6/18],['5 PM',11/18],['9 PM',15/18]].map(([l,t]) => `<button data-t="${t}">${l}</button>`).join('')}
@@ -63,6 +64,7 @@ function draw() {
     <h5>COLLECTIONS</h5><div class="row"><button id="dvAll">Collect everything</button><button id="dvNone">Clear collections</button></div>
     <h5>RESET</h5><div class="row"><button class="warn" id="dvReset">Start a brand new game</button><button id="dvOff">Turn off developer mode</button></div>
     <p id="dvMsg" style="margin:6px 0 0;min-height:18px;color:#9fe7e0"></p>`;
+  panel.querySelectorAll('[data-look]').forEach(b => b.onclick = () => { try { localStorage.setItem('sg.look', b.dataset.look); sessionStorage.setItem('sg.devmsg', `Look: ${b.textContent}`); } catch {} location.reload(); });
   const jump = panel.querySelector('#dvJump');
   ['Chapter 1 start','Chapter 1: tune the bell','Chapter 2 start','Chapter 3 start','Chapter 4 start (night)','Chapter 5 start','Story done, village empty','Village fully built']
     .forEach(n => { const b = document.createElement('button'); b.textContent = n; b.onclick = () => preset(n); jump.appendChild(b); });
