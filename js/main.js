@@ -71,6 +71,12 @@ const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 250);
 const hemi = new THREE.HemisphereLight(0xffffff, 0xb9a7d9, 0.9); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff1dc, 1.6);
 sun.castShadow = true; sun.shadow.mapSize.set(1024,1024);
+let lowGfx = false; try { lowGfx = localStorage.getItem('sg.lowgfx') === 'true'; } catch {}
+function setLowGfx(on) {
+  lowGfx = on; try { localStorage.setItem('sg.lowgfx', on); } catch {}
+  renderer.setPixelRatio(on ? 1 : Math.min(2, devicePixelRatio)); sun.castShadow = !on;
+  if (typeof tufts !== 'undefined') tufts.visible = !on && season() !== 3;
+}
 Object.assign(sun.shadow.camera, { left:-14, right:14, top:14, bottom:-14 });
 scene.add(sun); scene.add(sun.target);
 
@@ -638,7 +644,7 @@ function applySeason() {
   HOME.top.material.color.set(GRASS[s]); ORCH.top.material.color.set(GRASS[s]); WIND.top.material.color.set(GRASS[s]);
   tuftMat.color.set([0x6cc26a, 0x5fb85c, 0xc9a24f, 0xdfe8f5][s]);
   trees.forEach(t => t.userData.cm.color.set(CANOPY[s]));
-  flowers.visible = s < 2; tufts.visible = s !== 3;
+  flowers.visible = s < 2; tufts.visible = s !== 3 && !lowGfx;
   rainMat.color.set(s === 3 ? 0xffffff : 0xdfeaff); rainMat.size = s === 3 ? .14 : .08;
   const fz = festival(); lanterns.visible = !!fz; if (fz) lanternMat.color.set(fz.color);
   fruitTrees.forEach((t, i) => t.userData.fruits.visible = S.fruit[i] !== S.day && s !== 3);
@@ -863,6 +869,9 @@ async function openMoveGame(back) {
     <input id="theirKey" placeholder="Type or paste a sync key" autocomplete="off" style="width:100%;margin-top:8px;font:16px monospace;border-radius:12px;border:2px solid #eadfd0;padding:10px">
     <button id="loadKey">Load from cloud</button>
     <p id="keyMsg" style="margin-top:8px;font-weight:700;min-height:22px"></p>
+    <p style="font-size:13px;opacity:.7;margin-top:6px">So we can make the game better, the makers can see anonymous progress from cloud backups, like which chapter a player has reached. No names or emails are collected.</p>
+    <h4>Graphics</h4><p>${lowGfx ? 'Low graphics is on. It runs smoother on older phones.' : 'Full graphics are on.'}</p>
+    <button id="gfxBtn" class="ghost">${lowGfx ? 'Switch to full graphics' : 'Switch to low graphics'}</button>
     <h4 style="margin-top:22px">No internet? Use a save code instead</h4>
     <h4>Step 1: On this device</h4><p>Tap Copy code. Then send it to yourself, like in a text or email.</p>
     <textarea id="myCode" readonly rows="3" style="width:100%;margin-top:8px;font:12px monospace;border-radius:12px;border:2px solid #eadfd0;padding:8px">${code}</textarea>
@@ -871,6 +880,7 @@ async function openMoveGame(back) {
     <textarea id="theirCode" rows="3" placeholder="Paste a save code here" style="width:100%;margin-top:8px;font:12px monospace;border-radius:12px;border:2px solid #eadfd0;padding:8px"></textarea>
     <button id="loadCode">Load</button>
     <p id="codeMsg" style="margin-top:8px;font-weight:700;min-height:22px"></p>`, back ? 'Back' : 'Close', back);
+  $('gfxBtn').onclick = () => { setLowGfx(!lowGfx); openMoveGame(back); };
   $('copyKey').onclick = async () => {
     try { await navigator.clipboard.writeText(prettyKey(S.syncKey)); $('keyMsg').textContent = 'Sync key copied. Keep it somewhere safe.'; }
     catch { const r = document.createRange(); r.selectNodeContents($('myKey')); getSelection().removeAllRanges(); getSelection().addRange(r); $('keyMsg').textContent = 'The key is selected. Copy it with your device\'s copy command.'; }
@@ -1881,8 +1891,10 @@ const dome = new THREE.Mesh(new THREE.SphereGeometry(160, 32, 16), new THREE.Sha
 dome.renderOrder = -1; scene.add(dome);
 const sunGlow = halo(0xfff1c4, 40, 0); scene.add(sunGlow);
 const skyTop = new THREE.Color();
-function camOffset() { return S.where === 'hut' ? new THREE.Vector3(0, 7.5, 7.8) : new THREE.Vector3(0, 10.5, 11); }
+const ahead = () => innerHeight > innerWidth * 1.2 ? 2.2 : 0; // on tall phone screens, look further ahead so the top bar hides less
+function camOffset() { return S.where === 'hut' ? new THREE.Vector3(0, 7.5, 7.8 - ahead()) : new THREE.Vector3(0, 10.5, 11 - ahead()); }
 function snapCam() { camera.position.copy(player.position).add(camOffset()); }
+const perfCheck = { n:0, sum:0 };
 const clock = new THREE.Clock(); let playing = false, hudTick = 0, stepDist = 0;
 function tick() {
   const dt = Math.min(.05, clock.getDelta()), now = clock.elapsedTime;
@@ -1942,7 +1954,9 @@ function tick() {
     } else { target = null; pending = null; }
   } else { inner.position.y *= .8; inner.rotation.z *= .8; inner.scale.y = 1 + Math.sin(now*2.5)*.02; }
   // life
-  if (!inside) swayTufts(now);
+  if (!inside && !lowGfx) swayTufts(now);
+  if (playing && !lowGfx && perfCheck.n < 240 && !document.hidden) { perfCheck.n++; perfCheck.sum += dt;
+    if (perfCheck.n === 240 && perfCheck.sum / 240 > 1/32) { setLowGfx(true); toast('Switched to low graphics so the game runs smoother. You can change this in Sync my game.'); } }
   trees.forEach(t => { t.userData.canopy.rotation.z = Math.sin(now*1.2 + t.userData.ph)*.035; t.userData.canopy.rotation.x = Math.cos(now*.9 + t.userData.ph)*.025; });
   Object.values(npcs).forEach((n,i) => { n.userData.inner.scale.y = 1 + Math.sin(now*2+i)*.03;
     const d = n.position.distanceTo(player.position);
@@ -1991,12 +2005,12 @@ function tick() {
   // camera
   if (!playing) { const a = now*.07; camera.position.set(Math.sin(a)*17, 9.5, Math.cos(a)*17); camera.lookAt(0, .5, 0); }
   else { camera.position.lerp(player.position.clone().add(camOffset()), 1 - Math.pow(.02, dt));
-  camera.lookAt(player.position.x, player.position.y + .6, player.position.z); }
+  camera.lookAt(player.position.x, player.position.y + .6, player.position.z - ahead()); }
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
 snapCam();
-bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs();
+bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); if (lowGfx) setLowGfx(true);
 drawHud(); tick();
 $('moveTitle').onclick = () => openMoveGame();
 const localAt = S.savedAt || 0; save();
@@ -2014,7 +2028,31 @@ $('start').onclick = () => { $('title').style.display = 'none'; document.body.cl
   { const turned = seasonCheck(); applySeason(); if (turned && S.letter) toast(turned); }
   { const fz = festival(); if (fz && S.letter && !S.fests[fz.id + fz.year]) setTimeout(() => toast(`Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`), 800); }
   if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">A LETTER ON THE TABLE</div><h2>Dear little one,</h2><p class="letter">If you are reading this, the hut is yours now. The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Go find Nana'); } };
-// tester feedback: opens the claude.ai comment box when the game is shared as a link
+// --- playtest feedback: a short form that goes to the Sky Garden cloud ---
+function openFeedback() {
+  let mood = null;
+  const where = `${$('quest').querySelector('b')?.textContent || ''}: ${$('quest').querySelector('.qt')?.textContent || ''}`;
+  showCard(`<div class="kicker">FEEDBACK</div><h2>How is it going?</h2><p>Your notes go straight to the people making Sky Garden. Thank you!</p>
+    <div class="steppers" style="justify-content:flex-start">${[['love','Loving it'],['okay',"It's okay"],['confused','Confused'],['bored','Bored']].map(([k,l]) => `<button data-mood="${k}" class="ghost">${l}</button>`).join('')}</div>
+    <textarea id="fbText" rows="4" maxlength="2000" placeholder="What happened? What did you like? Where did you get stuck? (optional)" style="width:100%;margin-top:10px;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:10px"></textarea>
+    <p style="font-size:13px;opacity:.7;margin-top:6px">We also send where you are in the game (${where}) so we know what your note is about. Nothing else about you is sent.</p>
+    <button id="fbSend">Send</button> <button id="fbLater" class="ghost">Not now</button>
+    <p id="fbMsg" style="margin-top:8px;font-weight:700;min-height:22px"></p>`, null);
+  document.querySelectorAll('[data-mood]').forEach(b => b.onclick = () => { mood = b.dataset.mood; document.querySelectorAll('[data-mood]').forEach(x => x.className = x === b ? '' : 'ghost'); });
+  $('fbLater').onclick = hideCard;
+  $('fbSend').onclick = async () => {
+    const text = $('fbText').value.trim();
+    if (!mood && !text) { $('fbMsg').textContent = 'Pick how it is going, or write a note first.'; return; }
+    $('fbMsg').textContent = 'Sending...';
+    try {
+      const r = await fetch(`${CLOUD}/feedback`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ mood, text, where, day:S.day, player:S.syncKey }) });
+      if (!r.ok) throw new Error();
+      hideCard(); toast('Thank you! Your feedback was sent.'); sfx('heart');
+    } catch { $('fbMsg').textContent = 'Could not send. Check your internet and try again. Your note is still here.'; }
+  };
+}
+$('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
+// inside claude.ai, the Feedback button opens the comment box instead
 (async () => {
   try {
     const comments = await window.claude?.use?.('comments');

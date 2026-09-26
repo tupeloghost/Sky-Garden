@@ -4,6 +4,7 @@
 //
 // GET  /load?key=KEY            -> { updated, save } or 404
 // POST /save  { key, updated, save }  -> { ok, updated } (older saves are refused with 409)
+// POST /feedback { mood, text, where, day, player } -> { ok }   (playtest notes)
 
 const ALLOWED = ['https://tupeloghost.github.io', 'http://localhost:9011'];
 const MAX_SAVE = 200_000; // bytes; a full late-game save is about 10 KB
@@ -43,10 +44,23 @@ export default {
       const id = await hashKey(key), data = JSON.stringify(save);
       // Only write if this save is newer than what is stored, so an old device can't overwrite progress.
       const res = await env.DB.prepare(
-        'INSERT INTO saves (id, updated, data) VALUES (?1, ?2, ?3) ON CONFLICT(id) DO UPDATE SET updated = excluded.updated, data = excluded.data WHERE excluded.updated > saves.updated'
-      ).bind(id, updated, data).run();
+        'INSERT INTO saves (id, updated, data, created) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(id) DO UPDATE SET updated = excluded.updated, data = excluded.data WHERE excluded.updated > saves.updated'
+      ).bind(id, updated, data, Date.now()).run();
       if (!res.meta.changes) return json({ error: 'older than cloud save' }, 409, origin);
       return json({ ok: true, updated }, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/feedback') {
+      const text = await request.text();
+      if (text.length > 6000) return json({ error: 'too big' }, 413, origin);
+      let b; try { b = JSON.parse(text); } catch { return json({ error: 'bad json' }, 400, origin); }
+      const mood = ['love','okay','confused','bored'].includes(b.mood) ? b.mood : null;
+      const note = String(b.text || '').slice(0, 2000).trim();
+      if (!mood && !note) return json({ error: 'empty' }, 400, origin);
+      const player = KEY_RE.test(b.player || '') ? (await hashKey(b.player)).slice(0, 12) : null;
+      await env.DB.prepare('INSERT INTO feedback (at, player, mood, note, place, day) VALUES (?1, ?2, ?3, ?4, ?5, ?6)')
+        .bind(Date.now(), player, mood, note, String(b.where || '').slice(0, 200), Number.isFinite(b.day) ? b.day : null).run();
+      return json({ ok: true }, 200, origin);
     }
 
     return json({ error: 'not found' }, 404, origin);
