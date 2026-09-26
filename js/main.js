@@ -3,6 +3,7 @@ import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { HOWTO, QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES } from '../data/content.js';
 import { CONSTELLATIONS } from '../data/stars.js';
 import { FINDS } from '../data/finds.js';
+import { SPECIES, FUR, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
 Object.assign(NEIGHBORS, VILLAGERS); Object.assign(LOVES, VILLAGER_LOVES);
@@ -15,13 +16,14 @@ for (const id of Object.keys(FESTIVAL_AHA)) if (!AHA_ORDER.includes(id)) AHA_ORD
 const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, skywheat:0, moonpumpkin:0, frostmint:0 }, bag:{},
   tiles:Array.from({length:9},()=>({s:0})), sel:'cloudberry', hearts:{ nana:0, pip:0, drizzle:0, twins:0, lumen:0, mabel:0, hoot:0, allegra:0, sage:0 }, talked:{}, gifted:{}, scenes:[],
   bridge:false, pos:[0,0,2], where:'home', quest:0, aha:[], relics:0, digs:[], asked:-1, qi:0, letter:false,
-  order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
+  order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, created:false, name:'', look:null, mode:null, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
 let S;
 try {
   const saved = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
   const f = fresh();
   S = { ...f, ...saved, seeds:{ ...f.seeds, ...(saved.seeds||{}) }, hearts:{ ...f.hearts, ...(saved.hearts||{}) } };
   if (saved.letter && saved.tut === undefined) S.tut = 9;
+  if (saved.letter && saved.created === undefined) S.created = true;
   if (saved.crops) { for (const k in saved.crops) if (saved.crops[k]) S.bag[k] = (S.bag[k]||0) + saved.crops[k]; delete S.crops; }
   if (S.quest >= 5 && !saved.q2) S.q2 = S.q2 || 0;
   if (S.pos.length === 2) S.pos = [S.pos[0], 0, S.pos[1]];
@@ -34,6 +36,7 @@ const prettyKey = k => k.match(/.{1,4}/g).join('-');
 const cleanKey = k => (k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 if (!S.syncKey) S.syncKey = newSyncKey();
 let cloudDirty = true, lastPush = 0, cloudState = { when:0, ok:null };
+let setupCam = false; // camera close-up while making your character
 const save = () => { S.savedAt = Date.now(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
 const devOn = () => { try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
 async function cloudPush(force) {
@@ -511,7 +514,7 @@ stakes.add(mesh(new THREE.TorusGeometry(.2,.05,6,14), mat(0xc9a27a), .45, .08, .
 stakes.userData.kind = 'stakes'; scene.add(stakes);
 
 // --- critters ---
-function critter({ body, belly, ear, earType, beak, hat, frog, captain, spikes, owl, shell }) {
+function critter({ body, belly, ear, earType, beak, hat, hatType, tail, frog, captain, spikes, owl, shell }) {
   const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner); const eyes = [], arms = [];
   const b = mesh(sph(.5), mat(body), 0, .55, 0); b.scale.set(1,1.05,.95); inner.add(b);
   inner.add(mesh(sph(.3), mat(belly), 0, .5, .28));
@@ -526,9 +529,19 @@ function critter({ body, belly, ear, earType, beak, hat, frog, captain, spikes, 
     inner.add(mesh(sph(.13), mat(body), s*.22, .1, .1));
     if (earType === 'round') inner.add(mesh(sph(.14), mat(ear), s*.3, 1.55, 0));
     if (earType === 'long') { const e = mesh(sph(.12), mat(ear), s*.4, 1.3, 0); e.scale.set(1.8,.7,1); inner.add(e); }
+    if (earType === 'bunny') { const e = mesh(sph(.11), mat(body), s*.14, 1.78, -.02); e.scale.set(.8, 2.6, .6); e.rotation.z = -s*.12; inner.add(e); const ei = mesh(sph(.07), mat(0xffb6c8), s*.14, 1.8, .04); ei.scale.set(.7, 2.4, .3); ei.rotation.z = -s*.12; inner.add(ei); }
+    if (earType === 'mouse') { const e = mesh(new THREE.CylinderGeometry(.2,.2,.05,20), mat(body), s*.34, 1.56, -.02); e.rotation.x = Math.PI/2; inner.add(e); const ei = mesh(new THREE.CylinderGeometry(.13,.13,.02,16), mat(0xffb6c8), s*.34, 1.56, .02); ei.rotation.x = Math.PI/2; inner.add(ei); }
   });
   if (beak) { const k = mesh(new THREE.ConeGeometry(.08,.18,8), mat(beak), 0, 1.15, .45); k.rotation.x = Math.PI/2; inner.add(k); }
-  if (hat) { inner.add(mesh(new THREE.CylinderGeometry(.35,.4,.08,20), mat(hat), 0, 1.58, 0)); inner.add(mesh(new THREE.CylinderGeometry(.22,.25,.28,20), mat(hat), 0, 1.72, 0)); }
+  if (tail === 'puff') inner.add(mesh(sph(.14), mat(0xffffff), 0, .45, -.48));
+  if (tail === 'long') { const tl = mesh(new THREE.CylinderGeometry(.05,.07,.7,8), mat(body), .1, .6, -.55); tl.rotation.x = -.9; tl.rotation.z = .3; inner.add(tl); }
+  if (tail === 'fox') { const tl = mesh(sph(.2), mat(body), .08, .5, -.6); tl.scale.set(.8, .8, 1.8); inner.add(tl); inner.add(mesh(sph(.12), mat(0xffffff), .1, .5, -.88)); }
+  if (tail === 'thin') { const tl = mesh(new THREE.TorusGeometry(.25,.025,6,16,Math.PI), mat(0xffb6c8), 0, .45, -.55); tl.rotation.y = Math.PI/2; inner.add(tl); }
+  if (hatType === 'crown') for (let i=0;i<9;i++){ const a = i/9*Math.PI*2; inner.add(mesh(sph(.07), mat([hat, 0xffffff, 0xfff3a0][i%3]), Math.cos(a)*.3, 1.55, Math.sin(a)*.3)); }
+  if (hatType === 'beanie') { const bn = mesh(new THREE.SphereGeometry(.44,20,10,0,Math.PI*2,0,Math.PI/2.2), mat(hat), 0, 1.3, 0); inner.add(bn); inner.add(mesh(new THREE.TorusGeometry(.4,.06,8,24), mat(hat), 0, 1.42, 0).rotateX(Math.PI/2)); inner.add(mesh(sph(.1), mat(0xffffff), 0, 1.76, 0)); }
+  if (hatType === 'bow') [-1,1].forEach(sd => { const bw = mesh(sph(.12), mat(hat), .22 + sd*.1, 1.58, .05); bw.scale.set(1.2,.8,.5); inner.add(bw); });
+  if (hatType === 'straw') { inner.add(mesh(new THREE.CylinderGeometry(.6,.62,.04,24), mat(0xf2d38a), 0, 1.58, 0)); inner.add(mesh(new THREE.CylinderGeometry(.26,.3,.24,20), mat(0xf2d38a), 0, 1.7, 0)); inner.add(mesh(new THREE.CylinderGeometry(.305,.305,.06,20), mat(hat), 0, 1.63, 0)); }
+  if (hat && (!hatType || hatType === 'tophat')) { inner.add(mesh(new THREE.CylinderGeometry(.35,.4,.08,20), mat(hat), 0, 1.58, 0)); inner.add(mesh(new THREE.CylinderGeometry(.22,.25,.28,20), mat(hat), 0, 1.72, 0)); }
   if (earType === 'point') [-1,1].forEach(sd => { const e = mesh(new THREE.ConeGeometry(.13,.3,8), mat(ear), sd*.26, 1.58, 0); e.rotation.z = -sd*.3; inner.add(e); });
   if (spikes) for (let i=0;i<14;i++){ const a = (i/14)*Math.PI - Math.PI/2, yy = .5 + (i%3)*.3; const sp = mesh(new THREE.ConeGeometry(.07,.32,6), mat(0x6e5345), Math.sin(a)*.42, yy + .2, -Math.cos(a)*.3 - .15); sp.rotation.x = -1.1; sp.rotation.z = -Math.sin(a)*.6; inner.add(sp); }
   if (owl) { [-1,1].forEach(sd => { const disc = mesh(new THREE.CylinderGeometry(.14,.14,.03,16), mat(0xfff6e6), sd*.15, 1.26, .37); disc.rotation.x = Math.PI/2; inner.add(disc);
@@ -541,7 +554,16 @@ function critter({ body, belly, ear, earType, beak, hat, frog, captain, spikes, 
   g.userData.inner = inner; inner.userData.eyes = eyes; inner.userData.arms = arms; inner.userData.blink = Math.random()*4;
   scene.add(g); return g;
 }
-const player = critter({ body:0xffe0b3, belly:0xfff6e6, ear:0xffc58f, earType:'round', hat:0x7ec8e3 });
+// the player's character is rebuilt from their chosen look
+const player = new THREE.Group(); scene.add(player);
+function dressPlayer() {
+  const lk = S.look || DEFAULT_LOOK, sp = SPECIES[lk.species] || SPECIES.bear, body = new THREE.Color(lk.fur);
+  player.children.slice().forEach(c => player.remove(c));
+  const c = critter({ body:lk.fur, belly:body.clone().lerp(new THREE.Color(0xffffff), .6).getHex(), ear:body.clone().multiplyScalar(.85).getHex(), earType:sp.ears, tail:sp.tail,
+    hat: lk.hat === 'none' ? null : lk.hatColor, hatType:lk.hat });
+  c.position.set(0,0,0); player.add(c); player.userData.inner = c.userData.inner;
+}
+dressPlayer();
 player.position.set(...S.pos);
 const npcs = {
   nana: critter({ body:0xf6f1ea, belly:0xffffff, ear:0x3b2f4a, earType:'long' }),
@@ -593,6 +615,7 @@ const dock = new THREE.Group(); dock.position.set(ORCH_POS.x + 6.8, ORCH_POS.y, 
 for (let i=0;i<5;i++) dock.add(mesh(new THREE.BoxGeometry(.5,.1,1.2), mat(i%2?0xd9a066:0xc98f58), i*.5, .02, 0));
 const ripple = mesh(new THREE.TorusGeometry(.5,.04,8,30), glow(0xffffff), 3.2, -.2, 0); ripple.rotation.x = Math.PI/2; dock.add(ripple);
 dock.userData.kind = 'dock'; scene.add(dock);
+const homeDock = dock.clone(); homeDock.position.set(7.4, 0, -4.4); homeDock.rotation.y = .6; homeDock.userData = { kind:'dock' }; homeDock.visible = false; scene.add(homeDock);
 
 // --- the hut interior (a room far from the islands) ---
 const ROOM = new THREE.Vector3(80, 0, -80);
@@ -922,7 +945,7 @@ function ahaHtml(id) {
   return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2><h4>What you did</h4><p>${a.did}</p><h4>The real story</h4><p>${a.real}</p><h4>Where you see it today</h4><p>${a.today}</p>`;
 }
 function showAha(id, onClose) {
-  if (!S.aha.includes(id)) S.aha.push(id);
+  if (!S.aha.includes(id)) { S.aha.push(id); if (S.mode === 'scholar') { S.coins += 30; setTimeout(() => toast('Scholar bonus: +30 coins for a new memory!'), 600); } }
   [523,659,784].forEach((f,i)=>setTimeout(()=>chime(f),i*140));
   showCard(ahaHtml(id), 'Save to my journal', onClose); drawRoom(); drawHud(); save();
 }
@@ -1068,7 +1091,8 @@ function openBag() {
     <div class="jlist">${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}</div>
     <h4>Furniture</h4><div class="jlist">${furn || '<p>None yet. Pip sells furniture.</p>'}</div>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
-    <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+    <button id="lookBtn" class="ghost">Change my look</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+  $('lookBtn').onclick = () => openLookEditor(openBag);
   $('moveBtn').onclick = () => openMoveGame(openBag);
 }
 $('journalBtn').onclick = openJournal;
@@ -1187,7 +1211,7 @@ function useTile(i) {
     S.seeds[S.sel]--; Object.assign(t, { s:2, c:S.sel, d:0 }); sfx('plant'); toast(`Planted ${c.name}. Tap to water.`);
   } else {
     const c = CROPS[t.c];
-    if (t.d >= c.days) { bagAdd(t.c); goal('pick'); S.tiles[i] = { s:1, w:t.w }; sfx('pick'); burst(pos, c.color); toast(`Picked a ${c.name}! Sell it in the crate or give it as a gift.`); }
+    if (t.d >= c.days) { bagAdd(t.c); goal('pick'); if (S.mode === 'garden' && Math.random() < .2) { bagAdd(t.c); setTimeout(() => toast(`Bonus crop! You got an extra ${c.name}.`), 900); } S.tiles[i] = { s:1, w:t.w }; sfx('pick'); burst(pos, c.color); toast(`Picked a ${c.name}! Sell it in the crate or give it as a gift.`); }
     else if (!t.w) { t.w = true; goal('water'); sfx('water'); burst(pos, 0x9fd3ff, 8); toast(`Watered. ${c.days - t.d} more day${c.days - t.d>1?'s':''}.`); }
     else toast('Already watered today. Sleep to let it grow.');
   }
@@ -1195,7 +1219,7 @@ function useTile(i) {
 }
 function useCrate() {
   let total = 0;
-  for (const k in S.bag) { if (ITEMS[k].kind === 'quest') continue; total += S.bag[k] * ITEMS[k].sell; delete S.bag[k]; }
+  for (const k in S.bag) { if (ITEMS[k].kind === 'quest') continue; total += Math.round(S.bag[k] * ITEMS[k].sell * (S.mode === 'fisher' && ITEMS[k].kind === 'fish' ? 1.25 : 1)); delete S.bag[k]; }
   if (!total) { toast('Nothing to sell yet. Pick crops, fruit, or fish first.'); return; }
   S.coins += total; sfx('coin'); burst(crate.position, 0xffc857); toast(`Sold for ${total} coins!`); goal('sell', total); drawHud(); save(); tutSold();
 }
@@ -1365,7 +1389,7 @@ function nanaQuest() {
   const h = S.hearts.nana;
   if (S.quest === 0) {
     S.quest = 1; if (S.tut === 1) tutAfterGreeting(); else spawnDigs(); drawHud(); save();
-    openDialog('Nana Gale', "Oh! You have her eyes. Your grandmother was our Keeper of Memory. When the Great Gust hit, the village's memories fell into the ground like seeds. See that sparkle, right by your garden? Tap it a few times to dig it up.", [], h);
+    openDialog('Nana Gale', `Oh! You must be ${S.name || 'the new Keeper'}. You have her eyes. Your grandmother was our Keeper of Memory. When the Great Gust hit, the village's memories fell into the ground like seeds. See that sparkle, right by your garden? Tap it a few times to dig it up.`, [], h);
   } else if (S.quest === 1) openDialog('Nana Gale', `Keep digging, dear. ${S.relics} of 3 memories found. New sparkles show up each morning.`, neighborButtons('nana'), h);
   else if (S.quest === 2) openDialog('Nana Gale', "Three memories! Now, the old stone dial by your garden. Tap it when its shadow is the very shortest. Do not ask me why. Your grandmother always did.", neighborButtons('nana'), h);
   else if (S.quest === 3) openDialog('Nana Gale', "This is her Wind Bell frame. The big chime survived, but the small ones are all mixed up. Hang the three that sound sweetest with the big one.", [{ label:'Tune the bell', fn:() => { closeDialog(); openBell(); } }, ...neighborButtons('nana')], h);
@@ -1427,11 +1451,12 @@ function openBell() {
   };
   draw();
 }
+const bridgeCost = c => Math.round(c * (S.mode === 'explorer' ? .7 : 1));
 function useSign() {
   if (S.bridge) { toast('The bridge to Orchard Isle. Walk across!'); return; }
-  openDialog('Broken Bridge', `Fix this bridge to reach Orchard Isle. Cost: ${BRIDGE_COST} coins. You have ${S.coins}.`, [{ label:`Fix it (${BRIDGE_COST})`, fn:() => {
-    if (S.coins < BRIDGE_COST) { toast('Not enough coins yet.'); return; }
-    S.coins -= BRIDGE_COST; S.bridge = true; if (S.quest >= 4) S.quest = 5; buildBridge(); save(); drawHud();
+  openDialog('Broken Bridge', `Fix this bridge to reach Orchard Isle. Cost: ${bridgeCost(BRIDGE_COST)} coins. You have ${S.coins}.`, [{ label:`Fix it (${bridgeCost(BRIDGE_COST)})`, fn:() => {
+    if (S.coins < bridgeCost(BRIDGE_COST)) { toast('Not enough coins yet.'); return; }
+    S.coins -= bridgeCost(BRIDGE_COST); S.bridge = true; if (S.quest >= 4) S.quest = 5; buildBridge(); save(); drawHud();
     [523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*160)); burst(sign.position, 0xffc857, 20);
     openDialog('Bridge fixed!', 'The bridge to Orchard Isle is whole again. Walk across and find out who answered the bell.');
   }}]);
@@ -1560,9 +1585,9 @@ function drizzleFinale() {
 }
 function useSign2() {
   if (S.bridge2) { toast('The bridge to Windmill Isle. Walk across!'); return; }
-  openDialog('Broken Bridge', `This bridge goes north to Windmill Isle. Cost: ${BRIDGE2_COST} coins. You have ${S.coins}.`, [{ label:`Fix it (${BRIDGE2_COST})`, fn:() => {
-    if (S.coins < BRIDGE2_COST) { toast('Not enough coins yet.'); return; }
-    S.coins -= BRIDGE2_COST; S.bridge2 = true; if (S.q3 === 0) S.q3 = 1; buildBridge(); save(); drawHud();
+  openDialog('Broken Bridge', `This bridge goes north to Windmill Isle. Cost: ${bridgeCost(BRIDGE2_COST)} coins. You have ${S.coins}.`, [{ label:`Fix it (${bridgeCost(BRIDGE2_COST)})`, fn:() => {
+    if (S.coins < bridgeCost(BRIDGE2_COST)) { toast('Not enough coins yet.'); return; }
+    S.coins -= bridgeCost(BRIDGE2_COST); S.bridge2 = true; if (S.q3 === 0) S.q3 = 1; buildBridge(); save(); drawHud();
     [523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*160)); burst(sign2.position, 0xffc857, 20);
     openDialog('Bridge fixed!', 'The bridge to Windmill Isle is whole again. You can hear something creaking up there.');
   }}]);
@@ -2002,7 +2027,7 @@ let raining = false;
 function seasonCheck() {
   const now = season(), was = S.lastSeason; S.lastSeason = now;
   if (was === null || was === now) return '';
-  let lost = 0; S.tiles.forEach(t => { if (t.s === 2 && !CROPS[t.c].seasons.includes(now)) { t.s = 1; delete t.c; lost++; } });
+  let lost = 0; if (S.mode !== 'cozy') S.tiles.forEach(t => { if (t.s === 2 && !CROPS[t.c].seasons.includes(now)) { t.s = 1; delete t.c; lost++; } });
   S.tiles.forEach((_, i) => drawTile(i)); applySeason();
   return `${SEASONS[now]} is here!${lost ? ` ${lost} out-of-season plant${lost>1?'s':''} wilted.` : ''} Pip has new seeds.`;
 }
@@ -2024,7 +2049,7 @@ function sleep(passedOut) {
 // ============ INPUT ============
 const ray = new THREE.Raycaster(), down = new THREE.Raycaster(), ptr = new THREE.Vector2(), DOWN = new THREE.Vector3(0,-1,0);
 let target = null, pending = null;
-const clickables = [greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
+const clickables = [homeDock, greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
 renderer.domElement.addEventListener('pointerdown', e => {
   if ($('title').style.display !== 'none' || $('veil').classList.contains('show')) return;
   closeDialog();
@@ -2108,7 +2133,7 @@ function tick() {
   const dt = Math.min(.05, clock.getDelta()), now = clock.elapsedTime;
   const menuOpen = $('veil').classList.contains('show') || $('dialog').classList.contains('show');
   if (playing) {
-    if (!menuOpen) S.t += dt * (window.__sgSpeed || 1) / DAY_LEN; // the clock stops while any menu or conversation is open
+    if (!menuOpen) S.t += dt * (window.__sgSpeed || 1) / (DAY_LEN * (S.mode === 'cozy' ? 2 : 1)); // the clock stops while any menu or conversation is open
     if (S.t >= 1) sleep(true);
     if ((hudTick += dt) > .5) { hudTick = 0; drawHud(); ambience(); cloudPush(); }
     playMusic(dt);
@@ -2148,7 +2173,7 @@ function tick() {
   }
   const inner = player.userData.inner;
   if (mv.lengthSq() && !$('veil').classList.contains('show')) {
-    mv.normalize().multiplyScalar(4.2*dt);
+    mv.normalize().multiplyScalar((S.mode === 'explorer' ? 5.25 : 4.2)*dt);
     const nx = player.position.x + mv.x, nz = player.position.z + mv.z;
     let gy = groundAt(nx, player.position.y, nz);
     if (gy === null) { gy = groundAt(nx, player.position.y, player.position.z); if (gy !== null) mv.z = 0; else { gy = groundAt(player.position.x, player.position.y, nz); if (gy !== null) mv.x = 0; } }
@@ -2215,14 +2240,16 @@ function tick() {
   rain.visible = !inside && raining && S.t < .5;
   if (rain.visible) { const p = rainGeo.attributes.position, sp = season() === 3 ? 3 : 14; for (let i=0;i<RN;i++){ let y = p.getY(i) - sp*dt; if (y<0) y += 12; p.setY(i,y); } p.needsUpdate = true; rain.position.set(player.position.x, player.position.y, player.position.z); }
   // camera
-  if (!playing) { const a = now*.07; camera.position.set(Math.sin(a)*17, 9.5, Math.cos(a)*17); camera.lookAt(0, .5, 0); }
+  if (setupCam) { const wide = innerWidth >= 760, off = wide ? new THREE.Vector3(1.25, 1, 0) : new THREE.Vector3(0, .15, 0);
+    camera.position.lerp(player.position.clone().add(new THREE.Vector3(off.x, 1.9, 4.2)), 1 - Math.pow(.001, dt)); camera.lookAt(player.position.x + off.x, player.position.y + off.y + (wide ? 0 : -.9), player.position.z); player.rotation.y = Math.sin(now*.6)*.5; }
+  else if (!playing) { const a = now*.07; camera.position.set(Math.sin(a)*17, 9.5, Math.cos(a)*17); camera.lookAt(0, .5, 0); }
   else { camera.position.lerp(player.position.clone().add(camOffset()), 1 - Math.pow(.02, dt));
   camera.lookAt(player.position.x, player.position.y + .6, player.position.z - ahead()); }
   if (outline) outline.render(scene, camera); else renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
 snapCam(); tameOutlines();
-bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); if (lowGfx) setLowGfx(true);
+bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); homeDock.visible = S.mode === 'fisher'; if (lowGfx) setLowGfx(true);
 drawHud(); tick();
 $('moveTitle').onclick = () => openMoveGame();
 const localAt = S.savedAt || 0; save();
@@ -2236,10 +2263,60 @@ cloudLoad(S.syncKey).then(found => {
 const hemiBtn = $('hemi');
 const drawHemi = () => hemiBtn.textContent = S.south ? 'Seasons: Southern Hemisphere' : 'Seasons: Northern Hemisphere';
 drawHemi(); hemiBtn.onclick = () => { S.south = !S.south; S.lastSeason = null; save(); drawHemi(); applySeason(); drawHud(); };
+function lookPicker(title, done, withName) {
+  const lk = { ...(S.look || DEFAULT_LOOK) };
+  let name = S.name || '';
+  setupCam = true; document.getElementById('veil').classList.add('setup'); document.body.classList.add('in-setup');
+  const sw = (list, cur, attr) => list.map(c => `<button class="sw ${c === cur ? 'on' : ''}" data-${attr}="${c}" style="background:#${c.toString(16).padStart(6,'0')}" aria-label="color"></button>`).join('');
+  const draw = () => {
+    showCard(`<div class="kicker">${title}</div><h2>Make your character</h2>
+      ${withName ? `<h4>Your name</h4><input id="nm" maxlength="16" value="${name.replace(/"/g,'')}" placeholder="Type a name" autocomplete="off" style="width:100%;font:18px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:8px">` : ''}
+      <h4>Animal</h4><div class="chips">${Object.entries(SPECIES).map(([k,v]) => `<button data-sp="${k}" class="${lk.species === k ? '' : 'ghost'}">${v.name}</button>`).join('')}</div>
+      <h4>Fur color</h4><div class="chips">${sw(FUR, lk.fur, 'fur')}</div>
+      <h4>Hat</h4><div class="chips">${Object.entries(HATS).map(([k,v]) => `<button data-hat="${k}" class="${lk.hat === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
+      ${lk.hat !== 'none' ? `<h4>Hat color</h4><div class="chips">${sw(HAT_COLORS, lk.hatColor, 'hc')}</div>` : ''}
+      <p id="lkMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
+      <button id="lkDone">${withName ? 'Next' : 'Done'}</button>`, null);
+    const upd = () => { S.look = { ...lk }; dressPlayer(); };
+    if ($('nm')) $('nm').oninput = e => name = e.target.value;
+    document.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { lk.species = b.dataset.sp; upd(); draw(); });
+    document.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { lk.fur = +b.dataset.fur; upd(); draw(); });
+    document.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { lk.hat = b.dataset.hat; upd(); draw(); });
+    document.querySelectorAll('[data-hc]').forEach(b => b.onclick = () => { lk.hatColor = +b.dataset.hc; upd(); draw(); });
+    $('lkDone').onclick = () => {
+      if (withName && !name.trim()) { $('lkMsg').textContent = 'Type a name for your character first.'; return; }
+      S.look = { ...lk }; if (withName) S.name = name.trim().slice(0, 16); save(); dressPlayer(); done();
+    };
+  };
+  upd0(); draw();
+  function upd0() { S.look = { ...lk }; dressPlayer(); }
+}
+function modePicker(done) {
+  let pick = null;
+  const draw = () => {
+    showCard(`<div class="kicker">NEW GAME</div><h2>Choose your island</h2><p>Each island has its own perks. You pick once, at the start.</p>
+      <div class="jlist">${MODES.map(m => `<button data-md="${m.id}" style="${pick === m.id ? 'background:#ffc857' : ''}">${pick === m.id ? '✓ ' : ''}${m.name} <span class="sub">${m.blurb}</span><span class="sub" style="display:block;margin-top:2px">${m.perks.map(x => '• ' + x).join('<br>')}</span></button>`).join('')}</div>
+      <p id="mdMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
+      <button id="mdGo">Start my adventure</button> <button id="mdBack" class="ghost">Back</button>`, null);
+    document.querySelectorAll('[data-md]').forEach(b => b.onclick = () => { pick = b.dataset.md; draw(); });
+    $('mdBack').onclick = () => lookPicker('NEW GAME', () => modePicker(done), true);
+    $('mdGo').onclick = () => { if (!pick) { $('mdMsg').textContent = 'Pick an island first.'; return; } S.mode = pick; applyModeStart(); done(); };
+  };
+  draw();
+}
+function applyModeStart() {
+  if (S.mode === 'garden' && !S.bigGarden) { S.bigGarden = true; for (let i=0;i<3;i++){ S.tiles.push({ s:0 }); addTileGroup(S.tiles.length-1); } stakes.visible = false; }
+  if (S.mode === 'scholar') S.furn.bookshelf = (S.furn.bookshelf || 0) + 1;
+  homeDock.visible = S.mode === 'fisher';
+  S.created = true; save();
+}
+function openLookEditor(back) { lookPicker('YOUR LOOK', () => { endSetup(); if (back) back(); else toast('Looking good!'); }, true); }
+function endSetup() { setupCam = false; document.getElementById('veil').classList.remove('setup'); document.body.classList.remove('in-setup'); hideCard(); }
 $('start').onclick = () => { $('title').style.display = 'none'; document.body.classList.remove('on-title'); playing = true; snapCam(); startAudio();
   { const turned = seasonCheck(); applySeason(); if (turned && S.letter) toast(turned); }
   { const fz = festival(); if (fz && S.letter && !S.fests[fz.id + fz.year]) setTimeout(() => toast(`Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`), 800); }
-  if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">A LETTER ON THE TABLE</div><h2>Dear little one,</h2><p class="letter">If you are reading this, the hut is yours now. The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Let\'s go!', () => { if (S.tut === 0) startTutorial(); }); } };
+  if (!S.created) { lookPicker('NEW GAME', () => modePicker(() => { endSetup(); $('start').onclick(); }), true); return; }
+  if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">A LETTER ON THE TABLE</div><h2>Dear ${S.name || 'little one'},</h2><p class="letter">If you are reading this, the hut is yours now. The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Let\'s go!', () => { if (S.tut === 0) startTutorial(); }); } };
 // --- playtest feedback: a short form that goes to the Sky Garden cloud ---
 function openFeedback() {
   let mood = null;
@@ -2276,7 +2353,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
