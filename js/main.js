@@ -17,7 +17,7 @@ for (const id of Object.keys(FESTIVAL_AHA)) if (!AHA_ORDER.includes(id)) AHA_ORD
 const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, skywheat:0, moonpumpkin:0, frostmint:0, kale:0 }, bag:{},
   tiles:Array.from({length:9},()=>({s:0})), sel:'cloudberry', hearts:{ nana:0, pip:0, drizzle:0, twins:0, lumen:0, mabel:0, hoot:0, allegra:0, sage:0 }, talked:{}, gifted:{}, scenes:[],
   bridge:false, pos:[0,0,2], where:'home', quest:0, aha:[], relics:0, digs:[], asked:-1, qi:0, letter:false,
-  order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, home:0, builds:[], tools:{}, pickups:[], chopped:{}, created:false, birthday:null, startedAt:null, lastParty:null, partyHat:false, name:'', look:null, mode:null, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
+  order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, home:0, builds:[], stations:{}, bronzeKnown:false, tools:{}, pickups:[], chopped:{}, created:false, birthday:null, startedAt:null, lastParty:null, partyHat:false, name:'', look:null, mode:null, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
 let S;
 try {
   const saved = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
@@ -238,6 +238,23 @@ const workbench = new THREE.Group(); workbench.position.set(-6.1, 0, .5); workbe
 workbench.add(mesh(new THREE.CylinderGeometry(.42,.5,.55,14), mat(0x9b6b4a), 0, .27, 0)); workbench.add(mesh(new THREE.CylinderGeometry(.43,.43,.03,14), mat(0xd9a066), 0, .56, 0));
 workbench.add(mesh(new THREE.BoxGeometry(.08,.35,.08), mat(0x9b6b4a), .15, .72, .05).rotateZ(.6)); workbench.add(mesh(new THREE.DodecahedronGeometry(.08), mat(0x8a8290), .28, .82, .05));
 const pickupGroup = new THREE.Group(); scene.add(pickupGroup);
+const nodes = [];
+const addNode = (kind, ore, x, y, z, i) => { const g = new THREE.Group(); g.position.set(x, y, z); g.userData = { kind, ore, key:`${ore}${i}` };
+  if (kind === 'claypit') { const m = mesh(sph(.5), mat(0xb8653f), 0, 0, 0); m.scale.set(1.3, .22, 1); g.add(m); g.add(mesh(sph(.2), mat(0x9c4f30), .3, .06, .1)); }
+  else { const r = mesh(new THREE.DodecahedronGeometry(.45), mat(ore === 'copper' ? 0x8f8a92 : 0x5f5a68), 0, .3, 0); r.rotation.set(i, i*2, 0); g.add(r);
+    for (let k=0;k<5;k++){ const a = k*1.3; g.add(mesh(sph(.08), mat(ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, ore === 'tin' ? { metalness:.6, roughness:.3 } : {}), Math.cos(a)*.38, .3 + Math.sin(k)*.2, Math.sin(a)*.38)); } }
+  scene.add(g); nodes.push(g); };
+[[-7.9,-2.2],[3.5,-7.4]].forEach(([x,z],i) => addNode('claypit', 'clay', x, 0, z, i));
+[[5.5,-4.8],[6,1.8]].forEach(([x,z],i) => addNode('claypit', 'clay', ORCH_POS.x + x, ORCH_POS.y, ORCH_POS.z + z, i + 2));
+[[-5.5,-3],[-2,-6.2],[4.2,-5.4]].forEach(([x,z],i) => addNode('ore', 'copper', ORCH_POS.x + x, ORCH_POS.y, ORCH_POS.z + z, i));
+addNode('ore', 'tin', WIND_POS.x + 5, WIND_POS.y, WIND_POS.z - 4.5, 0);
+const kiln = new THREE.Group(); kiln.position.set(-5.2, 0, 2.1); kiln.userData.kind = 'kiln'; scene.add(kiln);
+const kilnDome = mesh(new THREE.SphereGeometry(.75, 18, 10, 0, Math.PI*2, 0, Math.PI/2), mat(0xc0703f), 0, 0, 0); kiln.add(kilnDome);
+kiln.add(mesh(new THREE.CylinderGeometry(.16,.2,.5,10), mat(0x9c4f30), .2, .85, -.2));
+const kilnMouth = mesh(new THREE.CircleGeometry(.22, 14, 0, Math.PI), glow(0xff8a3c), 0, .02, .74); kiln.add(kilnMouth);
+const furnace = new THREE.Group(); furnace.position.set(-7.2, 0, -2.7); furnace.userData.kind = 'furnace'; scene.add(furnace);
+furnace.add(mesh(new THREE.CylinderGeometry(.5,.7,1.3,12), mat(0xa8603a), 0, .65, 0)); furnace.add(mesh(new THREE.CylinderGeometry(.3,.45,.3,12), mat(0x8a4a2e), 0, 1.45, 0));
+const furnaceGlow = mesh(new THREE.CircleGeometry(.18, 12), glow(0xffc857), 0, .45, .6); furnace.add(furnaceGlow); const furnaceHalo = halo(0xff9a3c, 1.8, .5); furnaceHalo.position.set(0, .45, .7); furnace.add(furnaceHalo);
 [-.85,.85].forEach(x => { house.add(mesh(new THREE.BoxGeometry(.62,.14,.22), mat(0x9b6b4a), x, .77, 1.2));
   for (let i=0;i<4;i++) house.add(mesh(sph(.07), mat([0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff][i]), x - .22 + i*.15, .88, 1.22)); });
 house.add(mesh(sph(.05), mat(0xffc857, { metalness:.5 }), .22, .55, 1.18));
@@ -1522,6 +1539,7 @@ function seedShop() {
     if (S.coins < c.seed) { toast('Not enough coins.'); return; }
     S.coins -= c.seed; S.seeds[k]++; S.sel = k; sfx('coin'); toast(`Bought 1 ${c.name} seed. You have ${S.seeds[k]}.`); drawHud(); save();
   }}));
+  if (S.stations.furnace) btns.push({ label:'Tin, 15', fn:() => { if (S.coins < 15) { toast('Not enough coins.'); return; } S.coins -= 15; bagAdd('tin'); sfx('coin'); save(); drawHud(); toast('Pip: Imported! From very far away. Do not ask how far. I do not know.'); } });
   openDialog('Pip', `${SEASONS[s]} seeds! ${o ? `Today I am hungry for a ${CROPS[o.crop].name}. Bring me one and I pay double: ${o.pay} coins.` : 'Thanks for today\'s order!'}`, btns, S.hearts.pip);
 }
 function furnShop() {
@@ -2358,7 +2376,7 @@ const HOME_STAGES = [
   { name:'the walls', needs:{ log:10, fiber:6 } },
   { name:'the roof', needs:{ fiber:8, log:4 } },
 ];
-const CRAFTS = [
+const CRAFTS_OLD = [
   { id:'axe', name:'Stone Axe', needs:{ stick:3, stone:2, fiber:2 }, does:'Chop trees for logs.' },
   { id:'pick', name:'Stone Pickaxe', needs:{ stick:2, stone:3, fiber:1 }, does:'Break rocks for stone.' },
 ];
@@ -2398,28 +2416,118 @@ function chopTree(t) {
   if (!S.tools.axe) { toast('You need a stone axe to chop trees. Craft one at the tree stump workbench.'); return; }
   const key = t.userData.key; if (S.chopped[key] === S.day) { toast('This tree needs to rest. Come back tomorrow.'); return; }
   S.chopped[key] = S.day; t.userData.shake = 1; sfx('till'); const wp = new THREE.Vector3(); t.getWorldPosition(wp);
-  gain('log', 2, wp.setY(wp.y + 1)); toast(`+2 logs. ${homeHint()}`);
+  const nl = S.tools.bronzeAxe ? 3 : 2; gain('log', nl, wp.setY(wp.y + 1)); toast(`+${nl} logs. ${homeHint()}`);
 }
 function mineRock(r) {
   if (!S.tools.pick) { toast('You need a stone pickaxe to break rocks. Craft one at the tree stump workbench.'); return; }
   const key = r.userData.key; if (S.chopped[key] === S.day) { toast('You got all the stone from this rock today. Try again tomorrow.'); return; }
-  S.chopped[key] = S.day; sfx('dig'); gain('stone', 3, r.position.clone()); toast(`+3 stone. ${homeHint()}`);
+  S.chopped[key] = S.day; sfx('dig'); const ns = S.tools.bronzePick ? 5 : 3; gain('stone', ns, r.position.clone()); toast(`+${ns} stone. ${homeHint()}`);
 }
 function cutBush(b) {
   const key = b.userData.key; if (S.chopped[key] === S.day) { toast('You already cut grass here today.'); return; }
   S.chopped[key] = S.day; sfx('plant'); gain('fiber', 2, b.position.clone()); toast(`+2 grass fiber. ${homeHint()}`);
 }
+const CRAFTS = [
+  { id:'axe',   name:'Stone Axe',     needs:{ stick:3, stone:2, fiber:2 }, does:'Chop trees for logs.' },
+  { id:'pick',  name:'Stone Pickaxe', needs:{ stick:2, stone:3, fiber:1 }, does:'Break rocks for stone and dig ore.' },
+  { id:'kiln',  name:'Kiln',          needs:{ stone:12, clay:6 }, does:'A clay oven for firing pots and bricks. Starts the Pottery Age.', station:true, after:'pick' },
+  { id:'furnace', name:'Furnace',     needs:{ brick:8, stone:6 }, does:'A very hot oven for melting metal. Starts the Bronze Age.', station:true, after:'kiln' },
+  { id:'bronzeAxe',  name:'Bronze Axe',     needs:{ bronze:2, stick:1 }, does:'Chop 3 logs per tree instead of 2.', after:'furnace' },
+  { id:'bronzePick', name:'Bronze Pickaxe', needs:{ bronze:2, stick:1 }, does:'Break 5 stone per rock instead of 3.', after:'furnace' },
+];
+const hasCraft = id => id === 'kiln' || id === 'furnace' ? !!S.stations[id] : !!S.tools[id];
+const AGES = [
+  { id:'stone', name:'Stone Age', done:() => S.tools.axe && S.tools.pick },
+  { id:'pottery', name:'Pottery Age', done:() => !!S.stations.kiln },
+  { id:'bronze', name:'Bronze Age', done:() => !!S.stations.furnace },
+  { id:'glass', name:'Glass Age', soon:true },
+  { id:'iron', name:'Iron Age', soon:true },
+];
+function agesHtml() {
+  return `<div class="ages">${AGES.map(a => `<span class="${a.soon ? 'soon' : a.done() ? 'done' : ''}">${a.soon ? '' : a.done() ? '✓ ' : ''}${a.name}${a.soon ? ' (coming next)' : ''}</span>`).join('<i>›</i>')}</div>`;
+}
+function drawStations() { kiln.visible = !!S.stations.kiln; furnace.visible = !!S.stations.furnace; }
 function useWorkbench() {
-  showCard(`<div class="kicker">TREE STUMP WORKBENCH</div><h2>Craft</h2><p>Make tools from what you gather. Sticks, stones, and grass are lying around your island.</p>
-    <div class="jlist">${CRAFTS.map(c => `<button data-cr="${c.id}" ${S.tools[c.id] || !enough(c.needs) ? 'style="opacity:.6"' : ''}>${S.tools[c.id] ? '✓ ' : ''}${c.name} <span class="sub">${S.tools[c.id] ? 'You have this. ' : ''}${c.does} Needs ${needText(c.needs)}.</span></button>`).join('')}</div>`, 'Close');
+  const shown = CRAFTS.filter(c => !c.after || hasCraft(c.after));
+  showCard(`<div class="kicker">TREE STUMP WORKBENCH</div><h2>Craft</h2><h4>Ages of invention</h4>${agesHtml()}
+    <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>
+    <div class="jlist">${shown.map(c => `<button data-cr="${c.id}" ${hasCraft(c.id) || !enough(c.needs) ? 'style="opacity:.6"' : ''}>${hasCraft(c.id) ? '✓ ' : ''}${c.name} <span class="sub">${hasCraft(c.id) ? 'You have this. ' : ''}${c.does} Needs ${needText(c.needs)}.</span></button>`).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => {
     const c = CRAFTS.find(x => x.id === b.dataset.cr);
-    if (S.tools[c.id]) { toast(`You already have a ${c.name.toLowerCase()}.`); return; }
+    if (hasCraft(c.id)) { toast(`You already have a ${c.name.toLowerCase()}.`); return; }
     if (!enough(c.needs)) { toast(`Not enough yet. Needs ${needText(c.needs)}.`); return; }
-    Object.entries(c.needs).forEach(([k,n]) => bagAdd(k, -n)); S.tools[c.id] = true; save(); drawHud(); sfx('pick'); burst(workbench.position.clone(), 0xc98f58, 16);
-    if (c.id === 'axe' && !S.aha.includes('tools')) showAha('tools', () => toast('Now tap a tree to chop logs.'));
-    else { hideCard(); toast(`You made a ${c.name}! ${c.does}`); }
+    Object.entries(c.needs).forEach(([k,n]) => bagAdd(k, -n));
+    if (c.station) S.stations[c.id] = true; else S.tools[c.id] = true;
+    save(); drawHud(); drawStations(); sfx('pick'); burst((c.station ? (c.id === 'kiln' ? kiln : furnace) : workbench).position.clone(), 0xc98f58, 20);
+    if (c.id === 'axe' && !S.aha.includes('tools')) return showAha('tools', () => toast('Now tap a tree to chop logs.'));
+    hideCard();
+    if (c.station) { [523,659,784].forEach((f,i) => setTimeout(() => chime(f), i*150)); toast(c.id === 'kiln' ? 'You built a kiln! The Pottery Age begins. Tap it to fire clay.' : 'You built a furnace! The Bronze Age begins. Tap it to melt metal.'); }
+    else toast(`You made a ${c.name}! ${c.does}`);
   });
+}
+function gatherNode(n) {
+  const { kind, ore, key } = n.userData;
+  if (kind === 'ore' && !S.tools.pick) { toast('You need a stone pickaxe to dig ore. Craft one at the tree stump workbench.'); return; }
+  if (S.chopped[key] === S.day) { toast('Nothing left here today. It fills back in by tomorrow.'); return; }
+  S.chopped[key] = S.day; const amt = kind === 'claypit' ? 2 : 1;
+  sfx(kind === 'claypit' ? 'water' : 'dig'); for (let i=0;i<amt;i++) bagAdd(ore); burst(n.position.clone(), kind === 'claypit' ? 0xb8653f : ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, 12); save(); drawHud();
+  toast(`+${amt} ${ITEMS[ore].name.toLowerCase()}. ${kind === 'claypit' ? 'Clay is soft, wet earth that can be shaped and fired.' : ore === 'copper' ? 'Copper ore has those green streaks. Smelt it in a furnace.' : 'Tin is rare. People once traded it across whole continents.'}`);
+}
+// the kiln: keep the fire just right
+function useKiln() {
+  showCard(`<div class="kicker">THE KILN</div><h2>Fire clay</h2><p>Pick what to make. Then keep the fire in the green zone by tapping Add wood. Too cool and nothing happens. Too hot and it cracks!</p>
+    <div class="jlist"><button data-fire="brick">Bricks x2 <span class="sub">needs ${needText({ clay:3, log:1 })}</span></button><button data-fire="pot">Clay pot <span class="sub">needs ${needText({ clay:2, log:1 })}</span></button></div>`, 'Close');
+  document.querySelectorAll('[data-fire]').forEach(b => b.onclick = () => { const what = b.dataset.fire, needs = what === 'brick' ? { clay:3, log:1 } : { clay:2, log:1 };
+    if (!enough(needs)) { toast(`Not enough yet. Needs ${needText(needs)}.`); return; } Object.entries(needs).forEach(([k,n]) => bagAdd(k, -n)); save(); kilnGame(what); });
+}
+function kilnGame(what) {
+  showCard(`<div class="kicker">THE KILN</div><h2>Keep it just right</h2><p>Tap Add wood when the heat drops. Keep the needle in the green zone until the bar fills.</p>
+    <canvas id="kilnC" class="rope" width="520" height="220" style="background:#3b2f4a"></canvas><p id="kMsg" style="font-weight:700;text-align:center;min-height:22px;margin-top:6px"></p>
+    <button id="kAdd">Add wood</button> <button id="kLater" class="ghost">Stop</button>`, null);
+  const g = $('kilnC').getContext('2d'); let heat = .35, done = 0, t = 0, raf, over = false;
+  const end = ok => { over = true; cancelAnimationFrame(raf);
+    if (ok) { if (what === 'brick') { bagAdd('brick'); bagAdd('brick'); } else bagAdd('pot'); save(); drawHud(); [523,659,784].forEach((f,i) => setTimeout(() => chime(f), i*120)); burst(kiln.position.clone(), 0xffa94d, 18);
+      if (!S.aha.includes('pottery')) return setTimeout(() => showAha('pottery'), 500);
+      $('kMsg').textContent = `Done! You made ${what === 'brick' ? '2 bricks' : 'a clay pot'}.`; $('kAdd').textContent = 'Close'; $('kAdd').onclick = hideCard; }
+    else { tone(200, { to:90, dur:.4, vol:.06 }); $('kMsg').textContent = 'Crack! It got too hot. Try again with a little less wood.'; $('kAdd').textContent = 'Close'; $('kAdd').onclick = hideCard; } };
+  const loop = () => { const dt = .016; t += dt; heat = Math.max(0, heat - dt * .11);
+    const inZone = heat > .55 && heat < .8; if (inZone) done += dt / 4; if (heat >= 1) return end(false);
+    g.fillStyle = '#3b2f4a'; g.fillRect(0,0,520,220);
+    g.fillStyle = '#5a4b7a'; g.fillRect(40,90,440,36); g.fillStyle = '#8fdc8a'; g.fillRect(40 + .55*440, 90, .25*440, 36); g.fillStyle = '#ff5a5a'; g.fillRect(40 + .92*440, 90, .08*440, 36);
+    g.fillStyle = '#fff'; g.fillRect(40 + heat*440 - 3, 80, 6, 56);
+    for (let i=0;i<6;i++){ const fx = 180 + i*30, fh = 20 + heat*60 + Math.sin(t*12 + i)*8; g.fillStyle = `rgba(255,${120 + i*15},60,.85)`; g.beginPath(); g.moveTo(fx-12, 200); g.quadraticCurveTo(fx, 200 - fh*1.4, fx+12, 200); g.fill(); }
+    g.fillStyle = '#eadfd0'; g.fillRect(40,30,440,14); g.fillStyle = '#ffc857'; g.fillRect(40,30,440*Math.min(1,done),14);
+    g.fillStyle = '#fff8ee'; g.font = 'bold 18px "Baloo 2", sans-serif'; g.fillText(inZone ? 'Just right!' : heat < .55 ? 'Too cool' : 'Getting hot...', 40, 170);
+    if (done >= 1) return end(true); raf = requestAnimationFrame(loop); };
+  $('kAdd').onclick = () => { if (over) return; heat = Math.min(1.05, heat + .12); sfx('till'); };
+  $('kLater').onclick = () => { cancelAnimationFrame(raf); hideCard(); };
+  cardCleanup = () => cancelAnimationFrame(raf); loop();
+}
+// the furnace: find the bronze recipe yourself
+function useFurnace() {
+  const needs = { copper:2, tin:1, log:2 };
+  if (!S.bronzeKnown) return bronzePuzzle();
+  showCard(`<div class="kicker">THE FURNACE</div><h2>Smelt bronze</h2><p>You know the recipe: about 9 parts copper to 1 part tin.</p><div class="jlist"><button id="smelt">Bronze ingot <span class="sub">needs ${needText(needs)}</span></button></div>
+    <p style="margin-top:8px">No tin? Pip imports it. He will not say from where.</p>`, 'Close');
+  $('smelt').onclick = () => { if (!enough(needs)) { toast(`Not enough yet. Needs ${needText(needs)}.`); return; }
+    Object.entries(needs).forEach(([k,n]) => bagAdd(k, -n)); bagAdd('bronze'); save(); drawHud(); sfx('pick'); burst(furnace.position.clone(), 0xd9a441, 18); hideCard(); toast('You made a bronze ingot!'); };
+}
+function bronzePuzzle() {
+  let tin = 5;
+  const draw = () => {
+    const strong = [15, 60, 95, 80, 60, 45, 30, 20, 12, 8, 5][tin], brittle = [0, 5, 10, 30, 55, 70, 82, 90, 95, 98, 100][tin];
+    showCard(`<div class="kicker">THE FURNACE</div><h2>Find the bronze recipe</h2><p>Bronze is copper mixed with a little tin. Out of 10 parts, how many should be tin? Try different mixes and watch what happens.</p>
+      <div class="steppers"><div>Copper<br><b>${10 - tin}</b> parts</div><div>Tin<br><button id="t-">-</button><b>${tin}</b><button id="t+">+</button> parts</div></div>
+      <h4>Strength</h4><div class="meter"><div style="width:${strong}%;background:#8fdc8a"></div></div>
+      <h4>Brittleness (cracks easily)</h4><div class="meter"><div style="width:${brittle}%;background:#ff8fa3"></div></div>
+      <p id="bMsg" style="font-weight:700;min-height:22px;margin-top:8px">${tin === 0 ? 'Pure copper: soft and bendy.' : tin === 1 ? 'Strong and tough. This looks like a great mix!' : tin === 2 ? 'Strong, but starting to get brittle.' : 'Too much tin. It would shatter like glass.'}</p>
+      <button id="cast">Pour it</button> <button id="bLater" class="ghost">Later</button>`, null);
+    $('t-').onclick = () => { tin = Math.max(0, tin - 1); draw(); }; $('t+').onclick = () => { tin = Math.min(10, tin + 1); draw(); };
+    $('bLater').onclick = hideCard;
+    $('cast').onclick = () => { if (tin !== 1) { $('bMsg').textContent = tin === 0 ? 'Too soft. Add a little tin.' : 'Too brittle. Try less tin.'; tone(200, { to:120, dur:.3, vol:.05 }); return; }
+      S.bronzeKnown = true; save(); [392,523,659,784].forEach((f,i) => setTimeout(() => chime(f), i*130)); burst(furnace.position.clone(), 0xd9a441, 24); showAha('bronze', useFurnace); };
+  };
+  draw();
 }
 function useBuildSite() {
   const st = S.home || 0; if (st >= 3) return useHouse();
@@ -2490,7 +2598,7 @@ function sleep(passedOut) {
 // ============ INPUT ============
 const ray = new THREE.Raycaster(), down = new THREE.Raycaster(), ptr = new THREE.Vector2(), DOWN = new THREE.Vector3(0,-1,0);
 let target = null, pending = null;
-const clickables = [pickupGroup, buildSite, workbench, campfire, ...woodTrees, ...rocks, ...bushes, ...(ownerNpc ? [ownerNpc] : []), mailbox, homeDock, greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
+const clickables = [...nodes, kiln, furnace, pickupGroup, buildSite, workbench, campfire, ...woodTrees, ...rocks, ...bushes, ...(ownerNpc ? [ownerNpc] : []), mailbox, homeDock, greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
 // ============ FREE BUILDING ============
 const PIECES = [
   { id:'path',    name:'Stone Path',     cost:{ stone:2 } },
@@ -2503,6 +2611,11 @@ const PIECES = [
   { id:'bench',   name:'Bench',          cost:{ log:2 } },
   { id:'planter', name:'Flower Planter', cost:{ log:1, fiber:1 } },
   { id:'arch',    name:'Garden Arch',    cost:{ log:3, fiber:2 } },
+  { id:'bpath',   name:'Brick Path',     cost:{ brick:2 }, age:'kiln' },
+  { id:'bwall',   name:'Brick Wall',     cost:{ brick:3 }, age:'kiln' },
+  { id:'potplant',name:'Pot Planter',    cost:{ pot:1, fiber:1 }, age:'kiln' },
+  { id:'blamp',   name:'Bronze Lantern', cost:{ bronze:1, stone:1 }, age:'furnace' },
+  { id:'statue',  name:'Statue of Pip',  cost:{ bronze:2, stone:4 }, age:'furnace' },
 ];
 const lampLights = [];
 function pieceModel(id) {
@@ -2517,6 +2630,13 @@ function pieceModel(id) {
     const lh = halo(0xffc46b, 2.2, 0); lh.position.y = 1.6; g.add(lh); lampLights.push(lh); }
   if (id === 'bench') { g.add(mesh(new THREE.BoxGeometry(.95,.08,.38), wood, 0, .4, 0)); g.add(mesh(new THREE.BoxGeometry(.95,.3,.06), wood, 0, .62, -.18)); [-.4,.4].forEach(x => g.add(mesh(new THREE.BoxGeometry(.08,.4,.34), dark, x, .2, 0))); }
   if (id === 'planter') { g.add(mesh(new THREE.BoxGeometry(.8,.3,.5), wood, 0, .15, 0)); for (let i=0;i<6;i++) g.add(mesh(sph(.08), mat([0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b,0xff8fa3][i]), -.28 + (i%3)*.28, .36, -.1 + Math.floor(i/3)*.2)); }
+  if (id === 'bpath') for (let i=0;i<8;i++) g.add(mesh(new THREE.BoxGeometry(.46,.06,.22), mat(i%3 ? 0xc0703f : 0xa85c34), (i%2 ? .24 : -.24) + (Math.floor(i/2)%2 ? .06 : 0), .03, -.36 + Math.floor(i/2)*.24));
+  if (id === 'bwall') for (let k=0;k<4;k++) for (let j=0;j<3;j++) g.add(mesh(new THREE.BoxGeometry(.31,.22,.26), mat((k+j)%2 ? 0xc0703f : 0xa85c34), -.33 + j*.33 + (k%2)*.08, .12 + k*.24, 0));
+  if (id === 'potplant') { g.add(mesh(new THREE.CylinderGeometry(.26,.18,.36,14), mat(0xc0703f), 0, .18, 0)); for (let i=0;i<5;i++){ const l = mesh(new THREE.ConeGeometry(.07,.4,5), mat(0x4fb46a), Math.cos(i)*.1, .5, Math.sin(i)*.1); l.rotation.set(Math.sin(i)*.4, 0, Math.cos(i)*.4); g.add(l); } }
+  if (id === 'blamp') { g.add(mesh(new THREE.CylinderGeometry(.05,.08,1.3,8), mat(0xd9a441, { metalness:.6, roughness:.35 }), 0, .65, 0)); g.add(mesh(new THREE.SphereGeometry(.2,12,10), glow(0xffe0a8), 0, 1.42, 0)); g.add(mesh(new THREE.ConeGeometry(.24,.2,8), mat(0xd9a441, { metalness:.6, roughness:.35 }), 0, 1.66, 0));
+    const lh = halo(0xffc46b, 2.4, 0); lh.position.y = 1.42; g.add(lh); lampLights.push(lh); }
+  if (id === 'statue') { const br = mat(0xc9924a, { metalness:.55, roughness:.4 }); g.add(mesh(new THREE.BoxGeometry(.7,.35,.7), mat(0xc9c1d0), 0, .17, 0)); g.add(mesh(sph(.32), br, 0, .62, 0)); g.add(mesh(sph(.26), br, 0, 1.05, 0));
+    const bk = mesh(new THREE.ConeGeometry(.06,.14,6), br, 0, 1.02, .28); bk.rotation.x = Math.PI/2; g.add(bk); g.add(mesh(new THREE.CylinderGeometry(.2,.22,.08,14), br, 0, 1.3, 0)); g.add(mesh(new THREE.CylinderGeometry(.13,.15,.2,14), br, 0, 1.42, 0)); }
   if (id === 'arch') { [-.45,.45].forEach(x => g.add(mesh(new THREE.BoxGeometry(.1,1.6,.1), mat(0xfff1d6), x, .8, 0))); const top = mesh(new THREE.TorusGeometry(.45,.05,6,16,Math.PI), mat(0xfff1d6), 0, 1.6, 0); g.add(top);
     for (let i=0;i<8;i++){ const a = i/7*Math.PI; g.add(mesh(sph(.07), mat([0xff8fa3,0x8fdc8a,0xfff3a0][i%3]), Math.cos(a)*.45, 1.6 + Math.sin(a)*.45, .05)); } }
   return g;
@@ -2530,7 +2650,7 @@ function drawBuilds() {
 // places you can't build over, so the important things stay reachable
 function blockedAt(x, z) {
   if (Math.hypot(x, z) > 8.2) return 'That is too close to the edge.';
-  const circles = [[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
+  const circles = [[-5.2,2.1,1],[-7.2,-2.7,1],[-7.9,-2.2,.8],[3.5,-7.4,.8],[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
   if (circles.some(([cx,cz,r]) => Math.hypot(x-cx, z-cz) < r)) return 'That spot is taken by something important.';
   if (x > .2 && x < 4.8 && z > -2 && z < (S.bigGarden ? 3.9 : 2.6)) return 'That is your garden.';
   return null;
@@ -2543,7 +2663,7 @@ const gridLines = (() => { const pts = []; for (let i=-8;i<=8;i++){ pts.push(i,0
 function drawBuildBar() {
   const bar = $('buildbar');
   bar.innerHTML = `<p class="bhelp">${removing ? 'Tap a piece to pick it up. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
-    <div class="bpieces">${PIECES.map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
+    <div class="bpieces">${PIECES.filter(p => !p.age || S.stations[p.age]).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
     <div class="bctl"><button id="bRot">Rotate</button><button id="bRem" class="${removing ? 'on' : ''}">Remove</button><button id="bDone" class="done">Done</button></div>`;
   bar.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { buildSel = b.dataset.pc; removing = false; drawBuildBar(); });
   $('bRot').onclick = () => { buildRot = (buildRot + 1) % 4; toast('Turned. Pieces you place now face the new way.'); };
@@ -2635,6 +2755,9 @@ function arrive(o) {
   if (k === 'rock') return mineRock(o);
   if (k === 'bush') return cutBush(o);
   if (k === 'workbench') return useWorkbench();
+  if (k === 'claypit' || k === 'ore') return gatherNode(o);
+  if (k === 'kiln') return useKiln();
+  if (k === 'furnace') return useFurnace();
   if (k === 'buildsite') return useBuildSite();
   if (k === 'campfire') return useCampfire();
   if (k === 'tile') useTile(o.userData.i);
@@ -2809,6 +2932,8 @@ function tick() {
   flag.rotation.y = Math.sin(now*3) * .3;
   mflag.rotation.z = S.mailNew ? 0 : -Math.PI/2;
   if (balloons.visible) balloons.children.forEach((b, i) => { if (b.geometry.type === 'SphereGeometry') b.position.y = 2.6 + (i%4)*.15 + Math.sin(now*1.5 + i)*.1; });
+  if (kiln.visible) kilnMouth.material.color.setHSL(.07, 1, .5 + Math.sin(now*6)*.08);
+  if (furnace.visible) furnaceHalo.material.opacity = .4 + Math.sin(now*5)*.15;
   if (campfire.visible) { flame.scale.set(1 + Math.sin(now*9)*.1, 1 + Math.sin(now*13)*.15, 1); flameHalo.material.opacity = .45 + Math.sin(now*7)*.15; }
   if (S.q3 >= 4) blades.rotation.z -= dt * 1.2; else blades.rotation.z = Math.sin(now*.7)*.03;
   millstone.visible = S.q3 < 4;
@@ -2827,7 +2952,7 @@ function tick() {
   requestAnimationFrame(tick);
 }
 snapCam(); tameOutlines();
-bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); drawHome(); drawBuilds(); if (!(S.pickups || []).length) spawnPickups(); else drawPickups(); homeDock.visible = S.mode === 'fisher'; if (lowGfx) setLowGfx(true);
+bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); drawHome(); drawBuilds(); drawStations(); if (!(S.pickups || []).length) spawnPickups(); else drawPickups(); homeDock.visible = S.mode === 'fisher'; if (lowGfx) setLowGfx(true);
 drawHud(); tick();
 $('moveTitle').onclick = () => openMoveGame();
 const localAt = S.savedAt || 0; save();
@@ -2946,7 +3071,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }

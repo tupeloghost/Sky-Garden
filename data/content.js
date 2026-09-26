@@ -23,6 +23,12 @@ const ITEMS = {
   stone:  { name:'Stone',          sell:0,  kind:'material' },
   fiber:  { name:'Grass Fiber',    sell:0,  kind:'material' },
   log:    { name:'Log',            sell:0,  kind:'material' },
+  clay:   { name:'Clay',           sell:0,  kind:'material' },
+  brick:  { name:'Brick',          sell:0,  kind:'material' },
+  pot:    { name:'Clay Pot',       sell:0,  kind:'material' },
+  copper: { name:'Copper Ore',     sell:0,  kind:'material' },
+  tin:    { name:'Tin',            sell:0,  kind:'material' },
+  bronze: { name:'Bronze Ingot',   sell:0,  kind:'material' },
   moonray:{ name:'Manta Ray',      sell:150, kind:'fish' },
   koi:       { name:'Koi',           sell:45,  kind:'fish' },
   sunfish:   { name:'Ocean Sunfish', sell:60,  kind:'fish' },
@@ -171,6 +177,14 @@ const AHA = {
     today:'Close your eyes for a second. You still know you are here. That is his whole argument.' },
 };
 Object.assign(AHA, {
+  pottery: { kicker:'MEMORY FOUND', title:'Fire Turns Mud Into Stone',
+    did:'You kept a kiln just hot enough to turn soft clay into hard pottery.',
+    real:'The oldest pottery found so far, from Xianrendong Cave in China, is about 20,000 years old. Firing is a one-way change: the heat drives out the water in the clay and fuses its tiny grains together, so it can never turn back into mud. Bricks made the same way built cities like ancient Babylon.',
+    today:'Your plates, mugs, tiles, and toilet are all fired clay, called ceramic.' },
+  bronze: { kicker:'MEMORY FOUND', title:'The Recipe That Named an Age',
+    did:'You tested mixes until you found the best one: about 9 parts copper to 1 part tin.',
+    real:'Around 5,000 years ago, people in the Middle East discovered that adding a little tin to copper makes bronze, which is much harder than either metal alone. Tin was rare, so it was traded over enormous distances. This was so important that historians named a whole era after it: the Bronze Age.',
+    today:'Bells are cast from bronze with extra tin, which helps them ring. Remember the Wind Bell?' },
   roads: { kicker:'MEMORY FOUND', title:'All Roads Lead to Rome',
     did:'You laid a path of flat stones so your feet stay out of the mud.',
     real:'The ancient Romans built tens of thousands of kilometers of paved roads. They dug a trench and filled it with layers: big stones, then gravel, then fitted paving stones on top, curved so rain ran off to the sides. Some Roman roads are still walked on today, about 2,000 years later.',
@@ -232,7 +246,7 @@ Object.assign(AHA, {
     real:'In 1666, Isaac Newton split sunlight with a glass prism into a band of colors. Then he used a second prism to mix the colors back into white. That showed white light is not pure. It is every color at once.',
     today:'Every rainbow is sunlight being split by raindrops, which act like tiny prisms.' },
 });
-const AHA_ORDER = ['tools','thatch','roads','bone','temple','tablet','sundial','bell','still','rope','stars','gears','lever','bread','rosetta','moon','optics','loom','migration','worldtree','fibonacci','prism','harvest','theseus','zeno','cave','river','floating','stoic','golden'];
+const AHA_ORDER = ['tools','thatch','roads','pottery','bronze','bone','temple','tablet','sundial','bell','still','rope','stars','gears','lever','bread','rosetta','moon','optics','loom','migration','worldtree','fibonacci','prism','harvest','theseus','zeno','cave','river','floating','stoic','golden'];
 const RELICS = [ { id:'bone', name:'a notched bone' }, { id:'temple', name:'a carved stone' }, { id:'tablet', name:'a clay tablet' } ];
 const LAYERS = ['Topsoil. Roots and worms.', 'A dark layer of ash. Something burned here long ago.', 'Old clay. The deeper you dig, the older it gets.'];
 const QUESTIONS = [

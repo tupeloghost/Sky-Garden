@@ -114,3 +114,11 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .bctl { display:flex; gap:6px; margin-top:6px; }
 .bctl .done { margin-left:auto; background:#ffc857; }
 .building .quest { display:none; }
+
+.ages { display:flex; flex-wrap:wrap; gap:4px; align-items:center; margin-top:6px; font-size:13px; font-weight:700; }
+.ages span { background:#f3e8d8; border-radius:99px; padding:2px 10px; }
+.ages span.done { background:#8fdc8a; color:#fff; }
+.ages span.soon { opacity:.5; }
+.ages i { font-style:normal; opacity:.4; }
+.meter { height:12px; border-radius:99px; background:#eadfd0; overflow:hidden; margin-top:4px; }
+.meter div { height:100%; border-radius:99px; transition:width .3s; }
