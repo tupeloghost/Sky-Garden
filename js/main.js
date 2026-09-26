@@ -7,12 +7,16 @@ import { FISH } from '../data/fish.js';
 import { icon } from '../data/icons.js';
 import { FEATURES } from '../data/features.js';
 import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
+import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
 Object.assign(NEIGHBORS, VILLAGERS); Object.assign(LOVES, VILLAGER_LOVES);
 RECIPES.forEach(r => ITEMS[r.id] = { name:r.name, sell:r.sell, kind:'dish' });
 Object.assign(AHA, FESTIVAL_AHA);
+SPECIALTIES.forEach(sp => { ITEMS[sp.id] = { name:sp.name, sell:HOME_PRICE, kind:'specialty' }; FINDS[sp.id] = { fact:sp.fact, hint:'Every island grows one specialty. Trade with friends to get the others.' }; });
+// heirloom flowers are named after the island they came from, so register any we hold
+const registerHeirloom = id => { if (isHeirloom(id) && !ITEMS[id]) ITEMS[id] = { name:heirloomOf(codeOfHeirloom(id)).name, sell:60, kind:'heirloom' }; return id; };
 for (const id of Object.keys(FESTIVAL_AHA)) if (!AHA_ORDER.includes(id)) AHA_ORDER.push(id);
 
 
@@ -41,6 +45,8 @@ const newSyncKey = () => [...crypto.getRandomValues(new Uint8Array(24))].map(b =
 const prettyKey = k => k.match(/.{1,4}/g).join('-');
 const cleanKey = k => (k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 if (!S.syncKey) S.syncKey = newSyncKey();
+if (!S.specialty) S.specialty = SPECIALTIES[Math.floor(Math.random() * SPECIALTIES.length)].id;
+[...Object.keys(S.bag || {}), ...Object.keys(S.chest || {})].forEach(registerHeirloom);
 let cloudDirty = true, lastPush = 0, cloudState = { when:0, ok:null };
 let setupCam = false; // camera close-up while making your character
 const save = () => { if (VISIT) return; S.savedAt = Date.now(); if (typeof ageBand === 'function') S.ageBand = ageBand(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
@@ -1180,6 +1186,8 @@ function collectionCats() {
     { name:'Crops', ids:Object.keys(CROPS), has:k => S.found.includes(k), label:k => CROPS[k].name, open:k => itemCard(k, 'Crops'), hint:k => FINDS[k].hint },
     { name:'Fruit', ids:['apple','peach'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fruit'), hint:k => FINDS[k].hint },
     { name:'Fish', ids:['minnow','trout','koi','sunfish','frostchar','guppy','lanterneel','puffer','moonray'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fish'), hint:k => FINDS[k].hint },
+    { name:'Specialties', ids:SPECIALTIES.map(x => x.id), has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => () => showCard(`<div class="kicker">SPECIALTIES</div><h2>${ITEMS[k].name}</h2><h4>In real life</h4><p>${FINDS[k].fact}</p><p>${TRADE_FACT}</p><h4>In Sky Garden</h4><p>${k === S.specialty ? 'This is your island\'s specialty.' : 'This grows on a friend\'s island.'} It sells for ${HOME_PRICE * AWAY_MULT} coins on any island where it does not grow.</p>`, 'Back', () => openCategory('Specialties')), hint:() => 'Trade with friends. Each island grows a different one.' },
+    { name:'Heirlooms', ids:S.found.filter(isHeirloom), has:() => true, label:k => `${registerHeirloom(k) && ITEMS[k].name} (${codeOfHeirloom(k) === myCode ? 'yours' : 'island ' + codeOfHeirloom(k)})`, open:k => () => showCard(`<div class="kicker">HEIRLOOM FLOWERS</div><h2>${ITEMS[k].name}</h2><p>Only grows on island ${codeOfHeirloom(k)}.</p><h4>In real life</h4><p>Gardeners breed and name their own flower and vegetable varieties. In the 1930s one man bred the Mortgage Lifter tomato and paid off his house selling the seedlings.</p>`, 'Back', () => openCategory('Heirlooms')), hint:() => '' },
     { name:'Butterflies', ids:BUTTERFLIES.map(b => b.id), has:k => (S.bugs || []).includes(k), label:k => BUTTERFLIES.find(b => b.id === k).name, open:k => () => { const b = BUTTERFLIES.find(x => x.id === k); showCard(`<div class="kicker">BUTTERFLIES</div><h2>${b.name}</h2><h4>In real life</h4><p>${b.fact}</p>`, 'Back', () => openCategory('Butterflies')); }, hint:() => 'Tap a butterfly when you see one flying on the islands.' },
     { name:'Furniture', ids:Object.keys(FURN), has:k => S.found.includes(k), label:k => FURN[k].name, open:k => itemCard(k, 'Furniture'), hint:k => FINDS[k].hint },
     { name:'Memories', ids:AHA_ORDER, has:k => S.aha.includes(k), label:k => AHA[k].title + (S.used.includes(k) ? ' ★' : ''), open:k => () => showCard(ahaHtml(k), 'Back', () => openCategory('Memories')), hint:() => 'Keep playing the story, digging, and celebrating festivals.' },
@@ -1350,11 +1358,13 @@ function itemUse(k) {
     if (k === 'copper' || k === 'tin') uses.push('bronze in the furnace'); if (k === 'brick' || k === 'stone' || k === 'log') uses.push('building pieces');
     return uses.length ? `Used for: ${[...new Set(uses)].join(', ')}.` : 'Used for building.';
   }
+  if (it.kind === 'specialty') return k === S.specialty ? `Your island's specialty. It sells for ${HOME_PRICE} here, but ${HOME_PRICE * AWAY_MULT} on a friend's island. Gift it to friends and ask for theirs.` : `From another island. It sells for ${HOME_PRICE * AWAY_MULT} here, because it does not grow on your island.`;
+  if (it.kind === 'heirloom') { const c = codeOfHeirloom(k); return c === myCode ? 'Your own heirloom flower. It only grows on your island. Give one to a friend so they have one too.' : `A one-of-a-kind flower from island ${c}. It only grows there.`; }
   RECIPES.forEach(r => { if (r.needs[k]) uses.push(r.name); });
   return `Sells for ${it.sell} each.${uses.length ? ` Cook into: ${uses.join(', ')}.` : ''}`;
 }
 function openBag() {
-  const GROUPS = [['crop','Crops'],['fruit','Fruit'],['fish','Fish'],['dish','Dishes'],['material','Materials'],['quest','Special']];
+  const GROUPS = [['specialty','Specialties'],['heirloom','Heirlooms'],['crop','Crops'],['fruit','Fruit'],['fish','Fish'],['dish','Dishes'],['material','Materials'],['quest','Special']];
   const tile = (k, n, name, sub) => `<button class="itile" data-it="${k}" title="${name}"><span class="ic">${icon(k, ITEMS[k]?.kind)}</span><b>${n}</b><small>${name}</small></button>`;
   const goods = GROUPS.map(([kind, label]) => { const list = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && ITEMS[k].kind === kind);
     return list.length ? `<h4>${label}</h4><div class="igrid">${list.map(([k,n]) => tile(k, n, ITEMS[k].name)).join('')}</div>` : ''; }).join('');
@@ -1457,7 +1467,7 @@ async function checkInbox() {
   const lines = [];
   items.forEach(it => {
     if (it.kind === 'water') { S.tiles.forEach((t, i) => { if (t.s >= 1) { t.w = true; drawTile(i); } }); lines.push(`${it.from} watered your garden.`); }
-    else if (ITEMS[it.item] && ITEMS[it.item].kind !== 'quest') { bagAdd(it.item); lines.push(`${it.from} left you a ${ITEMS[it.item].name}.`); }
+    else if (ITEMS[registerHeirloom(it.item)] && ITEMS[it.item].kind !== 'quest') { bagAdd(it.item); lines.push(`${it.from} left you a ${ITEMS[it.item].name}.`); }
   });
   S.mailLog = [...(S.mailLog || []), ...lines].slice(-20); S.mailNew = true; save(); drawHud();
   showCard(`<div class="kicker">WHILE YOU WERE AWAY</div><h2>You had visitors!</h2><div class="jlist">${lines.map(l => `<button>${l}</button>`).join('')}</div><p style="margin-top:8px">Gifts are in your Bag. Visit them back from your mailbox!</p>`, 'Yay!');
@@ -1567,9 +1577,11 @@ function useTile(i) {
   }
   drawTile(i); drawHud(); save(); tutTile(i);
 }
+// what one item sells for at your crate: a specialty from another island is worth 5 times more here
+const sellPrice = k => ITEMS[k].sell * (S.mode === 'fisher' && ITEMS[k].kind === 'fish' ? 1.25 : 1) * (ITEMS[k].kind === 'specialty' && k !== S.specialty ? AWAY_MULT : 1);
 function useCrate() {
   let total = 0;
-  for (const k in S.bag) { if (ITEMS[k].kind === 'quest' || ITEMS[k].kind === 'material') continue; total += Math.round(S.bag[k] * ITEMS[k].sell * (S.mode === 'fisher' && ITEMS[k].kind === 'fish' ? 1.25 : 1)); delete S.bag[k]; }
+  for (const k in S.bag) { if (ITEMS[k].kind === 'quest' || ITEMS[k].kind === 'material') continue; total += Math.round(S.bag[k] * sellPrice(k)); delete S.bag[k]; }
   if (!total) { toast('Nothing to sell yet. Pick crops, fruit, or fish first.'); return; }
   S.coins += total; sfx('coin'); burst(crate.position, 0xffc857); toast(`Sold for ${total} coins!`); goal('sell', total); drawHud(); save(); tutSold();
 }
@@ -1647,7 +1659,7 @@ function furnShop() {
 }
 function giftPicker(id) {
   closeDialog();
-  const opts = Object.entries(S.bag).filter(([k]) => ['crop','fruit','fish','dish'].includes(ITEMS[k].kind));
+  const opts = Object.entries(S.bag).filter(([k]) => ['crop','fruit','fish','dish','specialty','heirloom'].includes(ITEMS[k].kind));
   if (!opts.length) { toast('Nothing to give. Pick crops, fruit, or fish first.'); return; }
   showCard(`<div class="kicker">GIVE A GIFT</div><h2>Gift for ${NEIGHBORS[id].name}</h2><p>Everyone has favorites. Watch how they react.</p><div class="jlist">${opts.map(([k,n]) => `<button data-g="${k}">${ITEMS[k].name} x${n}</button>`).join('')}</div>`, 'Never mind');
   document.querySelectorAll('[data-g]').forEach(b => b.onclick = () => {
@@ -2761,6 +2773,46 @@ function pieceModel(id) {
   return g;
 }
 const buildGroup = new THREE.Group(); scene.add(buildGroup); lateClicks.push(buildGroup);
+// --- island specialty plant and heirloom flower bed ---
+let myCode = null;
+const tradeGroup = new THREE.Group(); scene.add(tradeGroup); lateClicks.push(tradeGroup);
+function drawTradePlants() {
+  tradeGroup.clear(); const code = VISIT ? VISIT_CODE : myCode;
+  const sp = SPECIALTIES.find(x => x.id === S.specialty);
+  if (sp && featureOn('specialty') && !VISIT) {
+    const g = new THREE.Group(); g.position.set(4, 0, 5.1); tradeGroup.add(g);
+    g.add(mesh(new THREE.CylinderGeometry(.09,.13,1,7), mat(0x7a5236), 0, .5, 0));
+    [[0,1.15,0,.55],[.35,.95,.1,.38],[-.32,.98,-.05,.4]].forEach(([x,y,z,r]) => g.add(mesh(sph(r), mat(sp.leaf), x, y, z)));
+    for (let i = 0; i < 7; i++) { const a = i*.9, pod = mesh(new THREE.SphereGeometry(.12,8,6), mat(sp.color), Math.cos(a)*.52, .75 + (i%3)*.18, Math.sin(a)*.45); pod.scale.y = 1.5; g.add(pod); }
+    const h = hitBox(1.3, 1.8, 1.3); h.position.y = .9; g.add(h); deco(g, pickSpecialty); }
+  if (code && featureOn('heirloom')) {
+    const f = heirloomOf(code), g = new THREE.Group(); g.position.set(1.6, 0, 5.2); tradeGroup.add(g);
+    g.add(mesh(new THREE.CylinderGeometry(.55,.6,.2,16), mat(0x7a5236), 0, .1, 0));
+    [[0,0],[.28,.18],[-.26,.2],[.2,-.26],[-.22,-.22]].forEach(([x,z], j) => { const fl = new THREE.Group(); fl.position.set(x, .2, z); g.add(fl);
+      const hgt = .35 + (j%2)*.12; fl.add(mesh(new THREE.CylinderGeometry(.015,.02,hgt,4), mat(0x4fb46a), 0, hgt/2, 0));
+      const head = new THREE.Group(); head.position.y = hgt; fl.add(head);
+      for (let i = 0; i < f.petals; i++) { const a = i / f.petals * Math.PI * 2, pt = mesh(new THREE.SphereGeometry(.07,7,5), mat(f.stripes && i % 2 ? f.tip : f.main), Math.cos(a)*.09, 0, Math.sin(a)*.09); pt.scale.set(1.4,.35,.8); pt.rotation.y = -a; head.add(pt);
+        if (!f.stripes) head.add(mesh(sph(.025), mat(f.tip), Math.cos(a)*.16, .01, Math.sin(a)*.16)); }
+      head.add(mesh(sph(.045), mat(f.center), 0, .03, 0)); });
+    const h = hitBox(1.2, .8, 1.2); h.position.y = .4; g.add(h); deco(g, () => pickHeirloom(code)); }
+  if (typeof tameOutlines === 'function' && outline) tameOutlines();
+}
+friendCodeOf(S.syncKey).then(c => { myCode = c; drawTradePlants(); });
+function pickSpecialty() {
+  const sp = SPECIALTIES.find(x => x.id === S.specialty);
+  if (!canCarry(sp.id, 3)) return bagFull();
+  if (!daily('specialty')) { toast(`You already picked your ${sp.name.toLowerCase()} today. More grows by tomorrow.`); return; }
+  gain(sp.id, 3, new THREE.Vector3(4, 1, 5.1), true); sfx('pick');
+  toast(`+3 ${plural(sp.id, 3)}. This is your island's specialty. It sells for ${HOME_PRICE * AWAY_MULT} coins on a friend's island, so gift it and trade.`);
+}
+function pickHeirloom(code) {
+  if (VISIT) { toast(`This heirloom flower only grows on ${VISIT.name}'s island.`); return; }
+  const id = registerHeirloom(heirloomId(code));
+  if (!canCarry(id)) return bagFull();
+  if (!daily('heirloom')) { toast('You already picked your heirloom flower today.'); return; }
+  gain(id, 1, new THREE.Vector3(1.6, .8, 5.2), true); sfx('heart');
+  toast(`You picked a ${ITEMS[id].name}. This flower only grows on your island, so no one else has one unless you give it to them.`);
+}
 // --- tap actions for decorations and build pieces ---
 const PAINTS = [0xfff1d6, 0xff8fa3, 0x7ec8e3, 0xffc857, 0x8fdc8a, 0xc9b6ff, 0x9b6b4a];
 const daily = key => { if (S.chopped[key] === S.day) return false; S.chopped[key] = S.day; return true; };
@@ -2841,7 +2893,7 @@ function drawBuilds() {
 // places you can't build over, so the important things stay reachable
 function blockedAt(x, z) {
   if (Math.hypot(x, z) > 8.2) return 'That is too close to the edge.';
-  const circles = [[-5.2,2.1,1],[-7.2,-2.7,1],[-7.9,-2.2,.8],[3.5,-7.4,.8],[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
+  const circles = [[4,5.1,1],[1.6,5.2,.9],[-5.2,2.1,1],[-7.2,-2.7,1],[-7.9,-2.2,.8],[3.5,-7.4,.8],[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
   if (circles.some(([cx,cz,r]) => Math.hypot(x-cx, z-cz) < r)) return 'That spot is taken by something important.';
   if (x > .2 && x < 4.8 && z > -2 && z < (S.bigGarden ? 3.9 : 2.6)) return 'That is your garden.';
   return null;
@@ -2940,7 +2992,7 @@ async function visitWater() {
   else toast(res === 'already' ? `You already watered ${VISIT.name}'s garden today.` : 'Could not reach the cloud. Try again.');
 }
 function visitGift() {
-  const opts = Object.entries(mine.bag || {}).filter(([k,n]) => n > 0 && ITEMS[k] && ['crop','fruit','fish','dish'].includes(ITEMS[k].kind));
+  const opts = Object.entries(mine.bag || {}).filter(([k,n]) => n > 0 && ITEMS[k] && ['crop','fruit','fish','dish','specialty','heirloom'].includes(ITEMS[k].kind));
   if (!opts.length) { toast('Your bag is empty. Bring crops, fruit, fish, or dishes next time.'); return; }
   showCard(`<div class="kicker">LEAVE A GIFT</div><h2>A gift for ${VISIT.name}</h2><p>Pick one thing from your bag. They get it next time they play.</p><div class="jlist">${opts.map(([k,n]) => `<button data-vg="${k}">${ITEMS[k].name} x${n}</button>`).join('')}</div>`, 'Never mind');
   document.querySelectorAll('[data-vg]').forEach(b => b.onclick = async () => { const k = b.dataset.vg; hideCard();
