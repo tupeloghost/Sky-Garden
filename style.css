@@ -122,3 +122,12 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .ages i { font-style:normal; opacity:.4; }
 .meter { height:12px; border-radius:99px; background:#eadfd0; overflow:hidden; margin-top:4px; }
 .meter div { height:100%; border-radius:99px; transition:width .3s; }
+.igrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(72px, 1fr)); gap:8px; margin-top:6px; }
+.igrid .itile { position:relative; width:auto; height:auto; min-height:78px; border:2px solid #eadbc4; color:#3b2f4a; box-shadow:none; display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 4px 6px; margin:0; background:#f3e8d8; border-radius:14px; font-weight:700; }
+.itile .ic { font-size:26px; line-height:1.1; }
+.itile b { position:absolute; top:4px; right:7px; font-size:12px; background:#fff8ec; border-radius:10px; padding:0 5px; }
+.itile small { font-size:11px; font-weight:600; opacity:.75; text-align:center; line-height:1.15; }
+.itinfo { margin-top:10px; background:#fff3dd; border-radius:12px; padding:8px 10px; font-size:14px; }
+.slot .sic { margin-right:4px; }
+.floaty { position:fixed; transform:translate(-50%,-50%); pointer-events:none; z-index:40; font-weight:800; font-size:17px; color:#3b2f4a; background:#fff8ec; border-radius:12px; padding:2px 10px; box-shadow:0 3px 8px rgba(0,0,0,.18); animation:floaty 1.3s ease-out forwards; white-space:nowrap; }
+@keyframes floaty { 0% { opacity:0; margin-top:8px; } 15% { opacity:1; } 70% { opacity:1; } 100% { opacity:0; margin-top:-46px; } }

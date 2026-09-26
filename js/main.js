@@ -4,6 +4,7 @@ import { HOWTO, QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, IT
 import { CONSTELLATIONS } from '../data/stars.js';
 import { FINDS } from '../data/finds.js';
 import { FISH } from '../data/fish.js';
+import { icon } from '../data/icons.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
@@ -1089,7 +1090,7 @@ function drawHud() {
   if (!shown.some(([k]) => k === S.sel) && shown.length) S.sel = shown[0][0];
   $('bar').style.display = S.where === 'hut' || buildMode ? 'none' : 'flex';
   $('buildBtn').hidden = VISIT || (S.home || 0) < 3 || S.where !== 'home'; $('buildBtn').innerHTML = `${ICON.hammer}<span class="lbl">${buildMode ? 'Building' : 'Build'}</span>`;
-  $('bar').innerHTML = shown.map(([k,c]) => `<div class="slot ${S.sel===k?'on':''}" data-k="${k}"><span class="dot" style="background:${hex(c.color)}"></span>${c.name}<small>${S.seeds[k] || 0} seeds${c.seasons.includes(s) ? '' : ', out of season'}</small></div>`).join('');
+  $('bar').innerHTML = shown.map(([k,c]) => `<div class="slot ${S.sel===k?'on':''}" data-k="${k}"><span class="sic">${icon(k)}</span>${c.name}<small>${S.seeds[k] || 0} seeds${c.seasons.includes(s) ? '' : ', out of season'}</small></div>`).join('');
   document.querySelectorAll('.slot').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); });
 }
 function openDialog(name, text, btns=[], hearts, voice) {
@@ -1165,7 +1166,7 @@ function collectionCats() {
 }
 function openCategory(name) {
   const c = collectionCats().find(x => x.name === name), got = c.ids.filter(c.has).length;
-  showCard(`<div class="kicker">COLLECTIONS</div><h2>${name}: ${got} of ${c.ids.length}</h2><div class="jlist">${c.ids.map(k => c.has(k) ? `<button data-ck="${k}">${c.label(k)}</button>` : `<button class="locked">??? <span class="sub">${c.hint(k)}</span></button>`).join('')}</div>`, 'Back', openJournal);
+  showCard(`<div class="kicker">COLLECTIONS</div><h2>${name}: ${got} of ${c.ids.length}</h2><div class="jlist">${c.ids.map(k => c.has(k) ? `<button data-ck="${k}">${['Crops','Fruit','Fish','Furniture','Dishes'].includes(name) ? icon(k, ITEMS[k]?.kind) + ' ' : ''}${c.label(k)}</button>` : `<button class="locked">??? <span class="sub">${c.hint(k)}</span></button>`).join('')}</div>`, 'Back', openJournal);
   document.querySelectorAll('[data-ck]').forEach(b => b.onclick = c.open(b.dataset.ck));
 }
 const MONTH_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1313,15 +1314,32 @@ async function openMoveGame(back) {
     $('sureLoad').onclick = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {} location.reload(); };
   };
 }
+// what each item is for, in plain words
+function itemUse(k) {
+  const it = ITEMS[k], uses = [];
+  if (it.kind === 'material') {
+    CRAFTS.forEach(c => { if (c.needs[k]) uses.push(c.name); });
+    if (k === 'clay') uses.push('bricks and pots in the kiln'); if (k === 'log') uses.push('kiln fuel');
+    if (k === 'copper' || k === 'tin') uses.push('bronze in the furnace'); if (k === 'brick' || k === 'stone' || k === 'log') uses.push('building pieces');
+    return uses.length ? `Used for: ${[...new Set(uses)].join(', ')}.` : 'Used for building.';
+  }
+  RECIPES.forEach(r => { if (r.needs[k]) uses.push(r.name); });
+  return `Sells for ${it.sell} each.${uses.length ? ` Cook into: ${uses.join(', ')}.` : ''}`;
+}
 function openBag() {
-  const goods = Object.entries(S.bag).map(([k,n]) => `<button>${ITEMS[k].name} x${n} <span class="sub">${ITEMS[k].kind === 'material' ? 'for building' : `sells for ${ITEMS[k].sell} each`}</span></button>`).join('');
-  const furn = Object.entries(S.furn).filter(([,n]) => n > 0).map(([k,n]) => { const p = S.placed.filter(x => x === k).length;
-    return `<button>${FURN[k].name} x${n} <span class="sub">${p ? `${p} in your hut` : 'not placed yet'}</span></button>`; }).join('');
+  const GROUPS = [['crop','Crops'],['fruit','Fruit'],['fish','Fish'],['dish','Dishes'],['material','Materials'],['quest','Special']];
+  const tile = (k, n, name, sub) => `<button class="itile" data-it="${k}" title="${name}"><span class="ic">${icon(k, ITEMS[k]?.kind)}</span><b>${n}</b><small>${name}</small></button>`;
+  const goods = GROUPS.map(([kind, label]) => { const list = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && ITEMS[k].kind === kind);
+    return list.length ? `<h4>${label}</h4><div class="igrid">${list.map(([k,n]) => tile(k, n, ITEMS[k].name)).join('')}</div>` : ''; }).join('');
+  const furn = Object.entries(S.furn).filter(([,n]) => n > 0).map(([k,n]) => `<button class="itile" data-fu="${k}"><span class="ic">${icon(k)}</span><b>${n}</b><small>${FURN[k].name}</small></button>`).join('');
   showCard(`<div class="kicker">YOUR BAG</div><h2>Your stuff</h2>
-    <div class="jlist">${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}</div>
-    <h4>Furniture</h4><div class="jlist">${furn || '<p>None yet. Pip sells furniture.</p>'}</div>
+    ${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}
+    <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
+    <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
     <button id="lookBtn" class="ghost">Change my look</button> ${PLAYTEST ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+  document.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { const k = b.dataset.it; $('itInfo').innerHTML = `<b>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}</b>. ${itemUse(k)}`; });
+  document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => { const k = b.dataset.fu, p = S.placed.filter(x => x === k).length; $('itInfo').innerHTML = `<b>${icon(k)} ${FURN[k].name}</b>. ${p ? `${p} in your hut.` : 'Not placed yet. Place it inside your hut.'}`; });
   $('lookBtn').onclick = () => openLookEditor(openBag);
   if ($('modeBtn')) $('modeBtn').onclick = () => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); openBag(); }, { switching:true }); };
   $('bdBtn').onclick = () => birthdayPicker(openBag);
@@ -2420,7 +2438,7 @@ const CRAFTS_OLD = [
   { id:'pick', name:'Stone Pickaxe', needs:{ stick:2, stone:3, fiber:1 }, does:'Break rocks for stone.' },
 ];
 const have = k => S.bag[k] || 0, enough = needs => Object.entries(needs).every(([k,n]) => have(k) >= n);
-const needText = needs => Object.entries(needs).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase()}${n > 1 && !ITEMS[k].name.endsWith('s') && k !== 'fiber' ? 's' : ''} (you have ${have(k)})`).join(', ');
+const needText = needs => Object.entries(needs).map(([k,n]) => `${icon(k)} ${n} ${ITEMS[k].name.toLowerCase()}${n > 1 && !ITEMS[k].name.endsWith('s') && k !== 'fiber' ? 's' : ''} (you have ${have(k)})`).join(', ');
 function drawHome() {
   const st = S.home || 0; house.visible = st >= 3; buildSite.visible = st < 3;
   siteFrame.visible = st >= 1; siteWalls.visible = st >= 2; siteStones.children.slice(-2).forEach(c => c.visible = st === 0);
@@ -2440,11 +2458,22 @@ function drawPickups() {
     if (p.t === 'stick') [0,1].forEach(k => { const st = mesh(new THREE.CylinderGeometry(.03,.035,.55,5), mat(0x8a6445), k*.08, .05, k*.06); st.rotation.set(Math.PI/2, 0, .3 + k); g.add(st); });
     if (p.t === 'stone') { g.add(mesh(new THREE.DodecahedronGeometry(.11), mat(0x9a93a8), 0, .08, 0)); g.add(mesh(new THREE.DodecahedronGeometry(.08), mat(0xb3aabb), .12, .06, .05)); }
     if (p.t === 'fiber') for (let k=0;k<5;k++){ const bl = mesh(new THREE.ConeGeometry(.025,.35,4), mat(0xb7c46a), (k-2)*.03, .15, 0); bl.rotation.z = (k-2)*.15; g.add(bl); }
+    const ring = new THREE.Mesh(new THREE.RingGeometry(.22,.3,20), new THREE.MeshBasicMaterial({ color:0xfff1b0, transparent:true, opacity:.55, side:THREE.DoubleSide })); ring.rotation.x = -Math.PI/2; ring.position.y = -.03; g.add(ring);
     g.add(mesh(new THREE.CylinderGeometry(.3,.3,.3,8), new THREE.MeshBasicMaterial({ visible:false }), 0, .15, 0));
     pickupGroup.add(g);
   });
 }
-function gain(k, n, where) { for (let i=0;i<n;i++) bagAdd(k); burst(where, { stick:0x9b6b4a, stone:0xb3aabb, fiber:0xb7c46a, log:0xc98f58 }[k], 8); drawHud(); save(); }
+// a "+2 logs" label that floats up from where you gathered, and a quick arm swing
+let swingT = 0;
+const plural = (k, n) => `${ITEMS[k].name.toLowerCase()}${n > 1 && !ITEMS[k].name.endsWith('s') && k !== 'fiber' && k !== 'clay' && k !== 'tin' && k !== 'copper' ? 's' : ''}`;
+function floatText(text, where) {
+  if (!where) return; const v = where.clone().setY(where.y + 1.2).project(camera);
+  const d = document.createElement('div'); d.className = 'floaty'; d.textContent = text;
+  d.style.left = `${(v.x*.5+.5)*innerWidth}px`; d.style.top = `${(-v.y*.5+.5)*innerHeight}px`;
+  document.body.appendChild(d); setTimeout(() => d.remove(), 1300);
+}
+function gain(k, n, where, swing) { for (let i=0;i<n;i++) bagAdd(k); burst(where, { stick:0x9b6b4a, stone:0xb3aabb, fiber:0xb7c46a, log:0xc98f58 }[k], 8);
+  floatText(`+${n} ${icon(k)} ${plural(k, n)}`, where); if (swing) { swingT = .5; if (where) player.rotation.y = Math.atan2(where.x - player.position.x, where.z - player.position.z); } drawHud(); save(); }
 function usePickup(i) {
   const p = S.pickups[i]; if (!p) return;
   const n = 1 + (Math.random() < .35 ? 1 : 0); S.pickups.splice(i, 1); drawPickups();
@@ -2455,16 +2484,16 @@ function chopTree(t) {
   if (!S.tools.axe) { toast('You need a stone axe to chop trees. Craft one at the tree stump workbench.'); return; }
   const key = t.userData.key; if (S.chopped[key] === S.day) { toast('This tree needs to rest. Come back tomorrow.'); return; }
   S.chopped[key] = S.day; t.userData.shake = 1; sfx('till'); const wp = new THREE.Vector3(); t.getWorldPosition(wp);
-  const nl = S.tools.bronzeAxe ? 3 : 2; gain('log', nl, wp.setY(wp.y + 1)); toast(`+${nl} logs. ${homeHint()}`);
+  const nl = S.tools.bronzeAxe ? 3 : 2; gain('log', nl, wp.setY(wp.y + 1), true); toast(`+${nl} logs. ${homeHint()}`);
 }
 function mineRock(r) {
   if (!S.tools.pick) { toast('You need a stone pickaxe to break rocks. Craft one at the tree stump workbench.'); return; }
   const key = r.userData.key; if (S.chopped[key] === S.day) { toast('You got all the stone from this rock today. Try again tomorrow.'); return; }
-  S.chopped[key] = S.day; sfx('dig'); const ns = S.tools.bronzePick ? 5 : 3; gain('stone', ns, r.position.clone()); toast(`+${ns} stone. ${homeHint()}`);
+  S.chopped[key] = S.day; sfx('dig'); const ns = S.tools.bronzePick ? 5 : 3; gain('stone', ns, r.position.clone(), true); toast(`+${ns} stone. ${homeHint()}`);
 }
 function cutBush(b) {
   const key = b.userData.key; if (S.chopped[key] === S.day) { toast('You already cut grass here today.'); return; }
-  S.chopped[key] = S.day; sfx('plant'); gain('fiber', 2, b.position.clone()); toast(`+2 grass fiber. ${homeHint()}`);
+  S.chopped[key] = S.day; sfx('plant'); gain('fiber', 2, b.position.clone(), true); toast(`+2 grass fiber. ${homeHint()}`);
 }
 const CRAFTS = [
   { id:'axe',   name:'Stone Axe',     needs:{ stick:3, stone:2, fiber:2 }, does:'Chop trees for logs.' },
@@ -2509,7 +2538,7 @@ function gatherNode(n) {
   if (kind === 'ore' && !S.tools.pick) { toast('You need a stone pickaxe to dig ore. Craft one at the tree stump workbench.'); return; }
   if (S.chopped[key] === S.day) { toast('Nothing left here today. It fills back in by tomorrow.'); return; }
   S.chopped[key] = S.day; const amt = kind === 'claypit' ? 2 : 1;
-  sfx(kind === 'claypit' ? 'water' : 'dig'); for (let i=0;i<amt;i++) bagAdd(ore); burst(n.position.clone(), kind === 'claypit' ? 0xb8653f : ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, 12); save(); drawHud();
+  sfx(kind === 'claypit' ? 'water' : 'dig'); for (let i=0;i<amt;i++) bagAdd(ore); burst(n.position.clone(), kind === 'claypit' ? 0xb8653f : ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, 12); floatText(`+${amt} ${icon(ore)} ${plural(ore, amt)}`, n.position.clone()); swingT = .5; save(); drawHud();
   toast(`+${amt} ${ITEMS[ore].name.toLowerCase()}. ${kind === 'claypit' ? 'Clay is soft, wet earth that can be shaped and fired.' : ore === 'copper' ? 'Copper ore has those green streaks. Smelt it in a furnace.' : 'Tin is rare. People once traded it across whole continents.'}`);
 }
 // the kiln: keep the fire just right
@@ -2921,6 +2950,9 @@ function tick() {
       S.pos = [player.position.x, player.position.y, player.position.z];
     } else { target = null; pending = null; }
   } else { inner.position.y *= .8; inner.rotation.z *= .8; inner.scale.y = 1 + Math.sin(now*2.5)*.02; }
+  if (swingT > 0) { swingT = Math.max(0, swingT - dt); const a = inner.userData.arms[1] || inner.userData.arms[0], p = 1 - swingT/.5;
+    a.rotation.x = p < .35 ? -2.6 * (p/.35) : -2.6 + 2.6 * ((p-.35)/.65); }
+  pickupGroup.children.forEach((g, i) => { g.position.y = .06 + Math.sin(now*2.4 + i)*.05; g.rotation.y = now*.6 + i; });
   // life
   if (!inside && !lowGfx) swayTufts(now);
   if (playing && !lowGfx && perfCheck.n < 240 && !document.hidden) { perfCheck.n++; perfCheck.sum += dt;
