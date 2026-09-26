@@ -1359,7 +1359,7 @@ function openBag() {
   const goods = GROUPS.map(([kind, label]) => { const list = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && ITEMS[k].kind === kind);
     return list.length ? `<h4>${label}</h4><div class="igrid">${list.map(([k,n]) => tile(k, n, ITEMS[k].name)).join('')}</div>` : ''; }).join('');
   const furn = Object.entries(S.furn).filter(([,n]) => n > 0).map(([k,n]) => `<button class="itile" data-fu="${k}"><span class="ic">${icon(k)}</span><b>${n}</b><small>${FURN[k].name}</small></button>`).join('');
-  showCard(`<div class="kicker">YOUR BAG</div><h2>Your stuff</h2>
+  showCard(`<div class="kicker">YOUR BAG</div><h2>Your stuff</h2>${spaceMeter(slotsIn(S.bag), packCap(), "Backpack")}
     ${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
@@ -1560,6 +1560,7 @@ function useTile(i) {
     S.seeds[S.sel]--; Object.assign(t, { s:2, c:S.sel, d:0 }); sfx('plant'); toast(`Planted ${c.name}. Tap to water.`);
   } else {
     const c = CROPS[t.c];
+    if (t.d >= c.days && !canCarry(t.c)) return bagFull();
     if (t.d >= c.days) { bagAdd(t.c); goal('pick'); communityAdd('harvest'); if (S.mode === 'garden' && Math.random() < .2) { bagAdd(t.c); setTimeout(() => toast(`Bonus crop! You got an extra ${c.name}.`), 900); } S.tiles[i] = { s:1, w:t.w }; sfx('pick'); burst(pos, c.color); toast(`Picked a ${c.name}! Sell it in the crate or give it as a gift.`); }
     else if (!t.w) { t.w = true; goal('water'); sfx('water'); burst(pos, 0x9fd3ff, 8); toast(`Watered. ${c.days - t.d} more day${c.days - t.d>1?'s':''}.`); }
     else toast('Already watered today. Sleep to let it grow.');
@@ -2323,6 +2324,7 @@ function useFruitTree(t) {
   const i = t.userData.i;
   if (season() === 3) { toast('The fruit trees are resting for winter.'); return; }
   if (S.fruit[i] === S.day) { toast('Already picked today. Come back tomorrow.'); return; }
+  if (!canCarry(t.userData.fruitKind)) return bagFull();
   S.fruit[i] = S.day; bagAdd(t.userData.fruitKind); goal('fruit'); communityAdd('fruit'); t.userData.fruits.visible = false; sfx('pick');
   const wp = new THREE.Vector3(); t.getWorldPosition(wp); burst(wp.setY(wp.y + 1), t.userData.fruitKind === 'apple' ? 0xff6b6b : 0xffb36b);
   toast(`Picked a ${ITEMS[t.userData.fruitKind].name}!`); save();
@@ -2464,6 +2466,16 @@ const CRAFTS_OLD = [
   { id:'axe', name:'Stone Axe', needs:{ stick:3, stone:2, fiber:2 }, does:'Chop trees for logs.' },
   { id:'pick', name:'Stone Pickaxe', needs:{ stick:2, stone:3, fiber:1 }, does:'Break rocks for stone.' },
 ];
+// --- backpack and storage space: each kind of item takes a slot, and a slot holds up to 30 ---
+const STACK = 30;
+function slotsIn(box) { return Object.entries(box || {}).reduce((a, [k,n]) => a + (n > 0 && ITEMS[k] && ITEMS[k].kind !== 'quest' ? Math.ceil(n / STACK) : 0), 0); }
+function packCap() { return 12 + (S.tools.bag1 ? 6 : 0) + (S.tools.bag2 ? 6 : 0) + (S.tools.bag3 ? 12 : 0); }
+function storeCap() { return (S.builds || []).filter(b => b.p === 'chest').reduce((a, b) => a + (b.band ? 48 : 24), 0); }
+// how many of item k fit (never forces anyone to drop what they already carry)
+function roomFor(box, cap, k, n) { if (ITEMS[k]?.kind === 'quest') return n; const used = slotsIn(box), cur = box[k] || 0;
+  let fit = 0; while (fit < n) { const next = used - Math.ceil(cur / STACK) + Math.ceil((cur + fit + 1) / STACK); if (next > cap && next > used) break; fit++; } return fit; }
+const canCarry = (k, n = 1) => roomFor(S.bag, packCap(), k, n) >= n;
+function bagFull() { toast(`Your backpack is full (${packCap()} slots). Put things in a chest, or craft a bigger bag at the workbench.`); sfx('click'); }
 const have = k => S.bag[k] || 0, enough = needs => Object.entries(needs).every(([k,n]) => have(k) >= n);
 const needText = needs => Object.entries(needs).map(([k,n]) => `${icon(k)} ${n} ${ITEMS[k].name.toLowerCase()}${n > 1 && !ITEMS[k].name.endsWith('s') && k !== 'fiber' ? 's' : ''} (you have ${have(k)})`).join(', ');
 function drawHome() {
@@ -2499,10 +2511,10 @@ function floatText(text, where) {
   d.style.left = `${(v.x*.5+.5)*innerWidth}px`; d.style.top = `${(-v.y*.5+.5)*innerHeight}px`;
   document.body.appendChild(d); setTimeout(() => d.remove(), 1300);
 }
-function gain(k, n, where, swing) { for (let i=0;i<n;i++) bagAdd(k); burst(where, { stick:0x9b6b4a, stone:0xb3aabb, fiber:0xb7c46a, log:0xc98f58 }[k], 8);
+function gain(k, n, where, swing) { if (!canCarry(k, n)) { n = roomFor(S.bag, packCap(), k, n); if (!n) return false; } for (let i=0;i<n;i++) bagAdd(k); burst(where, { stick:0x9b6b4a, stone:0xb3aabb, fiber:0xb7c46a, log:0xc98f58 }[k], 8);
   floatText(`+${n} ${icon(k)} ${plural(k, n)}`, where); if (swing) { swingT = .5; if (where) player.rotation.y = Math.atan2(where.x - player.position.x, where.z - player.position.z); } drawHud(); save(); }
 function usePickup(i) {
-  const p = S.pickups[i]; if (!p) return;
+  const p = S.pickups[i]; if (!p) return; if (!canCarry(p.t)) return bagFull();
   const n = 1 + (Math.random() < .35 ? 1 : 0); S.pickups.splice(i, 1); drawPickups();
   gain(p.t, n, new THREE.Vector3(p.x, 0, p.z)); sfx({ stone:'stone', fiber:'swish', stick:'chop' }[p.t] || 'plant');
   toast(`+${n} ${ITEMS[p.t].name.toLowerCase()}. ${homeHint()}`);
@@ -2510,16 +2522,19 @@ function usePickup(i) {
 function chopTree(t) {
   if (!S.tools.axe) { toast('You need a stone axe to chop trees. Craft one at the tree stump workbench.'); return; }
   const key = t.userData.key; if (S.chopped[key] === S.day) { toast('This tree needs to rest. Come back tomorrow.'); return; }
+  if (!canCarry('log')) return bagFull();
   S.chopped[key] = S.day; t.userData.shake = 1; sfx('chop'); const wp = new THREE.Vector3(); t.getWorldPosition(wp);
   const nl = S.tools.bronzeAxe ? 3 : 2; gain('log', nl, wp.setY(wp.y + 1), true); toast(`+${nl} logs. ${homeHint()}`);
 }
 function mineRock(r) {
   if (!S.tools.pick) { toast('You need a stone pickaxe to break rocks. Craft one at the tree stump workbench.'); return; }
   const key = r.userData.key; if (S.chopped[key] === S.day) { toast('You got all the stone from this rock today. Try again tomorrow.'); return; }
+  if (!canCarry('stone')) return bagFull();
   S.chopped[key] = S.day; sfx('stone'); const ns = S.tools.bronzePick ? 5 : 3; gain('stone', ns, r.position.clone(), true); toast(`+${ns} stone. ${homeHint()}`);
 }
 function cutBush(b) {
   const key = b.userData.key; if (S.chopped[key] === S.day) { toast('You already cut grass here today.'); return; }
+  if (!canCarry('fiber')) return bagFull();
   S.chopped[key] = S.day; sfx('swish'); gain('fiber', 2, b.position.clone(), true); toast(`+2 grass fiber. ${homeHint()}`);
 }
 const CRAFTS = [
@@ -2527,6 +2542,9 @@ const CRAFTS = [
   { id:'pick',  name:'Stone Pickaxe', needs:{ stick:2, stone:3, fiber:1 }, does:'Break rocks for stone and dig ore.' },
   { id:'kiln',  name:'Kiln',          needs:{ stone:12, clay:6 }, does:'A clay oven for firing pots and bricks. Starts the Pottery Age.', station:true, after:'pick' },
   { id:'furnace', name:'Furnace',     needs:{ brick:8, stone:6 }, does:'A very hot oven for melting metal. Starts the Bronze Age.', station:true, after:'kiln' },
+  { id:'bag1', name:'Woven Grass Bag', needs:{ fiber:10, stick:4 }, does:'A bigger backpack: 18 slots instead of 12. People have woven bags from grass and reeds for thousands of years.', after:'axe' },
+  { id:'bag2', name:'Clay-Bead Satchel', needs:{ fiber:8, pot:1, clay:4 }, does:'A bigger backpack: 24 slots. Fired clay beads make strong fastenings.', after:'kiln' },
+  { id:'bag3', name:'Bronze-Buckle Pack', needs:{ bronze:2, fiber:8 }, does:'The biggest backpack: 36 slots. Metal buckles hold a heavy load closed.', after:'furnace' },
   { id:'bronzeAxe',  name:'Bronze Axe',     needs:{ bronze:2, stick:1 }, does:'Chop 3 logs per tree instead of 2.', after:'furnace' },
   { id:'bronzePick', name:'Bronze Pickaxe', needs:{ bronze:2, stick:1 }, does:'Break 5 stone per rock instead of 3.', after:'furnace' },
 ];
@@ -2545,7 +2563,7 @@ function agesHtml() {
 function drawStations() { kiln.visible = !!S.stations.kiln; furnace.visible = !!S.stations.furnace;
   nodes.forEach(n => n.visible = n.userData.kind === 'claypit' ? potteryOn() : bronzeOn()); }
 function useWorkbench() {
-  const shown = CRAFTS.filter(c => (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick'].includes(c.id) || bronzeOn()));
+  const shown = CRAFTS.filter(c => (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
   showCard(`<div class="kicker">TREE STUMP WORKBENCH</div><h2>Craft</h2><h4>Ages of invention</h4>${agesHtml()}
     <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln && potteryOn() ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>
     <div class="jlist">${shown.map(c => `<button data-cr="${c.id}" ${hasCraft(c.id) || !enough(c.needs) ? 'style="opacity:.6"' : ''}>${hasCraft(c.id) ? '✓ ' : ''}${c.name} <span class="sub">${hasCraft(c.id) ? 'You have this. ' : ''}${c.does} Needs ${needText(c.needs)}.</span></button>`).join('')}</div>`, 'Close');
@@ -2566,6 +2584,7 @@ function gatherNode(n) {
   const { kind, ore, key } = n.userData;
   if (kind === 'ore' && !S.tools.pick) { toast('You need a stone pickaxe to dig ore. Craft one at the tree stump workbench.'); return; }
   if (S.chopped[key] === S.day) { toast('Nothing left here today. It fills back in by tomorrow.'); return; }
+  if (!canCarry(ore)) return bagFull();
   S.chopped[key] = S.day; const amt = kind === 'claypit' ? 2 : 1;
   sfx(kind === 'claypit' ? 'squelch' : 'ting'); for (let i=0;i<amt;i++) bagAdd(ore); burst(n.position.clone(), kind === 'claypit' ? 0xb8653f : ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, 12); floatText(`+${amt} ${icon(ore)} ${plural(ore, amt)}`, n.position.clone()); swingT = .5; save(); drawHud();
   toast(`+${amt} ${ITEMS[ore].name.toLowerCase()}. ${kind === 'claypit' ? 'Clay is soft, wet earth that can be shaped and fired.' : ore === 'copper' ? 'Copper ore has those green streaks. Smelt it in a furnace.' : 'Tin is rare. People once traded it across whole continents.'}`);
@@ -2775,7 +2794,7 @@ function usePiece(o) {
   if (b.p === 'bench') { sitting = o; player.position.set(b.x, 0, b.z); player.rotation.y = (b.r || 0) * Math.PI/2; toast('You sit and rest. Time passes 3 times faster. Tap anywhere to get up.'); return; }
   if (b.p === 'lamp' || b.p === 'blamp') { b.off = !b.off; drawBuilds(); save(); sfx('click'); toast(b.off ? 'Lamp off.' : 'Lamp on. It glows at night.'); return; }
   if (b.p === 'planter' || b.p === 'potplant') return pickSeeds(`pl${b.x},${b.z}`);
-  if (b.p === 'hedge') { if (!daily(`hg${b.x},${b.z}`)) { toast('You already trimmed this hedge today.'); return; }
+  if (b.p === 'hedge') { if (!canCarry('fiber')) return bagFull(); if (!daily(`hg${b.x},${b.z}`)) { toast('You already trimmed this hedge today.'); return; }
     gain('fiber', 1, o.position.clone(), true); sfx('swish'); toast(`You trimmed the hedge. +1 grass fiber. ${TAP_FACTS.hedge}`); return; }
   if (['fence','wallw','walls','bwall'].includes(b.p)) { b.c = PAINTS[(b.c == null ? 0 : PAINTS.indexOf(b.c)) + 1 === PAINTS.length ? 0 : (b.c == null ? 1 : PAINTS.indexOf(b.c) + 1)]; drawBuilds(); save(); sfx('click'); toast(`You painted the ${p.name.toLowerCase()}. Tap again for another color.`); return; }
   if (b.p === 'deck') { danceT = 2.4; player.position.set(b.x, 0, b.z); [523,659,784,659].forEach((f,i) => setTimeout(() => chime(f), i*280)); toast('You dance on the floor!'); return; }
@@ -2784,25 +2803,37 @@ function usePiece(o) {
   toast(`Your ${p.name.toLowerCase()}.`);
 }
 // every chest you build shares one storage, so your things are in any chest you open
-function openChest() {
+function spaceMeter(used, cap, label) { const pct = Math.min(100, Math.round(used / Math.max(1, cap) * 100));
+  return `<div class="space"><span>${label}: ${used} of ${cap} slots</span><i><b style="width:${pct}%;background:${used >= cap ? '#ff8fa3' : '#8fdc8a'}"></b></i></div>`; }
+function openChest(chest) {
   S.chest = S.chest || {}; sfx('chest');
   const tile = (k, n, where) => `<button class="itile" data-${where}="${k}"><span class="ic">${icon(k, ITEMS[k]?.kind)}</span><b>${n}</b><small>${ITEMS[k].name}</small></button>`;
   const bag = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && ITEMS[k].kind !== 'quest'), box = Object.entries(S.chest).filter(([,n]) => n > 0);
-  showCard(`<div class="kicker">STORAGE CHEST</div><h2>Put things away</h2><p>Tap something in your bag to put it all in the chest. Tap something in the chest to take it all back. All your chests share the same space.</p>
-    <h4>In the chest</h4>${box.length ? `<div class="igrid">${box.map(([k,n]) => tile(k, n, 'out')).join('')}</div>` : '<p>Empty.</p>'}
+  const canBand = chest && !chest.band && bronzeOn();
+  showCard(`<div class="kicker">STORAGE CHEST</div><h2>Put things away</h2><p>Tap something in your bag to put it in storage. Tap something in storage to take it back. All your chests share the same space, and each chest adds more room.</p>
+    ${spaceMeter(slotsIn(S.chest), storeCap(), 'Storage')}
+    <h4>In storage</h4>${box.length ? `<div class="igrid">${box.map(([k,n]) => tile(k, n, 'out')).join('')}</div>` : '<p>Empty.</p>'}
+    ${spaceMeter(slotsIn(S.bag), packCap(), 'Backpack')}
     <h4>In your bag</h4>${bag.length ? `<div class="igrid">${bag.map(([k,n]) => tile(k, n, 'in')).join('')}</div>` : '<p>Empty.</p>'}
-    <div style="margin-top:10px"><button id="chMat" class="ghost">Put away all materials</button> <button id="chAll" class="ghost">Take everything</button></div>`);
-  const move = (k, into) => { const n = into ? S.bag[k] : S.chest[k]; if (!n) return; if (into) { S.chest[k] = (S.chest[k]||0) + n; delete S.bag[k]; } else { S.bag[k] = (S.bag[k]||0) + n; delete S.chest[k]; } };
-  const done = () => { sfx('click'); save(); drawHud(); openChest(); };
+    <div style="margin-top:10px"><button id="chMat" class="ghost">Put away all materials</button> <button id="chAll" class="ghost">Take everything</button></div>
+    ${canBand ? `<h4>Upgrade this chest</h4><p>Add bronze bands to make this chest hold twice as much (24 more slots). Real chests were made stronger with metal bands. Needs ${needText({ bronze:2 })}.</p><button id="chBand">Add bronze bands</button>` : chest?.band ? '<p style="margin-top:8px">This chest has bronze bands: it holds 48 slots.</p>' : ''}`);
+  let short = false;
+  const move = (k, into) => { const from = into ? S.bag : S.chest, to = into ? S.chest : S.bag, n = from[k] || 0; if (!n) return;
+    const fit = roomFor(to, into ? storeCap() : packCap(), k, n); if (fit < n) short = true; if (!fit) return;
+    to[k] = (to[k] || 0) + fit; from[k] -= fit; if (from[k] <= 0) delete from[k]; };
+  const done = () => { sfx('click'); save(); drawHud(); openChest(chest); if (short) toast('Not enough room for all of it. Build another chest or get a bigger bag.'); };
   document.querySelectorAll('[data-in]').forEach(b => b.onclick = () => { move(b.dataset.in, true); done(); });
   document.querySelectorAll('[data-out]').forEach(b => b.onclick = () => { move(b.dataset.out, false); done(); });
   $('chMat').onclick = () => { Object.keys(S.bag).filter(k => ITEMS[k]?.kind === 'material').forEach(k => move(k, true)); done(); };
   $('chAll').onclick = () => { Object.keys(S.chest).forEach(k => move(k, false)); done(); };
+  if ($('chBand')) $('chBand').onclick = () => { if (!enough({ bronze:2 })) { toast(`Not enough yet. Needs ${needText({ bronze:2 })}.`); return; }
+    bagAdd('bronze', -2); chest.band = true; drawBuilds(); save(); drawHud(); sfx('ting'); toast('Bronze bands added. This chest now holds 48 slots.'); openChest(chest); };
 }
 function drawBuilds() {
   buildGroup.clear(); lampLights.length = 0;
   (S.builds || []).forEach(b => { const m = pieceModel(b.p); m.position.set(b.x, 0, b.z); m.rotation.y = (b.r || 0) * Math.PI/2; buildGroup.add(m);
-    if (!m.userData.kind) m.userData = { kind:'piece', b };
+    if (!m.userData.kind) m.userData = { kind:'piece', b }; else m.userData.b = b;
+    if (b.p === 'chest' && b.band) [-.2,.2].forEach(z => m.add(mesh(new THREE.BoxGeometry(.84,.06,.05), mat(0xd9a441, { metalness:.55, roughness:.4 }), 0, .3, z*1.35)));
     if (b.c) m.traverse(o => { if (o.isMesh && o.material?.color && !o.material.isMeshBasicMaterial) { o.material = o.material.clone(); o.material.color.lerp(new THREE.Color(b.c), .7); } });
     if (b.off) m.traverse(o => { if (lampLights.includes(o)) { o.visible = false; lampLights.splice(lampLights.indexOf(o), 1); } else if (o.isMesh && o.material?.isMeshBasicMaterial && o.material.visible !== false) { o.material = o.material.clone(); o.material.color.set(0x8a8290); } }); });
   if (typeof tameOutlines === 'function' && outline) tameOutlines();
@@ -2934,7 +2965,7 @@ function arrive(o) {
   if (k === 'rock') return mineRock(o);
   if (k === 'bush') return cutBush(o);
   if (k === 'workbench') return useWorkbench();
-  if (k === 'chest') return openChest();
+  if (k === 'chest') return openChest(o.userData.b);
   if (k === 'deco') return o.userData.use(o);
   if (k === 'piece') return usePiece(o);
   if ((k === 'claypit' || k === 'ore') && o.visible) return gatherNode(o);
