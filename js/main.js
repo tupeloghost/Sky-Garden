@@ -552,6 +552,47 @@ function addTileGroup(i) {
   return g;
 }
 S.tiles.forEach((_, i) => addTileGroup(i)); tilesReady = true;
+// Each crop looks like the real plant and grows through visible stages (k goes 0 to 1).
+function cropModel(id, k, ripe) {
+  const c = CROPS[id], g = new THREE.Group(), leaf = mat(0x5fc377), dark = mat(0x3f8f55), sz = .35 + k*.65;
+  const sway = o => { o.userData.sway = true; return o; }, bob = o => { o.userData.bob = true; o.userData.by = o.position.y; return o; };
+  const fruit = ripe ? mat(c.color, { emissive:c.color, emissiveIntensity: id === 'starbloom' ? .6 : .15 }) : mat(0x9fd88a);
+  if (id === 'skywheat') {
+    const col = ripe ? mat(0xe6c35c) : mat(k > .6 ? 0xc9d46a : 0x7fcf6a);
+    [[-.2,-.15],[.15,-.2],[0,.1],[-.15,.25],[.22,.18]].forEach(([x,z]) => {
+      const st = sway(new THREE.Group()); st.position.set(x,.1,z);
+      st.add(mesh(new THREE.CylinderGeometry(.025,.03,.7*sz,5), col, 0, .35*sz, 0));
+      if (k > .4) st.add(mesh(new THREE.CapsuleGeometry(.06,.18*sz,3,6), col, 0, .7*sz + .08, 0));
+      g.add(st); });
+  } else if (id === 'sunbell') {
+    const st = sway(new THREE.Group()); st.position.y = .1; g.add(st);
+    const h = .3 + k*.9; st.add(mesh(new THREE.CylinderGeometry(.04,.05,h,6), leaf, 0, h/2, 0));
+    { const lf = mesh(new THREE.SphereGeometry(.12,8,6), leaf, .1, h*.5, 0); lf.scale.set(1,.3,.6); st.add(lf); }
+    if (k > .5) { const head = new THREE.Group(); head.position.set(0,h+.02,.05); head.rotation.x = .5; st.add(head);
+      const s2 = ripe ? .24 : .12;
+      for (let i = 0; i < 10; i++) { const a = i/10*Math.PI*2; const pt = mesh(new THREE.SphereGeometry(.07,6,4), ripe ? mat(0xffd35c) : leaf, Math.cos(a)*s2, Math.sin(a)*s2, 0); pt.scale.set(1.3,1.3,.3); head.add(pt); }
+      head.add(mesh(new THREE.CylinderGeometry(s2*.7,s2*.7,.06,12), mat(0x5a3a28), 0, 0, 0).rotateX(Math.PI/2)); }
+  } else if (id === 'moonpumpkin') {
+    [[-.3,.2],[.25,-.25],[.3,.25],[-.2,-.3]].slice(0, 1 + Math.floor(k*3)).forEach(([x,z]) => { const lf = mesh(new THREE.SphereGeometry(.16,8,5), dark, x, .16, z); lf.scale.set(1,.35,1); g.add(lf); });
+    if (k > .3) { const p = new THREE.Group(); p.position.y = .12 + (ripe ? .12 : .05); const r = ripe ? .3 : .08 + k*.1;
+      for (let i = 0; i < 6; i++) { const a = i/6*Math.PI*2; const lobe = mesh(new THREE.SphereGeometry(r*.55,8,6), fruit, Math.cos(a)*r*.4, 0, Math.sin(a)*r*.4); lobe.scale.y = .85; p.add(lobe); }
+      p.add(mesh(new THREE.CylinderGeometry(.03,.04,.12,5), mat(0x6b4f3a), 0, r*.5, 0)); g.add(ripe ? bob(p) : p); }
+  } else if (id === 'cloudberry') {
+    const b = mesh(new THREE.SphereGeometry(.3*sz,8,6), leaf, 0, .2*sz + .08, 0); b.scale.y = .6; g.add(sway(b));
+    if (k > .5) [[.18,.1],[-.15,.12],[0,-.18],[.12,-.12]].forEach(([x,z]) => g.add(mesh(new THREE.SphereGeometry(ripe ? .08 : .05,6,5), ripe ? fruit : mat(0xf2f0e0), x*sz*1.3, .3*sz + .1, z*sz*1.3)));
+  } else if (id === 'frostmint' || id === 'kale') {
+    const n = 3 + Math.floor(k*5), col = id === 'kale' ? mat(ripe ? 0x3f7a4f : 0x5f9a6a) : mat(ripe ? 0x5fd88a : 0x8fdc9a);
+    for (let i = 0; i < n; i++) { const a = i/n*Math.PI*2, lf = mesh(new THREE.SphereGeometry((id === 'kale' ? .16 : .1)*sz + .03,7,5), col, Math.cos(a)*.14*sz, .15 + (i%2)*.08*sz, Math.sin(a)*.14*sz);
+      lf.scale.set(1, id === 'kale' ? 1.4 : .7, .6); lf.rotation.y = -a; lf.rotation.z = .4; g.add(sway(lf)); }
+    if (id === 'kale') g.add(mesh(new THREE.SphereGeometry(.1*sz+.02,7,5), col, 0, .3*sz+.08, 0));
+  } else { // starbloom = Moonflower, a vine with white blooms that glow at night
+    const st = sway(new THREE.Group()); st.position.y = .1; g.add(st);
+    st.add(mesh(new THREE.CylinderGeometry(.03,.03,.9*sz,5), leaf, 0, .45*sz, 0));
+    [[.12,.3],[-.12,.5],[.1,.7]].forEach(([x,y]) => { if (y < sz) { const lf = mesh(new THREE.SphereGeometry(.09,6,4), leaf, x, y*sz+.1, 0); lf.scale.set(1.2,.4,.8); st.add(lf); } });
+    if (k > .6) { const fl = mesh(new THREE.ConeGeometry(ripe ? .2 : .08, .2, 10, 1, true), fruit, 0, .95*sz + .12, 0); fl.rotation.x = Math.PI; st.add(ripe ? bob(fl) : fl); }
+  }
+  return g;
+}
 function drawTile(i) {
   const g = tileGroups[i], t = S.tiles[i];
   while (g.children.length > 1) g.remove(g.children[1]);
@@ -559,9 +600,7 @@ function drawTile(i) {
   g.add(mesh(new THREE.BoxGeometry(1.1,.14,1.1), mat(t.w ? 0x7a5236 : 0xb98a63), 0, .05, 0));
   if (t.s === 2) {
     const c = CROPS[t.c], k = Math.min(1, t.d / c.days), ripe = t.d >= c.days;
-    const stem = mesh(new THREE.ConeGeometry(.12 + k*.1, .3 + k*.5, 8), mat(0x5fc377), 0, .3 + k*.25, 0); stem.userData.sway = true; g.add(stem);
-    if (ripe) { const f = mesh(sph(t.c === 'moonpumpkin' ? .38 : .28), mat(c.color, { emissive:c.color, emissiveIntensity:.2 }), 0, .85, 0); f.userData.bob = true; g.add(f); }
-    else if (k > 0) g.add(mesh(sph(.1 + k*.08), mat(0x7fd88a), 0, .55 + k*.4, 0));
+    g.add(cropModel(t.c, k, ripe));
   }
 }
 S.tiles.forEach((_, i) => drawTile(i));
@@ -2901,7 +2940,7 @@ function tick() {
   winHalos.forEach(hl => hl.material.opacity = winMat.emissiveIntensity * .45);
   smoke.forEach((sm, i) => { const k = ((now*.25 + i/5) % 1); sm.position.set(house.position.x + .75 + Math.sin(k*6 + i)*.2, 3.45 + k*2.2, house.position.z - .35); sm.scale.setScalar(.4 + k*1.1); sm.material.opacity = (1-k) * .35 * (S.where === 'hut' ? 0 : 1); });
   moonHalo.material.opacity = moonSprite.visible ? night * .35 : 0; moonHalo.position.copy(moonSprite.position);
-  tileGroups.forEach(g => g.children.forEach(c => { if (c.userData.bob) c.position.y = .85 + Math.sin(now*3)*.06; if (c.userData.sway) c.rotation.z = Math.sin(now*2 + g.position.x)*.08; }));
+  tileGroups.forEach(g => g.traverse(c => { if (c.userData.bob) c.position.y = c.userData.by + Math.sin(now*3)*.04; if (c.userData.sway) c.rotation.z = Math.sin(now*2 + g.position.x)*.08; }));
   digGroups.forEach(g => g.children.forEach(c => { if (c.userData.spark) { c.rotation.y = now*2; c.position.y = .6 + Math.sin(now*3)*.1; } }));
   if (bell.visible) bellBody.rotation.z = Math.sin(now*1.5)*.08;
   const bflyOn = !inside && h < 18.5 && season() < 3 && !(raining && S.t < .5);
