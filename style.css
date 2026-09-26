@@ -58,3 +58,4 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .bar { bottom:calc(12px + env(safe-area-inset-bottom, 0px)); }
 .help { font-size:14px; opacity:.75; margin-top:14px; }
 @media (max-width:520px) { .pill { font-size:13px; padding:4px 9px; } .quest { font-size:13px; } }
+.title .hemi { margin-top:12px; font-size:14px; padding:6px 16px; background:#ffffffaa; box-shadow:none; font-weight:700; }

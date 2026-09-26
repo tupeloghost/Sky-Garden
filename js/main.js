@@ -1,12 +1,15 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import { MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES } from '../data/content.js';
+import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA } from '../data/calendar.js';
+Object.assign(AHA, FESTIVAL_AHA);
+for (const id of Object.keys(FESTIVAL_AHA)) if (!AHA_ORDER.includes(id)) AHA_ORDER.push(id);
 
 
 // ============ STATE ============
 const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, skywheat:0, moonpumpkin:0, frostmint:0 }, bag:{},
   tiles:Array.from({length:9},()=>({s:0})), sel:'cloudberry', hearts:{ nana:0, pip:0, drizzle:0, twins:0, lumen:0 }, talked:{}, gifted:{}, scenes:[],
   bridge:false, pos:[0,0,2], where:'home', quest:0, aha:[], relics:0, digs:[], asked:-1, qi:0, letter:false,
-  order:null, furn:{}, placed:[null,null,null,null,null,null], q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
+  order:null, furn:{}, placed:[null,null,null,null,null,null], q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
 let S;
 try {
   const saved = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
@@ -18,9 +21,13 @@ try {
 } catch { S = fresh(); }
 const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
 let muted = false; try { muted = localStorage.getItem(MUTE_KEY) === 'true'; } catch {}
-const season = () => Math.floor((S.day-1)/7) % 4;
-const dayOfSeason = () => (S.day-1) % 7 + 1;
-const isFestival = () => season() === 2 && dayOfSeason() === 7;
+// The world follows the real calendar: real seasons, tonight's real moon, festivals on their real dates.
+let dateOverride = null; // for testing only
+const today = () => dateOverride ? new Date(dateOverride) : new Date();
+const season = () => realSeason(today(), S.south);
+const festival = () => activeFestival(today());
+const isFestival = () => !!festival();
+const moon = () => moonPhase(today());
 const hour = () => 6 + S.t*18;
 const bagAdd = (k, n=1) => { S.bag[k] = (S.bag[k]||0) + n; if (S.bag[k] <= 0) delete S.bag[k]; };
 
@@ -424,6 +431,10 @@ for (let i=0;i<16;i++){
 const starGeo = new THREE.BufferGeometry(), SN = 500, sp = new Float32Array(SN*3);
 for (let i=0;i<SN;i++){ const v = new THREE.Vector3().randomDirection(); v.y = Math.abs(v.y)*.8 + .1; v.normalize().multiplyScalar(110); sp.set([v.x, v.y, v.z], i*3); }
 starGeo.setAttribute('position', new THREE.BufferAttribute(sp,3));
+const moonCanvas = document.createElement('canvas'); moonCanvas.width = moonCanvas.height = 128;
+const moonTex = new THREE.CanvasTexture(moonCanvas);
+const moonSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:moonTex, transparent:true, fog:false, depthWrite:false }));
+moonSprite.scale.setScalar(9); scene.add(moonSprite); let moonDrawn = -1;
 const starMat = new THREE.PointsMaterial({ color:0xffffff, size:2, sizeAttenuation:false, transparent:true, opacity:0, fog:false, depthWrite:false });
 const stars = new THREE.Points(starGeo, starMat); scene.add(stars);
 const rainGeo = new THREE.BufferGeometry(), RN = 400, rp = new Float32Array(RN*3);
@@ -464,7 +475,7 @@ function applySeason() {
   trees.forEach(t => t.userData.cm.color.set(CANOPY[s]));
   flowers.visible = s < 2; tufts.visible = s !== 3;
   rainMat.color.set(s === 3 ? 0xffffff : 0xdfeaff); rainMat.size = s === 3 ? .14 : .08;
-  lanterns.visible = isFestival();
+  const fz = festival(); lanterns.visible = !!fz; if (fz) lanternMat.color.set(fz.color);
   fruitTrees.forEach((t, i) => t.userData.fruits.visible = S.fruit[i] !== S.day && s !== 3);
 }
 applySeason();
@@ -571,7 +582,8 @@ let toastT;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
 const hex = c => '#' + c.toString(16).padStart(6,'0');
 function drawHud() {
-  $('day').textContent = `${SEASONS[season()]} ${dayOfSeason()}${raining ? (season() === 3 ? ', snow' : ', rain') : ''}`;
+  const fz = festival(), mph = moon();
+  $('day').textContent = fz ? fz.name : `${SEASONS[season()]}, ${dateLabel(today())}${raining ? (season() === 3 ? ', snow' : ', rain') : hour() >= 19 && (mph.idx === 4 || mph.idx === 0) ? `, ${mph.name.toLowerCase()}` : ''}`;
   const h = hour(), hr = Math.floor(h), mn = Math.floor((h-hr)*6)*10, h12 = ((hr+11)%12)+1;
   $('clock').textContent = `${h12}:${String(mn).padStart(2,'0')} ${hr<12||hr>=24?'AM':'PM'}`;
   $('coins').textContent = `${S.coins} coins`;
@@ -700,7 +712,7 @@ function talk(id) {
   const n = NEIGHBORS[id], firstToday = S.talked[id] !== S.day;
   if (firstToday) { S.talked[id] = S.day; S.hearts[id] = Math.min(10, S.hearts[id]+1); chime(698); goal('talk'); }
   if (heartScene(id)) return;
-  if (id === 'nana' && isFestival() && !S.aha.includes('harvest')) return festival();
+  const fz = festival(); if (fz && id === fz.host && !S.fests[fz.id + fz.year]) return festivalTalk(fz);
   if (id === 'nana' && S.quest < 4) return nanaQuest();
   if (id === 'drizzle' && S.q2 < 5) return drizzleQuest();
   if (id === 'twins' && S.q3 < 7) return twinsQuest();
@@ -840,10 +852,13 @@ const SCENES = {
     openDialog('Captain Drizzle', "You know, I had no crew for years. Just me and the fish. Now I have a friend. Here. The rarest fish I ever caught. A Rainbow Puffer. Do not eat it. Or do. It is your fish.", [], S.hearts.drizzle);
   },
 };
-function festival() {
+function festivalTalk(f) {
   sfx('heart');
-  openDialog('Nana Gale', "Happy Harvest Festival, dear! Tonight the whole island gives thanks for the crops. Your grandmother lit these lanterns every year. Sit, eat, and look how much you grew.", [
-    { label:'Give thanks', fn:() => { closeDialog(); S.coins += 30; bagAdd('peach', 2); save(); drawHud(); showAha('harvest', () => toast('Nana gave you 2 Sun Peaches and 30 coins.')); } }], S.hearts.nana);
+  const card = f.aha || f.id, host = NEIGHBORS[f.host].name;
+  openDialog(host, f.line, [
+    { label:'Celebrate', fn:() => { closeDialog(); S.fests[f.id + f.year] = true; S.coins += 30; save(); drawHud(); burst(npcs[f.host].position, f.color, 24);
+      const thanks = () => toast(`${host} gave you 30 coins. Happy ${f.name}!`);
+      S.aha.includes(card) ? (thanks(), sfx('coin')) : showAha(card, thanks); } }], S.hearts[f.host]);
 }
 
 // --- chapter 1 ---
@@ -1274,7 +1289,7 @@ function fishing(o = {}) {
     if (state === 'idle') return cast();
     if (state === 'wait') { clearTimeout(timer); state = 'idle'; $('bob').className = 'bob'; $('fmsg').textContent = 'Too soon! The fish swam off.'; $('pull').textContent = 'Cast again'; return; }
     if (state === 'dip') {
-      clearTimeout(dipTimer); state = 'idle'; const r = Math.random(), k = secret ? (r < .5 ? 'moonray' : 'puffer') : r < .6 ? 'minnow' : r < .92 ? 'trout' : 'puffer';
+      clearTimeout(dipTimer); state = 'idle'; const r = Math.random(), k = secret ? (r < (moon().idx === 4 ? .8 : .5) ? 'moonray' : 'puffer') : r < .6 ? 'minnow' : r < .92 ? 'trout' : 'puffer';
       bagAdd(k); goal('fish'); save(); sfx('pick'); $('bob').className = 'bob gone';
       $('fmsg').textContent = `You caught a ${ITEMS[k].name}! It sells for ${ITEMS[k].sell}.`; $('pull').textContent = 'Cast again';
     }
@@ -1297,19 +1312,22 @@ function useSpot(i) {
   document.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { S.placed[i] = b.dataset.p; hideCard(); drawRoom(); save(); sfx('plant'); burst(new THREE.Vector3(ROOM.x + SPOTS[i][0], 0, ROOM.z + SPOTS[i][1]), 0xffc857, 10); });
 }
 let raining = false;
+function seasonCheck() {
+  const now = season(), was = S.lastSeason; S.lastSeason = now;
+  if (was === null || was === now) return '';
+  let lost = 0; S.tiles.forEach(t => { if (t.s === 2 && !CROPS[t.c].seasons.includes(now)) { t.s = 1; delete t.c; lost++; } });
+  S.tiles.forEach((_, i) => drawTile(i)); applySeason();
+  return `${SEASONS[now]} is here!${lost ? ` ${lost} out-of-season plant${lost>1?'s':''} wilted.` : ''} Pip has new seeds.`;
+}
 function sleep(passedOut) {
-  const oldSeason = season();
   S.day++; S.t = 0;
   S.tiles.forEach(t => { if (t.s === 2 && t.w) t.d++; t.w = false; });
   raining = Math.random() < .25;
   if (raining || S.sprinklers) S.tiles.forEach(t => { if (t.s >= 1) t.w = true; });
   let msg = passedOut ? 'You were so tired you fell asleep. New day!' : raining ? (season() === 3 ? 'Good morning! Snow watered your crops.' : 'Good morning! Rain watered your crops.') : 'Good morning!';
-  if (season() !== oldSeason) {
-    let lost = 0; S.tiles.forEach(t => { if (t.s === 2 && !CROPS[t.c].seasons.includes(season())) { t.s = 1; delete t.c; lost++; } });
-    msg = `${SEASONS[season()]} is here!${lost ? ` ${lost} out-of-season plant${lost>1?'s':''} wilted.` : ''} Pip has new seeds.`;
-  }
-  if (S.sprinklers && !raining && season() === oldSeason) msg += ' Your sprinkler watered the garden.';
-  if (isFestival()) msg = 'Today is the Harvest Festival! Talk to Nana Gale.';
+  const turned = seasonCheck(); if (turned) msg = turned;
+  else if (S.sprinklers && !raining) msg += ' Your sprinkler watered the garden.';
+  const fz = festival(); if (fz && !S.fests[fz.id + fz.year]) msg = `Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`;
   S.tiles.forEach((_, i) => drawTile(i));
   spawnDigs(); applySeason(); S.goals = null; ensureGoals();
   S.where = 'hut'; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); target = null; pending = null; snapCam();
@@ -1404,6 +1422,9 @@ function tick() {
   sun.position.set(lean*14 + player.position.x, player.position.y + 1.5 + el*16, lean*5 + 1.2 + player.position.z);
   sun.target.position.copy(player.position);
   starMat.opacity = inside ? 0 : night * .9;
+  const mp = moon().idx; if (mp !== moonDrawn) { moonDrawn = mp; const mc = moonCanvas.getContext('2d'); drawMoon(mc, mp, 128);
+    const img = mc.getImageData(0,0,128,128); for (let i=0;i<img.data.length;i+=4) if (img.data[i] < 40 && img.data[i+2] > 40 && img.data[i+2] < 70) img.data[i+3] = 0; mc.putImageData(img,0,0); moonTex.needsUpdate = true; }
+  moonSprite.visible = !inside && night > 0; moonSprite.material.opacity = night; moonSprite.position.set(player.position.x - 30, player.position.y + 32, player.position.z - 70);
   winMat.emissiveIntensity = night * 1.4 + (h > 18 ? .3 : 0);
   // movement
   let mv = new THREE.Vector3((keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0), 0, (keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0));
@@ -1463,7 +1484,12 @@ function tick() {
 snapCam();
 bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); spawnDigs();
 drawHud(); tick();
+const hemiBtn = $('hemi');
+const drawHemi = () => hemiBtn.textContent = S.south ? 'Seasons: Southern Hemisphere' : 'Seasons: Northern Hemisphere';
+drawHemi(); hemiBtn.onclick = () => { S.south = !S.south; S.lastSeason = null; save(); drawHemi(); applySeason(); drawHud(); };
 $('start').onclick = () => { $('title').style.display = 'none'; playing = true; startAudio();
+  { const turned = seasonCheck(); applySeason(); if (turned && S.letter) toast(turned); }
+  { const fz = festival(); if (fz && S.letter && !S.fests[fz.id + fz.year]) setTimeout(() => toast(`Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`), 800); }
   if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">A LETTER ON THE TABLE</div><h2>Dear little one,</h2><p class="letter">If you are reading this, the hut is yours now. The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Go find Nana'); } };
 // tester feedback: opens the claude.ai comment box when the game is shared as a link
 (async () => {
@@ -1477,4 +1503,4 @@ $('start').onclick = () => { $('title').style.display = 'none'; playing = true; 
     };
   } catch {}
 })();
-window.__sg = { S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, openGoals, furnShop, goal };
+window.__sg = { setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, openGoals, furnShop, goal };
