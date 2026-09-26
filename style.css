@@ -81,3 +81,4 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .title h1 { text-shadow:0 5px 0 #ff8fa3, 0 12px 30px #ff8fa366; }
 .title p { background:#fff8eecc; border-radius:16px; padding:8px 14px; }
 .on-title .top, .on-title .bar, .on-title .toast { visibility:hidden; }
+.veil { z-index:8; }

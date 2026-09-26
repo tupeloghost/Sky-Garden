@@ -809,6 +809,44 @@ function openJournal() {
   extra.reverse().forEach(([label, fn]) => { const bt = document.createElement('button'); bt.innerHTML = label; bt.onclick = fn; list.prepend(bt); });
   document.querySelectorAll('.jlist [data-id]').forEach(b => b.onclick = () => showCard(ahaHtml(b.dataset.id), 'Back', openJournal));
 }
+// --- save codes: move a game to another device without an account ---
+async function makeCode() {
+  const bytes = new TextEncoder().encode(JSON.stringify(S));
+  let out = bytes, tag = 'SG1';
+  if (window.CompressionStream) { out = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()); tag = 'SG2'; }
+  let bin = ''; out.forEach(b => bin += String.fromCharCode(b));
+  return `${tag}.${btoa(bin)}`;
+}
+async function readCode(code) {
+  const [tag, body] = code.trim().split('.');
+  const bytes = Uint8Array.from(atob(body), c => c.charCodeAt(0));
+  const raw = tag === 'SG2' ? new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()) : bytes;
+  const data = JSON.parse(new TextDecoder().decode(raw));
+  if (typeof data.day !== 'number' || !Array.isArray(data.tiles)) throw new Error('not a save');
+  return data;
+}
+async function openMoveGame(back) {
+  const code = await makeCode();
+  showCard(`<div class="kicker">MOVE MY GAME</div><h2>Play on another device</h2>
+    <h4>Step 1: On this device</h4><p>Tap Copy code. Then send it to yourself, like in a text or email.</p>
+    <textarea id="myCode" readonly rows="3" style="width:100%;margin-top:8px;font:12px monospace;border-radius:12px;border:2px solid #eadfd0;padding:8px">${code}</textarea>
+    <button id="copyCode">Copy code</button>
+    <h4>Step 2: On the other device</h4><p>Open Sky Garden, tap Move my game, paste the code here, and tap Load.</p>
+    <textarea id="theirCode" rows="3" placeholder="Paste a save code here" style="width:100%;margin-top:8px;font:12px monospace;border-radius:12px;border:2px solid #eadfd0;padding:8px"></textarea>
+    <button id="loadCode">Load</button>
+    <p id="codeMsg" style="margin-top:8px;font-weight:700;min-height:22px"></p>`, back ? 'Back' : 'Close', back);
+  $('copyCode').onclick = async () => {
+    try { await navigator.clipboard.writeText(code); $('codeMsg').textContent = 'Copied! Now send it to yourself.'; }
+    catch { $('myCode').select(); $('codeMsg').textContent = 'The code is selected. Copy it with your device\'s copy command.'; }
+  };
+  $('loadCode').onclick = async () => {
+    const txt = $('theirCode').value;
+    if (!txt.trim()) { $('codeMsg').textContent = 'Paste a save code in the box first.'; return; }
+    let data; try { data = await readCode(txt); } catch { $('codeMsg').textContent = 'That code did not work. Make sure you copied the whole thing.'; return; }
+    $('codeMsg').innerHTML = `This replaces the game on this device with the one from the code (${SEASONS[realSeason(today(), data.south)]}, ${data.coins} coins, ${(data.aha||[]).length} memories). <button id="sureLoad" style="margin-top:8px">Yes, replace it</button>`;
+    $('sureLoad').onclick = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {} location.reload(); };
+  };
+}
 function openBag() {
   const goods = Object.entries(S.bag).map(([k,n]) => `<button>${ITEMS[k].name} x${n} <span class="sub">sells for ${ITEMS[k].sell} each</span></button>`).join('');
   const furn = Object.entries(S.furn).filter(([,n]) => n > 0).map(([k,n]) => { const p = S.placed.filter(x => x === k).length;
@@ -816,7 +854,9 @@ function openBag() {
   showCard(`<div class="kicker">YOUR BAG</div><h2>Your stuff</h2>
     <div class="jlist">${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}</div>
     <h4>Furniture</h4><div class="jlist">${furn || '<p>None yet. Pip sells furniture.</p>'}</div>
-    <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>`, 'Close');
+    <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
+    <button id="moveBtn" class="ghost">Move my game to another device</button>`, 'Close');
+  $('moveBtn').onclick = () => openMoveGame(openBag);
 }
 $('journalBtn').onclick = openJournal;
 $('bagBtn').onclick = openBag;
@@ -1907,6 +1947,7 @@ function tick() {
 snapCam();
 bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs();
 drawHud(); tick();
+$('moveTitle').onclick = () => openMoveGame();
 const hemiBtn = $('hemi');
 const drawHemi = () => hemiBtn.textContent = S.south ? 'Seasons: Southern Hemisphere' : 'Seasons: Northern Hemisphere';
 drawHemi(); hemiBtn.onclick = () => { S.south = !S.south; S.lastSeason = null; save(); drawHemi(); applySeason(); drawHud(); };
