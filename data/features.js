@@ -6,6 +6,7 @@ const FEATURES = [
   { id:'bronze',   name:'Bronze Age',         live:false, what:'Copper and tin ore, the furnace, bronze tools and pieces.' },
   { id:'specialty', name:'Island specialties', live:false, what:'Each island grows one real specialty crop. It sells for 5 times more on other islands.' },
   { id:'heirloom',  name:'Heirloom flowers',  live:false, what:'Each island breeds its own one-of-a-kind flower that only grows there.' },
+  { id:'journey', name:'Choices and karma', live:false, what:'Neighbors bring small choices. Hidden kindness and harmony shape what happens later.' },
   { id:'switchIsle', name:'Switch island type', live:false, what:'Players can change their island type from the Bag.' },
 ];
 export { FEATURES };

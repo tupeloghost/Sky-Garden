@@ -7,6 +7,7 @@ import { FISH } from '../data/fish.js';
 import { icon } from '../data/icons.js';
 import { FEATURES } from '../data/features.js';
 import { ROLLOUT } from '../data/rollout.js';
+import { DILEMMAS, islandFeel, PATHS } from '../data/journey.js';
 import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
 import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
@@ -1160,6 +1161,7 @@ function ahaHtml(id) {
   return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2><h4>What you did</h4><p>${a.did}</p><h4>The real story</h4><p>${a.real}</p><h4>Where you see it today</h4><p>${a.today}</p>`;
 }
 function showAha(id, onClose) {
+  lean('scholar', 2);
   if (!S.aha.includes(id)) { S.aha.push(id); if (S.mode === 'scholar') { S.coins += 30; setTimeout(() => toast('Scholar bonus: +30 coins for a new memory!'), 600); } }
   [523,659,784].forEach((f,i)=>setTimeout(()=>chime(f),i*140));
   showCard(ahaHtml(id), 'Save to my journal', onClose); drawRoom(); drawHud(); save();
@@ -1273,8 +1275,10 @@ function openJournal() {
   const cats = collectionCats(), tot = cats.reduce((a, c) => a + c.ids.length, 0), got = cats.reduce((a, c) => a + c.ids.filter(c.has).length, 0);
   showCard(`<div class="kicker">COLLECTIONS: YEAR ${islandYear()} ON YOUR ISLAND</div><h2>${got} of ${tot} found</h2><p>Everything you have discovered in the sky. Tap a group to see what you have and what is still out there.</p>
     <div style="height:10px;border-radius:99px;background:#eadfd0;margin-top:10px;overflow:hidden"><div style="height:100%;width:${Math.round(got/tot*100)}%;background:#ffc857"></div></div>
+    ${featureOn('journey') ? '<button id="storyBtn" class="ghost" style="margin-top:10px">Your story</button>' : ''}
     <div class="jlist">${cats.map(c => { const n = c.ids.filter(c.has).length; return `<button data-cat="${c.name}">${n === c.ids.length ? '✓ ' : ''}${c.name} <span class="sub">${n} of ${c.ids.length}</span></button>`; }).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => openCategory(b.dataset.cat));
+  if ($('storyBtn')) $('storyBtn').onclick = openStory;
 }
 function openJournalOld() {
   const items = AHA_ORDER.map(id => S.aha.includes(id) ? `<button data-id="${id}">${AHA[id].title}${S.used.includes(id) ? ' <span class="sub">★ used again</span>' : ''}</button>` : `<button class="locked">??? Not found yet</button>`).join('');
@@ -1410,6 +1414,7 @@ function ensureGoals() {
   S.goals = { day:S.day, list, bonus:false };
 }
 function goal(t, n=1) {
+  lean({ water:'grower', pick:'grower', sell:'trader', talk:'friend', gift:'friend', fish:'explorer', fruit:'explorer' }[t], t === 'sell' ? 1 : n);
   if (!featureOn('goals')) return;
   ensureGoals();
   const g = S.goals.list.find(x => x.t === t && x.have < x.need); if (!g) return;
@@ -1609,6 +1614,7 @@ function talk(id) {
   if (id === 'twins' && S.q3 < 7) return twinsQuest();
   if (id === 'lumen' && S.q4 < 5) return lumenQuest();
   if (id === 'nana' && S.q3 === 5) return nanaBread();
+  if (firstToday && startDilemma(id)) return;
   if (id === 'pip' && S.asked !== S.day && (S.quest >= 1 || S.day > 1)) return pipQuestion();
   const pool = S.hearts[id] >= 3 ? [...n.lines, ...n.heartLines] : [...n.lines];
   if (id === 'nana' && S.aha.includes('rope') && !S.bigGarden) pool.push("Those fence stakes by your garden? A bigger plot needs a perfect square corner. You know how to make one now, don't you?", "Try the fence stakes by your garden, dear. You learned something on that ship.");
@@ -1637,7 +1643,7 @@ function pipOrder() {
   if (!S.order || S.order.day !== S.day) {
     const opts = Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(season()) && !CROPS[k].locked);
     const crop = opts[Math.floor(Math.random()*opts.length)];
-    S.order = { day:S.day, crop, pay:CROPS[crop].sell * 2, done:false };
+    S.order = { day:S.day, crop, pay:Math.round(CROPS[crop].sell * 2 * ((S.perks || []).includes('pipBonus') ? 1.25 : 1)), done:false };
   }
   return S.order.done ? null : S.order;
 }
@@ -2546,7 +2552,8 @@ function chopTree(t) {
   if (!S.tools.axe) { toast('You need a stone axe to chop trees. Craft one at the tree stump workbench.'); return; }
   const key = t.userData.key; if (S.chopped[key] === S.day) { toast('This tree needs to rest. Come back tomorrow.'); return; }
   if (!canCarry('log')) return bagFull();
-  S.chopped[key] = S.day; t.userData.shake = 1; sfx('chop'); const wp = new THREE.Vector3(); t.getWorldPosition(wp);
+  S.chopped[key] = S.day; t.userData.shake = 1; sfx('chop');
+  if (S.chopDay !== S.day) { S.chopDay = S.day; S.chopN = 0; } if (++S.chopN === 7) karma('harmony', -1); const wp = new THREE.Vector3(); t.getWorldPosition(wp);
   const nl = S.tools.bronzeAxe ? 3 : 2; gain('log', nl, wp.setY(wp.y + 1), true); toast(`+${nl} logs. ${homeHint()}`);
 }
 function mineRock(r) {
@@ -2595,7 +2602,7 @@ function useWorkbench() {
     if (hasCraft(c.id)) { toast(`You already have a ${c.name.toLowerCase()}.`); return; }
     if (!enough(c.needs)) { toast(`Not enough yet. Needs ${needText(c.needs)}.`); return; }
     Object.entries(c.needs).forEach(([k,n]) => bagAdd(k, -n));
-    if (c.station) S.stations[c.id] = true; else S.tools[c.id] = true;
+    if (c.station) S.stations[c.id] = true; else S.tools[c.id] = true; lean('maker', 2);
     save(); drawHud(); drawStations(); sfx('pick'); burst((c.station ? (c.id === 'kiln' ? kiln : furnace) : workbench).position.clone(), 0xc98f58, 20);
     if (c.id === 'axe' && !S.aha.includes('tools')) return showAha('tools', () => toast('Now tap a tree to chop logs.'));
     hideCard();
@@ -2967,7 +2974,7 @@ function buildTap(e) {
   if (idx >= 0) { toast('Something is already built there. Use Remove first.'); return; }
   const p = PIECES.find(x => x.id === buildSel);
   if (!enough(p.cost)) { toast(`Not enough materials for a ${p.name.toLowerCase()}. Chop trees, break rocks, and cut bushes.`); return; }
-  Object.entries(p.cost).forEach(([k,n]) => bagAdd(k, -n)); S.builds.push({ p:p.id, x:c.x, z:c.z, r:buildRot });
+  Object.entries(p.cost).forEach(([k,n]) => bagAdd(k, -n)); S.builds.push({ p:p.id, x:c.x, z:c.z, r:buildRot }); lean('maker');
   sfx(p.cost.stone || p.cost.brick ? 'stone' : p.cost.bronze ? 'ting' : p.cost.log ? 'chop' : 'swish'); burst(new THREE.Vector3(c.x, 0, c.z), 0xffc857, 10); drawBuilds(); save(); drawBuildBar(); drawHud();
   if (p.id === 'path' && !S.aha.includes('roads')) showAha('roads');
 }
@@ -3186,7 +3193,8 @@ function tick() {
   digGroups.forEach(g => g.children.forEach(c => { if (c.userData.spark) { c.rotation.y = now*2; c.position.y = .6 + Math.sin(now*3)*.1; } }));
   if (bell.visible) bellBody.rotation.z = Math.sin(now*1.5)*.08;
   const bflyOn = !inside && h < 18.5 && season() < 3 && !(raining && S.t < .5);
-  butterflies.forEach((b, i) => { b.visible = bflyOn; if (!bflyOn) return; const u = b.userData, t = now*.4 + u.ph;
+  const bflyN = featureOn('journey') ? Math.max(3, Math.min(9, 6 + Math.floor(((S.karma || {}).harmony || 0) / 2))) : 9;
+  butterflies.forEach((b, i) => { b.visible = bflyOn && i < bflyN; if (!b.visible) return; const u = b.userData, t = now*.4 + u.ph;
     b.position.set(u.cx + Math.sin(t)*3 + Math.sin(t*2.3)*.8, u.cy + .8 + Math.sin(t*3.1)*.4, u.cz + Math.cos(t*.8)*3);
     b.rotation.y = Math.atan2(Math.cos(t), -Math.sin(t*.8)); const f = Math.sin(now*18 + i)*1.1; u.l.rotation.z = f; u.r.rotation.z = -f;
     if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
@@ -3321,10 +3329,70 @@ $('start').onclick = () => { $('title').style.display = 'none'; document.body.cl
   if (isPartyDay() && S.lastParty !== dayKey(today()) && S.letter) setTimeout(birthdayParty, 900);
   else if (S.tut === 9 && !S.birthdayAsked && !S.birthday && S.letter) setTimeout(() => birthdayPicker(null, true), 1200);
   if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">${(S.home || 0) < 3 ? 'A LETTER UNDER A STONE' : 'A LETTER ON THE TABLE'}</div><h2>Dear ${S.name || 'little one'},</h2><p class="letter">${(S.home || 0) < 3 ? 'If you are reading this, you made it. I am sorry about the hut. The Great Gust took it, so all that is left are the stones it stood on. You will build a better one. ' : 'If you are reading this, the hut is yours now. '}The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Let\'s go!', () => { if (S.tut === 0) startTutorial(); }); } };
+// --- the quiet journey: hidden karma, paths, choices, and rewards that come later ---
+function karma(k, n) { S.karma = S.karma || { kind:0, harmony:0 }; S.karma[k] = Math.max(-20, Math.min(30, (S.karma[k] || 0) + n)); }
+function lean(path, n = 1) { if (!path || VISIT) return; S.paths = S.paths || {}; S.paths[path] = (S.paths[path] || 0) + n; }
+function giveReward(g) { if (!g) return [];
+  const got = [];
+  if (g.coins) { S.coins += g.coins; got.push(`${g.coins} coins`); }
+  Object.entries(g.items || {}).forEach(([k,n]) => { S.bag[k] = (S.bag[k] || 0) + n; noteFind(k); got.push(`${n} ${icon(k)} ${plural(k, n)}`); }); // gifts always fit
+  Object.entries(g.seeds || {}).forEach(([k,n]) => { S.seeds[k] = (S.seeds[k] || 0) + n; got.push(`${n} ${CROPS[k].name.toLowerCase()} seeds`); });
+  if (g.furn) { S.furn[g.furn] = (S.furn[g.furn] || 0) + 1; noteFind(g.furn); got.push(`a ${FURN[g.furn].name}`); }
+  if (g.perk) { S.perks = [...new Set([...(S.perks || []), g.perk])]; }
+  return got;
+}
+function startDilemma(who) {
+  if (!featureOn('journey') || VISIT || (!devOn() && playDays() < 3)) return false;
+  const dk = new Date().toISOString().slice(0, 10); if (S.dilemmaDate === dk) return false;
+  const done = (S.choices || []).map(c => c.id), d = DILEMMAS.find(x => x.who === who && !done.includes(x.id)); if (!d) return false;
+  S.dilemmaDate = dk; save();
+  const opts = Math.random() < .5 ? ['a','b'] : ['b','a']; // the kind option is not always in the same place
+  openDialog(NEIGHBORS[who].name, d.text, opts.map(k => ({ label:d[k].label, fn:() => chooseDilemma(d, k) })), S.hearts[who]);
+  return true;
+}
+function chooseDilemma(d, k) {
+  const o = d[k]; closeDialog();
+  if (o.kind) karma('kind', o.kind); if (o.harmony) karma('harmony', o.harmony);
+  S.choices = [...(S.choices || []), { id:d.id, pick:k, day:playDays() }];
+  const got = giveReward(o.now);
+  if (o.later) S.later = [...(S.later || []), { id:d.id, due:playDays() + o.later.days }];
+  if (k === 'a') lean('trader'); else lean(o.harmony ? 'grower' : 'friend');
+  save(); drawHud();
+  if (got.length) { sfx('coin'); toast(`You got ${got.join(', ')}.`); } else { sfx('click'); toast(d.who === 'twins' ? 'Moss and Fern get to work.' : `${NEIGHBORS[d.who].name} nods slowly.`); }
+}
+// letters for choices that pay off later, delivered the first time you play on the day they are due
+function deliverLetters(then) {
+  const due = (S.later || []).filter(l => l.due <= playDays()); if (!due.length) return then && then();
+  S.later = S.later.filter(l => l.due > playDays());
+  const show = i => { if (i >= due.length) { save(); drawHud(); return then && then(); }
+    const d = DILEMMAS.find(x => x.id === due[i].id), L = d.b.later, got = giveReward(L.give);
+    S.mailLog = [...(S.mailLog || []), `${L.from} sent you ${got.join(', ')}.`].slice(-20);
+    chime(659); setTimeout(() => chime(880), 150);
+    showCard(`<div class="kicker">A LETTER FROM ${L.from.toUpperCase()}</div><h2>Something came back to you</h2><p>${L.letter}</p><p><b>Inside:</b> ${got.join(', ')}${L.give.perk === 'pipBonus' ? ', and Pip\'s orders now pay you 25% more' : ''}.</p><p style="opacity:.75;font-style:italic;margin-top:10px">${L.quote}</p>`, 'Okay', () => show(i + 1)); };
+  show(0);
+}
+// kind people get surprise gifts sometimes (never announced as a reward)
+function kindnessGift() {
+  const k = (S.karma || {}).kind || 0; if (k < 5 || Math.random() > Math.min(.5, k / 30)) return;
+  const who = ['nana','pip'][Math.floor(Math.random()*2)], pool = ['apple','peach','cloudberry','kale','trout'], it = pool[Math.floor(Math.random()*pool.length)];
+  S.bag[it] = (S.bag[it] || 0) + 2; S.mailLog = [...(S.mailLog || []), `${NEIGHBORS[who].name} left you 2 ${ITEMS[it].name.toLowerCase()} "just because".`].slice(-20); S.mailNew = true;
+  setTimeout(() => toast(`${NEIGHBORS[who].name} left something in your mailbox, just because.`), 4000);
+}
+function openStory() {
+  const ps = Object.entries(S.paths || {}).sort((a,b) => b[1] - a[1]).slice(0, 2).filter(([,n]) => n >= 3), kk = S.karma || {};
+  showCard(`<div class="kicker">YOUR STORY</div><h2>${S.name ? S.name + "'s" : 'Your'} journey</h2>
+    <p style="font-style:italic">${islandFeel(kk.kind || 0, kk.harmony || 0)}</p>
+    <h4>Who you are becoming</h4>${ps.length ? ps.map(([k]) => `<p><b>${PATHS[k][0]}.</b> ${PATHS[k][1]}</p>`).join('') : '<p>Keep playing. Your path will show here.</p>'}
+    <h4>Choices you made</h4>${(S.choices || []).length ? `<div class="jlist">${S.choices.map(c => { const d = DILEMMAS.find(x => x.id === c.id); return `<p>• ${d[c.pick].story}</p>`; }).join('')}</div>` : '<p>None yet. Neighbors sometimes ask you to decide things. There are no wrong answers.</p>'}`, 'Back', openJournal);
+}
 // --- rolling unlocks: a "New today" card the first time you play each day ---
 function maybeNewToday() {
   if (!S.newDay || VISIT || !S.setupDone || $('veil').classList.contains('show')) return;
   S.newDay = false; save();
+  if (featureOn('journey')) { kindnessGift(); return deliverLetters(() => newTodayCard()); }
+  newTodayCard();
+}
+function newTodayCard() {
   const d = playDays(), fresh = ROLLOUT.filter(r => r.day === d && featureOn(r.id)), next = ROLLOUT.find(r => r.day > d && FEATURES.find(f => f.id === r.id)?.live !== false);
   if (!fresh.length) return;
   drawHud(); drawStations(); drawTradePlants(); chime(784); setTimeout(() => chime(1047), 140);
@@ -3367,7 +3435,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
