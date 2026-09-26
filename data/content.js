@@ -19,6 +19,10 @@ const ITEMS = {
   trout:  { name:'Rainbow Trout',  sell:35, kind:'fish' },
   puffer: { name:'Pufferfish',     sell:80, kind:'fish' },
   flour:  { name:'Bag of Flour',   sell:0,  kind:'quest' },
+  stick:  { name:'Stick',          sell:0,  kind:'material' },
+  stone:  { name:'Stone',          sell:0,  kind:'material' },
+  fiber:  { name:'Grass Fiber',    sell:0,  kind:'material' },
+  log:    { name:'Log',            sell:0,  kind:'material' },
   moonray:{ name:'Manta Ray',      sell:150, kind:'fish' },
   koi:       { name:'Koi',           sell:45,  kind:'fish' },
   sunfish:   { name:'Ocean Sunfish', sell:60,  kind:'fish' },
@@ -167,6 +171,14 @@ const AHA = {
     today:'Close your eyes for a second. You still know you are here. That is his whole argument.' },
 };
 Object.assign(AHA, {
+  tools: { kicker:'MEMORY FOUND', title:'The First Tools',
+    did:'You tied a sharp stone to a stick with grass and made an axe.',
+    real:'People have been shaping stone into tools for more than 3 million years, long before our own species existed. Tying stones onto wooden handles came later, at least 300,000 years ago. A handle lets you swing with much more force, the same idea as the lever.',
+    today:'Every hammer, axe, and garden hoe you have seen is a stone on a stick, upgraded.' },
+  thatch: { kicker:'MEMORY FOUND', title:'A Roof Made of Grass',
+    did:'You finished your home with a thick roof of grass fiber.',
+    real:'Thatched roofs of straw, reeds, or grass have kept people dry for thousands of years, and they are still made today. They work because the stems are packed tight and laid steep, so rain runs down along the outside of the stems instead of soaking through.',
+    today:'Some thatched roofs in England and the Netherlands last 40 years or more.' },
   gears: { kicker:'MEMORY FOUND', title:'The 2,000-Year-Old Computer',
     did:'You picked gear sizes until the small gear spun 3 times for every turn of the big one.',
     real:'In 1901, divers near the Greek island of Antikythera pulled a lump of corroded bronze out of a shipwreck. Inside were dozens of tiny gears. It is about 2,100 years old, and researchers have shown that turning its handle could predict eclipses and track the moon and planets. The sizes of its gears set the speeds, just like yours.',
@@ -216,7 +228,7 @@ Object.assign(AHA, {
     real:'In 1666, Isaac Newton split sunlight with a glass prism into a band of colors. Then he used a second prism to mix the colors back into white. That showed white light is not pure. It is every color at once.',
     today:'Every rainbow is sunlight being split by raindrops, which act like tiny prisms.' },
 });
-const AHA_ORDER = ['bone','temple','tablet','sundial','bell','still','rope','stars','gears','lever','bread','rosetta','moon','optics','loom','migration','worldtree','fibonacci','prism','harvest','theseus','zeno','cave','river','floating','stoic','golden'];
+const AHA_ORDER = ['tools','thatch','bone','temple','tablet','sundial','bell','still','rope','stars','gears','lever','bread','rosetta','moon','optics','loom','migration','worldtree','fibonacci','prism','harvest','theseus','zeno','cave','river','floating','stoic','golden'];
 const RELICS = [ { id:'bone', name:'a notched bone' }, { id:'temple', name:'a carved stone' }, { id:'tablet', name:'a clay tablet' } ];
 const LAYERS = ['Topsoil. Roots and worms.', 'A dark layer of ash. Something burned here long ago.', 'Old clay. The deeper you dig, the older it gets.'];
 const QUESTIONS = [

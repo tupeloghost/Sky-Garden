@@ -152,3 +152,17 @@ Later: Moonmelon (Night Isle only), Breezebean (climbs bridges), Rainroot (only 
 ## 13. Real Life First
 
 Everything you grow, pick, catch, cook, and collect is a real thing with its real name (Wheat, Pumpkin, Kale, Rainbow Trout, Manta Ray), with sizes and seasons as close to real life as the game allows. Every item card has two parts: **In real life** (a checked, true fact) and **In Sky Garden** (the game's rules, like growing in 2 days or only biting in the rain). Magic stays obviously magic: floating islands, a bridge of light, a firefly painter.
+
+## 14. The Blend: Minecraft, Lego, Stardew, Animal Crossing, Zelda, Hello Kitty, South Park
+
+- **Minecraft:** start with almost nothing; gather, craft tools, build anything.
+- **Lego games:** snap-together building pieces and playful physical humor.
+- **Stardew Valley:** farming, seasons, a purpose every day.
+- **Animal Crossing:** neighbors with personality, decorating, real-time days and festivals.
+- **Zelda:** exploration; new tools open new places; puzzles, secrets, caves.
+- **Hello Kitty:** cuteness, friendship, gifts, outfits, collectibles.
+- **South Park:** funny, sharp writing adults laugh at too. Never crude or mean; always kid-safe.
+
+**Crafting follows real human history:** stone tools and fire, pottery, bronze (copper plus tin), glass, iron, windmills. Each new material is a real "aha."
+
+**Rollout:** (1) start from nothing and build your home [built], (2) free building anywhere on a snap grid, (3) the history tech tree, (4) exploration: wild islands and caves opened by tools.
