@@ -1,7 +1,7 @@
 #!/bin/sh
 # Playtest report: feedback notes and where players have reached. Run from the cloud folder.
 export PATH="$HOME/.local/node/bin:$PATH"
-q() { npx wrangler d1 execute sky-garden-saves --remote --json --command "$1" 2>/dev/null | python3 -c "import sys,json; [print(r) for r in json.load(sys.stdin)[0]['results']]"; }
+q() { for try in 1 2 3; do out=$(npx wrangler d1 execute sky-garden-saves --remote --json --command "$1" 2>/dev/null) && echo "$out" | python3 -c "import sys,json; d=json.load(sys.stdin); [print(r) for r in d[0]['results']]" 2>/dev/null && return; sleep 2; done; echo "(could not read this section, try again)"; }
 echo "== Feedback (newest first)"
 q "SELECT datetime(at/1000,'unixepoch') AS sent, mood, place, day, note FROM feedback ORDER BY at DESC LIMIT 50"
 echo "== Players by furthest chapter"
