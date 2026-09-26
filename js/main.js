@@ -3,6 +3,7 @@ import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { HOWTO, QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES } from '../data/content.js';
 import { CONSTELLATIONS } from '../data/stars.js';
 import { FINDS } from '../data/finds.js';
+import { FISH } from '../data/fish.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
@@ -1058,9 +1059,10 @@ function collectionList(title, kicker, items, have, show) {
   showCard(`<div class="kicker">${kicker}</div><h2>${title}</h2><div class="jlist">${items.map(x => have.includes(x.id) ? `<button data-cl="${x.id}">${x.name || x.title}</button>` : `<button class="locked">??? Not found yet</button>`).join('')}</div>`, 'Back', openJournal);
   document.querySelectorAll('[data-cl]').forEach(b => b.onclick = () => show(items.find(x => x.id === b.dataset.cl)));
 }
+let quietFind = false; // the fishing reveal shows its own fact
 function noteFind(k) {
   if (S.found.includes(k)) return;
-  S.found.push(k);
+  S.found.push(k); if (quietFind) return;
   const f = FINDS[k]; if (!f) return; // dishes and quest items have their own cards
   const name = ITEMS[k]?.name || FURN[k]?.name || k;
   const el = $('discover'); el.onclick = () => el.classList.remove('show');
@@ -1074,7 +1076,7 @@ function collectionCats() {
   return [
     { name:'Crops', ids:Object.keys(CROPS), has:k => S.found.includes(k), label:k => CROPS[k].name, open:k => itemCard(k, 'Crops'), hint:k => FINDS[k].hint },
     { name:'Fruit', ids:['apple','peach'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fruit'), hint:k => FINDS[k].hint },
-    { name:'Fish', ids:['minnow','trout','puffer','moonray'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fish'), hint:k => FINDS[k].hint },
+    { name:'Fish', ids:['minnow','trout','koi','sunfish','frostchar','guppy','lanterneel','puffer','moonray'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fish'), hint:k => FINDS[k].hint },
     { name:'Furniture', ids:Object.keys(FURN), has:k => S.found.includes(k), label:k => FURN[k].name, open:k => itemCard(k, 'Furniture'), hint:k => FINDS[k].hint },
     { name:'Memories', ids:AHA_ORDER, has:k => S.aha.includes(k), label:k => AHA[k].title + (S.used.includes(k) ? ' ★' : ''), open:k => () => showCard(ahaHtml(k), 'Back', () => openCategory('Memories')), hint:() => 'Keep playing the story, digging, and celebrating festivals.' },
     { name:'Dishes', ids:RECIPES.map(r => r.id), has:k => S.cooked.includes(k), label:k => RECIPES.find(r => r.id === k).name, open:k => () => showCard(lessonHtml(RECIPES.find(r => r.id === k).aha), 'Back', () => openCategory('Dishes')), hint:k => `Cook it at the Bakery. Needs ${Object.entries(RECIPES.find(r => r.id === k).needs).map(([i,n]) => `${n} ${ITEMS[i].name}`).join(' and ')}.` },
@@ -2198,33 +2200,130 @@ function useFruitTree(t) {
   const wp = new THREE.Vector3(); t.getWorldPosition(wp); burst(wp.setY(wp.y + 1), t.userData.fruitKind === 'apple' ? 0xff6b6b : 0xffb36b);
   toast(`Picked a ${ITEMS[t.userData.fruitKind].name}!`); save();
 }
+function drawFishArt(g, x, y, len, f, tilt = 0) {
+  const hx = c => '#' + c.toString(16).padStart(6, '0');
+  g.save(); g.translate(x, y); g.rotate(tilt);
+  if (f.glow) { const gr = g.createRadialGradient(0,0,4,0,0,len*.8); gr.addColorStop(0, 'rgba(255,243,138,.55)'); gr.addColorStop(1, 'rgba(255,243,138,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0,0,len*.8,0,7); g.fill(); }
+  if (f.ray) {
+    g.fillStyle = hx(f.body); g.beginPath(); g.moveTo(len*.35,0); g.quadraticCurveTo(0,-len*.55,-len*.25,0); g.quadraticCurveTo(0,len*.55,len*.35,0); g.fill();
+    g.strokeStyle = hx(f.fin); g.lineWidth = 4; g.beginPath(); g.moveTo(-len*.25,0); g.quadraticCurveTo(-len*.5,len*.05,-len*.7,-len*.08); g.stroke();
+    g.fillStyle = hx(f.belly); g.beginPath(); g.ellipse(len*.08,0,len*.12,len*.2,0,0,7); g.fill();
+  } else {
+    const h = f.long ? len*.16 : f.round ? len*.42 : len*.3, bl = f.long ? len*.5 : len*.36;
+    g.fillStyle = hx(f.fin); g.beginPath(); g.moveTo(-bl*.85,0); g.lineTo(-bl*1.35,-h*.8); g.lineTo(-bl*1.2,0); g.lineTo(-bl*1.35,h*.8); g.closePath(); g.fill(); // tail
+    if (f.round) { g.beginPath(); g.moveTo(-bl*.1,-h*.9); g.lineTo(bl*.1,-h*1.6); g.lineTo(bl*.35,-h*.8); g.fill(); g.beginPath(); g.moveTo(-bl*.1,h*.9); g.lineTo(bl*.1,h*1.6); g.lineTo(bl*.35,h*.8); g.fill(); }
+    else { g.beginPath(); g.moveTo(-bl*.2,-h*.85); g.quadraticCurveTo(bl*.1,-h*1.5,bl*.35,-h*.85); g.fill(); }
+    g.fillStyle = hx(f.body); g.beginPath(); g.ellipse(0,0,bl,h,0,0,7); g.fill();
+    g.save(); g.beginPath(); g.ellipse(0,0,bl,h,0,0,7); g.clip(); g.fillStyle = hx(f.belly); g.fillRect(-bl, h*.15, bl*2, h);
+    if (f.spots) { g.fillStyle = hx(f.spots); [[-.3,-.3,.22],[.15,-.45,.16],[-.05,.1,.14],[.35,-.1,.12]].forEach(([sx,sy,sr]) => { g.beginPath(); g.arc(sx*bl, sy*h, sr*h, 0, 7); g.fill(); }); }
+    g.restore();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(bl*.62,-h*.18,Math.max(3,h*.2),0,7); g.fill(); g.fillStyle = '#2b2233'; g.beginPath(); g.arc(bl*.66,-h*.18,Math.max(2,h*.12),0,7); g.fill();
+    g.fillStyle = hx(f.fin); g.globalAlpha = .8; g.beginPath(); g.ellipse(-bl*.05,h*.25,bl*.18,h*.14,.5,0,7); g.fill(); g.globalAlpha = 1;
+  }
+  g.restore();
+}
 function fishing(o = {}) {
-  let state = 'idle', timer, dipTimer;
-  const cast = () => {
-    state = 'wait'; $('bob').className = 'bob'; $('fmsg').textContent = 'Wait for the bobber to dip...'; $('pull').textContent = 'Pull!'; sfx('cast');
-    S.t = Math.min(.99, S.t + 10/(60*18)); drawHud();
-    timer = setTimeout(() => { state = 'dip'; $('bob').className = 'bob dip'; sfx('splash'); $('fmsg').textContent = 'Now!';
-      dipTimer = setTimeout(() => { if (state === 'dip') { state = 'idle'; $('bob').className = 'bob'; $('fmsg').textContent = 'Too slow. It got away.'; $('pull').textContent = 'Cast again'; } }, 800);
-    }, 1500 + Math.random()*2500);
-  };
-  const night = hour() >= 20 && S.aha.includes('stars');
-  const secret = !!o.secret;
-  showCard(`<div class="kicker">THE CLOUD STREAM</div><h2>Fishing</h2><p>Cast your line. When the bobber dips, pull fast!${night ? ' Captain Drizzle says the biggest fish hide under the star that stays.' : ''}</p>
-    <div class="pond"><div class="bob gone" id="bob"></div></div><p id="fmsg" style="margin-top:8px;font-weight:700;text-align:center;min-height:22px"></p>
-    <button id="pull">Cast</button> ${night ? '<button id="secret">Find the secret spot</button> ' : ''}<button id="later" class="ghost">Done</button>`, null);
-  cardCleanup = () => { clearTimeout(timer); clearTimeout(dipTimer); };
-  if (night) $('secret').onclick = () => starPuzzle({ title:'Find the secret spot', text:'The big fish rest under the one star that never moves. Find it.',
-    done:() => { const first = !S.used.includes('stars'); const go = () => fishing({ secret:true }); first ? showRecall('stars', go) : go(); } });
-  if (secret) { $('fmsg').textContent = 'You are at the secret spot. Cast!'; if (night) $('secret').remove(); }
-  $('pull').onclick = () => {
-    if (state === 'idle') return cast();
-    if (state === 'wait') { clearTimeout(timer); state = 'idle'; $('bob').className = 'bob'; $('fmsg').textContent = 'Too soon! The fish swam off.'; $('pull').textContent = 'Cast again'; return; }
-    if (state === 'dip') {
-      clearTimeout(dipTimer); state = 'idle'; const r = Math.random(), k = secret ? (r < (moon().idx === 4 ? .8 : .5) ? 'moonray' : 'puffer') : r < .6 ? 'minnow' : r < .92 ? 'trout' : 'puffer';
-      bagAdd(k); goal('fish'); communityAdd('fishing'); save(); sfx('pick'); $('bob').className = 'bob gone';
-      $('fmsg').textContent = `You caught a ${ITEMS[k].name}! It sells for ${ITEMS[k].sell}.`; $('pull').textContent = 'Cast again';
+  const night = hour() >= 20 && S.aha.includes('stars'), secret = !!o.secret, W = 520, H = 320;
+  showCard(`<div class="kicker">${secret ? 'THE SECRET SPOT' : 'THE CLOUD STREAM'}</div><h2>Fishing</h2>
+    <p id="fhelp">Tap Cast. When the bobber gets pulled under, tap Hook it! Then hold Reel to keep the green zone over the fish until the meter fills.</p>
+    <canvas id="pondC" class="rope" width="${W}" height="${H}" style="background:#8fc3f2;touch-action:none"></canvas>
+    <p id="fmsg" style="margin-top:8px;font-weight:700;text-align:center;min-height:22px">${secret ? 'You are at the secret spot. The big ones live here.' : ''}</p>
+    <button id="fAct" style="min-width:140px">Cast</button> ${night && !secret ? '<button id="secret" class="ghost">Find the secret spot</button> ' : ''}<button id="later" class="ghost">Done</button>`, null);
+  const cv = $('pondC'), g = cv.getContext('2d'), act = $('fAct'), msg = t => $('fmsg').textContent = t;
+  const ctx = { season:season(), hour:hour(), raining:raining && S.t < .5, secret };
+  const pool = FISH.filter(f => f.when(ctx)).map(f => ({ ...f, weight: f.id === 'moonray' && moon().idx === 4 ? f.weight * 2 : f.weight }));
+  let state = 'ready', t0 = 0, now = 0, raf, fish = null, nextNibble = 0, biteAt = 0, holding = false, zone = .3, zoneV = 0, fishX = .5, fishT = .5, fishNext = 0, meter = .3, size = 0, reelTick = 0, splashes = [];
+  const shadows = [0,1,2].map(i => ({ x:Math.random()*W, y:170 + i*40, v:(Math.random() < .5 ? -1 : 1) * (12 + Math.random()*14), s:.7 + Math.random()*.5 }));
+  const BX = 330, BY = 150, TIP = [70, 60];
+  const pickFish = () => { let r = Math.random() * pool.reduce((a, f) => a + f.weight, 0); for (const f of pool) { if ((r -= f.weight) <= 0) return f; } return pool[0]; };
+  const setAct = (label, dis = false) => { act.textContent = label; act.disabled = dis; act.style.opacity = dis ? .5 : 1; };
+  const splash = (x, y, big) => splashes.push({ x, y, r:4, a:1, big });
+  const draw = () => {
+    const sky = g.createLinearGradient(0,0,0,H); sky.addColorStop(0,'#cfe9ff'); sky.addColorStop(.28,'#9fd0f5'); sky.addColorStop(1,'#5f9fd6');
+    g.fillStyle = sky; g.fillRect(0,0,W,H);
+    g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2;
+    for (let i=0;i<6;i++){ g.beginPath(); const y = 100 + i*36; for (let x=0;x<=W;x+=20) g.lineTo(x, y + Math.sin(x*.03 + now*1.5 + i)*3); g.stroke(); }
+    shadows.forEach(sh => { if (state === 'reel' || state === 'caught') return; sh.x += sh.v * .016; if (sh.x < -40) sh.x = W + 40; if (sh.x > W + 40) sh.x = -40;
+      if (state === 'wait' || state === 'bite') { sh.x += (BX - sh.x) * .004; sh.y += (BY + 20 - sh.y) * .004; }
+      g.fillStyle = 'rgba(30,50,90,.22)'; g.beginPath(); g.ellipse(sh.x, sh.y, 26*sh.s, 9*sh.s, 0, 0, 7); g.fill(); });
+    g.fillStyle = '#c98f58'; g.fillRect(0, 40, 90, 18); g.fillStyle = '#9b6b4a'; g.fillRect(10, 58, 10, 50); g.fillRect(70, 58, 10, 50); // the dock
+    g.strokeStyle = '#6b4f3a'; g.lineWidth = 5; g.beginPath(); g.moveTo(30, 90); g.lineTo(TIP[0], TIP[1]); g.stroke(); // rod
+    if (state === 'casting' || state === 'wait' || state === 'bite' || state === 'reel') {
+      const k = state === 'casting' ? Math.min(1, (now - t0) / .5) : 1;
+      let bx = TIP[0] + (BX - TIP[0]) * k, by = TIP[1] + (BY - TIP[1]) * k - Math.sin(k * Math.PI) * 60;
+      if (state === 'wait') by += Math.sin(now*3)*2 + (now < nextNibble - 1.1 && now > nextNibble - 1.3 ? 5 : 0);
+      if (state === 'bite') by += 12;
+      if (state === 'reel') { bx += Math.sin(now*22)*4; by += 10; }
+      g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(...TIP); g.quadraticCurveTo((TIP[0]+bx)/2, Math.min(TIP[1], by) - 30*k, bx, by); g.stroke();
+      if (state !== 'reel') { g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by + 4, 9, 0, Math.PI); g.fill(); g.fillStyle = '#ff5a5a'; g.beginPath(); g.arc(bx, by + 4, 9, Math.PI, 0); g.fill(); }
+      if (state === 'bite') { g.fillStyle = '#ffc857'; g.font = 'bold 44px "Baloo 2", sans-serif'; g.textAlign = 'center'; g.fillText('!', bx, by - 22 + Math.sin(now*20)*3); }
+    }
+    splashes = splashes.filter(sp => { sp.r += sp.big ? 2.2 : 1.2; sp.a -= .025; g.strokeStyle = `rgba(255,255,255,${sp.a})`; g.lineWidth = 3; g.beginPath(); g.ellipse(sp.x, sp.y, sp.r*1.6, sp.r*.6, 0, 0, 7); g.stroke(); return sp.a > 0; });
+    if (state === 'reel') {
+      if (Math.random() < .2) splash(BX + (Math.random()-.5)*30, BY + 12, false);
+      const x0 = 30, x1 = W - 30, bw = x1 - x0, zw = (.42 - fish.fight*.16) * bw, y = 262;
+      g.fillStyle = 'rgba(255,248,238,.92)'; g.beginPath(); g.roundRect(x0 - 10, y - 30, bw + 20, 78, 16); g.fill();
+      g.fillStyle = '#eadfd0'; g.beginPath(); g.roundRect(x0, y, bw, 26, 13); g.fill();
+      const zx = x0 + zone * (bw - zw), fx = x0 + fishX * bw, inside = fx >= zx && fx <= zx + zw;
+      g.fillStyle = inside ? '#8fdc8a' : '#c7e8c4'; g.beginPath(); g.roundRect(zx, y, zw, 26, 13); g.fill();
+      drawFishArt(g, fx, y + 13, 30, fish, Math.sin(now*14)*.3);
+      g.fillStyle = '#eadfd0'; g.beginPath(); g.roundRect(x0, y - 20, bw, 10, 5); g.fill();
+      g.fillStyle = meter > .7 ? '#2fae60' : meter > .35 ? '#ffc857' : '#ff8fa3'; g.beginPath(); g.roundRect(x0, y - 20, Math.max(10, bw * meter), 10, 5); g.fill();
+    }
+    if (state === 'caught') {
+      const k = Math.min(1, (now - t0) / .6), cx = W/2, cy = 150 - Math.sin(k * Math.PI * .5) * 20 + (1 - k) * 60;
+      g.save(); g.translate(cx, 150); g.rotate(now * .5); for (let i=0;i<12;i++){ g.rotate(Math.PI/6); g.fillStyle = 'rgba(255,248,200,.35)'; g.beginPath(); g.moveTo(0,0); g.lineTo(200, -18); g.lineTo(200, 18); g.fill(); } g.restore();
+      drawFishArt(g, cx, cy, fish.ray ? 200 : fish.long ? 230 : 150 + fish.fight*60, fish, Math.sin(now*3)*.08);
+      for (let i=0;i<8;i++){ const a = now*2 + i; g.fillStyle = '#fff8dc'; g.beginPath(); g.arc(cx + Math.cos(a)*(130 + i*6), 150 + Math.sin(a*1.3)*80, 3, 0, 7); g.fill(); }
     }
   };
+  const land = () => {
+    state = 'caught'; t0 = now;
+    const f = fish, isNew = !S.found.includes(f.id); S.fishLog = S.fishLog || {}; const rec = S.fishLog[f.id] || { n:0, best:0 };
+    const isRecord = rec.n > 0 && size > rec.best; rec.n++; rec.best = Math.max(rec.best, size); S.fishLog[f.id] = rec;
+    quietFind = true; bagAdd(f.id); quietFind = false; goal('fish'); communityAdd('fishing'); save(); burst(new THREE.Vector3(player.position.x, player.position.y, player.position.z), f.body, 18);
+    [523,659,784,1047].forEach((fr,i) => setTimeout(() => chime(fr), i*110)); sfx('splash');
+    const price = Math.round(ITEMS[f.id].sell * (S.mode === 'fisher' ? 1.25 : 1));
+    $('fhelp').innerHTML = `<b style="font-size:20px">You caught a ${ITEMS[f.id].name}!</b> ${size} cm. ${isNew ? '<span style="background:#6fd3b8;color:#fff;border-radius:99px;padding:1px 8px;font-weight:800">NEW!</span>' : ''} ${isRecord ? '<span style="background:#ffc857;border-radius:99px;padding:1px 8px;font-weight:800">New record!</span>' : ''}`;
+    msg(isNew ? FINDS[f.id].fact : `Sells for ${price} coins. Your biggest: ${rec.best} cm.`);
+    setAct('Cast again');
+  };
+  const lose = why => { state = 'ready'; msg(why); setAct('Cast again'); tone(300, { to:140, dur:.4, vol:.05 }); };
+  const loop = () => {
+    const dt = .016; now += dt;
+    if (state === 'casting' && now - t0 > .5) { state = 'wait'; splash(BX, BY + 8, false); sfx('splash'); nextNibble = now + 1 + Math.random(); biteAt = now + 2.2 + Math.random()*3; msg('Wait for it...'); }
+    if (state === 'wait') {
+      if (now > nextNibble) { tone(900, { dur:.05, vol:.025 }); splash(BX, BY + 8, false); nextNibble = now + .6 + Math.random()*1.2; }
+      if (now > biteAt) { state = 'bite'; t0 = now; fish = pickFish(); splash(BX, BY + 8, true); sfx('splash'); tone(220, { to:110, dur:.25, vol:.08 }); msg('Something bit! Tap Hook it!'); setAct('Hook it!'); }
+    }
+    if (state === 'bite' && now - t0 > 1.1) lose('Too slow. It slipped off the hook.');
+    if (state === 'reel') {
+      zoneV += (holding ? 2.4 : -1.8) * dt; zoneV *= .985; zoneV = Math.max(-1, Math.min(1, zoneV)); zone += zoneV * dt;
+      if (zone < 0) { zone = 0; zoneV = 0; } if (zone > 1) { zone = 1; zoneV = 0; }
+      if (now > fishNext) { fishT = Math.random(); fishNext = now + (1.3 - fish.fight) * (.5 + Math.random()); }
+      fishX += (fishT - fishX) * dt * (1 + fish.fight * 4);
+      const zw = .42 - fish.fight*.16, zx = zone * (1 - zw), inside = fishX >= zx && fishX <= zx + zw;
+      meter += (inside ? .3 : -.1 - fish.fight*.1) * dt;
+      if (holding && (reelTick += dt) > .09) { reelTick = 0; tone(1300, { dur:.03, vol:.012 }); }
+      if (meter >= 1) land(); else if (meter <= 0) lose(`It got away! ${fish.fight > .5 ? 'That was a strong one.' : 'Try again.'}`);
+    }
+    draw(); raf = requestAnimationFrame(loop);
+  };
+  const hold = on => { holding = on; };
+  act.onclick = () => {
+    if (state === 'ready' || state === 'caught') { if (!pool.length) return msg('Nothing is biting here right now.'); state = 'casting'; t0 = now; sfx('cast'); S.t = Math.min(.99, S.t + 10/(60*18)); drawHud(); msg('');
+      $('fhelp').textContent = 'Tap Cast. When the bobber gets pulled under, tap Hook it! Then hold Reel to keep the green zone over the fish until the meter fills.'; setAct('Wait...', true); return; }
+    if (state === 'wait') return lose('Too soon! The fish swam off.');
+    if (state === 'bite') { state = 'reel'; meter = .45; zone = .35; zoneV = 0; fishX = .5; fishNext = 0; size = Math.round(fish.cm[0] + (fish.cm[1] - fish.cm[0]) * Math.pow(Math.random(), 1.6)); msg('Hold Reel to move the green zone. Keep the fish inside it!'); setAct('Hold to reel'); }
+  };
+  ['pointerdown','pointerup','pointerleave','pointercancel'].forEach(ev => { act.addEventListener(ev, e => { if (state === 'reel') { e.preventDefault(); hold(ev === 'pointerdown'); } }); cv.addEventListener(ev, e => { if (state === 'reel') hold(ev === 'pointerdown'); }); });
+  const key = e => { if (e.code === 'Space' && state === 'reel') { e.preventDefault(); hold(e.type === 'keydown'); } };
+  addEventListener('keydown', key); addEventListener('keyup', key);
+  window.__sgFish = () => ({ state, fishX, zone, zw: fish ? .42 - fish.fight*.16 : 0, meter }); // read-only, for testing
+  loop();
+  cardCleanup = () => { cancelAnimationFrame(raf); removeEventListener('keydown', key); removeEventListener('keyup', key); };
+  if (night && !secret) $('secret').onclick = () => starPuzzle({ title:'Find the secret spot', text:'The big fish rest under the one star that never moves. Find it.',
+    done:() => { const first = !S.used.includes('stars'); const go = () => fishing({ secret:true }); first ? showRecall('stars', go) : go(); } });
   $('later').onclick = hideCard;
 }
 

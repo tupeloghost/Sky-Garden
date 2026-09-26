@@ -19,6 +19,11 @@ const ITEMS = {
   puffer: { name:'Rainbow Puffer', sell:80, kind:'fish' },
   flour:  { name:'Bag of Flour',   sell:0,  kind:'quest' },
   moonray:{ name:'Moon Ray',       sell:150, kind:'fish' },
+  koi:       { name:'Cloud Koi',     sell:45,  kind:'fish' },
+  sunfish:   { name:'Ocean Sunfish', sell:60,  kind:'fish' },
+  frostchar: { name:'Frost Char',    sell:55,  kind:'fish' },
+  guppy:     { name:'Rain Guppy',    sell:25,  kind:'fish' },
+  lanterneel:{ name:'Lantern Eel',   sell:70,  kind:'fish' },
 };
 const FURN = {
   rug:       { name:'Round Rug',         price:20 },
