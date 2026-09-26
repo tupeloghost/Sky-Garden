@@ -38,16 +38,17 @@ const cleanKey = k => (k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 if (!S.syncKey) S.syncKey = newSyncKey();
 let cloudDirty = true, lastPush = 0, cloudState = { when:0, ok:null };
 let setupCam = false; // camera close-up while making your character
-const save = () => { S.savedAt = Date.now(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
+const save = () => { if (VISIT) return; S.savedAt = Date.now(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
 const devOn = () => { try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
 async function cloudPush(force) {
-  if (devOn()) return; // developer mode never touches the cloud
+  if (devOn() || VISIT) return; // developer mode and visits never touch the cloud
   if (!cloudDirty || (!force && Date.now() - lastPush < 60000)) return;
   lastPush = Date.now(); cloudDirty = false;
   try {
     const r = await fetch(`${CLOUD}/save`, { method:'POST', headers:{ 'Content-Type':'application/json' }, keepalive:true,
       body: JSON.stringify({ key:S.syncKey, updated:S.savedAt || Date.now(), save:S }) });
     cloudState = { when:Date.now(), ok: r.ok || r.status === 409 };
+    communitySend();
   } catch { cloudDirty = true; cloudState = { when:Date.now(), ok:false }; }
 }
 async function cloudLoad(key) {
@@ -57,6 +58,18 @@ async function cloudLoad(key) {
   return r.json();
 }
 addEventListener('visibilitychange', () => { if (document.hidden) cloudPush(true); });
+const VISIT_CODE = (new URLSearchParams(location.search).get('visit') || '').toUpperCase();
+let VISIT = null, mine = null;
+if (/^[A-F0-9]{6}$/.test(VISIT_CODE)) {
+  try { const r = await fetch(`${CLOUD}/visit?code=${VISIT_CODE}`); if (r.ok) VISIT = (await r.json()).island; } catch {}
+  if (VISIT) {
+    mine = S;
+    S = { ...fresh(), ...VISIT, letter:true, tut:9, created:true, where:'home', pos:[-1.2, 0, .8], t:mine.t, day:mine.day, south:mine.south,
+      syncKey:mine.syncKey, look:mine.look, coins:mine.coins, bag:mine.bag, aha:VISIT.aha || [], used:[], found:[], goals:null };
+  }
+}
+const saveMine = () => { mine.savedAt = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(mine)); } catch {} };
+const friendCodeOf = async key => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key)))].map(b => b.toString(16).padStart(2,'0')).join('').slice(0,6).toUpperCase();
 let muted = false; try { muted = localStorage.getItem(MUTE_KEY) === 'true'; } catch {}
 // The world follows the real calendar: real seasons, tonight's real moon, festivals on their real dates.
 let dateOverride = null; // for testing only
@@ -221,6 +234,12 @@ const stoneMat = mat(0xd8cfc0);
 [[-7.6,1.4,.3],[6.8,-3.6,.25],[-2.8,-6.9,.35],[3.2,6.9,.28],[-6.2,-4.8,.2]].forEach(([x,z,r],i) => { const rk = mesh(new THREE.DodecahedronGeometry(r), mat(0xb3aabb), x, r*.5, z); rk.rotation.set(i, i*2, 0); scene.add(rk); });
 
 // --- sell crate ---
+const mailbox = new THREE.Group(); mailbox.position.set(-1.7, 0, -1.6); mailbox.rotation.y = .5;
+mailbox.add(mesh(new THREE.CylinderGeometry(.05,.06,.9,8), mat(0x9b6b4a), 0, .45, 0));
+const mbox = mesh(new THREE.CapsuleGeometry(.18,.35,4,10), mat(0x7ec8e3), 0, 1, 0); mbox.rotation.z = Math.PI/2; mailbox.add(mbox);
+const mflag = new THREE.Group(); mflag.position.set(.2, 1, .1); mailbox.add(mflag);
+mflag.add(mesh(new THREE.BoxGeometry(.03,.3,.03), mat(0x3b2f4a), 0, .15, 0)); mflag.add(mesh(new THREE.BoxGeometry(.14,.1,.02), mat(0xff5a5a), .07, .26, 0));
+mailbox.userData.kind = 'mailbox';
 const crate = new THREE.Group(); crate.position.set(5,0,-2.6);
 crate.add(mesh(new THREE.BoxGeometry(1,.8,1), mat(0xd9a066), 0, .4, 0));
 crate.add(mesh(new THREE.BoxGeometry(1.05,.12,1.05), mat(0xb87d45), 0, .82, 0));
@@ -632,6 +651,12 @@ function dressPlayer() {
   const c = person(lk); player.add(c); player.userData.inner = c.userData.inner;
 }
 dressPlayer();
+let ownerNpc = null;
+if (VISIT) {
+  ownerNpc = person({ ...DEFAULT_LOOK, ...(VISIT.look && VISIT.look.human ? VISIT.look : {}) }); ownerNpc.position.set(-3.1, 0, -1.2); ownerNpc.rotation.y = .6;
+  ownerNpc.userData.kind = 'owner'; scene.add(ownerNpc);
+  const tag = labelSprite(VISIT.name); tag.position.y = 2.25; ownerNpc.add(tag);
+}
 player.position.set(...S.pos);
 const npcs = {
   nana: critter({ body:0xf6f1ea, belly:0xffffff, ear:0x3b2f4a, earType:'long', outfit:{ style:'cardigan', color:0xc9b6ff, trim:0xffffff, acc:'glasses' } }),
@@ -1187,10 +1212,76 @@ function goal(t, n=1) {
   if (!S.goals.bonus && S.goals.list.every(x => x.have >= x.need)) { S.goals.bonus = true; S.coins += 30; setTimeout(() => { toast('All 3 goals done today! +30 bonus coins'); sfx('heart'); }, 2400); }
   drawHud(); save();
 }
+function communityGoal() {
+  const d = today(), m = d.getMonth(), ym = `${d.getFullYear()}-${String(m+1).padStart(2,'0')}`;
+  const [type, title, verb, target] = [['harvest','The Great Harvest','Pick crops',500], ['fishing','The Big Catch','Catch fish',200], ['fruit','Orchard Days','Pick fruit',300]][m % 3];
+  return { id:`${ym}-${type}`, type, title, text:`${verb} together this month. Every one that anyone picks or catches counts.`, target, reward:150 };
+}
+function communityAdd(type) {
+  const cg = communityGoal(); if (cg.type !== type || VISIT) return;
+  S.contrib = S.contrib || {}; S.contrib[cg.id] = (S.contrib[cg.id] || 0) + 1;
+}
+async function communitySend() {
+  if (devOn() || VISIT) return;
+  const cg = communityGoal(); S.contribSent = S.contribSent || {};
+  const n = Math.min(50, (S.contrib?.[cg.id] || 0) - (S.contribSent[cg.id] || 0)); if (n <= 0) return;
+  try { const r = await fetch(`${CLOUD}/contribute`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ key:S.syncKey, goal:cg.id, n }) });
+    if (r.ok) { S.contribSent[cg.id] = (S.contribSent[cg.id] || 0) + n; save(); } } catch {}
+}
+async function communityHtml() {
+  const cg = communityGoal(); let count = null;
+  try { count = (await (await fetch(`${CLOUD}/community?goal=${cg.id}`)).json()).count; } catch {}
+  const mineN = S.contrib?.[cg.id] || 0, done = count !== null && count >= cg.target, claimed = S.claimed?.[cg.id];
+  return `<h4>Community goal: ${cg.title}</h4><p>${cg.text}</p>
+    ${count === null ? '<p>Could not reach the cloud right now.</p>' : `<div style="height:12px;border-radius:99px;background:#eadfd0;margin-top:8px;overflow:hidden"><div style="height:100%;width:${Math.min(100, Math.round(count/cg.target*100))}%;background:#8fdc8a"></div></div>
+    <p style="margin-top:4px"><b>${Math.min(count, cg.target)} of ${cg.target}</b> together. You helped with ${mineN}.</p>`}
+    ${done && mineN > 0 && !claimed ? `<button id="claimCg">Claim your reward: ${cg.reward} coins</button>` : done ? `<p style="font-weight:700">${claimed ? 'Reward claimed. Thank you for helping!' : 'Goal reached! Help next month to earn the reward.'}</p>` : ''}`;
+}
+function wireClaim() { const b = $('claimCg'); if (!b) return; b.onclick = () => { const cg = communityGoal(); S.claimed = S.claimed || {}; S.claimed[cg.id] = true; S.coins += cg.reward; save(); drawHud(); sfx('coin'); b.outerHTML = '<p style="font-weight:700">Reward claimed. Thank you for helping!</p>'; }; }
+async function openMailbox() {
+  S.mailNew = false; save(); sfx('click');
+  const code = await friendCodeOf(S.syncKey), friends = S.friends || [], log = S.mailLog || [];
+  showCard(`<div class="kicker">MAILBOX</div><h2>Friends</h2>
+    <h4>Your friend code</h4><p style="font:700 26px monospace;letter-spacing:.12em" id="myFc">${code}</p>
+    <button id="copyFc" class="ghost">Copy code</button>
+    <p style="margin-top:6px">Friends type this code in their mailbox to visit your island. They can water your garden and leave you a gift once a day.</p>
+    <h4>Visit a friend</h4>
+    <input id="fcIn" maxlength="6" placeholder="Their 6-character code" autocomplete="off" style="width:100%;margin-top:6px;font:18px monospace;text-transform:uppercase;border-radius:12px;border:2px solid #eadfd0;padding:8px">
+    <button id="fcGo">Visit</button>
+    ${friends.length ? `<div class="jlist">${friends.map(f => `<button data-fc="${f.code}">Visit ${f.name} <span class="sub">${f.code}</span></button>`).join('')}</div>` : ''}
+    <p id="fcMsg" style="margin-top:8px;font-weight:700;min-height:20px"></p>
+    ${log.length ? `<h4>Recent mail</h4><div class="jlist">${log.slice(-6).reverse().map(l => `<button>${l}</button>`).join('')}</div>` : ''}
+    <div id="cgBox"><p style="margin-top:12px">Loading the community goal...</p></div>`, 'Close');
+  $('copyFc').onclick = async () => { try { await navigator.clipboard.writeText(code); $('fcMsg').textContent = 'Copied! Send it to a friend.'; } catch { $('fcMsg').textContent = `Your code is ${code}.`; } };
+  const go = async c => { c = (c || '').toUpperCase().trim();
+    if (!/^[A-F0-9]{6}$/.test(c)) { $('fcMsg').textContent = 'A friend code has 6 characters, using the numbers 0 to 9 and the letters A to F.'; return; }
+    if (c === code) { $('fcMsg').textContent = 'That is your own code. Share it with a friend!'; return; }
+    $('fcMsg').textContent = 'Looking for their island...';
+    try { const r = await fetch(`${CLOUD}/visit?code=${c}`); if (!r.ok) throw 0; const isl = (await r.json()).island;
+      S.friends = [{ code:c, name:isl.name }, ...(S.friends || []).filter(f => f.code !== c)].slice(0, 8); save(); cloudPush(true);
+      $('fcMsg').textContent = `Flying to ${isl.name}'s island...`; setTimeout(() => location.href = `${location.pathname}?visit=${c}`, 600);
+    } catch { $('fcMsg').textContent = 'No island found with that code. Check it and try again. Your friend needs to have played online at least once.'; } };
+  $('fcGo').onclick = () => go($('fcIn').value);
+  document.querySelectorAll('[data-fc]').forEach(b => b.onclick = () => go(b.dataset.fc));
+  $('cgBox').innerHTML = await communityHtml(); wireClaim();
+}
+async function checkInbox() {
+  if (devOn() || VISIT) return;
+  let items = []; try { items = (await (await fetch(`${CLOUD}/inbox?key=${S.syncKey}`)).json()).items || []; } catch { return; }
+  if (!items.length) return;
+  const lines = [];
+  items.forEach(it => {
+    if (it.kind === 'water') { S.tiles.forEach((t, i) => { if (t.s >= 1) { t.w = true; drawTile(i); } }); lines.push(`${it.from} watered your garden.`); }
+    else if (ITEMS[it.item] && ITEMS[it.item].kind !== 'quest') { bagAdd(it.item); lines.push(`${it.from} left you a ${ITEMS[it.item].name}.`); }
+  });
+  S.mailLog = [...(S.mailLog || []), ...lines].slice(-20); S.mailNew = true; save(); drawHud();
+  showCard(`<div class="kicker">WHILE YOU WERE AWAY</div><h2>You had visitors!</h2><div class="jlist">${lines.map(l => `<button>${l}</button>`).join('')}</div><p style="margin-top:8px">Gifts are in your Bag. Visit them back from your mailbox!</p>`, 'Yay!');
+}
 function openGoals() {
   ensureGoals();
+  setTimeout(async () => { const box = $('goalCg'); if (box) { box.innerHTML = await communityHtml(); wireClaim(); } }, 0);
   showCard(`<div class="kicker">TODAY</div><h2>Little goals</h2><p>Each one pays 20 coins. Finish all 3 for 30 more. New goals every morning.</p>
-    <div class="jlist">${S.goals.list.map(g => `<button>${g.have >= g.need ? '✓ ' : ''}${GOAL_TYPES[g.t](g.need)} <span class="sub">${g.t === 'sell' ? `${g.have} of ${g.need} coins` : `${g.have} of ${g.need}`}</span></button>`).join('')}</div>`, 'Close');
+    <div class="jlist">${S.goals.list.map(g => `<button>${g.have >= g.need ? '✓ ' : ''}${GOAL_TYPES[g.t](g.need)} <span class="sub">${g.t === 'sell' ? `${g.have} of ${g.need} coins` : `${g.have} of ${g.need}`}</span></button>`).join('')}</div><div id="goalCg"><p style="margin-top:12px">Loading the community goal...</p></div>`, 'Close');
 }
 $('goalsBtn').onclick = openGoals;
 function applyPaint() { roof.material.color.set(+S.roof); house.userData.awning.material.color.set(+S.roof); house.children[0].material.color.set(+S.wall); }
@@ -1238,6 +1329,7 @@ function tutSold() {
   }, 900);
 }
 function questTarget() {
+  if (VISIT) return ownerNpc;
   if (S.tut === 1) return null;
   if (S.tut === 2) return digGroups[0] || null;
   if (S.tut >= 3 && S.tut <= 5) return tileGroups[0];
@@ -1258,8 +1350,9 @@ function currentHowto() {
   if (S.q4 < 5) return HOWTO.c4[S.q4];
   return HOWTO.c5[S.q5];
 }
-$('quest').onclick = () => { sfx('click'); showCard(`<div class="kicker">WHAT TO DO</div><h2>${$('quest').querySelector('.qt').textContent}</h2><p>${currentHowto()}</p><h4>Tip</h4><p>A gold arrow floats over the next thing to tap.</p>`, 'Got it'); };
+$('quest').onclick = () => { if (VISIT) return goHome(); sfx('click'); showCard(`<div class="kicker">WHAT TO DO</div><h2>${$('quest').querySelector('.qt').textContent}</h2><p>${currentHowto()}</p><h4>Tip</h4><p>A gold arrow floats over the next thing to tap.</p>`, 'Got it'); };
 function drawQuest() {
+  if (VISIT) { $('quest').innerHTML = `<i>Tap to go home</i><b>VISITING ${VISIT.name.toUpperCase()}'S ISLAND</b><span class="qt">Say hi, water their garden, or leave a gift.</span>`; return; }
   if (S.tut === 1 || tutActive()) { $('quest').innerHTML = `<i>Tap for help</i><b>GETTING STARTED</b><span class="qt">${S.tut === 1 ? 'Nana Gale is coming to say hello.' : TUT[S.tut].text}</span>`; return; }
   if (S.quest < 5) $('quest').innerHTML = `<i>Tap for help</i><b>CHAPTER 1: THE WIND BELL</b><span class="qt">${QUEST1[S.quest]}${S.quest === 1 ? ` (${S.relics} of 3 found)` : ''}</span>`;
   else if (S.q2 < 5) $('quest').innerHTML = `<i>Tap for help</i><b>CHAPTER 2: THE CLOUD SHIP</b><span class="qt">${QUEST2[S.q2]}</span>`;
@@ -1279,7 +1372,7 @@ function useTile(i) {
     S.seeds[S.sel]--; Object.assign(t, { s:2, c:S.sel, d:0 }); sfx('plant'); toast(`Planted ${c.name}. Tap to water.`);
   } else {
     const c = CROPS[t.c];
-    if (t.d >= c.days) { bagAdd(t.c); goal('pick'); if (S.mode === 'garden' && Math.random() < .2) { bagAdd(t.c); setTimeout(() => toast(`Bonus crop! You got an extra ${c.name}.`), 900); } S.tiles[i] = { s:1, w:t.w }; sfx('pick'); burst(pos, c.color); toast(`Picked a ${c.name}! Sell it in the crate or give it as a gift.`); }
+    if (t.d >= c.days) { bagAdd(t.c); goal('pick'); communityAdd('harvest'); if (S.mode === 'garden' && Math.random() < .2) { bagAdd(t.c); setTimeout(() => toast(`Bonus crop! You got an extra ${c.name}.`), 900); } S.tiles[i] = { s:1, w:t.w }; sfx('pick'); burst(pos, c.color); toast(`Picked a ${c.name}! Sell it in the crate or give it as a gift.`); }
     else if (!t.w) { t.w = true; goal('water'); sfx('water'); burst(pos, 0x9fd3ff, 8); toast(`Watered. ${c.days - t.d} more day${c.days - t.d>1?'s':''}.`); }
     else toast('Already watered today. Sleep to let it grow.');
   }
@@ -2041,7 +2134,7 @@ function useFruitTree(t) {
   const i = t.userData.i;
   if (season() === 3) { toast('The fruit trees are resting for winter.'); return; }
   if (S.fruit[i] === S.day) { toast('Already picked today. Come back tomorrow.'); return; }
-  S.fruit[i] = S.day; bagAdd(t.userData.fruitKind); goal('fruit'); t.userData.fruits.visible = false; sfx('pick');
+  S.fruit[i] = S.day; bagAdd(t.userData.fruitKind); goal('fruit'); communityAdd('fruit'); t.userData.fruits.visible = false; sfx('pick');
   const wp = new THREE.Vector3(); t.getWorldPosition(wp); burst(wp.setY(wp.y + 1), t.userData.fruitKind === 'apple' ? 0xff6b6b : 0xffb36b);
   toast(`Picked a ${ITEMS[t.userData.fruitKind].name}!`); save();
 }
@@ -2068,7 +2161,7 @@ function fishing(o = {}) {
     if (state === 'wait') { clearTimeout(timer); state = 'idle'; $('bob').className = 'bob'; $('fmsg').textContent = 'Too soon! The fish swam off.'; $('pull').textContent = 'Cast again'; return; }
     if (state === 'dip') {
       clearTimeout(dipTimer); state = 'idle'; const r = Math.random(), k = secret ? (r < (moon().idx === 4 ? .8 : .5) ? 'moonray' : 'puffer') : r < .6 ? 'minnow' : r < .92 ? 'trout' : 'puffer';
-      bagAdd(k); goal('fish'); save(); sfx('pick'); $('bob').className = 'bob gone';
+      bagAdd(k); goal('fish'); communityAdd('fishing'); save(); sfx('pick'); $('bob').className = 'bob gone';
       $('fmsg').textContent = `You caught a ${ITEMS[k].name}! It sells for ${ITEMS[k].sell}.`; $('pull').textContent = 'Cast again';
     }
   };
@@ -2117,7 +2210,7 @@ function sleep(passedOut) {
 // ============ INPUT ============
 const ray = new THREE.Raycaster(), down = new THREE.Raycaster(), ptr = new THREE.Vector2(), DOWN = new THREE.Vector3(0,-1,0);
 let target = null, pending = null;
-const clickables = [homeDock, greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
+const clickables = [...(ownerNpc ? [ownerNpc] : []), mailbox, homeDock, greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
 renderer.domElement.addEventListener('pointerdown', e => {
   if ($('title').style.display !== 'none' || $('veil').classList.contains('show')) return;
   closeDialog();
@@ -2131,8 +2224,39 @@ renderer.domElement.addEventListener('pointerdown', e => {
   const g = ray.intersectObjects(walkables, false)[0];
   if (g) { target = g.point.clone(); pending = null; }
 });
+function goHome() { location.href = location.pathname; }
+async function visitAction(kind, item) {
+  try { const r = await fetch(`${CLOUD}/gift`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ key:mine.syncKey, code:VISIT_CODE, kind, item }) });
+    if (r.status === 409) return 'already';
+    return r.ok ? 'ok' : 'error';
+  } catch { return 'error'; }
+}
+async function visitWater() {
+  const res = await visitAction('water');
+  if (res === 'ok') { S.tiles.forEach((t, i) => { if (t.s >= 1) { t.w = true; drawTile(i); } }); sfx('water'); burst(tileGroups[0].position, 0x9fd3ff, 20); toast(`You watered ${VISIT.name}'s garden! They will see it next time they play.`); }
+  else toast(res === 'already' ? `You already watered ${VISIT.name}'s garden today.` : 'Could not reach the cloud. Try again.');
+}
+function visitGift() {
+  const opts = Object.entries(mine.bag || {}).filter(([k,n]) => n > 0 && ITEMS[k] && ['crop','fruit','fish','dish'].includes(ITEMS[k].kind));
+  if (!opts.length) { toast('Your bag is empty. Bring crops, fruit, fish, or dishes next time.'); return; }
+  showCard(`<div class="kicker">LEAVE A GIFT</div><h2>A gift for ${VISIT.name}</h2><p>Pick one thing from your bag. They get it next time they play.</p><div class="jlist">${opts.map(([k,n]) => `<button data-vg="${k}">${ITEMS[k].name} x${n}</button>`).join('')}</div>`, 'Never mind');
+  document.querySelectorAll('[data-vg]').forEach(b => b.onclick = async () => { const k = b.dataset.vg; hideCard();
+    const res = await visitAction('gift', k);
+    if (res === 'ok') { mine.bag[k]--; if (mine.bag[k] <= 0) delete mine.bag[k]; saveMine(); sfx('heart'); burst(ownerNpc.position, 0xff8fa3, 20); toast(`You left ${VISIT.name} a ${ITEMS[k].name}!`); }
+    else toast(res === 'already' ? `You already left ${VISIT.name} a gift today.` : 'Could not reach the cloud. Try again.'); });
+}
 function arrive(o) {
   const k = o.userData.kind;
+  if (VISIT) {
+    if (k === 'owner') return openDialog(VISIT.name, `Welcome to my island! Thanks for visiting.`, [{ label:'Leave a gift', fn:() => { closeDialog(); visitGift(); } }, { label:'Water my garden', fn:() => { closeDialog(); visitWater(); } }, { label:'Go home', fn:goHome }], null, 'none');
+    if (k === 'tile') return S.tiles[o.userData.i].s === 2 ? visitWater() : toast(`This is ${VISIT.name}'s garden.`);
+    if (k === 'house') return enterHut();
+    if (k === 'door') return exitHut();
+    if (k === 'spot' || k === 'shelf') return toast(`${VISIT.name} decorated this.`);
+    if (k === 'mailbox') return goHome();
+    return toast(`This is ${VISIT.name}'s island. Look around!`);
+  }
+  if (k === 'mailbox') return openMailbox();
   if (k === 'tile') useTile(o.userData.i);
   else if (k === 'crate') useCrate();
   else if (k === 'npc') { talk(o.userData.id); o.lookAt(player.position.x, o.position.y, player.position.z); }
@@ -2301,6 +2425,7 @@ function tick() {
   crystals.children.forEach((c, i) => c.material.emissiveIntensity = .5 + Math.sin(now*1.5 + i)*.3);
   siteGroups.forEach(sg => sg.traverse(o => { if (o.userData.spin) { o.rotation.y = now; o.position.y = 3.9 + Math.sin(now*2)*.15; } }));
   flag.rotation.y = Math.sin(now*3) * .3;
+  mflag.rotation.z = S.mailNew ? 0 : -Math.PI/2;
   if (S.q3 >= 4) blades.rotation.z -= dt * 1.2; else blades.rotation.z = Math.sin(now*.7)*.03;
   millstone.visible = S.q3 < 4;
   sprinkler.visible = S.sprinklers; if (S.sprinklers) sprHead.rotation.y += dt * (h < 8 ? 6 : .6);
@@ -2321,13 +2446,14 @@ bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = 
 drawHud(); tick();
 $('moveTitle').onclick = () => openMoveGame();
 const localAt = S.savedAt || 0; save();
-cloudLoad(S.syncKey).then(found => {
+if (!VISIT) cloudLoad(S.syncKey).then(found => {
   if (found && found.updated > localAt + 5000 && !playing) {
     found.save.syncKey = S.syncKey; found.save.savedAt = found.updated;
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(found.save)); } catch {}
     location.reload();
-  } else cloudPush(true);
+  } else { cloudPush(true); checkInbox(); }
 }).catch(() => {});
+if (VISIT) setTimeout(() => $('start').onclick(), 50);
 const hemiBtn = $('hemi');
 const drawHemi = () => hemiBtn.textContent = S.south ? 'Seasons: Southern Hemisphere' : 'Seasons: Northern Hemisphere';
 drawHemi(); hemiBtn.onclick = () => { S.south = !S.south; S.lastSeason = null; save(); drawHemi(); applySeason(); drawHud(); };
@@ -2425,7 +2551,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
