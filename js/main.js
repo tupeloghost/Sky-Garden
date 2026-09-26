@@ -33,7 +33,9 @@ const cleanKey = k => (k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 if (!S.syncKey) S.syncKey = newSyncKey();
 let cloudDirty = true, lastPush = 0, cloudState = { when:0, ok:null };
 const save = () => { S.savedAt = Date.now(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
+const devOn = () => { try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
 async function cloudPush(force) {
+  if (devOn()) return; // developer mode never touches the cloud
   if (!cloudDirty || (!force && Date.now() - lastPush < 60000)) return;
   lastPush = Date.now(); cloudDirty = false;
   try {
@@ -1955,7 +1957,7 @@ function tick() {
   const dt = Math.min(.05, clock.getDelta()), now = clock.elapsedTime;
   const menuOpen = $('veil').classList.contains('show') || $('dialog').classList.contains('show');
   if (playing) {
-    if (!menuOpen) S.t += dt / DAY_LEN; // the clock stops while any menu or conversation is open
+    if (!menuOpen) S.t += dt * (window.__sgSpeed || 1) / DAY_LEN; // the clock stops while any menu or conversation is open
     if (S.t >= 1) sleep(true);
     if ((hudTick += dt) > .5) { hudTick = 0; drawHud(); ambience(); cloudPush(); }
     playMusic(dt);
@@ -2101,7 +2103,7 @@ function openFeedback() {
     if (!mood && !text) { $('fbMsg').textContent = 'Pick how it is going, or write a note first.'; return; }
     $('fbMsg').textContent = 'Sending...';
     try {
-      const r = await fetch(`${CLOUD}/feedback`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ mood, text, where, day:S.day, player:S.syncKey }) });
+      const r = await fetch(`${CLOUD}/feedback`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ mood, text, where: (devOn() ? '[dev] ' : '') + where, day:S.day, player:S.syncKey }) });
       if (!r.ok) throw new Error();
       hideCard(); toast('Thank you! Your feedback was sent.'); sfx('heart');
     } catch { $('fbMsg').textContent = 'Could not send. Check your internet and try again. Your note is still here.'; }
@@ -2120,4 +2122,9 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+
+// developer mode: add #dev to the address, or tap the title 5 times
+{ let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
+if (location.hash === '#dev') { try { localStorage.setItem('sg.dev', 'true'); } catch {} }
+if (devOn()) import('./dev.js');
