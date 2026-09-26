@@ -1,6 +1,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import { HOWTO, QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES } from '../data/content.js';
 import { CONSTELLATIONS } from '../data/stars.js';
+import { FINDS } from '../data/finds.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
 Object.assign(NEIGHBORS, VILLAGERS); Object.assign(LOVES, VILLAGER_LOVES);
@@ -57,7 +58,8 @@ const festival = () => activeFestival(today());
 const isFestival = () => !!festival();
 const moon = () => moonPhase(today());
 const hour = () => 6 + S.t*18;
-const bagAdd = (k, n=1) => { S.bag[k] = (S.bag[k]||0) + n; if (S.bag[k] <= 0) delete S.bag[k]; };
+const bagAdd = (k, n=1) => { S.bag[k] = (S.bag[k]||0) + n; if (S.bag[k] <= 0) delete S.bag[k]; if (n > 0) noteFind(k); };
+if (!S.found) S.found = [...new Set([...Object.keys(S.bag), ...Object.keys(S.furn || {}), ...(S.cooked || [])])];
 
 // ============ SCENE ============
 const renderer = new THREE.WebGLRenderer({ antialias:true });
@@ -154,7 +156,7 @@ function tree(parent, x, z, fruitKind) {
 }
 [[-7,-1],[-6,4],[5,-6],[-2,7],[6.5,5]].forEach(([x,z]) => tree(scene, x, z));
 [[-5.5,-2],[-6,3.5],[5.5,3]].forEach(([x,z]) => tree(WIND.g, x, z));
-const fruitTrees = [[-3,-3,'apple'],[2,-4,'peach'],[-4,3,'peach'],[3.5,3.5,'apple']].map(([x,z,k], i) => {
+const fruitTrees = [[-3,-3,'apple'],[2,-4,'peach'],[-4,3,'peach'],[5,.3,'apple']].map(([x,z,k], i) => {
   const t = tree(ORCH.g, x, z, k); t.userData.kind = 'fruitTree'; t.userData.i = i; t.userData.fruitKind = k; return t;
 });
 
@@ -305,7 +307,7 @@ const frameGear = new THREE.Group(); frameGear.position.set(2.05, 4.2, 0); bellF
 frameGear.add(mesh(new THREE.CylinderGeometry(.55,.55,.12,24), mat(0xc98f58), 0, 0, 0).rotateZ(Math.PI/2));
 for (let i=0;i<12;i++){ const a = i/12*Math.PI*2; frameGear.add(mesh(new THREE.BoxGeometry(.12,.14,.14), mat(0xc98f58), 0, Math.cos(a)*.62, Math.sin(a)*.62)); }
 const ship2 = new THREE.Group(); ship2.position.set(OH.x + 8.5, OH.y, OH.z + 3); ship2.rotation.y = -1.2;
-const hull2 = mesh(new THREE.SphereGeometry(1.2, 20, 10, 0, Math.PI*2, Math.PI/2, Math.PI/2), mat(0xb87d45), 0, .85, 0); hull2.scale.set(1.5,.75,.75); ship2.add(hull2);
+const hull2 = mesh(new THREE.SphereGeometry(1.2, 20, 10, 0, Math.PI*2, Math.PI/2, Math.PI/2), mat(0x3f86c9), 0, .85, 0); hull2.scale.set(1.5,.75,.75); ship2.add(hull2);
 ship2.add(mesh(new THREE.CylinderGeometry(.07,.08,2.6,8), mat(0x9b6b4a), 0, 2.2, 0));
 ship2.add(mesh(new THREE.PlaneGeometry(1.3,1.5), new THREE.MeshStandardMaterial({ color:0xfff6e6, side:THREE.DoubleSide }), .7, 2.4, 0));
 ship2.userData.kind = 'ship2'; scene.add(ship2);
@@ -512,9 +514,11 @@ Object.entries(npcs).forEach(([k,g]) => { g.userData.kind = 'npc'; g.userData.id
 
 // --- orchard: ship, pot, dock ---
 const ship = new THREE.Group(); ship.position.set(ORCH_POS.x + 2, ORCH_POS.y, ORCH_POS.z + 4.2); ship.rotation.y = -.4;
-const hull = mesh(new THREE.SphereGeometry(1.3, 24, 12, 0, Math.PI*2, Math.PI/2, Math.PI/2), mat(0xb87d45), 0, .9, 0); hull.scale.set(1.6,.8,.8); ship.add(hull);
+const hull = mesh(new THREE.SphereGeometry(1.3, 24, 12, 0, Math.PI*2, Math.PI/2, Math.PI/2), mat(0x3f86c9), 0, .9, 0); hull.scale.set(1.6,.8,.8); ship.add(hull);
 const deck = mesh(new THREE.CylinderGeometry(2.05,2.05,.12,24), mat(0xd9a066), 0, .9, 0); deck.scale.set(1, 1, .5); ship.add(deck);
 ship.add(mesh(new THREE.CylinderGeometry(.07,.08,3,8), mat(0x9b6b4a), 0, 2.4, 0));
+const stripe = mesh(new THREE.TorusGeometry(1.3, .07, 6, 40), mat(0xffffff), 0, .88, 0); stripe.rotation.x = Math.PI/2; stripe.scale.set(1.6, .8, 1); ship.add(stripe);
+const flag = mesh(new THREE.PlaneGeometry(.55,.32), new THREE.MeshStandardMaterial({ color:0xff5a5a, side:THREE.DoubleSide }), .3, 3.75, 0); ship.add(flag);
 const sail = mesh(new THREE.PlaneGeometry(1.5,1.7), new THREE.MeshStandardMaterial({ color:0xfff6e6, side:THREE.DoubleSide }), .8, 2.6, 0); sail.visible = false; ship.add(sail);
 const saggy = mesh(new THREE.PlaneGeometry(1.2,.8), new THREE.MeshStandardMaterial({ color:0xe8dcc8, side:THREE.DoubleSide }), .6, 1.6, 0); saggy.rotation.z = .5; ship.add(saggy);
 ship.userData = { kind:'ship', lift:0 }; scene.add(ship);
@@ -768,7 +772,8 @@ function drawHud() {
   $('clock').textContent = `${h12}:${String(mn).padStart(2,'0')} ${hr<12||hr>=24?'AM':'PM'}`;
   $('coins').innerHTML = `${ICON.coin}${S.coins}`; $('coins').setAttribute('aria-label', `${S.coins} coins`);
   $('bagBtn').innerHTML = `${ICON.bag}<span class="lbl">Bag</span>`;
-  $('journalBtn').innerHTML = `${ICON.book}<span class="lbl">Journal</span> ${S.aha.length}`;
+  Object.keys(S.furn).forEach(k => S.furn[k] > 0 && noteFind(k));
+  { const cats = collectionCats(); $('journalBtn').innerHTML = `${ICON.book}<span class="lbl">Collections</span> ${cats.reduce((a, c) => a + c.ids.filter(c.has).length, 0)}`; }
   { const tg = typeof questTarget === 'function' ? questTarget() : null, fz = festival();
     bubbles.forEach(b => { const id = b.userData.id, fest = fz && fz.host === id && !S.fests[fz.id + fz.year];
       const kind = tg === npcs[id] ? null : fest ? '!' : S.talked[id] !== S.day ? '...' : null;
@@ -825,7 +830,45 @@ function collectionList(title, kicker, items, have, show) {
   showCard(`<div class="kicker">${kicker}</div><h2>${title}</h2><div class="jlist">${items.map(x => have.includes(x.id) ? `<button data-cl="${x.id}">${x.name || x.title}</button>` : `<button class="locked">??? Not found yet</button>`).join('')}</div>`, 'Back', openJournal);
   document.querySelectorAll('[data-cl]').forEach(b => b.onclick = () => show(items.find(x => x.id === b.dataset.cl)));
 }
+function noteFind(k) {
+  if (S.found.includes(k)) return;
+  S.found.push(k);
+  const f = FINDS[k]; if (!f) return; // dishes and quest items have their own cards
+  const name = ITEMS[k]?.name || FURN[k]?.name || k;
+  const el = $('discover'); el.onclick = () => el.classList.remove('show');
+  el.innerHTML = `<b>FIRST FIND! ${S.found.filter(x => FINDS[x]).length} of ${Object.keys(FINDS).length} found</b><strong>${name}</strong><span>${f.fact}</span>`;
+  el.classList.add('show'); chime(1047); setTimeout(() => chime(1319), 120);
+  clearTimeout(noteFind.t); noteFind.t = setTimeout(() => el.classList.remove('show'), 7000);
+}
+function collectionCats() {
+  const month = m => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+  const itemCard = (k, kick) => () => showCard(`<div class="kicker">${kick}</div><h2>${ITEMS[k]?.name || FURN[k]?.name}</h2><p>${FINDS[k].fact}</p><h4>Where to find it</h4><p>${FINDS[k].hint}</p>`, 'Back', () => openCategory(kick));
+  return [
+    { name:'Crops', ids:Object.keys(CROPS), has:k => S.found.includes(k), label:k => CROPS[k].name, open:k => itemCard(k, 'Crops'), hint:k => FINDS[k].hint },
+    { name:'Fruit', ids:['apple','peach'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fruit'), hint:k => FINDS[k].hint },
+    { name:'Fish', ids:['minnow','trout','puffer','moonray'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fish'), hint:k => FINDS[k].hint },
+    { name:'Furniture', ids:Object.keys(FURN), has:k => S.found.includes(k), label:k => FURN[k].name, open:k => itemCard(k, 'Furniture'), hint:k => FINDS[k].hint },
+    { name:'Memories', ids:AHA_ORDER, has:k => S.aha.includes(k), label:k => AHA[k].title + (S.used.includes(k) ? ' ★' : ''), open:k => () => showCard(ahaHtml(k), 'Back', () => openCategory('Memories')), hint:() => 'Keep playing the story, digging, and celebrating festivals.' },
+    { name:'Dishes', ids:RECIPES.map(r => r.id), has:k => S.cooked.includes(k), label:k => RECIPES.find(r => r.id === k).name, open:k => () => showCard(lessonHtml(RECIPES.find(r => r.id === k).aha), 'Back', () => openCategory('Dishes')), hint:k => `Cook it at the Bakery. Needs ${Object.entries(RECIPES.find(r => r.id === k).needs).map(([i,n]) => `${n} ${ITEMS[i].name}`).join(' and ')}.` },
+    { name:'Star Chart', ids:CONSTELLATIONS.map(c => c.id), has:k => S.charted.includes(k), label:k => CONSTELLATIONS.find(c => c.id === k).name, open:k => () => showCard(starHtml(CONSTELLATIONS.find(c => c.id === k)), 'Back', () => openCategory('Star Chart')), hint:k => `Chart it at the Observatory after 8 PM. Out in ${CONSTELLATIONS.find(c => c.id === k).months.map(month).join(', ')}.` },
+    { name:'Library Books', ids:BOOKS.map(b => b.id), has:k => S.read.includes(k), label:k => BOOKS.find(b => b.id === k).title, open:k => () => showCard(lessonHtml({ kicker:'THE LIBRARY', ...BOOKS.find(b => b.id === k) }), 'Back', () => openCategory('Library Books')), hint:() => 'Build the Library. A new book arrives every week.' },
+    { name:'Songs', ids:[...SONGS.map(x => x.id), 'penta'], has:k => k === 'penta' ? S.penta : S.songs.includes(k), label:k => k === 'penta' ? 'The Five-Note Scale' : SONGS.find(x => x.id === k).name, open:k => () => showCard(lessonHtml(k === 'penta' ? PENTA_AHA : SONGS.find(x => x.id === k).aha), 'Back', () => openCategory('Songs')), hint:() => 'Build the Music Hall and play the xylophone.' },
+    { name:'Sayings', ids:SAYINGS.map(x => x.id), has:k => S.sayings.includes(k), label:k => SAYINGS.find(x => x.id === k).text.slice(0, 44) + '...', open:k => () => showCard(sayingHtml(SAYINGS.find(x => x.id === k)), 'Back', () => openCategory('Sayings')), hint:() => 'Build the Temple Garden. Sage shares a new saying each day.' },
+  ];
+}
+function openCategory(name) {
+  const c = collectionCats().find(x => x.name === name), got = c.ids.filter(c.has).length;
+  showCard(`<div class="kicker">COLLECTIONS</div><h2>${name}: ${got} of ${c.ids.length}</h2><div class="jlist">${c.ids.map(k => c.has(k) ? `<button data-ck="${k}">${c.label(k)}</button>` : `<button class="locked">??? <span class="sub">${c.hint(k)}</span></button>`).join('')}</div>`, 'Back', openJournal);
+  document.querySelectorAll('[data-ck]').forEach(b => b.onclick = c.open(b.dataset.ck));
+}
 function openJournal() {
+  const cats = collectionCats(), tot = cats.reduce((a, c) => a + c.ids.length, 0), got = cats.reduce((a, c) => a + c.ids.filter(c.has).length, 0);
+  showCard(`<div class="kicker">COLLECTIONS</div><h2>${got} of ${tot} found</h2><p>Everything you have discovered in the sky. Tap a group to see what you have and what is still out there.</p>
+    <div style="height:10px;border-radius:99px;background:#eadfd0;margin-top:10px;overflow:hidden"><div style="height:100%;width:${Math.round(got/tot*100)}%;background:#ffc857"></div></div>
+    <div class="jlist">${cats.map(c => { const n = c.ids.filter(c.has).length; return `<button data-cat="${c.name}">${n === c.ids.length ? '✓ ' : ''}${c.name} <span class="sub">${n} of ${c.ids.length}</span></button>`; }).join('')}</div>`, 'Close');
+  document.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => openCategory(b.dataset.cat));
+}
+function openJournalOld() {
   const items = AHA_ORDER.map(id => S.aha.includes(id) ? `<button data-id="${id}">${AHA[id].title}${S.used.includes(id) ? ' <span class="sub">★ used again</span>' : ''}</button>` : `<button class="locked">??? Not found yet</button>`).join('');
   showCard(`<div class="kicker">MEMORY JOURNAL</div><h2>${S.aha.length} of ${AHA_ORDER.length} memories</h2><p>Everything you have brought back to the sky.</p><div class="jlist">${S.built.includes('observatory') ? `<button id="starList">Star Chart <span class="sub">${S.charted.length} of ${CONSTELLATIONS.length} charted</span></button>` : ''}${items}</div>`, 'Close');
   if ($('starList')) $('starList').onclick = openStarList;
@@ -1996,6 +2039,7 @@ function tick() {
   if (lightLit) lightMat.opacity = .65 + Math.sin(now*2)*.2;
   crystals.children.forEach((c, i) => c.material.emissiveIntensity = .5 + Math.sin(now*1.5 + i)*.3);
   siteGroups.forEach(sg => sg.traverse(o => { if (o.userData.spin) { o.rotation.y = now; o.position.y = 3.9 + Math.sin(now*2)*.15; } }));
+  flag.rotation.y = Math.sin(now*3) * .3;
   if (S.q3 >= 4) blades.rotation.z -= dt * 1.2; else blades.rotation.z = Math.sin(now*.7)*.03;
   millstone.visible = S.q3 < 4;
   sprinkler.visible = S.sprinklers; if (S.sprinklers) sprHead.rotation.y += dt * (h < 8 ? 6 : .6);

@@ -82,3 +82,9 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .title p { background:#fff8eecc; border-radius:16px; padding:8px 14px; }
 .on-title .top, .on-title .bar, .on-title .toast { visibility:hidden; }
 .veil { z-index:8; }
+
+.discover { position:fixed; top:calc(120px + env(safe-area-inset-top, 0px)); left:50%; transform:translate(-50%, -12px); width:min(420px, calc(100% - 24px)); background:#fff8ee; border-radius:18px; border-top:8px solid #6fd3b8; padding:10px 14px; box-shadow:0 6px 18px #3b2f4a33; opacity:0; pointer-events:none; transition:opacity .3s, transform .3s; z-index:4; }
+.discover.show { opacity:1; transform:translate(-50%, 0); pointer-events:auto; }
+.discover b { display:block; color:#2c9c7d; font-size:12px; letter-spacing:.06em; }
+.discover strong { display:block; font-size:18px; }
+.discover span { display:block; font-size:14px; line-height:1.35; margin-top:2px; }
