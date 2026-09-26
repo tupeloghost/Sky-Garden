@@ -14,12 +14,13 @@ for (const id of Object.keys(FESTIVAL_AHA)) if (!AHA_ORDER.includes(id)) AHA_ORD
 const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, skywheat:0, moonpumpkin:0, frostmint:0 }, bag:{},
   tiles:Array.from({length:9},()=>({s:0})), sel:'cloudberry', hearts:{ nana:0, pip:0, drizzle:0, twins:0, lumen:0, mabel:0, hoot:0, allegra:0, sage:0 }, talked:{}, gifted:{}, scenes:[],
   bridge:false, pos:[0,0,2], where:'home', quest:0, aha:[], relics:0, digs:[], asked:-1, qi:0, letter:false,
-  order:null, furn:{}, placed:[null,null,null,null,null,null], q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
+  order:null, furn:{}, placed:[null,null,null,null,null,null], q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
 let S;
 try {
   const saved = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
   const f = fresh();
   S = { ...f, ...saved, seeds:{ ...f.seeds, ...(saved.seeds||{}) }, hearts:{ ...f.hearts, ...(saved.hearts||{}) } };
+  if (saved.letter && saved.tut === undefined) S.tut = 9;
   if (saved.crops) { for (const k in saved.crops) if (saved.crops[k]) S.bag[k] = (S.bag[k]||0) + saved.crops[k]; delete S.crops; }
   if (S.quest >= 5 && !saved.q2) S.q2 = S.q2 || 0;
   if (S.pos.length === 2) S.pos = [S.pos[0], 0, S.pos[1]];
@@ -425,6 +426,7 @@ function drawDigs() {
   });
 }
 function spawnDigs() {
+  if (S.tut >= 1 && S.tut < 9) { drawDigs(); return; }
   if (S.quest < 1 || S.relics >= RELICS.length) { S.digs = []; drawDigs(); return; }
   const want = Math.min(2, RELICS.length - S.relics);
   const free = DIG_SPOTS.filter(p => !S.digs.some(d => d.p[0] === p[0] && d.p[1] === p[1]));
@@ -1008,7 +1010,53 @@ function openGoals() {
 $('goalsBtn').onclick = openGoals;
 function applyPaint() { roof.material.color.set(+S.roof); house.children[0].material.color.set(+S.wall); }
 document.addEventListener('click', e => { if (e.target.closest('button,.slot') && e.target.id !== 'mute') sfx('click'); });
+// S.tut: 1 Nana walks over, 2 dig the first spot, 3 plant, 4 water, 5 pick, 6 sell, 9 done
+const TUT = {
+  2: { text:'Tap the sparkly spot 3 times to dig it up.', help:'Nana showed you a gold sparkle right next to your garden. Walk to it and tap it 3 times. Each tap digs a little deeper.' },
+  3: { text:'Tap the garden square to dig the soil, then tap it again to plant.', help:'Your garden is the patch of squares near your hut. The gold arrow points at one. Tap it once to dig the soil, then tap it again to plant one of the seeds Nana gave you.' },
+  4: { text:'Tap the planted square to water it.', help:'Seeds need water. Tap the square with your new sprout to water it.' },
+  5: { text:'Your first crop is ripe! Tap it to pick it.', help:'Grandma\'s soil grew your first plant right away. Tap it to pick it. Usually crops take a few days.' },
+  6: { text:'Sell your crop. Tap the wooden crate.', help:'The wooden crate next to your garden buys anything you grow, catch, or pick. Tap it to sell your crop for coins.' },
+};
+function tutActive() { return S.tut >= 2 && S.tut <= 6; }
+function startTutorial() { S.tut = 1; save(); nanaWalk = { to: player.position.clone().add(new THREE.Vector3(-1.3, 0, -1.1)), back:false }; }
+let nanaWalk = null;
+const NANA_HOME = new THREE.Vector3(-1, 0, -5.2), FIRST_DIG = [.3, -2.9];
+function tutAfterGreeting() {
+  S.tut = 2; S.digs = [{ p:[...FIRST_DIG], n:0 }]; drawDigs(); save(); drawHud();
+}
+function tutAfterFirstMemory() {
+  const c = Object.keys(CROPS).find(k => CROPS[k].seasons.includes(season()) && !CROPS[k].locked);
+  S.tut = 3; S.tiles[0] = { s:0 }; S.seeds[c] = (S.seeds[c] || 0) + 2; S.sel = c; drawTile(0); save(); drawHud();
+  openDialog('Nana Gale', "You found your first memory! Your grandmother would be proud. Now, you'll need coins to rebuild the sky. Let me show you her garden. Here are 2 seeds that grow this season. Tap the square the arrow points at.", [], S.hearts.nana);
+}
+function tutTile(i) {
+  if (!tutActive() || i !== 0) return;
+  const t = S.tiles[0];
+  if (S.tut === 3 && t.s === 2) { S.tut = 4; }
+  else if (S.tut === 4 && t.w) {
+    S.tut = 5; toast('Watch closely...');
+    setTimeout(() => { const tt = S.tiles[0]; if (tt.s === 2) { tt.d = CROPS[tt.c].days; drawTile(0); burst(tileGroups[0].position, 0xffc4d6, 24); chime(784); chime(1047);
+      openDialog('Nana Gale', "Oh my! Your grandmother's soil grows fast the very first time. Go on, pick it! After this, crops take a few days, so water them every day.", [], S.hearts.nana); } }, 1600);
+  }
+  else if (S.tut === 5 && t.s === 1) { S.tut = 6; }
+  save(); drawHud();
+}
+function tutSold() {
+  if (S.tut !== 6) return;
+  S.tut = 9; save(); drawHud();
+  setTimeout(() => {
+    openDialog('Nana Gale', "Your first coins! That is how it works up here: grow things, sell them, and use the coins to rebuild. Now, there are more memories buried out there. New sparkles appear every morning. Off you go, dear!", [], S.hearts.nana);
+    spawnDigs(); nanaWalk = { to: NANA_HOME.clone(), back:true };
+    const fb = $('fbBtn'); fb.classList.add('pulse'); setTimeout(() => fb.classList.remove('pulse'), 4000);
+    setTimeout(() => toast('Tell us what you think anytime with the pink Feedback button.'), 5500);
+  }, 900);
+}
 function questTarget() {
+  if (S.tut === 1) return null;
+  if (S.tut === 2) return digGroups[0] || null;
+  if (S.tut >= 3 && S.tut <= 5) return tileGroups[0];
+  if (S.tut === 6) return crate;
   if (S.quest < 5) return [npcs.nana, digGroups[0] || null, sundial, npcs.nana, sign][S.quest];
   if (S.q2 < 5) return [npcs.drizzle, pot, ship, npcs.drizzle, npcs.drizzle][S.q2];
   if (S.q3 < 7) return [sign2, npcs.twins, windmill, windmill, windmill, npcs.nana, npcs.twins][S.bridge2 && S.q3 === 0 ? 1 : S.q3];
@@ -1018,6 +1066,7 @@ function questTarget() {
 }
 const MARK_H = { npc:2.4, ship:4.2, windmill:5.6, greatbell:2.2, bellframe:1.4, house:3.8 };
 function currentHowto() {
+  if (TUT[S.tut]) return TUT[S.tut].help;
   if (S.quest < 5) return HOWTO.c1[S.quest];
   if (S.q2 < 5) return HOWTO.c2[S.q2];
   if (S.q3 < 7) return HOWTO.c3[S.bridge2 && S.q3 === 0 ? 1 : S.q3];
@@ -1026,6 +1075,7 @@ function currentHowto() {
 }
 $('quest').onclick = () => { sfx('click'); showCard(`<div class="kicker">WHAT TO DO</div><h2>${$('quest').querySelector('.qt').textContent}</h2><p>${currentHowto()}</p><h4>Tip</h4><p>A gold arrow floats over the next thing to tap.</p>`, 'Got it'); };
 function drawQuest() {
+  if (S.tut === 1 || tutActive()) { $('quest').innerHTML = `<i>Tap for help</i><b>GETTING STARTED</b><span class="qt">${S.tut === 1 ? 'Nana Gale is coming to say hello.' : TUT[S.tut].text}</span>`; return; }
   if (S.quest < 5) $('quest').innerHTML = `<i>Tap for help</i><b>CHAPTER 1: THE WIND BELL</b><span class="qt">${QUEST1[S.quest]}${S.quest === 1 ? ` (${S.relics} of 3 found)` : ''}</span>`;
   else if (S.q2 < 5) $('quest').innerHTML = `<i>Tap for help</i><b>CHAPTER 2: THE CLOUD SHIP</b><span class="qt">${QUEST2[S.q2]}</span>`;
   else if (S.q3 < 7) $('quest').innerHTML = `<i>Tap for help</i><b>CHAPTER 3: THE WINDMILL</b><span class="qt">${QUEST3[S.bridge2 && S.q3 === 0 ? 1 : S.q3]}</span>`;
@@ -1048,13 +1098,13 @@ function useTile(i) {
     else if (!t.w) { t.w = true; goal('water'); sfx('water'); burst(pos, 0x9fd3ff, 8); toast(`Watered. ${c.days - t.d} more day${c.days - t.d>1?'s':''}.`); }
     else toast('Already watered today. Sleep to let it grow.');
   }
-  drawTile(i); drawHud(); save();
+  drawTile(i); drawHud(); save(); tutTile(i);
 }
 function useCrate() {
   let total = 0;
   for (const k in S.bag) { if (ITEMS[k].kind === 'quest') continue; total += S.bag[k] * ITEMS[k].sell; delete S.bag[k]; }
   if (!total) { toast('Nothing to sell yet. Pick crops, fruit, or fish first.'); return; }
-  S.coins += total; sfx('coin'); burst(crate.position, 0xffc857); toast(`Sold for ${total} coins!`); goal('sell', total); drawHud(); save();
+  S.coins += total; sfx('coin'); burst(crate.position, 0xffc857); toast(`Sold for ${total} coins!`); goal('sell', total); drawHud(); save(); tutSold();
 }
 
 // --- neighbors ---
@@ -1221,8 +1271,8 @@ function festivalTalk(f) {
 function nanaQuest() {
   const h = S.hearts.nana;
   if (S.quest === 0) {
-    S.quest = 1; spawnDigs(); drawHud(); save();
-    openDialog('Nana Gale', "Oh! You have her eyes. Your grandmother was our Keeper of Memory. When the Great Gust hit, the village's memories fell into the ground like seeds. See those sparkles? Tap one a few times to dig it up.", [], h);
+    S.quest = 1; if (S.tut === 1) tutAfterGreeting(); else spawnDigs(); drawHud(); save();
+    openDialog('Nana Gale', "Oh! You have her eyes. Your grandmother was our Keeper of Memory. When the Great Gust hit, the village's memories fell into the ground like seeds. See that sparkle, right by your garden? Tap it a few times to dig it up.", [], h);
   } else if (S.quest === 1) openDialog('Nana Gale', `Keep digging, dear. ${S.relics} of 3 memories found. New sparkles show up each morning.`, neighborButtons('nana'), h);
   else if (S.quest === 2) openDialog('Nana Gale', "Three memories! Now, the old stone dial by your garden. Tap it when its shadow is the very shortest. Do not ask me why. Your grandmother always did.", neighborButtons('nana'), h);
   else if (S.quest === 3) openDialog('Nana Gale', "This is her Wind Bell frame. The big chime survived, but the small ones are all mixed up. Hang the three that sound sweetest with the big one.", [{ label:'Tune the bell', fn:() => { closeDialog(); openBell(); } }, ...neighborButtons('nana')], h);
@@ -1247,7 +1297,7 @@ function dig(i) {
   if (S.relics >= RELICS.length) { S.quest = Math.max(S.quest, 2); S.digs = []; }
   drawDigs(); drawHud(); save();
   toast(`${LAYERS[2]} You found ${r.name}!`);
-  setTimeout(() => showAha(r.id, () => { if (S.quest === 2 && S.relics === 3) toast('Go talk to Nana Gale.'); }), 700);
+  setTimeout(() => showAha(r.id, () => { if (S.tut === 2) return tutAfterFirstMemory(); if (S.quest === 2 && S.relics === 3) toast('Go talk to Nana Gale.'); }), 700);
 }
 function useSundial() {
   const h = hour();
@@ -2015,6 +2065,9 @@ function tick() {
   if (playing && !lowGfx && perfCheck.n < 240 && !document.hidden) { perfCheck.n++; perfCheck.sum += dt;
     if (perfCheck.n === 240 && perfCheck.sum / 240 > 1/32) { setLowGfx(true); toast('Switched to low graphics so the game runs smoother. You can change this in Sync my game.'); } }
   trees.forEach(t => { t.userData.canopy.rotation.z = Math.sin(now*1.2 + t.userData.ph)*.035; t.userData.canopy.rotation.x = Math.cos(now*.9 + t.userData.ph)*.025; });
+  if (nanaWalk) { const n = npcs.nana, d = nanaWalk.to.clone().sub(n.position); d.y = 0;
+    if (d.length() > .15) { d.normalize().multiplyScalar(Math.min(d.length(), 2.6*dt)); n.position.add(d); n.rotation.y = Math.atan2(d.x, d.z); n.userData.inner.position.y = Math.abs(Math.sin(now*12))*.1; }
+    else { n.userData.inner.position.y = 0; const back = nanaWalk.back; nanaWalk = null; if (!back && S.tut === 1) { n.lookAt(player.position.x, 0, player.position.z); talk('nana'); } } }
   Object.values(npcs).forEach((n,i) => { n.userData.inner.scale.y = 1 + Math.sin(now*2+i)*.03;
     const d = n.position.distanceTo(player.position);
     if (d < 4.5 && n !== npcs.twins) { const want = Math.atan2(player.position.x - n.position.x, player.position.z - n.position.z); let df = want - n.rotation.y; df = Math.atan2(Math.sin(df), Math.cos(df)); n.rotation.y += df * Math.min(1, dt*4); } });
@@ -2085,7 +2138,7 @@ drawHemi(); hemiBtn.onclick = () => { S.south = !S.south; S.lastSeason = null; s
 $('start').onclick = () => { $('title').style.display = 'none'; document.body.classList.remove('on-title'); playing = true; snapCam(); startAudio();
   { const turned = seasonCheck(); applySeason(); if (turned && S.letter) toast(turned); }
   { const fz = festival(); if (fz && S.letter && !S.fests[fz.id + fz.year]) setTimeout(() => toast(`Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`), 800); }
-  if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">A LETTER ON THE TABLE</div><h2>Dear little one,</h2><p class="letter">If you are reading this, the hut is yours now. The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Go find Nana'); } };
+  if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">A LETTER ON THE TABLE</div><h2>Dear little one,</h2><p class="letter">If you are reading this, the hut is yours now. The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Let\'s go!', () => { if (S.tut === 0) startTutorial(); }); } };
 // --- playtest feedback: a short form that goes to the Sky Garden cloud ---
 function openFeedback() {
   let mood = null;

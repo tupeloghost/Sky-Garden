@@ -88,3 +88,5 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .discover b { display:block; color:#2c9c7d; font-size:12px; letter-spacing:.06em; }
 .discover strong { display:block; font-size:18px; }
 .discover span { display:block; font-size:14px; line-height:1.35; margin-top:2px; }
+@keyframes fbPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.18); box-shadow:0 0 0 8px #ff8fa355; } }
+.pill.fb.pulse { animation:fbPulse .8s ease-in-out 4; }
