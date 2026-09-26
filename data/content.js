@@ -3,27 +3,28 @@
 
 const SEASONS = ['Spring','Summer','Fall','Winter'];
 const CROPS = {
-  cloudberry:  { name:'Cloudberry',   days:2, seed:10, sell:25,  color:0xffc4d6, seasons:[0,1] },
-  sunbell:     { name:'Sunbell',      days:4, seed:25, sell:85,  color:0xff9a3c, seasons:[0,1] },
-  skywheat:    { name:'Skywheat',     days:3, seed:15, sell:45,  color:0xffd35c, seasons:[1,2] },
-  moonpumpkin: { name:'Moonpumpkin',  days:5, seed:30, sell:120, color:0xb58cff, seasons:[2] },
-  frostmint:   { name:'Frostmint',    days:3, seed:20, sell:60,  color:0x9fe7e0, seasons:[3] },
-  starbloom:   { name:'Starbloom',    days:4, seed:35, sell:140, color:0xfff3a0, seasons:[0,1,2,3], locked:true },
+  cloudberry:  { name:'Cloudberry',   days:2, seed:10, sell:25,  color:0xffb36b, seasons:[0,1] },
+  sunbell:     { name:'Sunflower',    days:4, seed:25, sell:85,  color:0xffd35c, seasons:[1,2] },
+  skywheat:    { name:'Wheat',        days:3, seed:15, sell:45,  color:0xe6c35c, seasons:[1,2] },
+  moonpumpkin: { name:'Pumpkin',      days:5, seed:30, sell:120, color:0xff9a3c, seasons:[2] },
+  frostmint:   { name:'Mint',         days:3, seed:20, sell:60,  color:0x7fd8a0, seasons:[0,1,2] },
+  kale:        { name:'Kale',         days:3, seed:20, sell:60,  color:0x4f8a5b, seasons:[2,3] },
+  starbloom:   { name:'Moonflower',   days:4, seed:35, sell:140, color:0xfdfcf0, seasons:[0,1,2,3], locked:true },
 };
 const ITEMS = {
   ...Object.fromEntries(Object.entries(CROPS).map(([k,c]) => [k, { name:c.name, sell:c.sell, kind:'crop' }])),
-  apple:  { name:'Sky Apple',      sell:20, kind:'fruit' },
-  peach:  { name:'Sun Peach',      sell:30, kind:'fruit' },
-  minnow: { name:'Cloud Minnow',   sell:15, kind:'fish' },
-  trout:  { name:'Sky Trout',      sell:35, kind:'fish' },
-  puffer: { name:'Rainbow Puffer', sell:80, kind:'fish' },
+  apple:  { name:'Apple',          sell:20, kind:'fruit' },
+  peach:  { name:'Peach',          sell:30, kind:'fruit' },
+  minnow: { name:'Minnow',         sell:15, kind:'fish' },
+  trout:  { name:'Rainbow Trout',  sell:35, kind:'fish' },
+  puffer: { name:'Pufferfish',     sell:80, kind:'fish' },
   flour:  { name:'Bag of Flour',   sell:0,  kind:'quest' },
-  moonray:{ name:'Moon Ray',       sell:150, kind:'fish' },
-  koi:       { name:'Cloud Koi',     sell:45,  kind:'fish' },
+  moonray:{ name:'Manta Ray',      sell:150, kind:'fish' },
+  koi:       { name:'Koi',           sell:45,  kind:'fish' },
   sunfish:   { name:'Ocean Sunfish', sell:60,  kind:'fish' },
-  frostchar: { name:'Frost Char',    sell:55,  kind:'fish' },
-  guppy:     { name:'Rain Guppy',    sell:25,  kind:'fish' },
-  lanterneel:{ name:'Lantern Eel',   sell:70,  kind:'fish' },
+  frostchar: { name:'Arctic Char',   sell:55,  kind:'fish' },
+  guppy:     { name:'Guppy',         sell:25,  kind:'fish' },
+  lanterneel:{ name:'Lanternfish',   sell:70,  kind:'fish' },
 };
 const FURN = {
   rug:       { name:'Round Rug',         price:20 },
@@ -39,7 +40,7 @@ const FURN = {
   cake:      { name:'Birthday Cake', gift:true },
   painting:  { name:"Lumen's Painting", gift:true },
 };
-const LOVES = { nana:['skywheat','frostmint','peach'], pip:['sunbell','cloudberry','apple'], drizzle:['minnow','trout','puffer','moonpumpkin'], twins:['moonpumpkin','apple','frostmint'], lumen:['starbloom','frostmint','peach','moonray'] };
+const LOVES = { nana:['skywheat','kale','peach'], pip:['sunbell','cloudberry','apple'], drizzle:['minnow','trout','puffer','moonpumpkin'], twins:['moonpumpkin','apple','frostmint'], lumen:['starbloom','frostmint','peach','moonray'] };
 const BRIDGE2_COST = 300;
 const BRIDGE_COST = 150;
 const DAY_LEN = 360; // seconds, 6 AM to midnight (6 real minutes per day)
@@ -59,7 +60,7 @@ const NEIGHBORS = {
   pip: { name:'Pip', lines:[
     "Seeds! Fresh seeds! Well. Fresh-ish. They were in my hat.",
     "One day I will have a real shop. On a big island. With a sign!",
-    "Cloudberries grow fast. Sunbells sell high. I did that math myself.",
+    "Cloudberries grow fast. Sunflowers sell high. I did that math myself.",
     "I sell furniture now too. Your hut looks like a cloud with a door.",
     "You are my best customer. You are also my only customer.",
   ], heartLines:[

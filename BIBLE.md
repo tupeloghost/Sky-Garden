@@ -148,3 +148,7 @@ Later: Moonmelon (Night Isle only), Breezebean (climbs bridges), Rainroot (only 
 **Plan for now, build later:** real accounts, safety and moderation (reporting, review, filters; COPPA if kids play), payments (Stripe or similar, payouts, refunds, fraud; legal review first), and a quality review queue so creations fit the cozy style.
 
 **Safety principle:** shared features start with friendly actions only (gifts, watering, waves), no open chat.
+
+## 13. Real Life First
+
+Everything you grow, pick, catch, cook, and collect is a real thing with its real name (Wheat, Pumpkin, Kale, Rainbow Trout, Manta Ray), with sizes and seasons as close to real life as the game allows. Every item card has two parts: **In real life** (a checked, true fact) and **In Sky Garden** (the game's rules, like growing in 2 days or only biting in the rain). Magic stays obviously magic: floating islands, a bridge of light, a firefly painter.

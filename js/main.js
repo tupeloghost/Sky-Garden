@@ -14,7 +14,7 @@ for (const id of Object.keys(FESTIVAL_AHA)) if (!AHA_ORDER.includes(id)) AHA_ORD
 
 
 // ============ STATE ============
-const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, skywheat:0, moonpumpkin:0, frostmint:0 }, bag:{},
+const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, skywheat:0, moonpumpkin:0, frostmint:0, kale:0 }, bag:{},
   tiles:Array.from({length:9},()=>({s:0})), sel:'cloudberry', hearts:{ nana:0, pip:0, drizzle:0, twins:0, lumen:0, mabel:0, hoot:0, allegra:0, sage:0 }, talked:{}, gifted:{}, scenes:[],
   bridge:false, pos:[0,0,2], where:'home', quest:0, aha:[], relics:0, digs:[], asked:-1, qi:0, letter:false,
   order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, created:false, birthday:null, startedAt:null, lastParty:null, partyHat:false, name:'', look:null, mode:null, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
@@ -1066,13 +1066,13 @@ function noteFind(k) {
   const f = FINDS[k]; if (!f) return; // dishes and quest items have their own cards
   const name = ITEMS[k]?.name || FURN[k]?.name || k;
   const el = $('discover'); el.onclick = () => el.classList.remove('show');
-  el.innerHTML = `<b>FIRST FIND! ${S.found.filter(x => FINDS[x]).length} of ${Object.keys(FINDS).length} found</b><strong>${name}</strong><span>${f.fact}</span>`;
+  el.innerHTML = `<b>FIRST FIND! ${S.found.filter(x => FINDS[x]).length} of ${Object.keys(FINDS).length} found</b><strong>${name}</strong><span><i style="font-style:normal;font-weight:800">In real life:</i> ${f.fact}</span>`;
   el.classList.add('show'); chime(1047); setTimeout(() => chime(1319), 120);
   clearTimeout(noteFind.t); noteFind.t = setTimeout(() => el.classList.remove('show'), 7000);
 }
 function collectionCats() {
   const month = m => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
-  const itemCard = (k, kick) => () => showCard(`<div class="kicker">${kick}</div><h2>${ITEMS[k]?.name || FURN[k]?.name}</h2><p>${FINDS[k].fact}</p><h4>Where to find it</h4><p>${FINDS[k].hint}</p>`, 'Back', () => openCategory(kick));
+  const itemCard = (k, kick) => () => showCard(`<div class="kicker">${kick}</div><h2>${ITEMS[k]?.name || FURN[k]?.name}</h2><h4>In real life</h4><p>${FINDS[k].fact}</p><h4>In Sky Garden</h4><p>${FINDS[k].hint}${CROPS[k] ? ` It grows in ${CROPS[k].days} days here, and sells for ${CROPS[k].sell} coins.` : ITEMS[k] ? ` It sells for ${ITEMS[k].sell} coins.` : ''}${S.fishLog?.[k] ? ` Your biggest: ${S.fishLog[k].best} cm.` : ''}</p>`, 'Back', () => openCategory(kick));
   return [
     { name:'Crops', ids:Object.keys(CROPS), has:k => S.found.includes(k), label:k => CROPS[k].name, open:k => itemCard(k, 'Crops'), hint:k => FINDS[k].hint },
     { name:'Fruit', ids:['apple','peach'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fruit'), hint:k => FINDS[k].hint },
@@ -1462,7 +1462,7 @@ function talk(id) {
   if (id === 'pip' && S.asked !== S.day && (S.quest >= 1 || S.day > 1)) return pipQuestion();
   const pool = S.hearts[id] >= 3 ? [...n.lines, ...n.heartLines] : [...n.lines];
   if (id === 'nana' && S.aha.includes('rope') && !S.bigGarden) pool.push("Those fence stakes by your garden? A bigger plot needs a perfect square corner. You know how to make one now, don't you?", "Try the fence stakes by your garden, dear. You learned something on that ship.");
-  if (id === 'drizzle' && S.aha.includes('stars') && !S.used.includes('stars')) pool.push("Come fish at night, sailor. The biggest fish hide under the star that stays.", "Night fishing! Find the still star and the Moon Rays will find you.");
+  if (id === 'drizzle' && S.aha.includes('stars') && !S.used.includes('stars')) pool.push("Come fish at night, sailor. The biggest fish hide under the star that stays.", "Night fishing! Find the still star and the manta rays will find you.");
   if (id === 'twins' && S.aha.includes('lever') && !S.boulder) pool.push("Moss: There is a big boulder by the sunflowers. Fern: Something is carved under it. Moss: If only we knew about levers. Fern: YOU do!");
   const line = pool[(S.day*7 + Math.floor(Math.random()*pool.length)) % pool.length];
   openDialog(n.name, line, neighborButtons(id), S.hearts[id]); save();
@@ -1595,7 +1595,7 @@ const SCENES = {
   },
   drizzle6() {
     bagAdd('puffer', 1); sfx('heart'); save();
-    openDialog('Captain Drizzle', "You know, I had no crew for years. Just me and the fish. Now I have a friend. Here. The rarest fish I ever caught. A Rainbow Puffer. Do not eat it. Or do. It is your fish.", [], S.hearts.drizzle);
+    openDialog('Captain Drizzle', "You know, I had no crew for years. Just me and the fish. Now I have a friend. Here. The rarest fish I ever caught. A pufferfish. Do not eat it. Or do. It is your fish.", [], S.hearts.drizzle);
   },
 };
 function festivalTalk(f) {
@@ -1939,7 +1939,7 @@ function lumenQuest() {
   else if (S.q4 === 3) openDialog('Lumen', "The crystals in my garden used to sing. Now they sound wrong. Could you listen to them?", nb, h);
   else if (S.q4 === 4) {
     S.q4 = 5; S.seeds.starbloom = (S.seeds.starbloom||0) + 3; S.coins += 100; save(); drawHud(); sfx('heart'); burst(npcs.lumen.position, 0xfff3a0, 24);
-    openDialog('Lumen', "Now I can show you my best painting. This is the Old Heart, before the Great Gust. See the giant bell in the middle? Every island had a small bell, and they all rang together with the big one. Then one night the big bell cracked. Without its song, the islands drifted apart. Your grandmother tried to fix it. She never finished. I think you are supposed to. Here: 3 Starbloom seeds. They grow in any season.", [], h);
+    openDialog('Lumen', "Now I can show you my best painting. This is the Old Heart, before the Great Gust. See the giant bell in the middle? Every island had a small bell, and they all rang together with the big one. Then one night the big bell cracked. Without its song, the islands drifted apart. Your grandmother tried to fix it. She never finished. I think you are supposed to. Here: 3 moonflower seeds. Moonflowers are real, they open at night! In my garden they bloom in any season.", [], h);
   }
   save();
 }
@@ -2285,7 +2285,7 @@ function fishing(o = {}) {
     [523,659,784,1047].forEach((fr,i) => setTimeout(() => chime(fr), i*110)); sfx('splash');
     const price = Math.round(ITEMS[f.id].sell * (S.mode === 'fisher' ? 1.25 : 1));
     $('fhelp').innerHTML = `<b style="font-size:20px">You caught a ${ITEMS[f.id].name}!</b> ${size} cm. ${isNew ? '<span style="background:#6fd3b8;color:#fff;border-radius:99px;padding:1px 8px;font-weight:800">NEW!</span>' : ''} ${isRecord ? '<span style="background:#ffc857;border-radius:99px;padding:1px 8px;font-weight:800">New record!</span>' : ''}`;
-    msg(isNew ? FINDS[f.id].fact : `Sells for ${price} coins. Your biggest: ${rec.best} cm.`);
+    msg(isNew ? `In real life: ${FINDS[f.id].fact}` : `Sells for ${price} coins. Your biggest: ${rec.best} cm.`);
     setAct('Cast again');
   };
   const lose = why => { state = 'ready'; msg(why); setAct('Cast again'); tone(300, { to:140, dur:.4, vol:.05 }); };
