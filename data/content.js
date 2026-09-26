@@ -229,20 +229,20 @@ const QUESTIONS = [
     a:['Only nice birds','Everybody','Start with the crow'], r:["Hmm. But then who is nice first?", "Everybody! Even the crow. Deep breath.", "The crow?! Brave. Okay. Tomorrow."] },
 ];
 const QUEST3 = [
-  "Save 300 coins and fix the bridge north of Orchard Isle.",
-  "Cross the north bridge. Meet whoever lives on Windmill Isle.",
-  "Fix the windmill gears. Tap the windmill.",
-  "Lift the millstone into place. Tap the windmill.",
-  "Grind the twins' wheat. Tap the windmill.",
-  "Take the flour to Nana Gale.",
-  "Tell Moss & Fern the good news.",
+  "Earn 300 coins. Then tap the sign on the north edge of Orchard Isle.",
+  "Walk across the north bridge. Talk to the mole twins.",
+  "Tap the windmill to fix its gears.",
+  "Tap the windmill to lift the millstone.",
+  "Tap the windmill to grind flour.",
+  "Bring the flour to Nana Gale.",
+  "Talk to Moss & Fern.",
   "Chapter 3 done! Night Isle is coming.",
 ];
 const QUEST4 = [
-  "After 8 PM, a bridge of light appears east of Windmill Isle. Cross it.",
-  "Help Lumen put her moon paintings in order. Tap her easel.",
-  "Tap Lumen's dark room.",
-  "Tune the crystal chimes in Lumen's garden.",
+  "After 8 PM, cross the glowing bridge east of Windmill Isle. Talk to Lumen.",
+  "Tap Lumen's easel to sort her moon paintings.",
+  "Tap Lumen's little black house.",
+  "Tap the purple crystals.",
   "Talk to Lumen.",
   "Chapter 4 done! The Old Heart is waiting.",
 ];
@@ -250,18 +250,18 @@ const ROOFS = { '0xff8fa3':'Rose', '0x7ec8e3':'Sky Blue', '0x8fdc8a':'Mint', '0x
 const WALLS = { '0xfff1d6':'Cream', '0xffd6c9':'Peach', '0xdff3ff':'Cloud', '0xfff3a0':'Butter' };
 const PAINT_PRICE = 40;
 const QUEST1 = [
-  "Talk to Nana Gale. She is the sheep.",
-  "Dig up sparkly spots on the island.",
-  "Tap the sundial when its shadow is the shortest.",
-  "Ask Nana Gale about the Wind Bell.",
-  "Save 150 coins and fix the bridge to the east.",
+  "Talk to Nana Gale. She is the white sheep.",
+  "Find a sparkly spot. Tap it 3 times to dig it up.",
+  "Tap the stone sundial at noon (12 PM on the clock).",
+  "Talk to Nana Gale to fix the Wind Bell.",
+  "Earn 150 coins. Then tap the sign by the broken bridge.",
 ];
 const QUEST2 = [
-  "Cross the bridge to Orchard Isle. Find who rang the bell.",
-  "Help Captain Drizzle get fresh water. Use the pot by his ship.",
-  "Square the sail. Tap the ship.",
-  "Come back after 8 PM and ask Captain Drizzle about the stars.",
-  "The ship is ready! Talk to Captain Drizzle.",
+  "Walk across the east bridge. Talk to the frog in the captain's hat.",
+  "Tap the metal pot by the ship. Tap it again tomorrow.",
+  "Tap the ship to fix its sail.",
+  "After 8 PM, talk to Captain Drizzle.",
+  "Talk to Captain Drizzle.",
   "Chapter 2 done! Windmill Isle is coming.",
 ];
 const CHIMES = [ // length as a fraction of the big chime; simple = sweet
@@ -270,12 +270,12 @@ const CHIMES = [ // length as a fraction of the big chime; simple = sweet
 ];
 
 const QUEST5 = [
-  "Ask Captain Drizzle about the Old Heart.",
-  "Fly to the Old Heart. Tap the Puddle Jumper on Orchard Isle.",
-  "The great bell has fallen. Lift it.",
-  "Build a square frame for the bell. Tap the empty frame.",
-  "Fix the gears that swing the bell. Tap the frame.",
-  "Ring the great bell at exactly noon. Tap the bell.",
+  "Talk to Captain Drizzle on Orchard Isle.",
+  "Tap the ship on Orchard Isle to fly north.",
+  "Tap the fallen bell to lift it.",
+  "Tap the gray stones next to the bell to build a frame.",
+  "Tap the wooden frame to fix its gears.",
+  "Tap the bell at noon (12 PM on the clock) to ring it.",
   "The islands are home. Rebuild the village at the Old Heart!",
 ];
 Object.assign(RECALL, {
@@ -294,4 +294,51 @@ const BUILDINGS = [
 ];
 const GRANDMA_LETTER2 = "If you are reading this, you rang it. I knew you would. I spent years trying, and I think I was missing the one thing you have: you learned it all by doing it, one small thing at a time, with friends beside you. The village was never just the islands. It was the people who remembered together. Build it back, one home at a time. The sky remembers. So will you.";
 
-export { QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES };
+// "What to do" help for every quest step. Shown when the player taps the goal box.
+// Keep these plain: where to go, what to tap, what happens next.
+const HOWTO = {
+  c1: [
+    "Nana Gale is the white sheep near the top of your island. Walk to her by tapping the ground, then tap her to talk. The gold arrow points at her.",
+    "Look for small gold sparkles on the ground. Walk to one and tap it. Each tap digs one layer deeper. On the third tap you find something. New sparkles appear each morning until you have found all 3.",
+    "The sundial is the round stone with a pointer, left of your garden. Watch the clock at the top of the screen. When it says about 12 PM, tap the sundial. If you miss noon, try again the next day.",
+    "Talk to Nana Gale. She will ask you to tune the bell. You tap chimes to hear them, pick the 3 that sound nice together, and ring the bell.",
+    "Grow and sell crops to earn 150 coins. Sell by tapping the wooden crate next to your garden. Then walk to the sign at the right edge of your island and tap it to fix the bridge.",
+  ],
+  c2: [
+    "Walk across the bridge on the right side of your island. On Orchard Isle, tap the green frog wearing a captain's hat.",
+    "Tap the metal pot next to the ship to set it up. Then sleep in your bed, or wait for the next day. Tap the pot again to collect fresh water.",
+    "Tap the ship. You will split a rope into 3 sides. Use the + and - buttons until the corner turns green, then tap Tie it.",
+    "Wait until the clock says 8 PM or later. Then tap Captain Drizzle and choose Look up. Watch the stars turn, and tap the one star that does not move.",
+    "Tap Captain Drizzle to finish the chapter.",
+    "You finished this chapter. Keep farming, fishing, and meeting your neighbors.",
+  ],
+  c3: [
+    "Earn 300 coins by selling crops, fruit, and fish. Then walk to the sign at the top edge of Orchard Isle and tap it.",
+    "Walk across the new bridge to Windmill Isle. Tap the two brown moles to talk.",
+    "Tap the windmill. Try the small gears one at a time. Watch the two counters: the small gear must spin 3 times each time the big gear spins once. Then tap Fit this gear.",
+    "Tap the windmill. Use the arrow buttons to move the log under the plank, then tap Push down. If the stone won't lift, move the log and try again.",
+    "Tap the windmill once. It grinds wheat into a bag of flour for you.",
+    "Walk back to your home island and tap Nana Gale. She turns the flour into bread.",
+    "Go back to Windmill Isle and tap Moss & Fern.",
+    "You finished this chapter. Keep farming, fishing, and meeting your neighbors.",
+  ],
+  c4: [
+    "The glowing bridge only appears after 8 PM, on the right side of Windmill Isle. Wait for the clock, cross it, and tap Lumen, the little firefly.",
+    "Tap the easel with the moon painting. Tap the 8 moon paintings in order, starting with the darkest one. The lit part grows night by night until the moon is full, then shrinks.",
+    "Tap the little black house. Try the hole-size buttons. Find the one that makes the picture sharp.",
+    "Tap the purple crystals. Tap each crystal to hear it with the tallest one. Pick the 2 that sound nice together, then tap Ring them. Sound off? Tap the hint button.",
+    "Tap Lumen to finish the chapter.",
+    "You finished this chapter. The Old Heart is next.",
+  ],
+  c5: [
+    "Walk to Orchard Isle and tap Captain Drizzle.",
+    "Tap the ship on Orchard Isle and choose Fly. To come back later, tap the ship at the Old Heart.",
+    "Tap the big gold bell lying on the ground. Move the log with the arrow buttons, then tap Push down.",
+    "Tap the gray stones beside the bell. Use + and - to split the rope into 3 sides until the corner turns green, then tap Tie it.",
+    "Tap the wooden frame. Try small gears until the small gear spins 4 times for each turn of the big gear, then tap Fit this gear.",
+    "Watch the clock at the top. At about 12 PM, tap the bell.",
+    "Tap an empty building site at the Old Heart to see what it needs. The Observatory can be built now.",
+  ],
+};
+
+export { HOWTO, QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES };

@@ -1,5 +1,5 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import { QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES } from '../data/content.js';
+import { HOWTO, QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES } from '../data/content.js';
 import { CONSTELLATIONS } from '../data/stars.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA } from '../data/calendar.js';
 Object.assign(AHA, FESTIVAL_AHA);
@@ -275,6 +275,10 @@ function drawSites() {
   });
 }
 drawSites();
+const marker = new THREE.Group(); scene.add(marker);
+const markerMat = new THREE.MeshBasicMaterial({ color:0xffc857, fog:false });
+const mCone = new THREE.Mesh(new THREE.ConeGeometry(.28,.55,16), markerMat); mCone.rotation.x = Math.PI; marker.add(mCone);
+const mRing = new THREE.Mesh(new THREE.TorusGeometry(.2,.06,8,20), markerMat); mRing.position.y = .45; mRing.rotation.x = Math.PI/2; marker.add(mRing);
 const sprinkler = new THREE.Group(); sprinkler.position.set(.15, 0, .25); sprinkler.visible = false;
 sprinkler.add(mesh(new THREE.CylinderGeometry(.06,.06,.5,8), mat(0x8a8f99, { metalness:.4 }), 0, .25, 0));
 const sprHead = new THREE.Group(); sprHead.position.y = .52; sprinkler.add(sprHead);
@@ -733,12 +737,29 @@ function openGoals() {
 $('goalsBtn').onclick = openGoals;
 function applyPaint() { roof.material.color.set(+S.roof); house.children[0].material.color.set(+S.wall); }
 document.addEventListener('click', e => { if (e.target.closest('button,.slot') && e.target.id !== 'mute') sfx('click'); });
+function questTarget() {
+  if (S.quest < 5) return [npcs.nana, digGroups[0] || null, sundial, npcs.nana, sign][S.quest];
+  if (S.q2 < 5) return [npcs.drizzle, pot, ship, npcs.drizzle, npcs.drizzle][S.q2];
+  if (S.q3 < 7) return [sign2, npcs.twins, windmill, windmill, windmill, npcs.nana, npcs.twins][S.bridge2 && S.q3 === 0 ? 1 : S.q3];
+  if (S.q4 < 5) return [npcs.lumen, easel, darkroom, crystals, npcs.lumen][S.q4];
+  if (S.q5 < 6) return [npcs.drizzle, ship, greatBell, bellFrame, bellFrame, greatBell][S.q5];
+  return S.built.includes('observatory') ? null : siteGroups[0];
+}
+const MARK_H = { npc:2.4, ship:4.2, windmill:5.6, greatbell:2.2, bellframe:1.4, house:3.8 };
+function currentHowto() {
+  if (S.quest < 5) return HOWTO.c1[S.quest];
+  if (S.q2 < 5) return HOWTO.c2[S.q2];
+  if (S.q3 < 7) return HOWTO.c3[S.bridge2 && S.q3 === 0 ? 1 : S.q3];
+  if (S.q4 < 5) return HOWTO.c4[S.q4];
+  return HOWTO.c5[S.q5];
+}
+$('quest').onclick = () => { sfx('click'); showCard(`<div class="kicker">WHAT TO DO</div><h2>${$('quest').querySelector('.qt').textContent}</h2><p>${currentHowto()}</p><h4>Tip</h4><p>A gold arrow floats over the next thing to tap.</p>`, 'Got it'); };
 function drawQuest() {
-  if (S.quest < 5) $('quest').innerHTML = `<b>CHAPTER 1: THE WIND BELL</b>${QUEST1[S.quest]}${S.quest === 1 ? ` (${S.relics} of 3 found)` : ''}`;
-  else if (S.q2 < 5) $('quest').innerHTML = `<b>CHAPTER 2: THE CLOUD SHIP</b>${QUEST2[S.q2]}`;
-  else if (S.q3 < 7) $('quest').innerHTML = `<b>CHAPTER 3: THE WINDMILL</b>${QUEST3[S.bridge2 && S.q3 === 0 ? 1 : S.q3]}`;
-  else if (S.q4 < 5) $('quest').innerHTML = `<b>CHAPTER 4: THE PAINTER OF LIGHT</b>${QUEST4[S.q4]}`;
-  else $('quest').innerHTML = `<b>${S.q5 < 6 ? 'CHAPTER 5: THE OLD HEART' : 'REBUILD THE VILLAGE'}</b>${S.q5 < 6 ? QUEST5[S.q5] : `${S.built.length} of ${BUILDINGS.length} buildings. Tap a building site at the Old Heart.`}`;
+  if (S.quest < 5) $('quest').innerHTML = `<i>Tap for help</i><b>CHAPTER 1: THE WIND BELL</b><span class="qt">${QUEST1[S.quest]}${S.quest === 1 ? ` (${S.relics} of 3 found)` : ''}</span>`;
+  else if (S.q2 < 5) $('quest').innerHTML = `<i>Tap for help</i><b>CHAPTER 2: THE CLOUD SHIP</b><span class="qt">${QUEST2[S.q2]}</span>`;
+  else if (S.q3 < 7) $('quest').innerHTML = `<i>Tap for help</i><b>CHAPTER 3: THE WINDMILL</b><span class="qt">${QUEST3[S.bridge2 && S.q3 === 0 ? 1 : S.q3]}</span>`;
+  else if (S.q4 < 5) $('quest').innerHTML = `<i>Tap for help</i><b>CHAPTER 4: THE PAINTER OF LIGHT</b><span class="qt">${QUEST4[S.q4]}</span>`;
+  else $('quest').innerHTML = `<i>Tap for help</i><b>${S.q5 < 6 ? 'CHAPTER 5: THE OLD HEART' : 'REBUILD THE VILLAGE'}</b><span class="qt">${S.q5 < 6 ? QUEST5[S.q5] : `${S.built.length} of ${BUILDINGS.length} buildings. Tap a building site at the Old Heart.`}</span>`;
 }
 
 // ============ ACTIONS ============
@@ -944,7 +965,7 @@ function pipQuestion() {
 function dig(i) {
   const d = S.digs[i];
   d.n++; sfx('dig'); burst(digGroups[i].position, 0x9b6b4a, 8);
-  if (d.n < 3) { toast(LAYERS[d.n - 1]); drawDigs(); save(); return; }
+  if (d.n < 3) { toast(`${LAYERS[d.n - 1]} Tap again to dig deeper.`); drawDigs(); save(); return; }
   const r = RELICS[S.relics];
   S.relics++; S.digs.splice(i, 1);
   if (S.relics >= RELICS.length) { S.quest = Math.max(S.quest, 2); S.digs = []; }
@@ -957,17 +978,18 @@ function useSundial() {
   if (S.quest < 2) { toast('An old sundial. Its shadow moves with the sun.'); return; }
   if (S.quest > 2) { toast('The sundial. Shortest shadow means noon.'); return; }
   if (h >= 11.5 && h <= 12.5) { S.quest = 3; save(); drawHud(); showAha('sundial', () => toast('Go see Nana Gale.')); }
-  else if (h < 11.5) toast('The shadow is still shrinking. Come back when it is shortest.');
-  else toast('The shadow is growing again. Try again tomorrow, before it starts to grow.');
+  else if (h < 11.5) toast('Not noon yet. Come back at 12 PM. The clock is at the top of the screen.');
+  else toast('Noon has passed. Try again tomorrow at 12 PM.');
 }
 function openBell() {
   const picked = new Set();
   const draw = (msg='') => {
     showCard(`<div class="kicker">THE WIND BELL</div><h2>Tune the chimes</h2>
-      <p>Each small chime is part of the length of the big one. Tap a chime to hear it ring with the big one. Pick the 3 that sound the sweetest.</p>
+      <p>Tap a chime to hear it ring together with the big bell. Some pairs sound nice. Some sound harsh. Pick the 3 that sound nice, then tap Ring the bell.</p>
       <div class="jlist">${CHIMES.map((c,i)=>`<button data-i="${i}" style="${picked.has(i)?'background:#ffc857':''}">${picked.has(i)?'✓ ':''}Chime ${i+1}: ${c.label} as long</button>`).join('')}</div>
       <p style="margin-top:10px;min-height:22px;font-weight:700">${msg}</p>
-      <button id="ring">Ring the bell</button> <button id="later" class="ghost">Later</button>`, null);
+      <button id="ring">Ring the bell</button> <button id="deaf" class="ghost">Can't hear it?</button> <button id="later" class="ghost">Later</button>`, null);
+    $('deaf').onclick = () => draw('Hint: the nice-sounding chimes have the simplest lengths: 1/2, 2/3, and 3/4.');
     document.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const i = +b.dataset.i, base = 262;
       if (muted) toast('Turn sound on to hear the chimes.');
@@ -1041,15 +1063,19 @@ function useShip() {
 }
 function ropePuzzle(o = {}) {
   const total = o.total || 12, max = total - 2;
-  let A = total/3, B = total/3;
+  let A = total/3, B = total/3, hint = false;
+  const ROPE_HINT = { 12:'Hint: try Side A = 3 and Side B = 4.', 24:'Hint: last time, 3, 4, 5 worked. What if you double each side?', 36:'Hint: take the 3, 4, 5 answer and make each side 3 times longer.' };
   const draw = () => {
     const C = total - A - B;
     showCard(`<div class="kicker">${o.kicker || 'THE SAIL'}</div><h2>Make a square corner</h2>
-      <p>${o.text || 'The rope has 12 equal spaces between its knots. Split them into 3 sides. Make the bottom left corner a perfect square corner.'}</p>
+      <p>${o.text || 'The rope has 12 knots. Split it into 3 sides to make a triangle. Your goal: make the bottom left corner a square corner, like the corner of a book.'}</p>
       <canvas class="rope" id="ropeC" width="520" height="300"></canvas>
       <div class="steppers"><div>Side A<br><button id="a-">-</button>${A}<button id="a+">+</button></div><div>Side B<br><button id="b-">-</button>${B}<button id="b+">+</button></div><div>Side C<br>${C}</div></div>
       <p id="ropeMsg" style="margin-top:8px;font-weight:700;text-align:center"></p>
-      <button id="tie">Tie it</button> <button id="later" class="ghost">Later</button>`, null);
+      <p style="font-size:14px;text-align:center;opacity:.75">Use + and - to change Side A and Side B. Side C gets the rest. The corner turns green when it is square.</p>
+      <p id="ropeHint" style="text-align:center;font-weight:700;color:#b87d45;min-height:0">${hint ? ROPE_HINT[total] : ''}</p>
+      <button id="tie">Tie it</button> <button id="hintB" class="ghost">Hint</button> <button id="later" class="ghost">Later</button>`, null);
+    $('hintB').onclick = () => { hint = true; draw(); };
     const cv = $('ropeC'), g = cv.getContext('2d'), msg = $('ropeMsg');
     const ok = A + B > C && A + C > B && B + C > A && C > 0;
     let ang = 0;
@@ -1080,7 +1106,7 @@ function ropePuzzle(o = {}) {
 }
 function starPuzzle(o = {}) {
   showCard(`<div class="kicker">THE NIGHT SKY</div><h2>${o.title || 'Find the star that stays'}</h2>
-    <p>${o.text || 'Watch the sky turn. Tap the one star that does not move.'}</p>
+    <p>${o.text || 'Watch the sky for a few seconds. Every star moves in a circle, except one. Tap the star that stays still.'}</p>
     <canvas class="sky" id="skyC" width="560" height="560"></canvas>
     <p id="skyMsg" style="margin-top:8px;font-weight:700;text-align:center;min-height:22px"></p>
     <button id="later" class="ghost">Later</button>`, null);
@@ -1156,7 +1182,7 @@ function gearPuzzle(o = {}) {
   let teeth = 24, spin = 0, raf;
   const draw = (msg='') => {
     showCard(`<div class="kicker">${o.kicker || 'THE WINDMILL'}</div><h2>Fix the gears</h2>
-      <p>The big gear turns with the wind. ${o.what || 'The millstone needs its small gear'} to spin exactly ${target} times for every 1 turn of the big gear. Try different small gears.</p>
+      <p>The big gear turns with the wind. ${o.what || 'The millstone needs its small gear'} to spin exactly ${target} times for every 1 turn of the big gear.</p><p style="font-size:14px;opacity:.75;margin-top:6px">Tap a small gear below to try it. Watch the two counters at the top. When the small gear counts ${target} turns for each 1 big turn, tap Fit this gear.</p>
       <canvas class="rope" id="gearC" width="520" height="280"></canvas>
       <div class="steppers">${[6,8,12,16].map(n => `<button data-t="${n}" class="${n===teeth?'':'ghost'}">${n} teeth</button>`).join('')}</div>
       <p id="gearMsg" style="margin-top:8px;font-weight:700;text-align:center;min-height:22px">${msg}</p>
@@ -1180,7 +1206,7 @@ function gearPuzzle(o = {}) {
     document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { teeth = +b.dataset.t; spin = 0; draw(); });
     $('later').onclick = hideCard;
     $('fit').onclick = () => {
-      if (teeth !== right) { $('gearMsg').textContent = `Watch the counters. With ${teeth} teeth it spins ${24/teeth} times per big turn.`; return; }
+      if (teeth !== right) { $('gearMsg').textContent = `With ${teeth} teeth it spins ${24/teeth} time${24/teeth === 1 ? '' : 's'} per big turn. ${24/teeth < target ? 'Try a gear with fewer teeth.' : 'Try a gear with more teeth.'}`; return; }
       if (o.done) { hideCard(); return o.done(); }
       hideCard(); S.q3 = 3; save(); drawHud(); sfx('pick'); burst(windmill.position, 0xffc857, 16);
       showAha('gears', () => toast('The gears fit! Now tap the windmill to lift the millstone.'));
@@ -1193,7 +1219,7 @@ function leverPuzzle(o = {}) {
   let f = 5, pushed = false;
   const draw = (msg='') => {
     showCard(`<div class="kicker">${o.kicker || 'THE WINDMILL'}</div><h2>${o.title || 'Lift the millstone'}</h2>
-      <p>${o.text || 'The stone is too heavy to lift by hand. You have a long plank and a log to rest it on. Move the log, then push down on your end.'}</p>
+      <p>${o.text || 'The stone is too heavy to lift by hand. Use a plank and a log. Tap the arrow buttons to slide the log, then tap Push down.'}</p>
       <canvas class="rope" id="levC" width="520" height="260"></canvas>
       <div class="steppers"><div>Log<br><button id="l-">&lt;</button><button id="l+">&gt;</button></div></div>
       <p id="levMsg" style="margin-top:8px;font-weight:700;text-align:center;min-height:22px">${msg}</p>
@@ -1212,7 +1238,7 @@ function leverPuzzle(o = {}) {
     $('l+').onclick = () => { f = Math.min(9, f+1); pushed = false; draw(); };
     $('later').onclick = hideCard;
     $('push').onclick = () => {
-      pushed = true; draw(lifts ? 'It lifts!' : 'Too heavy. It barely moves. Try moving the log.');
+      pushed = true; draw(lifts ? 'It lifts!' : 'Too heavy. Try sliding the log closer to the stone.');
       if (lifts && o.done) return setTimeout(() => { hideCard(); o.done(); }, 900);
       if (lifts) setTimeout(() => { hideCard(); S.q3 = 4; save(); drawHud(); sfx('pick'); burst(windmill.position, 0xffc857, 20);
         [262,330,392,524].forEach((f,i)=>setTimeout(()=>chime(f),i*200));
@@ -1270,7 +1296,7 @@ function moonPuzzle() {
   const order = [0,1,2,3,4,5,6,7].sort(() => Math.random() - .5), picked = [];
   const draw = (msg='') => {
     showCard(`<div class="kicker">LUMEN'S EASEL</div><h2>Put the moons in order</h2>
-      <p>Lumen painted the moon on 8 nights in a row. Tap the paintings in the order she painted them. Start with the darkest one.</p>
+      <p>Lumen painted the moon on 8 nights in a row. Tap all 8 paintings in order, starting with the darkest moon. Night by night the lit part grows until the moon is full, then it shrinks.</p>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px">${order.map(p => `<canvas data-m="${p}" width="120" height="120" style="width:100%;border-radius:12px;cursor:pointer;${picked.includes(p) ? 'opacity:.25' : ''}"></canvas>`).join('')}</div>
       <p style="margin-top:10px;font-weight:700;text-align:center;min-height:22px">${msg || `${picked.length} of 8 in order`}</p>
       <button id="later" class="ghost">Later</button>`, null);
@@ -1292,7 +1318,7 @@ function useDarkroom() {
   const names = ['', 'Tiny', 'Small', 'Medium', 'Big'];
   const draw = () => {
     showCard(`<div class="kicker">LUMEN'S DARK ROOM</div><h2>Make the picture sharp</h2>
-      <p>Light from outside comes in through one hole and paints the back wall. Change the size of the hole.</p>
+      <p>Light from outside shines through one hole and makes a picture on the back wall. Tap the buttons to try different hole sizes. Find the one that makes the picture sharp.</p>
       <canvas class="rope" id="obsC" width="520" height="300" style="background:#0b0916"></canvas>
       <div class="steppers">${[4,3,2,1].map(n => `<button data-h="${n}" class="${n === size ? '' : 'ghost'}">${names[n]} hole</button>`).join('')}</div>
       <p id="obsMsg" style="margin-top:8px;font-weight:700;text-align:center;min-height:22px"></p>
@@ -1318,10 +1344,11 @@ function useCrystals() {
   const picked = new Set();
   const draw = (msg='') => {
     showCard(`<div class="kicker">LUMEN'S GARDEN</div><h2>Tune the crystals</h2>
-      <p>Each small crystal is part of the height of the tallest one. Tap one to hear it with the tallest. Pick the 2 that sound the sweetest.</p>
+      <p>Tap a crystal to hear it ring together with the tallest one. Some pairs sound nice. Some sound harsh. Pick the 2 that sound nice, then tap Ring them.</p>
       <div class="jlist">${list.map((c,i) => `<button data-c="${i}" style="${picked.has(i)?'background:#c9b6ff':''}">${picked.has(i)?'✓ ':''}Crystal ${i+1}: ${c.l} as tall</button>`).join('')}</div>
       <p style="margin-top:10px;min-height:22px;font-weight:700">${msg}</p>
-      <button id="ring">Ring them</button> <button id="later" class="ghost">Later</button>`, null);
+      <button id="ring">Ring them</button> <button id="deaf" class="ghost">Can't hear it?</button> <button id="later" class="ghost">Later</button>`, null);
+    $('deaf').onclick = () => draw('Hint: just like the Wind Bell, the simplest fractions sound nice: 1/2 and 2/3.');
     document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const i = +b.dataset.c;
       if (muted) toast('Turn sound on to hear the crystals.'); chime(392); chime(392 * list[i].r); picked.has(i) ? picked.delete(i) : picked.add(i); draw(); });
     $('later').onclick = hideCard;
@@ -1344,7 +1371,7 @@ function useGreatBell() {
   if (S.q5 === 5) {
     const h = hour();
     if (h >= 11.5 && h <= 12.5) return showRecall('sundial', ringGreatBell);
-    toast(h < 11.5 ? 'Not yet. The bell must ring at the moment of the shortest shadow.' : 'The shortest shadow has passed. Try again tomorrow, a little before noon.'); return;
+    toast(h < 11.5 ? 'Not noon yet. Come back at 12 PM. The clock is at the top of the screen.' : 'Noon has passed. Try again tomorrow at 12 PM.'); return;
   }
   chime(131); chime(196); chime(262); toast('BONNNG. Every island hums back.');
 }
@@ -1649,6 +1676,10 @@ function tick() {
     else if (q < 5) { greatBell.position.set(OH.x, OH.y + .7, OH.z); gbSwing.rotation.set(0, 0, 0); }
     else { greatBell.position.set(OH.x, OH.y + 3.3, OH.z); const r = gbSwing.userData.ring || 0; gbSwing.rotation.set(0, 0, Math.sin(now*3) * .25 * Math.min(1, r)); if (r > 0) gbSwing.userData.ring = r - dt * .5; }
     if (q >= 5) frameGear.rotation.x += dt * (gbSwing.userData.ring > 0 ? 3 : .2); }
+  { let tg = questTarget(); if (tg && S.where === 'hut') tg = doormat;
+    marker.visible = !!tg && !$('veil').classList.contains('show');
+    if (tg) { const wp = new THREE.Vector3(); tg.getWorldPosition(wp); const k = tg.userData.kind;
+      marker.position.set(wp.x, wp.y + (MARK_H[k] || 1.9) + Math.sin(now*3)*.15 + (k === 'greatbell' && S.q5 >= 5 ? 1.5 : 0), wp.z); marker.rotation.y = now*1.5; } }
   const wantLit = S.q3 >= 7 && h >= 20; if (wantLit !== lightLit) drawLightBridge(wantLit);
   if (lightLit) lightMat.opacity = .65 + Math.sin(now*2)*.2;
   crystals.children.forEach((c, i) => c.material.emissiveIntensity = .5 + Math.sin(now*1.5 + i)*.3);

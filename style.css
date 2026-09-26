@@ -8,6 +8,8 @@ canvas { display:block; touch-action:none; }
 .row { display:flex; gap:6px; flex-wrap:wrap; }
 button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .quest { align-self:flex-start; max-width:min(320px,100%); background:#3b2f4acc; color:#fff; border-radius:14px; padding:6px 12px; font-size:14px; line-height:1.25; }
+.quest { pointer-events:auto; cursor:pointer; }
+.quest i { float:right; font-style:normal; font-size:11px; opacity:.7; margin-left:8px; }
 .quest b { color:var(--gold); display:block; font-size:12px; letter-spacing:.05em; }
 .bar { position:fixed; bottom:12px; left:50%; transform:translateX(-50%); display:flex; gap:6px; max-width:calc(100% - 20px); overflow-x:auto; padding-top:4px; }
 .slot { background:var(--card); border:3px solid transparent; border-radius:16px; padding:5px 9px; min-width:76px; text-align:center; font-weight:700; box-shadow:0 3px 0 #0002; cursor:pointer; font-size:13px; line-height:1.15; flex:none; }
