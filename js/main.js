@@ -5,6 +5,7 @@ import { CONSTELLATIONS } from '../data/stars.js';
 import { FINDS } from '../data/finds.js';
 import { FISH } from '../data/fish.js';
 import { icon } from '../data/icons.js';
+import { FEATURES } from '../data/features.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
@@ -42,6 +43,10 @@ if (!S.syncKey) S.syncKey = newSyncKey();
 let cloudDirty = true, lastPush = 0, cloudState = { when:0, ok:null };
 let setupCam = false; // camera close-up while making your character
 const save = () => { if (VISIT) return; S.savedAt = Date.now(); if (typeof ageBand === 'function') S.ageBand = ageBand(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
+// is a feature switched on? live for everyone, or switched on in developer mode
+const devFeatures = () => { try { return JSON.parse(localStorage.getItem('sg.features') || '{}'); } catch { return {}; } };
+function featureOn(id) { const f = FEATURES.find(x => x.id === id); if (!f) return true; if (f.live) return true;
+  if (!devOn()) return false; const d = devFeatures(); return d[id] !== false; }
 const devOn = () => { try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
 async function cloudPush(force) {
   if (devOn() || VISIT) return; // developer mode and visits never touch the cloud
@@ -1343,7 +1348,7 @@ function openBag() {
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
-    <button id="lookBtn" class="ghost">Change my look</button> ${PLAYTEST ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+    <button id="lookBtn" class="ghost">Change my look</button> ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
   document.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { const k = b.dataset.it; $('itInfo').innerHTML = `<b>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}</b>. ${itemUse(k)}`; });
   document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => { const k = b.dataset.fu, p = S.placed.filter(x => x === k).length; $('itInfo').innerHTML = `<b>${icon(k)} ${FURN[k].name}</b>. ${p ? `${p} in your hut.` : 'Not placed yet. Place it inside your hut.'}`; });
   $('lookBtn').onclick = () => openLookEditor(openBag);
@@ -2509,22 +2514,24 @@ const CRAFTS = [
   { id:'bronzeAxe',  name:'Bronze Axe',     needs:{ bronze:2, stick:1 }, does:'Chop 3 logs per tree instead of 2.', after:'furnace' },
   { id:'bronzePick', name:'Bronze Pickaxe', needs:{ bronze:2, stick:1 }, does:'Break 5 stone per rock instead of 3.', after:'furnace' },
 ];
+const potteryOn = () => featureOn('pottery') || !!S.stations.kiln, bronzeOn = () => featureOn('bronze') || !!S.stations.furnace;
 const hasCraft = id => id === 'kiln' || id === 'furnace' ? !!S.stations[id] : !!S.tools[id];
 const AGES = [
   { id:'stone', name:'Stone Age', done:() => S.tools.axe && S.tools.pick },
-  { id:'pottery', name:'Pottery Age', done:() => !!S.stations.kiln },
-  { id:'bronze', name:'Bronze Age', done:() => !!S.stations.furnace },
+  { id:'pottery', name:'Pottery Age', done:() => !!S.stations.kiln, get soon() { return !potteryOn(); } },
+  { id:'bronze', name:'Bronze Age', done:() => !!S.stations.furnace, get soon() { return !bronzeOn(); } },
   { id:'glass', name:'Glass Age', soon:true },
   { id:'iron', name:'Iron Age', soon:true },
 ];
 function agesHtml() {
-  return `<div class="ages">${AGES.map(a => `<span class="${a.soon ? 'soon' : a.done() ? 'done' : ''}">${a.soon ? '' : a.done() ? '✓ ' : ''}${a.name}${a.soon ? ' (coming next)' : ''}</span>`).join('<i>›</i>')}</div>`;
+  return `<div class="ages">${AGES.map(a => `<span class="${a.soon ? 'soon' : a.done() ? 'done' : ''}">${a.soon ? '' : a.done() ? '✓ ' : ''}${a.name}${a.soon ? ' (coming soon)' : ''}</span>`).join('<i>›</i>')}</div>`;
 }
-function drawStations() { kiln.visible = !!S.stations.kiln; furnace.visible = !!S.stations.furnace; }
+function drawStations() { kiln.visible = !!S.stations.kiln; furnace.visible = !!S.stations.furnace;
+  nodes.forEach(n => n.visible = n.userData.kind === 'claypit' ? potteryOn() : bronzeOn()); }
 function useWorkbench() {
-  const shown = CRAFTS.filter(c => !c.after || hasCraft(c.after));
+  const shown = CRAFTS.filter(c => (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick'].includes(c.id) || bronzeOn()));
   showCard(`<div class="kicker">TREE STUMP WORKBENCH</div><h2>Craft</h2><h4>Ages of invention</h4>${agesHtml()}
-    <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>
+    <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln && potteryOn() ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>
     <div class="jlist">${shown.map(c => `<button data-cr="${c.id}" ${hasCraft(c.id) || !enough(c.needs) ? 'style="opacity:.6"' : ''}>${hasCraft(c.id) ? '✓ ' : ''}${c.name} <span class="sub">${hasCraft(c.id) ? 'You have this. ' : ''}${c.does} Needs ${needText(c.needs)}.</span></button>`).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => {
     const c = CRAFTS.find(x => x.id === b.dataset.cr);
@@ -2821,7 +2828,7 @@ renderer.domElement.addEventListener('pointerdown', e => {
   closeDialog();
   ptr.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1);
   ray.setFromCamera(ptr, camera);
-  const hit = ray.intersectObjects([...clickables, ...lateClicks, ...digGroups], true)[0];
+  const hit = ray.intersectObjects([...clickables, ...lateClicks, ...digGroups], true).find(h => { for (let o = h.object; o; o = o.parent) if (!o.visible) return false; return true; });
   if (hit) {
     let o = hit.object; while (o && !o.userData.kind) o = o.parent;
     if (o) { const wp = new THREE.Vector3(); o.getWorldPosition(wp); target = wp; pending = o; return; }
@@ -2868,7 +2875,7 @@ function arrive(o) {
   if (k === 'bush') return cutBush(o);
   if (k === 'workbench') return useWorkbench();
   if (k === 'chest') return openChest();
-  if (k === 'claypit' || k === 'ore') return gatherNode(o);
+  if ((k === 'claypit' || k === 'ore') && o.visible) return gatherNode(o);
   if (k === 'kiln') return useKiln();
   if (k === 'furnace') return useFurnace();
   if (k === 'buildsite') return useBuildSite();
@@ -3115,7 +3122,6 @@ function lookPicker(title, done, withName) {
   upd0(); draw();
   function upd0() { S.look = { ...lk }; dressPlayer(); }
 }
-const PLAYTEST = true; // while testing, players may switch islands from the Bag
 function modePicker(done, o = {}) {
   let pick = o.switching ? S.mode : null;
   const draw = () => {
@@ -3187,7 +3193,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }

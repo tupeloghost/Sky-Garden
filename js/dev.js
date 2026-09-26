@@ -62,6 +62,7 @@ function draw() {
     <h5>GIVE</h5><div class="row">
       <button id="dvCoins">+1,000 coins</button><button id="dvBag">5 of every item</button><button id="dvSeeds">10 of every seed</button><button id="dvFurn">All furniture</button></div>
     <h5>COLLECTIONS</h5><div class="row"><button id="dvAll">Collect everything</button><button id="dvNone">Clear collections</button></div>
+    <h5>FEATURES (off = players don't see it yet)</h5><div class="row">${g.FEATURES.map(f => `<button data-ft="${f.id}" title="${f.what}" style="${g.featureOn(f.id) ? 'background:#8fdc8a;color:#1d2b1f' : ''}">${f.name}: ${f.live ? 'live for everyone' : g.featureOn(f.id) ? 'on in dev' : 'off'}</button>`).join('')}</div>
     <h5>RESET</h5><div class="row"><button class="warn" id="dvReset">Start a brand new game</button><button id="dvOff">Turn off developer mode</button></div>
     <p id="dvMsg" style="margin:6px 0 0;min-height:18px;color:#9fe7e0"></p>`;
   panel.querySelectorAll('[data-look]').forEach(b => b.onclick = () => { try { localStorage.setItem('sg.look', b.dataset.look); sessionStorage.setItem('sg.devmsg', `Look: ${b.textContent}`); } catch {} location.reload(); });
@@ -84,6 +85,9 @@ function draw() {
     S.found = [...new Set([...S.found, ...Object.keys(g.FINDS)])]; S.aha = [...g.AHA_ORDER]; S.cooked = g.RECIPES.map(r => r.id); S.charted = g.CONSTELLATIONS.map(c => c.id);
     S.read = g.BOOKS.map(b => b.id); S.songs = ['twinkle','ode']; S.penta = true; S.sayings = g.SAYINGS.map(x => x.id); g.save(); g.drawHud(); msg('Everything collected.'); };
   panel.querySelector('#dvNone').onclick = () => { Object.assign(S, { found:[], cooked:[], charted:[], read:[], songs:[], penta:false, sayings:[] }); g.save(); g.drawHud(); msg('Collections cleared. Story memories were kept.'); };
+  panel.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { const f = g.FEATURES.find(x => x.id === b.dataset.ft); if (f.live) { msg(`${f.name} is live for everyone. Change it in data/features.js.`); return; }
+    let d = {}; try { d = JSON.parse(localStorage.getItem('sg.features') || '{}'); } catch {} d[f.id] = !g.featureOn(f.id); try { localStorage.setItem('sg.features', JSON.stringify(d)); } catch {}
+    reloadWith(`${f.name} is now ${d[f.id] ? 'on' : 'off'} in developer mode.`); });
   panel.querySelector('#dvReset').onclick = () => {
     const b = panel.querySelector('#dvReset'); if (b.dataset.sure) { try { localStorage.removeItem('sg.save'); } catch {} location.reload(); return; }
     b.dataset.sure = 1; b.textContent = 'Tap again to erase this game'; };
