@@ -92,7 +92,9 @@ Later: Moonmelon (Night Isle only), Breezebean (climbs bridges), Rainroot (only 
 - **v0.2 (built):** story, Chapter 1 quest, dig spots, sundial, bell tuning, Pip's Big Questions, Memory Journal.
 - **v0.3 (built):** walkable bridge to Orchard Isle, Chapter 2 (The Cloud Ship: solar still, 3-4-5 rope, star that stays), fishing, fruit trees, 4 seasons of 7 days with seasonal crops (Moonpumpkin, Frostmint), Harvest Festival, bag, gifts with favorites, heart scenes at 3 and 6 hearts (Jacquard loom, bird migration, world trees), Pip's daily order, furniture shop, hut interior with decorating and a memory shelf, swaying grass and trees, butterflies, fireflies, stars, glowing windows, sparkle bursts.
 - **v0.4 (built):** Chapter 3 The Windmill (Antikythera gears, Archimedes' lever, yeast and bread across faiths), Moss & Fern with Fibonacci sunflower scene and Glow Mushroom Lamp, wind-powered sprinkler, Stoic and Golden Rule questions, 23 memories.
-- **v0.5:** Chapter 4 Night Isle with Lumen (only after dark), 10-heart scenes, tools bar.
+- **v0.5 (built):** recall moments (6-8-10 garden, Rosetta boulder, night fishing), GitHub Pages launch, pause during menus, 6-minute days.
+- **v0.6 (built):** Chapter 4 The Painter of Light (bridge of light after 8 PM, Lumen, moon phases and lunar calendars, Ibn al-Haytham's dark room, crystal chimes recall), Newton prism scene, Starbloom crop, daily goals, hut paint.
+- **v0.7:** Chapter 5 The Old Heart: ring every bell together, uses all earlier lessons.
 - **v0.5:** crafting, sprinklers, museum.
 - **v0.6:** visit a friend's island (share link), festivals.
 
