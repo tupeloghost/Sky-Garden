@@ -82,7 +82,7 @@ export default {
       if (!row) return json({ error: 'not found' }, 404, origin);
       const full = JSON.parse(row.data), pub = {};
       PUBLIC.forEach(k => { if (full[k] !== undefined) pub[k] = full[k]; });
-      pub.name = cleanName(full.name);
+      pub.name = full.ageBand === 'kid' ? 'A young gardener' : cleanName(full.name); // kids' names stay private
       return json({ island: pub }, 200, origin);
     }
 
@@ -94,7 +94,8 @@ export default {
       if (!to) return json({ error: 'not found' }, 404, origin);
       if (to.id === from) return json({ error: 'that is you' }, 400, origin);
       const me = await env.DB.prepare('SELECT data FROM saves WHERE id = ?').bind(from).first();
-      const fromName = cleanName(me ? JSON.parse(me.data).name : '');
+      const meData = me ? JSON.parse(me.data) : {};
+      const fromName = meData.ageBand === 'kid' ? 'A young gardener' : cleanName(meData.name);
       const res = await env.DB.prepare('INSERT OR IGNORE INTO gifts (to_id, from_id, from_name, kind, item, day, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
         .bind(to.id, from, fromName, kind, kind === 'gift' ? b.item : null, today(), Date.now()).run();
       if (!res.meta.changes) return json({ error: 'already today' }, 409, origin);

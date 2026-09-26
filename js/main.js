@@ -16,7 +16,7 @@ for (const id of Object.keys(FESTIVAL_AHA)) if (!AHA_ORDER.includes(id)) AHA_ORD
 const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, skywheat:0, moonpumpkin:0, frostmint:0 }, bag:{},
   tiles:Array.from({length:9},()=>({s:0})), sel:'cloudberry', hearts:{ nana:0, pip:0, drizzle:0, twins:0, lumen:0, mabel:0, hoot:0, allegra:0, sage:0 }, talked:{}, gifted:{}, scenes:[],
   bridge:false, pos:[0,0,2], where:'home', quest:0, aha:[], relics:0, digs:[], asked:-1, qi:0, letter:false,
-  order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, created:false, name:'', look:null, mode:null, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
+  order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, created:false, birthday:null, startedAt:null, lastParty:null, partyHat:false, name:'', look:null, mode:null, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
 let S;
 try {
   const saved = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
@@ -38,7 +38,7 @@ const cleanKey = k => (k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 if (!S.syncKey) S.syncKey = newSyncKey();
 let cloudDirty = true, lastPush = 0, cloudState = { when:0, ok:null };
 let setupCam = false; // camera close-up while making your character
-const save = () => { if (VISIT) return; S.savedAt = Date.now(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
+const save = () => { if (VISIT) return; S.savedAt = Date.now(); if (typeof ageBand === 'function') S.ageBand = ageBand(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
 const devOn = () => { try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
 async function cloudPush(force) {
   if (devOn() || VISIT) return; // developer mode and visits never touch the cloud
@@ -640,6 +640,7 @@ function person(lk) {
   if (lk.hat === 'crown') for (let i=0;i<9;i++){ const a = i/9*Math.PI*2; inner.add(mesh(sph(.065), mat([hc, 0xffffff, 0xfff3a0][i%3]), Math.cos(a)*.28, y - .07, Math.sin(a)*.28)); }
   if (lk.hat === 'beanie') { inner.add(mesh(new THREE.SphereGeometry(.36,20,10,0,Math.PI*2,0,Math.PI/2.1), mat(hc), 0, 1.58, -.01)); inner.add(mesh(new THREE.TorusGeometry(.33,.05,8,24), mat(hc), 0, 1.64, 0).rotateX(Math.PI/2)); inner.add(mesh(sph(.09), mat(0xffffff), 0, 1.96, 0)); }
   if (lk.hat === 'bow') [-1,1].forEach(sd => { const bw = mesh(sph(.1), mat(hc), .2 + sd*.09, 1.8, .06); bw.scale.set(1.2,.8,.5); inner.add(bw); });
+  if (lk.hat === 'party') { const ph = mesh(new THREE.ConeGeometry(.2,.45,16), mat(hc), 0, y + .15, 0); inner.add(ph); inner.add(mesh(sph(.07), mat(0xffffff), 0, y + .4, 0)); for (let i=0;i<3;i++) inner.add(mesh(new THREE.TorusGeometry(.2 - i*.055,.018,6,16), mat(0xffffff), 0, y + i*.12, 0).rotateX(Math.PI/2)); }
   if (lk.hat === 'straw') { inner.add(mesh(new THREE.CylinderGeometry(.56,.58,.04,24), mat(0xf2d38a), 0, y - .04, 0)); inner.add(mesh(new THREE.CylinderGeometry(.24,.28,.22,20), mat(0xf2d38a), 0, y + .08, 0)); inner.add(mesh(new THREE.CylinderGeometry(.285,.285,.06,20), mat(hc), 0, y + .01, 0)); }
   g.userData.inner = inner; inner.userData.eyes = eyes; inner.userData.arms = arms; inner.userData.blink = Math.random()*4;
   return g;
@@ -741,7 +742,7 @@ Object.values(shelfItems).forEach(m => shelf.add(m));
 shelf.userData.kind = 'shelf'; room.add(shelf);
 const roomLight = new THREE.PointLight(0xffd9a8, 0, 16, 1); roomLight.position.set(ROOM.x, 3, ROOM.z + .5); scene.add(roomLight);
 // A designed room: every spot is meant for a certain kind of furniture.
-const FURN_CAT = { rug:'rug', table:'table', armchair:'seat', rocker:'seat', bookshelf:'tall', lamp:'decor', fern:'decor', globe:'decor', mushroom:'decor', painting:'wall', sign:'wall' };
+const FURN_CAT = { cake:'decor', rug:'rug', table:'table', armchair:'seat', rocker:'seat', bookshelf:'tall', lamp:'decor', fern:'decor', globe:'decor', mushroom:'decor', painting:'wall', sign:'wall' };
 const CAT_INFO = {
   rug:   { label:'Rug', need:'a rug', buy:'Pip sells a Round Rug.' },
   table: { label:'Table', need:'a table', buy:'Pip sells a Round Table.' },
@@ -802,6 +803,7 @@ function furnModel(id) {
   if (id === 'rocker') { const w = mat(0xb87d45); g.add(mesh(new THREE.BoxGeometry(.7,.08,.7), w, 0, .45, 0)); g.add(mesh(new THREE.BoxGeometry(.7,.8,.08), w, 0, .85, -.32)); [-1,1].forEach(s => { const r = mesh(new THREE.TorusGeometry(.6,.03,6,20,1.2), w, s*.3, .6, 0); r.rotation.set(0, Math.PI/2, Math.PI*1.35); g.add(r); }); g.add(mesh(new THREE.BoxGeometry(.6,.1,.6), mat(0xff8fa3), 0, .52, 0)); }
   if (id === 'sign') { g.add(mesh(new THREE.BoxGeometry(.9,.5,.06), mat(0xff8fa3), 0, 0, .03)); g.add(mesh(new THREE.BoxGeometry(.98,.08,.08), mat(0x9b6b4a), 0, .29, .04)); g.add(mesh(sph(.09), glow(0xffc857), 0, 0, .08)); [-.3,.3].forEach(x => g.add(mesh(sph(.05), mat(0xffffff), x, 0, .07))); return g; }
   if (id === 'sign_old') { g.add(mesh(new THREE.CylinderGeometry(.05,.05,1.1,8), mat(0x9b6b4a), 0, .55, 0)); g.add(mesh(new THREE.BoxGeometry(.9,.45,.08), mat(0xff8fa3), 0, 1.1, 0)); g.add(mesh(sph(.08), glow(0xffc857), 0, 1.1, .05)); }
+  if (id === 'cake') { g.add(mesh(new THREE.CylinderGeometry(.34,.36,.24,20), mat(0xfff1d6), 0, .12, 0)); g.add(mesh(new THREE.CylinderGeometry(.24,.26,.2,20), mat(0xff8fa3), 0, .34, 0)); for (let i=0;i<5;i++){ const a = i/5*Math.PI*2; g.add(mesh(new THREE.CylinderGeometry(.015,.015,.12,6), mat(0x7ec8e3), Math.cos(a)*.14, .5, Math.sin(a)*.14)); g.add(mesh(sph(.025), glow(0xffc857), Math.cos(a)*.14, .58, Math.sin(a)*.14)); } return g; }
   if (id === 'painting') { g.add(mesh(new THREE.BoxGeometry(1,.8,.06), mat(0xc98f58), 0, 0, .03)); g.add(mesh(new THREE.BoxGeometry(.86,.66,.04), mat(0x1f2552), 0, 0, .06)); g.add(mesh(new THREE.CircleGeometry(.14,20), glow(0xfff3a0), .18, .1, .09)); [[-.25,.15],[-.1,-.12],[.3,-.18],[-.3,-.2]].forEach(([x,y]) => g.add(mesh(new THREE.CircleGeometry(.025,8), glow(0xffffff), x, y, .09))); return g; }
   if (id === 'painting_old') { [-.3,.3].forEach(x => g.add(mesh(new THREE.CylinderGeometry(.04,.04,1.5,6), mat(0x9b6b4a), x, .75, 0))); g.add(mesh(new THREE.BoxGeometry(.9,.7,.05), mat(0x1f2552), 0, 1.2, .06)); g.add(mesh(new THREE.CircleGeometry(.18,20), glow(0xfff3a0), .15, 1.28, .09)); g.add(mesh(new THREE.CircleGeometry(.05,10), glow(0xffffff), -.2, 1.1, .09)); }
   if (id === 'mushroom') { g.add(mesh(new THREE.CylinderGeometry(.1,.14,.6,10), mat(0xfff1d6), 0, .3, 0)); const cap = mesh(new THREE.SphereGeometry(.4,20,10,0,Math.PI*2,0,Math.PI/2), glow(0x9fe7e0), 0, .58, 0); g.add(cap); }
@@ -876,6 +878,7 @@ function applySeason() {
   flowers.visible = s < 2; tufts.visible = s !== 3 && !lowGfx;
   rainMat.color.set(s === 3 ? 0xffffff : 0xdfeaff); rainMat.size = s === 3 ? .14 : .08;
   const fz = festival(); lanterns.visible = !!fz; if (fz) lanternMat.color.set(fz.color);
+  try { balloons.visible = isPartyDay() && !VISIT; } catch {} // balloons are made later in startup
   fruitTrees.forEach((t, i) => t.userData.fruits.visible = S.fruit[i] !== S.day && s !== 3);
 }
 applySeason();
@@ -1086,9 +1089,64 @@ function openCategory(name) {
   showCard(`<div class="kicker">COLLECTIONS</div><h2>${name}: ${got} of ${c.ids.length}</h2><div class="jlist">${c.ids.map(k => c.has(k) ? `<button data-ck="${k}">${c.label(k)}</button>` : `<button class="locked">??? <span class="sub">${c.hint(k)}</span></button>`).join('')}</div>`, 'Back', openJournal);
   document.querySelectorAll('[data-ck]').forEach(b => b.onclick = c.open(b.dataset.ck));
 }
+const MONTH_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const dayKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+if (!S.startedAt && !VISIT) S.startedAt = dayKey(today());
+function yearMark() { if (S.birthday) return S.birthday; const st = new Date((S.startedAt || dayKey(today())) + 'T12:00'); return { m:st.getMonth()+1, d:st.getDate() }; }
+function islandYear() { // Year 1 from the start; each birthday (or start anniversary) after that begins a new year
+  const mk = yearMark(), st = new Date((S.startedAt || dayKey(today())) + 'T00:00'), now = today(); let n = 1;
+  for (let y = st.getFullYear(); y <= now.getFullYear(); y++) { const b = new Date(y, mk.m-1, mk.d); if (b > st && b <= now) n++; }
+  return n;
+}
+function ageBand() {
+  if (!S.birthday || !S.birthday.y) return 'kid'; // no birthday given: use kid-safe settings
+  const d = today(), b = S.birthday; let age = d.getFullYear() - b.y; if (d.getMonth()+1 < b.m || (d.getMonth()+1 === b.m && d.getDate() < b.d)) age--;
+  return age < 13 ? 'kid' : age < 18 ? 'teen' : 'adult';
+}
+const kidSafe = () => ageBand() === 'kid';
+const isPartyDay = () => { const mk = yearMark(), d = today(); return d.getMonth()+1 === mk.m && d.getDate() === mk.d && dayKey(d) !== S.startedAt; };
+function birthdayPicker(done, fromNana) {
+  const draw = (msg = '') => {
+    showCard(`<div class="kicker">${fromNana ? 'NANA GALE ASKS' : 'YOUR BIRTHDAY'}</div><h2>${fromNana ? '"When is your birthday, dear?"' : 'When is your birthday?'}</h2>
+      <p>On your birthday the whole sky throws you a party, and your island starts a new year.</p>
+      <div class="chips" style="margin-top:10px"><select id="bdM" style="font:18px 'Baloo 2',sans-serif;border-radius:12px;padding:6px">${MONTH_LONG.map((m,i) => `<option value="${i+1}">${m}</option>`).join('')}</select>
+      <select id="bdD" style="font:18px 'Baloo 2',sans-serif;border-radius:12px;padding:6px">${Array.from({length:31}, (_,i) => `<option>${i+1}</option>`).join('')}</select>
+      <select id="bdY" style="font:18px 'Baloo 2',sans-serif;border-radius:12px;padding:6px"><option value="">Year</option>${Array.from({length:100}, (_,i) => today().getFullYear() - i).map(y => `<option>${y}</option>`).join('')}</select></div>
+      <p id="bdMsg" style="font-weight:700;min-height:20px;margin-top:8px">${msg}</p>
+      <button id="bdOk">Save my birthday</button> <button id="bdSkip" class="ghost">Skip</button>`, null);
+    if (S.birthday) { $('bdM').value = S.birthday.m; $('bdD').value = S.birthday.d; if (S.birthday.y) $('bdY').value = S.birthday.y; }
+    $('bdOk').onclick = () => { const m = +$('bdM').value, d = +$('bdD').value, y = +$('bdY').value;
+      if (!y) return draw('Pick the year too.');
+      if (d > new Date(2024, m, 0).getDate()) return draw(`${MONTH_LONG[m-1]} only has ${new Date(2024, m, 0).getDate()} days.`);
+      S.birthday = { m, d, y }; S.ageBand = ageBand(); S.birthdayAsked = true; save(); hideCard(); toast(`Birthday saved: ${MONTH_LONG[m-1]} ${d}.`); done && done(); };
+    $('bdSkip').onclick = () => { S.birthdayAsked = true; save(); hideCard(); S.ageBand = 'kid'; save(); toast('No problem. Your island will celebrate the day you started instead. You can add it later from your Bag.'); done && done(); };
+  };
+  draw();
+}
+const balloons = new THREE.Group(); balloons.visible = false; scene.add(balloons);
+[[-5.6,-1.6],[-2.4,-1.6],[-5.6,-4.4],[-2.4,-4.4],[-4,-1.2],[-1.2,-2.4]].forEach(([x,z], i) => {
+  const c = [0xff8fa3,0x7ec8e3,0xffc857,0x8fdc8a,0xc9b6ff,0xff9a3c][i];
+  const b = mesh(sph(.26), new THREE.MeshStandardMaterial({ color:c, roughness:.3 }), x, 2.6 + (i%2)*.3, z); b.scale.y = 1.2; balloons.add(b);
+  balloons.add(mesh(new THREE.CylinderGeometry(.008,.008,2.4,4), mat(0xffffff), x, 1.3 + (i%2)*.15, z)); });
+function birthdayParty() {
+  S.lastParty = dayKey(today());
+  const yr = islandYear(), met = Object.keys(NEIGHBORS).filter(id => (S.hearts[id] || 0) > 0 && npcs[id]);
+  const giftsFrom = met.map(id => NEIGHBORS[id].name.replace(/^Professor /, 'Professor ')), coins = 25 * Math.max(1, met.length);
+  S.coins += coins; S.furn.cake = (S.furn.cake || 0) + 1; S.partyHat = true;
+  const ys = S.yearStats || { aha:0, found:0, built:0 };
+  const review = { aha:S.aha.length - ys.aha, found:(S.found || []).length - ys.found, built:S.built.length - ys.built };
+  S.yearStats = { aha:S.aha.length, found:(S.found || []).length, built:S.built.length }; save(); drawHud();
+  [523,659,784,1047,784,1047,1319].forEach((f,i) => setTimeout(() => chime(f), i*170)); burst(house.position, 0xff8fa3, 30);
+  showCard(`<div class="kicker">${S.birthday ? 'HAPPY BIRTHDAY' : 'HAPPY ISLAND DAY'}</div><h2>${S.birthday ? `Happy birthday, ${S.name || 'friend'}!` : `Happy Island Day, ${S.name || 'friend'}!`}</h2>
+    <p>${S.birthday ? 'The whole sky came to celebrate you.' : 'One more year on your island. The whole sky came to celebrate.'} Year ${yr} begins today!</p>
+    <h4>Presents</h4><div class="jlist">
+      ${giftsFrom.length ? `<button>${coins} coins from ${giftsFrom.join(', ')}</button>` : `<button>${coins} coins from the sky</button>`}
+      <button>A Birthday Cake for your hut</button><button>A party hat (Bag, then Change my look)</button></div>
+    <h4>Your year ${yr - 1} in review</h4><div class="jlist"><button>${review.aha} memories brought back</button><button>${review.found} new things found</button><button>${review.built} buildings rebuilt</button></div>`, 'Thank you!');
+}
 function openJournal() {
   const cats = collectionCats(), tot = cats.reduce((a, c) => a + c.ids.length, 0), got = cats.reduce((a, c) => a + c.ids.filter(c.has).length, 0);
-  showCard(`<div class="kicker">COLLECTIONS</div><h2>${got} of ${tot} found</h2><p>Everything you have discovered in the sky. Tap a group to see what you have and what is still out there.</p>
+  showCard(`<div class="kicker">COLLECTIONS: YEAR ${islandYear()} ON YOUR ISLAND</div><h2>${got} of ${tot} found</h2><p>Everything you have discovered in the sky. Tap a group to see what you have and what is still out there.</p>
     <div style="height:10px;border-radius:99px;background:#eadfd0;margin-top:10px;overflow:hidden"><div style="height:100%;width:${Math.round(got/tot*100)}%;background:#ffc857"></div></div>
     <div class="jlist">${cats.map(c => { const n = c.ids.filter(c.has).length; return `<button data-cat="${c.name}">${n === c.ids.length ? '✓ ' : ''}${c.name} <span class="sub">${n} of ${c.ids.length}</span></button>`; }).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => openCategory(b.dataset.cat));
@@ -1184,8 +1242,9 @@ function openBag() {
     <div class="jlist">${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}</div>
     <h4>Furniture</h4><div class="jlist">${furn || '<p>None yet. Pip sells furniture.</p>'}</div>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
-    <button id="lookBtn" class="ghost">Change my look</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+    <button id="lookBtn" class="ghost">Change my look</button> <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
   $('lookBtn').onclick = () => openLookEditor(openBag);
+  $('bdBtn').onclick = () => birthdayPicker(openBag);
   $('moveBtn').onclick = () => openMoveGame(openBag);
 }
 $('journalBtn').onclick = openJournal;
@@ -2426,6 +2485,7 @@ function tick() {
   siteGroups.forEach(sg => sg.traverse(o => { if (o.userData.spin) { o.rotation.y = now; o.position.y = 3.9 + Math.sin(now*2)*.15; } }));
   flag.rotation.y = Math.sin(now*3) * .3;
   mflag.rotation.z = S.mailNew ? 0 : -Math.PI/2;
+  if (balloons.visible) balloons.children.forEach((b, i) => { if (b.geometry.type === 'SphereGeometry') b.position.y = 2.6 + (i%4)*.15 + Math.sin(now*1.5 + i)*.1; });
   if (S.q3 >= 4) blades.rotation.z -= dt * 1.2; else blades.rotation.z = Math.sin(now*.7)*.03;
   millstone.visible = S.q3 < 4;
   sprinkler.visible = S.sprinklers; if (S.sprinklers) sprHead.rotation.y += dt * (h < 8 ? 6 : .6);
@@ -2471,7 +2531,7 @@ function lookPicker(title, done, withName) {
       <h4>Shirt</h4><div class="chips">${sw(SHIRTS, lk.shirt, 'shirt')}</div>
       <h4>Bottoms</h4><div class="chips">${Object.entries(BOTTOMS).map(([k,v]) => `<button data-bt="${k}" class="${lk.bottom === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
       <div class="chips">${sw(BOTTOM_COLORS, lk.bottomColor, 'bcol')}</div>
-      <h4>Hat</h4><div class="chips">${Object.entries(HATS).map(([k,v]) => `<button data-hat="${k}" class="${lk.hat === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
+      <h4>Hat</h4><div class="chips">${Object.entries({ ...HATS, ...(S.partyHat ? { party:'Party hat' } : {}) }).map(([k,v]) => `<button data-hat="${k}" class="${lk.hat === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
       ${lk.hat !== 'none' ? `<h4>Hat color</h4><div class="chips">${sw(HAT_COLORS, lk.hatColor, 'hc')}</div>` : ''}
       <p id="lkMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
       <button id="lkDone">${withName ? 'Next' : 'Done'}</button>`, null);
@@ -2513,7 +2573,9 @@ function endSetup() { setupCam = false; document.getElementById('veil').classLis
 $('start').onclick = () => { $('title').style.display = 'none'; document.body.classList.remove('on-title'); playing = true; snapCam(); startAudio();
   { const turned = seasonCheck(); applySeason(); if (turned && S.letter) toast(turned); }
   { const fz = festival(); if (fz && S.letter && !S.fests[fz.id + fz.year]) setTimeout(() => toast(`Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`), 800); }
-  if (!S.created) { lookPicker('NEW GAME', () => modePicker(() => { endSetup(); $('start').onclick(); }), true); return; }
+  if (!S.created) { lookPicker('NEW GAME', () => { endSetup(); birthdayPicker(() => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); $('start').onclick(); }); }); }, true); return; }
+  if (isPartyDay() && S.lastParty !== dayKey(today()) && S.letter) setTimeout(birthdayParty, 900);
+  else if (S.tut === 9 && !S.birthdayAsked && !S.birthday && S.letter) setTimeout(() => birthdayPicker(null, true), 1200);
   if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">A LETTER ON THE TABLE</div><h2>Dear ${S.name || 'little one'},</h2><p class="letter">If you are reading this, the hut is yours now. The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Let\'s go!', () => { if (S.tut === 0) startTutorial(); }); } };
 // --- playtest feedback: a short form that goes to the Sky Garden cloud ---
 function openFeedback() {
@@ -2521,14 +2583,14 @@ function openFeedback() {
   const where = `${$('quest').querySelector('b')?.textContent || ''}: ${$('quest').querySelector('.qt')?.textContent || ''}`;
   showCard(`<div class="kicker">FEEDBACK</div><h2>How is it going?</h2><p>Your notes go straight to the people making Sky Garden. Thank you!</p>
     <div class="steppers" style="justify-content:flex-start">${[['love','Loving it'],['okay',"It's okay"],['confused','Confused'],['bored','Bored']].map(([k,l]) => `<button data-mood="${k}" class="ghost">${l}</button>`).join('')}</div>
-    <textarea id="fbText" rows="4" maxlength="2000" placeholder="What happened? What did you like? Where did you get stuck? (optional)" style="width:100%;margin-top:10px;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:10px"></textarea>
+    ${kidSafe() ? '' : `<textarea id="fbText" rows="4" maxlength="2000" placeholder="What happened? What did you like? Where did you get stuck? (optional)" style="width:100%;margin-top:10px;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:10px"></textarea>`}
     <p style="font-size:13px;opacity:.7;margin-top:6px">We also send where you are in the game (${where}) so we know what your note is about. Nothing else about you is sent.</p>
     <button id="fbSend">Send</button> <button id="fbLater" class="ghost">Not now</button>
     <p id="fbMsg" style="margin-top:8px;font-weight:700;min-height:22px"></p>`, null);
   document.querySelectorAll('[data-mood]').forEach(b => b.onclick = () => { mood = b.dataset.mood; document.querySelectorAll('[data-mood]').forEach(x => x.className = x === b ? '' : 'ghost'); });
   $('fbLater').onclick = hideCard;
   $('fbSend').onclick = async () => {
-    const text = $('fbText').value.trim();
+    const text = $('fbText') ? $('fbText').value.trim() : '';
     if (!mood && !text) { $('fbMsg').textContent = 'Pick how it is going, or write a note first.'; return; }
     $('fbMsg').textContent = 'Sending...';
     try {
@@ -2551,7 +2613,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }

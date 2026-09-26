@@ -31,6 +31,7 @@ const FURN = {
   rocker:    { name:"Grandma's Rocker",  gift:true },
   sign:      { name:"Pip's Lucky Sign",  gift:true },
   mushroom:  { name:'Glow Mushroom Lamp', gift:true },
+  cake:      { name:'Birthday Cake', gift:true },
   painting:  { name:"Lumen's Painting", gift:true },
 };
 const LOVES = { nana:['skywheat','frostmint','peach'], pip:['sunbell','cloudberry','apple'], drizzle:['minnow','trout','puffer','moonpumpkin'], twins:['moonpumpkin','apple','frostmint'], lumen:['starbloom','frostmint','peach','moonray'] };

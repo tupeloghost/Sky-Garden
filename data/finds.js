@@ -23,6 +23,7 @@ const FINDS = {
   globe:     { fact:'Star globes are old: one famous Greek statue, the Farnese Atlas, carries a globe of the sky.', hint:'Buy it from Pip.' },
   rocker:    { fact:'Rocking chairs became popular in the 1700s. Gentle rocking can help people relax.', hint:'Reach 6 hearts with Nana Gale.' },
   sign:      { fact:'Before most people could read, shop signs used pictures, like a boot for a shoemaker.', hint:'Reach 6 hearts with Pip.' },
+  cake:      { fact:'Birthday candles may go back to ancient Greece, where round cakes with candles were offered to Artemis, goddess of the moon. Historians are not completely sure.', hint:'Celebrate your birthday, or your Island Day, in Sky Garden.' },
   mushroom:  { fact:'Some real mushrooms glow in the dark. The glow is called bioluminescence, the same as fireflies.', hint:'Reach 6 hearts with Moss & Fern.' },
   painting:  { fact:'Some of the oldest known paintings, in caves in Indonesia, are over 40,000 years old.', hint:'Reach 6 hearts with Lumen.' },
 };
