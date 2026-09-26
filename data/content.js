@@ -287,10 +287,14 @@ Object.assign(RECALL, {
 const BUILDINGS = [
   { id:'observatory', name:'Observatory', coins:400, items:{ trout:2, minnow:3 }, pos:[-5,-4],
     about:'A dome with a telescope. After 8 PM, chart the constellations. Different stars come out in different months.' },
-  { id:'library', name:'Library', soon:true, pos:[5,-4], about:'Plans arrive in a future update.' },
-  { id:'bakery', name:'Bakery', soon:true, pos:[-6,3], about:'Plans arrive in a future update.' },
-  { id:'musichall', name:'Music Hall', soon:true, pos:[6,3], about:'Plans arrive in a future update.' },
-  { id:'temple', name:'Temple Garden', soon:true, pos:[0,7], about:'Plans arrive in a future update.' },
+  { id:'bakery', name:'Bakery', coins:500, items:{ 'kind:crop':6 }, pos:[-6,3], villager:'mabel',
+    about:'Mabel the hedgehog moves in. Cook crops, fruit, and fish into dishes that sell for more, and learn kitchen science.' },
+  { id:'library', name:'Library', coins:600, items:{ 'kind:fish':4 }, pos:[5,-4], villager:'hoot',
+    about:'Professor Hoot the owl moves in. A new book arrives every week, full of history and science.' },
+  { id:'musichall', name:'Music Hall', coins:700, items:{ 'kind:fruit':5 }, pos:[6,3], villager:'allegra',
+    about:'Allegra the cat moves in. Play the xylophone and learn songs.' },
+  { id:'temple', name:'Temple Garden', coins:800, items:{ 'kind:dish':3 }, pos:[0,7], villager:'sage',
+    about:'Sage the old tortoise moves in. Hear a saying from the world\'s traditions each day, and see every festival coming this year.' },
 ];
 const GRANDMA_LETTER2 = "If you are reading this, you rang it. I knew you would. I spent years trying, and I think I was missing the one thing you have: you learned it all by doing it, one small thing at a time, with friends beside you. The village was never just the islands. It was the people who remembered together. Build it back, one home at a time. The sky remembers. So will you.";
 
@@ -337,7 +341,7 @@ const HOWTO = {
     "Tap the gray stones beside the bell. Use + and - to split the rope into 3 sides until the corner turns green, then tap Tie it.",
     "Tap the wooden frame. Try small gears until the small gear spins 4 times for each turn of the big gear, then tap Fit this gear.",
     "Watch the clock at the top. At about 12 PM, tap the bell.",
-    "Tap an empty building site at the Old Heart to see what it needs. The Observatory can be built now.",
+    "Tap an empty building site at the Old Heart to see what it needs. Each building costs coins plus some crops, fish, fruit, or dishes. When it is built, a new neighbor moves in. Tap the building or the neighbor to use it.",
   ],
 };
 
