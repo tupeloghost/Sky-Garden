@@ -23,7 +23,31 @@ try {
   if (S.quest >= 5 && !saved.q2) S.q2 = S.q2 || 0;
   if (S.pos.length === 2) S.pos = [S.pos[0], 0, S.pos[1]];
 } catch { S = fresh(); }
-const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
+// --- cloud sync: each garden has a private sync key and backs itself up to the Sky Garden cloud ---
+const CLOUD = 'https://sky-garden-saves.tupeloghost.workers.dev';
+const KEY_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O or 1/I, easy to type
+const newSyncKey = () => [...crypto.getRandomValues(new Uint8Array(24))].map(b => KEY_ABC[b % 32]).join('');
+const prettyKey = k => k.match(/.{1,4}/g).join('-');
+const cleanKey = k => (k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+if (!S.syncKey) S.syncKey = newSyncKey();
+let cloudDirty = true, lastPush = 0, cloudState = { when:0, ok:null };
+const save = () => { S.savedAt = Date.now(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
+async function cloudPush(force) {
+  if (!cloudDirty || (!force && Date.now() - lastPush < 60000)) return;
+  lastPush = Date.now(); cloudDirty = false;
+  try {
+    const r = await fetch(`${CLOUD}/save`, { method:'POST', headers:{ 'Content-Type':'application/json' }, keepalive:true,
+      body: JSON.stringify({ key:S.syncKey, updated:S.savedAt || Date.now(), save:S }) });
+    cloudState = { when:Date.now(), ok: r.ok || r.status === 409 };
+  } catch { cloudDirty = true; cloudState = { when:Date.now(), ok:false }; }
+}
+async function cloudLoad(key) {
+  const r = await fetch(`${CLOUD}/load?key=${encodeURIComponent(key)}`);
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error('cloud error');
+  return r.json();
+}
+addEventListener('visibilitychange', () => { if (document.hidden) cloudPush(true); });
 let muted = false; try { muted = localStorage.getItem(MUTE_KEY) === 'true'; } catch {}
 // The world follows the real calendar: real seasons, tonight's real moon, festivals on their real dates.
 let dateOverride = null; // for testing only
@@ -827,7 +851,19 @@ async function readCode(code) {
 }
 async function openMoveGame(back) {
   const code = await makeCode();
-  showCard(`<div class="kicker">MOVE MY GAME</div><h2>Play on another device</h2>
+  const ago = cloudState.when ? Math.max(1, Math.round((Date.now() - cloudState.when) / 60000)) : 0;
+  const status = cloudState.ok === false ? 'Cloud backup could not connect. It will keep trying while you play.' : cloudState.when ? `Backed up to the cloud ${ago} minute${ago === 1 ? '' : 's'} ago.` : 'Your garden backs up to the cloud automatically while you play.';
+  showCard(`<div class="kicker">SYNC MY GAME</div><h2>Play on any device</h2>
+    <p>${status}</p>
+    <h4>Your sync key</h4>
+    <p style="font:700 20px monospace;letter-spacing:.05em;margin-top:4px;word-break:break-all" id="myKey">${prettyKey(S.syncKey)}</p>
+    <button id="copyKey">Copy sync key</button>
+    <p style="margin-top:8px">On another phone or computer, open Sky Garden, tap <b>Sync my game</b>, and enter this key. After that, both devices stay in sync. Keep your key private: anyone who has it can load your garden.</p>
+    <h4>Have a sync key from another device?</h4>
+    <input id="theirKey" placeholder="Type or paste a sync key" autocomplete="off" style="width:100%;margin-top:8px;font:16px monospace;border-radius:12px;border:2px solid #eadfd0;padding:10px">
+    <button id="loadKey">Load from cloud</button>
+    <p id="keyMsg" style="margin-top:8px;font-weight:700;min-height:22px"></p>
+    <h4 style="margin-top:22px">No internet? Use a save code instead</h4>
     <h4>Step 1: On this device</h4><p>Tap Copy code. Then send it to yourself, like in a text or email.</p>
     <textarea id="myCode" readonly rows="3" style="width:100%;margin-top:8px;font:12px monospace;border-radius:12px;border:2px solid #eadfd0;padding:8px">${code}</textarea>
     <button id="copyCode">Copy code</button>
@@ -835,6 +871,21 @@ async function openMoveGame(back) {
     <textarea id="theirCode" rows="3" placeholder="Paste a save code here" style="width:100%;margin-top:8px;font:12px monospace;border-radius:12px;border:2px solid #eadfd0;padding:8px"></textarea>
     <button id="loadCode">Load</button>
     <p id="codeMsg" style="margin-top:8px;font-weight:700;min-height:22px"></p>`, back ? 'Back' : 'Close', back);
+  $('copyKey').onclick = async () => {
+    try { await navigator.clipboard.writeText(prettyKey(S.syncKey)); $('keyMsg').textContent = 'Sync key copied. Keep it somewhere safe.'; }
+    catch { const r = document.createRange(); r.selectNodeContents($('myKey')); getSelection().removeAllRanges(); getSelection().addRange(r); $('keyMsg').textContent = 'The key is selected. Copy it with your device\'s copy command.'; }
+  };
+  $('loadKey').onclick = async () => {
+    const key = cleanKey($('theirKey').value);
+    if (key.length !== 24) { $('keyMsg').textContent = 'A sync key has 24 letters and numbers. Check that you typed all of it.'; return; }
+    if (key === S.syncKey) { $('keyMsg').textContent = 'That is this device\'s own key. Enter it on your other device.'; return; }
+    $('keyMsg').textContent = 'Checking the cloud...';
+    let found; try { found = await cloudLoad(key); } catch { $('keyMsg').textContent = 'Could not reach the cloud. Check your internet and try again.'; return; }
+    if (!found) { $('keyMsg').textContent = 'No garden was found for that key. Check each letter and try again.'; return; }
+    const d = found.save;
+    $('keyMsg').innerHTML = `Found it: ${d.coins} coins, ${(d.aha||[]).length} ${(d.aha||[]).length === 1 ? 'memory' : 'memories'}. This replaces the game on this device, and from now on both devices share one garden. <button id="sureKey" style="margin-top:8px">Yes, use this garden</button>`;
+    $('sureKey').onclick = () => { d.syncKey = key; d.savedAt = found.updated; try { localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch {} location.reload(); };
+  };
   $('copyCode').onclick = async () => {
     try { await navigator.clipboard.writeText(code); $('codeMsg').textContent = 'Copied! Now send it to yourself.'; }
     catch { $('myCode').select(); $('codeMsg').textContent = 'The code is selected. Copy it with your device\'s copy command.'; }
@@ -843,7 +894,7 @@ async function openMoveGame(back) {
     const txt = $('theirCode').value;
     if (!txt.trim()) { $('codeMsg').textContent = 'Paste a save code in the box first.'; return; }
     let data; try { data = await readCode(txt); } catch { $('codeMsg').textContent = 'That code did not work. Make sure you copied the whole thing.'; return; }
-    $('codeMsg').innerHTML = `This replaces the game on this device with the one from the code (${SEASONS[realSeason(today(), data.south)]}, ${data.coins} coins, ${(data.aha||[]).length} memories). <button id="sureLoad" style="margin-top:8px">Yes, replace it</button>`;
+    $('codeMsg').innerHTML = `This replaces the game on this device with the one from the code (${SEASONS[realSeason(today(), data.south)]}, ${data.coins} coins, ${(data.aha||[]).length} ${(data.aha||[]).length === 1 ? 'memory' : 'memories'}). <button id="sureLoad" style="margin-top:8px">Yes, replace it</button>`;
     $('sureLoad').onclick = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {} location.reload(); };
   };
 }
@@ -855,7 +906,7 @@ function openBag() {
     <div class="jlist">${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}</div>
     <h4>Furniture</h4><div class="jlist">${furn || '<p>None yet. Pip sells furniture.</p>'}</div>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
-    <button id="moveBtn" class="ghost">Move my game to another device</button>`, 'Close');
+    <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
   $('moveBtn').onclick = () => openMoveGame(openBag);
 }
 $('journalBtn').onclick = openJournal;
@@ -1755,7 +1806,7 @@ function sleep(passedOut) {
   S.tiles.forEach((_, i) => drawTile(i));
   spawnDigs(); applySeason(); S.goals = null; ensureGoals();
   S.where = 'hut'; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); target = null; pending = null; snapCam();
-  toast(msg); drawRoom(); drawHud(); save();
+  toast(msg); drawRoom(); drawHud(); save(); cloudPush(true);
 }
 
 // ============ INPUT ============
@@ -1839,7 +1890,7 @@ function tick() {
   if (playing) {
     if (!menuOpen) S.t += dt / DAY_LEN; // the clock stops while any menu or conversation is open
     if (S.t >= 1) sleep(true);
-    if ((hudTick += dt) > .5) { hudTick = 0; drawHud(); ambience(); }
+    if ((hudTick += dt) > .5) { hudTick = 0; drawHud(); ambience(); cloudPush(); }
     playMusic(dt);
     setChord(S.t < .3 ? 0 : S.t < .65 ? 1 : S.t < .85 ? 2 : 3);
   }
@@ -1948,6 +1999,14 @@ snapCam();
 bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs();
 drawHud(); tick();
 $('moveTitle').onclick = () => openMoveGame();
+const localAt = S.savedAt || 0; save();
+cloudLoad(S.syncKey).then(found => {
+  if (found && found.updated > localAt + 5000 && !playing) {
+    found.save.syncKey = S.syncKey; found.save.savedAt = found.updated;
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(found.save)); } catch {}
+    location.reload();
+  } else cloudPush(true);
+}).catch(() => {});
 const hemiBtn = $('hemi');
 const drawHemi = () => hemiBtn.textContent = S.south ? 'Seasons: Southern Hemisphere' : 'Seasons: Northern Hemisphere';
 drawHemi(); hemiBtn.onclick = () => { S.south = !S.south; S.lastSeason = null; save(); drawHemi(); applySeason(); drawHud(); };

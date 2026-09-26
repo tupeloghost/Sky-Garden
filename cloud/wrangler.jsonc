@@ -1,0 +1,15 @@
+{
+  // Sky Garden cloud saves: one small Worker and one D1 database.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sky-garden-saves",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-26",
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sky-garden-saves",
+      "database_id": "c5c82bd6-007d-4d48-816e-8a1b6a024151"
+    }
+  ]
+}
