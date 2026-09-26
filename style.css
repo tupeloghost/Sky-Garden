@@ -63,3 +63,21 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .title .hemi { margin-top:12px; font-size:14px; padding:6px 16px; background:#ffffffaa; box-shadow:none; font-weight:700; }
 #fade { position:fixed; inset:0; background:#fff8ee; opacity:0; pointer-events:none; transition:opacity .6s; z-index:7; }
 .bar { scrollbar-width:none; } .bar::-webkit-scrollbar { display:none; }
+
+/* design pass: icons, colored cards, see-through title */
+.pill svg { width:18px; height:18px; vertical-align:-4px; margin-right:4px; }
+#mute svg { margin-right:0; }
+@media (max-width:520px) { .pill .lbl { display:none; } .pill svg { margin-right:2px; } }
+.card { border-top:10px solid #eadfd0; }
+.card.k-mem { border-top-color:#ffc857; } .card.k-mem .kicker { color:#c98a1f; }
+.card.k-fest { border-top-color:#ff8fa3; background:linear-gradient(#fff0f3, #fff8ee 40%); }
+.card.k-recall { border-top-color:#6fd3b8; background:linear-gradient(#eafaf4, #fff8ee 40%); } .card.k-recall .kicker { color:#2c9c7d; }
+.card.k-star { border-top-color:#5a4b99; background:linear-gradient(#eeeaff, #fff8ee 40%); } .card.k-star .kicker { color:#5a4b99; }
+.card.k-letter { border-top-color:#c9a27a; background:#fdf5e6; }
+.card h2 { letter-spacing:-.01em; }
+.dialog { border:3px solid #fff; box-shadow:0 6px 0 #0002, 0 12px 30px #3b2f4a33; }
+.dialog h3 { color:#ff6f8f; }
+.title { background:linear-gradient(rgba(255,214,201,.92) 0%, rgba(255,214,201,.55) 45%, rgba(191,227,255,.1) 100%); }
+.title h1 { text-shadow:0 5px 0 #ff8fa3, 0 12px 30px #ff8fa366; }
+.title p { background:#fff8eecc; border-radius:16px; padding:8px 14px; }
+.on-title .top, .on-title .bar, .on-title .toast { visibility:hidden; }
