@@ -6,6 +6,7 @@ import { FINDS } from '../data/finds.js';
 import { FISH } from '../data/fish.js';
 import { icon } from '../data/icons.js';
 import { FEATURES } from '../data/features.js';
+import { ROLLOUT } from '../data/rollout.js';
 import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
 import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
@@ -45,6 +46,10 @@ const newSyncKey = () => [...crypto.getRandomValues(new Uint8Array(24))].map(b =
 const prettyKey = k => k.match(/.{1,4}/g).join('-');
 const cleanKey = k => (k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 if (!S.syncKey) S.syncKey = newSyncKey();
+{ const dk = new Date().toISOString().slice(0, 10); S.playDates = S.playDates || [];
+  if (!S.playDates.length && S.day > 1) { // testers who played before rolling unlocks keep everything they already use
+    S.unlocked = [S.goals && 'goals', (S.builds || []).some(b => b.p === 'chest') && 'chest', (S.bugs || []).length && 'butterflies', S.tools?.bag1 && 'bagup', S.stations?.kiln && 'pottery', S.stations?.furnace && 'bronze'].filter(Boolean); }
+  if (!/[?&]visit=/.test(location.search) && !S.playDates.includes(dk)) { S.playDates.push(dk); S.playDates = S.playDates.slice(-60); S.newDay = true; } }
 if (!S.specialty) S.specialty = SPECIALTIES[Math.floor(Math.random() * SPECIALTIES.length)].id;
 [...Object.keys(S.bag || {}), ...Object.keys(S.chest || {})].forEach(registerHeirloom);
 let cloudDirty = true, lastPush = 0, cloudState = { when:0, ok:null };
@@ -52,8 +57,12 @@ let setupCam = false; // camera close-up while making your character
 const save = () => { if (VISIT) return; S.savedAt = Date.now(); if (typeof ageBand === 'function') S.ageBand = ageBand(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
 // is a feature switched on? live for everyone, or switched on in developer mode
 const devFeatures = () => { try { return JSON.parse(localStorage.getItem('sg.features') || '{}'); } catch { return {}; } };
-function featureOn(id) { const f = FEATURES.find(x => x.id === id); if (!f) return true; if (f.live) return true;
-  if (!devOn()) return false; const d = devFeatures(); return d[id] !== false; }
+function featureOn(id) { const f = FEATURES.find(x => x.id === id), d = devOn() ? devFeatures() : {};
+  if (f && !f.live && (!devOn() || d[id] === false)) return false; // not released yet
+  return devOn() || unlockedToday(id); }
+// rolling unlocks: count the real days this player has opened the game
+function unlockedToday(id) { const r = ROLLOUT.find(x => x.id === id); return !r || (S.unlocked || []).includes(id) || playDays() >= r.day; }
+const playDays = () => (S.playDates || []).length + (S.bonusDays || 0);
 const devOn = () => { try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
 async function cloudPush(force) {
   if (devOn() || VISIT) return; // developer mode and visits never touch the cloud
@@ -1115,7 +1124,7 @@ function drawHud() {
     bubbles.forEach(b => { const id = b.userData.id, fest = fz && fz.host === id && !S.fests[fz.id + fz.year];
       const kind = tg === npcs[id] ? null : fest ? '!' : S.talked[id] !== S.day ? '...' : null;
       b.visible = !!kind; if (kind) b.material.map = BUBBLE[kind]; }); }
-  ensureGoals(); $('goalsBtn').innerHTML = `${ICON.goal}<span class="lbl">Goals</span> ${S.goals.list.filter(g => g.have >= g.need).length}/3`;
+  $('goalsBtn').hidden = !featureOn('goals'); ensureGoals(); $('goalsBtn').innerHTML = `${ICON.goal}<span class="lbl">Goals</span> ${S.goals.list.filter(g => g.have >= g.need).length}/3`;
   drawQuest();
   const s = season(), shown = Object.entries(CROPS).filter(([k,c]) => (c.seasons.includes(s) && (!c.locked || S.q4 >= 5)) || S.seeds[k] > 0);
   if (!shown.some(([k]) => k === S.sel) && shown.length) S.sel = shown[0][0];
@@ -1179,7 +1188,8 @@ function noteFind(k) {
   el.classList.add('show'); chime(1047); setTimeout(() => chime(1319), 120);
   clearTimeout(noteFind.t); noteFind.t = setTimeout(() => el.classList.remove('show'), 7000);
 }
-function collectionCats() {
+function collectionCats() { return allCats().filter(c => !({ Butterflies:'butterflies', Specialties:'specialty', Heirlooms:'heirloom' })[c.name] || featureOn({ Butterflies:'butterflies', Specialties:'specialty', Heirlooms:'heirloom' }[c.name])); }
+function allCats() {
   const month = m => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
   const itemCard = (k, kick) => () => showCard(`<div class="kicker">${kick}</div><h2>${ITEMS[k]?.name || FURN[k]?.name}</h2><h4>In real life</h4><p>${FINDS[k].fact}</p><h4>In Sky Garden</h4><p>${FINDS[k].hint}${CROPS[k] ? ` It grows in ${CROPS[k].days} days here, and sells for ${CROPS[k].sell} coins.` : ITEMS[k] ? ` It sells for ${ITEMS[k].sell} coins.` : ''}${S.fishLog?.[k] ? ` Your biggest: ${S.fishLog[k].best} cm.` : ''}</p>`, 'Back', () => openCategory(kick));
   return [
@@ -1400,6 +1410,7 @@ function ensureGoals() {
   S.goals = { day:S.day, list, bonus:false };
 }
 function goal(t, n=1) {
+  if (!featureOn('goals')) return;
   ensureGoals();
   const g = S.goals.list.find(x => x.t === t && x.have < x.need); if (!g) return;
   g.have = Math.min(g.need, g.have + n);
@@ -2575,7 +2586,7 @@ function agesHtml() {
 function drawStations() { kiln.visible = !!S.stations.kiln; furnace.visible = !!S.stations.furnace;
   nodes.forEach(n => n.visible = n.userData.kind === 'claypit' ? potteryOn() : bronzeOn()); }
 function useWorkbench() {
-  const shown = CRAFTS.filter(c => (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
+  const shown = CRAFTS.filter(c => (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag1' || featureOn('bagup')) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
   showCard(`<div class="kicker">TREE STUMP WORKBENCH</div><h2>Craft</h2><h4>Ages of invention</h4>${agesHtml()}
     <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln && potteryOn() ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>
     <div class="jlist">${shown.map(c => `<button data-cr="${c.id}" ${hasCraft(c.id) || !enough(c.needs) ? 'style="opacity:.6"' : ''}>${hasCraft(c.id) ? '✓ ' : ''}${c.name} <span class="sub">${hasCraft(c.id) ? 'You have this. ' : ''}${c.does} Needs ${needText(c.needs)}.</span></button>`).join('')}</div>`, 'Close');
@@ -2833,6 +2844,7 @@ function factCard(kicker, title, text, id) { S.tapped = S.tapped || []; if (!S.t
   showCard(`<div class="kicker">${kicker}</div><h2>${title}</h2><h4>In real life</h4><p>${text}</p>`); }
 function paintGardenFence() { S.fenceColor = PAINTS[(PAINTS.indexOf(S.fenceColor ?? PAINTS[0]) + 1) % PAINTS.length]; applyFenceColor(); sfx('click'); save(); toast('You painted the garden fence. Tap again for another color.'); }
 function spotButterfly(g) {
+  if (!featureOn('butterflies')) { g.userData.flee = 1.2; toast('The butterfly flutters away.'); return; }
   const sp = g.userData.sp; S.bugs = S.bugs || []; const first = !S.bugs.includes(sp.id);
   g.userData.flee = 1.2; tone(1760, { dur:.12, vol:.03 }); tone(2093, { t:.08, dur:.12, vol:.03 });
   if (first) { S.bugs.push(sp.id); save(); drawHud(); showCard(`<div class="kicker">NEW BUTTERFLY ${S.bugs.length} of ${BUTTERFLIES.length}</div><h2>${sp.name}</h2><h4>In real life</h4><p>${sp.fact}</p><p>Saved to Collections.</p>`); }
@@ -2906,7 +2918,7 @@ const gridLines = (() => { const pts = []; for (let i=-8;i<=8;i++){ pts.push(i,0
 function drawBuildBar() {
   const bar = $('buildbar');
   bar.innerHTML = `<p class="bhelp">${held ? `Holding your ${PIECES.find(x => x.id === held.p).name.toLowerCase()}. Tap an empty square to set it down. Rotate turns it.` : moving ? 'Tap a piece you built to pick it up and move it.' : removing ? 'Tap a piece to pick it up. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
-    <div class="bpieces">${PIECES.filter(p => !p.age || S.stations[p.age]).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
+    <div class="bpieces">${PIECES.filter(p => (!p.age || S.stations[p.age]) && (p.id !== 'chest' || featureOn('chest'))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
     <div class="bctl"><button id="bRot">Rotate</button><button id="bMove" class="${moving ? 'on' : ''}">Move</button><button id="bRem" class="${removing ? 'on' : ''}">Remove</button><button id="bDone" class="done">Done</button></div>`;
   bar.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { dropHeld(); buildSel = b.dataset.pc; removing = moving = false; drawBuildBar(); });
   ghostPiece();
@@ -3309,6 +3321,16 @@ $('start').onclick = () => { $('title').style.display = 'none'; document.body.cl
   if (isPartyDay() && S.lastParty !== dayKey(today()) && S.letter) setTimeout(birthdayParty, 900);
   else if (S.tut === 9 && !S.birthdayAsked && !S.birthday && S.letter) setTimeout(() => birthdayPicker(null, true), 1200);
   if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">${(S.home || 0) < 3 ? 'A LETTER UNDER A STONE' : 'A LETTER ON THE TABLE'}</div><h2>Dear ${S.name || 'little one'},</h2><p class="letter">${(S.home || 0) < 3 ? 'If you are reading this, you made it. I am sorry about the hut. The Great Gust took it, so all that is left are the stones it stood on. You will build a better one. ' : 'If you are reading this, the hut is yours now. '}The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Let\'s go!', () => { if (S.tut === 0) startTutorial(); }); } };
+// --- rolling unlocks: a "New today" card the first time you play each day ---
+function maybeNewToday() {
+  if (!S.newDay || VISIT || !S.setupDone || $('veil').classList.contains('show')) return;
+  S.newDay = false; save();
+  const d = playDays(), fresh = ROLLOUT.filter(r => r.day === d && featureOn(r.id)), next = ROLLOUT.find(r => r.day > d && FEATURES.find(f => f.id === r.id)?.live !== false);
+  if (!fresh.length) return;
+  drawHud(); drawStations(); drawTradePlants(); chime(784); setTimeout(() => chime(1047), 140);
+  showCard(`<div class="kicker">NEW TODAY: DAY ${d}</div>${fresh.map(r => `<h2>${r.title}</h2><p>${r.text}</p>`).join('')}${next ? `<p style="opacity:.75;margin-top:10px">${next.day === d + 1 ? 'Something new unlocks tomorrow. See you then!' : 'More unlocks soon. Keep playing each day!'}</p>` : ''}`);
+}
+{ const st = $('start').onclick; $('start').onclick = () => { st(); setTimeout(maybeNewToday, 1800); }; }
 // --- playtest feedback: a short form that goes to the Sky Garden cloud ---
 function openFeedback() {
   let mood = null;
@@ -3345,7 +3367,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
