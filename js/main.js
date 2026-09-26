@@ -3,7 +3,7 @@ import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { HOWTO, QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES } from '../data/content.js';
 import { CONSTELLATIONS } from '../data/stars.js';
 import { FINDS } from '../data/finds.js';
-import { SPECIES, FUR, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
+import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
 Object.assign(NEIGHBORS, VILLAGERS); Object.assign(LOVES, VILLAGER_LOVES);
@@ -24,6 +24,7 @@ try {
   S = { ...f, ...saved, seeds:{ ...f.seeds, ...(saved.seeds||{}) }, hearts:{ ...f.hearts, ...(saved.hearts||{}) } };
   if (saved.letter && saved.tut === undefined) S.tut = 9;
   if (saved.letter && saved.created === undefined) S.created = true;
+  if (S.look && !S.look.human) S.look = { ...DEFAULT_LOOK, hat:S.look.hat || 'none', hatColor:S.look.hatColor || DEFAULT_LOOK.hatColor };
   if (saved.crops) { for (const k in saved.crops) if (saved.crops[k]) S.bag[k] = (S.bag[k]||0) + saved.crops[k]; delete S.crops; }
   if (S.quest >= 5 && !saved.q2) S.q2 = S.q2 || 0;
   if (S.pos.length === 2) S.pos = [S.pos[0], 0, S.pos[1]];
@@ -514,7 +515,7 @@ stakes.add(mesh(new THREE.TorusGeometry(.2,.05,6,14), mat(0xc9a27a), .45, .08, .
 stakes.userData.kind = 'stakes'; scene.add(stakes);
 
 // --- critters ---
-function critter({ body, belly, ear, earType, beak, hat, hatType, tail, frog, captain, spikes, owl, shell }) {
+function critter({ body, belly, ear, earType, beak, hat, hatType, tail, frog, captain, spikes, owl, shell, outfit }) {
   const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner); const eyes = [], arms = [];
   const b = mesh(sph(.5), mat(body), 0, .55, 0); b.scale.set(1,1.05,.95); inner.add(b);
   inner.add(mesh(sph(.3), mat(belly), 0, .5, .28));
@@ -550,33 +551,100 @@ function critter({ body, belly, ear, earType, beak, hat, hatType, tail, frog, ca
   if (shell) { const sh = mesh(new THREE.SphereGeometry(.62, 20, 12, 0, Math.PI*2, 0, Math.PI/2), mat(0x7a5a3a), 0, .45, -.18); sh.scale.set(1,.9,1.05); inner.add(sh);
     for (let i=0;i<6;i++) inner.add(mesh(new THREE.CylinderGeometry(.13,.13,.04,6), mat(0xa07a4f), Math.cos(i)*.3, .78 + (i%2)*.12, -.3 + Math.sin(i)*.2).rotateX(-.6)); }
   if (captain) { inner.add(mesh(new THREE.CylinderGeometry(.38,.38,.22,20), mat(0x2d3a6b), 0, 1.7, -.05)); inner.add(mesh(new THREE.BoxGeometry(.5,.04,.2), mat(0x1f2a52), 0, 1.6, .3)); inner.add(mesh(sph(.06), glow(0xffc857), 0, 1.72, .33)); }
+  if (outfit) { const o = outfit, c = mat(o.color);
+    if (o.style === 'cardigan' || o.style === 'coat' || o.style === 'vest' || o.style === 'robe') {
+      const top = mesh(new THREE.CylinderGeometry(.44, .52, o.style === 'robe' ? .85 : .55, 20, 1, true), c, 0, o.style === 'robe' ? .45 : .62, 0); top.material.side = THREE.DoubleSide; inner.add(top);
+      if (o.style !== 'vest') [-1,1].forEach(sd => { const sl = mesh(sph(.15), c, sd*.47, .72, .04); sl.scale.set(.85, 1.3, .85); inner.add(sl); });
+      if (o.style === 'coat' || o.style === 'cardigan') for (let i=0;i<3;i++) inner.add(mesh(sph(.035), mat(o.trim || 0xffc857), 0, .78 - i*.15, .5));
+      if (o.style === 'robe') inner.add(mesh(new THREE.TorusGeometry(.49,.04,6,24), mat(o.trim || 0xffc857), 0, .62, 0).rotateX(Math.PI/2));
+    }
+    if (o.style === 'apron' || o.style === 'overalls') {
+      const bib = mesh(new THREE.BoxGeometry(.42, .5, .06), c, 0, .6, .45); bib.rotation.x = -.15; inner.add(bib);
+      if (o.style === 'overalls') [-1,1].forEach(sd => inner.add(mesh(new THREE.BoxGeometry(.06,.35,.05), c, sd*.16, .95, .38)));
+      if (o.style === 'apron') inner.add(mesh(new THREE.TorusGeometry(.5,.025,6,24), mat(0xffffff), 0, .6, 0).rotateX(Math.PI/2));
+    }
+    if (o.style === 'dress') { const dr = mesh(new THREE.CylinderGeometry(.42,.62,.6,20), c, 0, .38, 0); inner.add(dr); }
+    if (o.acc === 'glasses') { [-1,1].forEach(sd => inner.add(mesh(new THREE.TorusGeometry(.085,.015,6,16), mat(0x9b6b4a), sd*.15, 1.26, .4))); inner.add(mesh(new THREE.BoxGeometry(.08,.015,.015), mat(0x9b6b4a), 0, 1.27, .41)); }
+    if (o.acc === 'bowtie') [-1,1].forEach(sd => { const bt = mesh(new THREE.ConeGeometry(.08,.14,4), mat(o.trim || 0xff5a5a), sd*.07, .96, .42); bt.rotation.z = sd*Math.PI/2; inner.add(bt); });
+    if (o.acc === 'scarf') { inner.add(mesh(new THREE.TorusGeometry(.33,.08,8,24), mat(o.trim || 0x9fe7e0), 0, .92, 0).rotateX(Math.PI/2)); const tail2 = mesh(new THREE.BoxGeometry(.12,.35,.06), mat(o.trim || 0x9fe7e0), .18, .75, .36); tail2.rotation.z = .2; inner.add(tail2); }
+  }
   if (!beak) { const smile = mesh(new THREE.TorusGeometry(.06, .016, 6, 12, Math.PI), mat(0x2b2233), 0, frog ? 1.12 : 1.1, frog ? .48 : .39); smile.rotation.z = Math.PI; inner.add(smile); }
   g.userData.inner = inner; inner.userData.eyes = eyes; inner.userData.arms = arms; inner.userData.blink = Math.random()*4;
   scene.add(g); return g;
 }
 // the player's character is rebuilt from their chosen look
 const player = new THREE.Group(); scene.add(player);
+function person(lk) {
+  const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner); const eyes = [], arms = [];
+  const skin = mat(lk.skin), shirt = mat(lk.shirt), bottom = mat(lk.bottomColor), hair = mat(lk.hairColor), shoe = mat(0x3b2f4a);
+  // legs and shoes
+  [-1,1].forEach(sd => {
+    inner.add(mesh(new THREE.CylinderGeometry(.085,.075,.5,10), lk.bottom === 'pants' ? bottom : skin, sd*.12, .32, 0));
+    if (lk.bottom === 'shorts') inner.add(mesh(new THREE.CylinderGeometry(.1,.095,.2,10), bottom, sd*.12, .5, 0));
+    const sh = mesh(sph(.1), shoe, sd*.12, .07, .04); sh.scale.set(1, .6, 1.4); inner.add(sh);
+  });
+  // hips: skirt or waistband
+  if (lk.bottom === 'skirt') inner.add(mesh(new THREE.CylinderGeometry(.24,.4,.38,18), bottom, 0, .58, 0));
+  else inner.add(mesh(new THREE.CylinderGeometry(.25,.24,.2,16), bottom, 0, .62, 0));
+  // body
+  inner.add(mesh(new THREE.CylinderGeometry(.22,.26,.52,16), shirt, 0, .95, 0));
+  const shoulders = mesh(sph(.23), shirt, 0, 1.18, 0); shoulders.scale.set(1.1, .5, .85); inner.add(shoulders);
+  // arms that swing from the shoulder
+  [-1,1].forEach(sd => {
+    const arm = new THREE.Group(); arm.position.set(sd*.3, 1.15, 0); arm.rotation.z = sd*.08;
+    arm.add(mesh(new THREE.CylinderGeometry(.07,.065,.28,10), shirt, 0, -.13, 0));
+    arm.add(mesh(new THREE.CylinderGeometry(.06,.055,.24,10), skin, 0, -.37, 0));
+    arm.add(mesh(sph(.065), skin, 0, -.5, 0));
+    inner.add(arm); arms.push(arm);
+  });
+  // neck and head
+  inner.add(mesh(new THREE.CylinderGeometry(.08,.09,.1,10), skin, 0, 1.27, 0));
+  inner.add(mesh(sph(.33), skin, 0, 1.52, 0));
+  [-1,1].forEach(sd => {
+    const eye = new THREE.Group(); eye.add(mesh(sph(.05), mat(0x2b2233, { roughness:.25 }))); eye.add(mesh(sph(.018), glow(0xffffff), .016, .022, .04));
+    eye.position.set(sd*.12, 1.56, .29); inner.add(eye); eyes.push(eye);
+    inner.add(mesh(sph(.055), mat(0xff9fb2), sd*.2, 1.47, .25));
+    inner.add(mesh(sph(.06), skin, sd*.33, 1.52, 0)); // ears
+  });
+  inner.add(mesh(sph(.035), mat(new THREE.Color(lk.skin).multiplyScalar(.9).getHex()), 0, 1.5, .33)); // nose
+  const smile = mesh(new THREE.TorusGeometry(.05, .013, 6, 12, Math.PI), mat(0x2b2233), 0, 1.42, .31); smile.rotation.z = Math.PI; inner.add(smile);
+  // hair
+  const cap = mesh(new THREE.SphereGeometry(.35, 22, 12, 0, Math.PI*2, 0, Math.PI/2.1), hair, 0, 1.54, -.02); cap.rotation.x = -.25; inner.add(cap);
+  if (lk.hair === 'long') { const back = mesh(sph(.3), hair, 0, 1.3, -.2); back.scale.set(1.15, 1.5, .6); inner.add(back); }
+  if (lk.hair === 'bun') inner.add(mesh(sph(.14), hair, 0, 1.86, -.14));
+  if (lk.hair === 'curly') for (let i=0;i<12;i++){ const a = i/12*Math.PI*2; inner.add(mesh(sph(.1), hair, Math.cos(a)*.3, 1.68 + Math.sin(i*1.7)*.05, Math.sin(a)*.3 - .03)); }
+  if (lk.hair === 'pigtails') [-1,1].forEach(sd => { const pt = mesh(sph(.12), hair, sd*.36, 1.42, -.08); pt.scale.set(.8, 1.3, .8); inner.add(pt); });
+  if (lk.hair === 'bob') [-1,1].forEach(sd => { const sdh = mesh(sph(.18), hair, sd*.27, 1.46, -.03); sdh.scale.set(.6, 1.2, 1); inner.add(sdh); });
+  // hats, sized for a person's head
+  const hc = lk.hatColor, y = 1.8;
+  if (lk.hat === 'tophat') { inner.add(mesh(new THREE.CylinderGeometry(.34,.38,.06,20), mat(hc), 0, y, 0)); inner.add(mesh(new THREE.CylinderGeometry(.22,.24,.28,20), mat(hc), 0, y + .16, 0)); }
+  if (lk.hat === 'crown') for (let i=0;i<9;i++){ const a = i/9*Math.PI*2; inner.add(mesh(sph(.065), mat([hc, 0xffffff, 0xfff3a0][i%3]), Math.cos(a)*.28, y - .07, Math.sin(a)*.28)); }
+  if (lk.hat === 'beanie') { inner.add(mesh(new THREE.SphereGeometry(.36,20,10,0,Math.PI*2,0,Math.PI/2.1), mat(hc), 0, 1.58, -.01)); inner.add(mesh(new THREE.TorusGeometry(.33,.05,8,24), mat(hc), 0, 1.64, 0).rotateX(Math.PI/2)); inner.add(mesh(sph(.09), mat(0xffffff), 0, 1.96, 0)); }
+  if (lk.hat === 'bow') [-1,1].forEach(sd => { const bw = mesh(sph(.1), mat(hc), .2 + sd*.09, 1.8, .06); bw.scale.set(1.2,.8,.5); inner.add(bw); });
+  if (lk.hat === 'straw') { inner.add(mesh(new THREE.CylinderGeometry(.56,.58,.04,24), mat(0xf2d38a), 0, y - .04, 0)); inner.add(mesh(new THREE.CylinderGeometry(.24,.28,.22,20), mat(0xf2d38a), 0, y + .08, 0)); inner.add(mesh(new THREE.CylinderGeometry(.285,.285,.06,20), mat(hc), 0, y + .01, 0)); }
+  g.userData.inner = inner; inner.userData.eyes = eyes; inner.userData.arms = arms; inner.userData.blink = Math.random()*4;
+  return g;
+}
+// the player's character is a person, rebuilt from their chosen look
 function dressPlayer() {
-  const lk = S.look || DEFAULT_LOOK, sp = SPECIES[lk.species] || SPECIES.bear, body = new THREE.Color(lk.fur);
+  const lk = { ...DEFAULT_LOOK, ...(S.look && S.look.human ? S.look : {}) };
   player.children.slice().forEach(c => player.remove(c));
-  const c = critter({ body:lk.fur, belly:body.clone().lerp(new THREE.Color(0xffffff), .6).getHex(), ear:body.clone().multiplyScalar(.85).getHex(), earType:sp.ears, tail:sp.tail,
-    hat: lk.hat === 'none' ? null : lk.hatColor, hatType:lk.hat });
-  c.position.set(0,0,0); player.add(c); player.userData.inner = c.userData.inner;
+  const c = person(lk); player.add(c); player.userData.inner = c.userData.inner;
 }
 dressPlayer();
 player.position.set(...S.pos);
 const npcs = {
-  nana: critter({ body:0xf6f1ea, belly:0xffffff, ear:0x3b2f4a, earType:'long' }),
-  pip:  critter({ body:0x86c7ff, belly:0xfff3a0, beak:0xffb347, hat:0xff8fa3 }),
-  drizzle: critter({ body:0x7fcf8f, belly:0xe6f7c8, frog:true, captain:true }),
+  nana: critter({ body:0xf6f1ea, belly:0xffffff, ear:0x3b2f4a, earType:'long', outfit:{ style:'cardigan', color:0xc9b6ff, trim:0xffffff, acc:'glasses' } }),
+  pip:  critter({ body:0x86c7ff, belly:0xfff3a0, beak:0xffb347, hat:0xff8fa3, outfit:{ style:'vest', color:0x8fdc8a } }),
+  drizzle: critter({ body:0x7fcf8f, belly:0xe6f7c8, frog:true, captain:true, outfit:{ style:'coat', color:0x2d3a6b, trim:0xffc857 } }),
 };
-const mole = () => critter({ body:0x8b6b5a, belly:0xd9bfa6, ear:0x6e5345, earType:'round', beak:0xff9fb2 });
+const mole = () => critter({ body:0x8b6b5a, belly:0xd9bfa6, ear:0x6e5345, earType:'round', beak:0xff9fb2, outfit:{ style:'overalls', color:0x3f5a8c } });
 npcs.twins = new THREE.Group(); scene.add(npcs.twins);
 const moss = mole(), fern = mole(); moss.position.x = -.45; fern.position.x = .45; fern.scale.setScalar(.9); moss.scale.setScalar(.8);
 fern.userData.inner.add(mesh(new THREE.TorusGeometry(.1,.02,6,16), mat(0x3b2f4a), .15, 1.26, .4), mesh(new THREE.TorusGeometry(.1,.02,6,16), mat(0x3b2f4a), -.15, 1.26, .4));
 npcs.twins.add(moss, fern); npcs.twins.userData.inner = moss.userData.inner;
 npcs.twins.position.set(WIND_POS.x - 2.5, WIND_POS.y, WIND_POS.z + 2);
-npcs.lumen = critter({ body:0x3b2f4a, belly:0x5a4b7a });
+npcs.lumen = critter({ body:0x3b2f4a, belly:0x5a4b7a, outfit:{ acc:'scarf', trim:0x9fe7e0 } });
 npcs.lumen.userData.inner.add(mesh(sph(.32), glow(0xfff38a), 0, .45, -.42));
 const wingM = new THREE.MeshBasicMaterial({ color:0xdff3ff, transparent:true, opacity:.45, side:THREE.DoubleSide });
 [-1,1].forEach(s2 => { const wg = new THREE.Mesh(new THREE.PlaneGeometry(.6,.3), wingM); wg.position.set(s2*.42, 1, -.25); wg.rotation.set(.3, s2*.5, s2*.4); npcs.lumen.userData.inner.add(wg); });
@@ -591,7 +659,7 @@ const bubbles = []; npcs.nana.scale.setScalar(1.05);
 npcs.pip.position.set(-4.2,0,3); npcs.pip.scale.setScalar(.8);
 npcs.drizzle.position.set(ORCH_POS.x - 1.5, ORCH_POS.y, ORCH_POS.z - .5);
 for (const [id, v] of Object.entries(VILLAGERS)) {
-  const b = BUILDINGS.find(x => x.id === v.building), c = critter(VILLAGER_LOOK[id]);
+  const b = BUILDINGS.find(x => x.id === v.building), c = critter({ ...VILLAGER_LOOK[id], outfit:{ mabel:{ style:'apron', color:0xfff6e6 }, hoot:{ acc:'bowtie', trim:0xff5a5a }, allegra:{ style:'dress', color:0xff8fa3 }, sage:{ style:'robe', color:0xc98f58, trim:0xffc857 } }[id] });
   c.position.set(OH.x + b.pos[0] - 1.9, OH.y, OH.z + b.pos[1] + 1.7); c.scale.setScalar(id === 'sage' ? .85 : .8); c.visible = false; npcs[id] = c;
 }
 Object.entries(npcs).forEach(([k,g]) => { g.userData.kind = 'npc'; g.userData.id = k; g.rotation.y = .4;
@@ -915,7 +983,7 @@ function drawHud() {
   const s = season(), shown = Object.entries(CROPS).filter(([k,c]) => (c.seasons.includes(s) && (!c.locked || S.q4 >= 5)) || S.seeds[k] > 0);
   if (!shown.some(([k]) => k === S.sel) && shown.length) S.sel = shown[0][0];
   $('bar').style.display = S.where === 'hut' ? 'none' : 'flex';
-  $('bar').innerHTML = shown.map(([k,c]) => `<div class="slot ${S.sel===k?'on':''}" data-k="${k}"><span class="dot" style="background:${hex(c.color)}"></span>${c.name}<small>${S.seeds[k]} seeds${c.seasons.includes(s) ? '' : ', out of season'}</small></div>`).join('');
+  $('bar').innerHTML = shown.map(([k,c]) => `<div class="slot ${S.sel===k?'on':''}" data-k="${k}"><span class="dot" style="background:${hex(c.color)}"></span>${c.name}<small>${S.seeds[k] || 0} seeds${c.seasons.includes(s) ? '' : ', out of season'}</small></div>`).join('');
   document.querySelectorAll('.slot').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); });
 }
 function openDialog(name, text, btns=[], hearts, voice) {
@@ -2241,7 +2309,7 @@ function tick() {
   if (rain.visible) { const p = rainGeo.attributes.position, sp = season() === 3 ? 3 : 14; for (let i=0;i<RN;i++){ let y = p.getY(i) - sp*dt; if (y<0) y += 12; p.setY(i,y); } p.needsUpdate = true; rain.position.set(player.position.x, player.position.y, player.position.z); }
   // camera
   if (setupCam) { const wide = innerWidth >= 760, off = wide ? new THREE.Vector3(1.25, 1, 0) : new THREE.Vector3(0, .15, 0);
-    camera.position.lerp(player.position.clone().add(new THREE.Vector3(off.x, 1.9, 4.2)), 1 - Math.pow(.001, dt)); camera.lookAt(player.position.x + off.x, player.position.y + off.y + (wide ? 0 : -.9), player.position.z); player.rotation.y = Math.sin(now*.6)*.5; }
+    camera.position.lerp(player.position.clone().add(new THREE.Vector3(off.x, 2.2, 4.6)), 1 - Math.pow(.001, dt)); camera.lookAt(player.position.x + off.x, player.position.y + off.y + .15 + (wide ? 0 : -.9), player.position.z); player.rotation.y = Math.sin(now*.6)*.5; }
   else if (!playing) { const a = now*.07; camera.position.set(Math.sin(a)*17, 9.5, Math.cos(a)*17); camera.lookAt(0, .5, 0); }
   else { camera.position.lerp(player.position.clone().add(camOffset()), 1 - Math.pow(.02, dt));
   camera.lookAt(player.position.x, player.position.y + .6, player.position.z - ahead()); }
@@ -2264,23 +2332,27 @@ const hemiBtn = $('hemi');
 const drawHemi = () => hemiBtn.textContent = S.south ? 'Seasons: Southern Hemisphere' : 'Seasons: Northern Hemisphere';
 drawHemi(); hemiBtn.onclick = () => { S.south = !S.south; S.lastSeason = null; save(); drawHemi(); applySeason(); drawHud(); };
 function lookPicker(title, done, withName) {
-  const lk = { ...(S.look || DEFAULT_LOOK) };
+  const lk = { ...DEFAULT_LOOK, ...(S.look && S.look.human ? S.look : {}) };
   let name = S.name || '';
   setupCam = true; document.getElementById('veil').classList.add('setup'); document.body.classList.add('in-setup');
   const sw = (list, cur, attr) => list.map(c => `<button class="sw ${c === cur ? 'on' : ''}" data-${attr}="${c}" style="background:#${c.toString(16).padStart(6,'0')}" aria-label="color"></button>`).join('');
   const draw = () => {
     showCard(`<div class="kicker">${title}</div><h2>Make your character</h2>
       ${withName ? `<h4>Your name</h4><input id="nm" maxlength="16" value="${name.replace(/"/g,'')}" placeholder="Type a name" autocomplete="off" style="width:100%;font:18px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:8px">` : ''}
-      <h4>Animal</h4><div class="chips">${Object.entries(SPECIES).map(([k,v]) => `<button data-sp="${k}" class="${lk.species === k ? '' : 'ghost'}">${v.name}</button>`).join('')}</div>
-      <h4>Fur color</h4><div class="chips">${sw(FUR, lk.fur, 'fur')}</div>
+      <h4>Skin tone</h4><div class="chips">${sw(SKIN, lk.skin, 'skin')}</div>
+      <h4>Hair</h4><div class="chips">${Object.entries(HAIR_STYLES).map(([k,v]) => `<button data-hs="${k}" class="${lk.hair === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
+      <div class="chips">${sw(HAIR_COLORS, lk.hairColor, 'hcol')}</div>
+      <h4>Shirt</h4><div class="chips">${sw(SHIRTS, lk.shirt, 'shirt')}</div>
+      <h4>Bottoms</h4><div class="chips">${Object.entries(BOTTOMS).map(([k,v]) => `<button data-bt="${k}" class="${lk.bottom === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
+      <div class="chips">${sw(BOTTOM_COLORS, lk.bottomColor, 'bcol')}</div>
       <h4>Hat</h4><div class="chips">${Object.entries(HATS).map(([k,v]) => `<button data-hat="${k}" class="${lk.hat === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
       ${lk.hat !== 'none' ? `<h4>Hat color</h4><div class="chips">${sw(HAT_COLORS, lk.hatColor, 'hc')}</div>` : ''}
       <p id="lkMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
       <button id="lkDone">${withName ? 'Next' : 'Done'}</button>`, null);
     const upd = () => { S.look = { ...lk }; dressPlayer(); };
     if ($('nm')) $('nm').oninput = e => name = e.target.value;
-    document.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { lk.species = b.dataset.sp; upd(); draw(); });
-    document.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { lk.fur = +b.dataset.fur; upd(); draw(); });
+    const pick = (attr, key, num) => document.querySelectorAll(`[data-${attr}]`).forEach(b => b.onclick = () => { lk[key] = num ? +b.dataset[attr] : b.dataset[attr]; upd(); draw(); });
+    pick('skin','skin',1); pick('hs','hair'); pick('hcol','hairColor',1); pick('shirt','shirt',1); pick('bt','bottom'); pick('bcol','bottomColor',1);
     document.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { lk.hat = b.dataset.hat; upd(); draw(); });
     document.querySelectorAll('[data-hc]').forEach(b => b.onclick = () => { lk.hatColor = +b.dataset.hc; upd(); draw(); });
     $('lkDone').onclick = () => {

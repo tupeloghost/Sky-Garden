@@ -1,13 +1,12 @@
 // Character creation and island modes. Add new animals, colors, hats, or modes here.
 
-const SPECIES = {
-  bear:  { name:'Bear',  ears:'round' },
-  bunny: { name:'Bunny', ears:'bunny', tail:'puff' },
-  cat:   { name:'Cat',   ears:'point', tail:'long' },
-  fox:   { name:'Fox',   ears:'point', tail:'fox' },
-  mouse: { name:'Mouse', ears:'mouse', tail:'thin' },
-};
-const FUR = [0xffe0b3, 0xf6f1ea, 0xd9a066, 0x9b7b5a, 0xffb36b, 0xb8b8c8, 0xffc4d6, 0x86c7ff];
+// The player is a person. (Neighbors are animal villagers.)
+const SKIN = [0xffe0c9, 0xf6c9a4, 0xe0ac86, 0xc68a62, 0x9c6644, 0x6e4630];
+const HAIR_STYLES = { short:'Short', long:'Long', bun:'Bun', curly:'Curly', pigtails:'Pigtails', bob:'Bob' };
+const HAIR_COLORS = [0x2b2233, 0x5a3a28, 0x9b6b4a, 0xe6b35a, 0xd9653b, 0xe8e0d0, 0xff8fa3, 0x7ec8e3];
+const SHIRTS = [0xff8fa3, 0x7ec8e3, 0xffc857, 0x8fdc8a, 0xc9b6ff, 0xfff1d6, 0xff9a3c, 0x3b2f4a];
+const BOTTOMS = { pants:'Pants', skirt:'Skirt', shorts:'Shorts' };
+const BOTTOM_COLORS = [0x3f5a8c, 0x6b4f3a, 0x3b2f4a, 0xd9c7a0, 0x8fa37a, 0xff8fa3];
 const HATS = {
   none:   'No hat',
   tophat: 'Top hat',
@@ -17,7 +16,7 @@ const HATS = {
   straw:  'Straw hat',
 };
 const HAT_COLORS = [0x7ec8e3, 0xff8fa3, 0xffc857, 0x8fdc8a, 0xc9b6ff, 0x3b2f4a];
-const DEFAULT_LOOK = { species:'bear', fur:0xffe0b3, hat:'tophat', hatColor:0x7ec8e3 };
+const DEFAULT_LOOK = { human:true, skin:0xf6c9a4, hair:'short', hairColor:0x5a3a28, shirt:0x7ec8e3, bottom:'pants', bottomColor:0x3f5a8c, hat:'none', hatColor:0x7ec8e3 };
 
 // Island modes, chosen once at the start (like picking a farm type). Each has perks.
 const MODES = [
@@ -33,4 +32,4 @@ const MODES = [
     perks:['Days last twice as long', 'Crops never wilt when the season changes'] },
 ];
 
-export { SPECIES, FUR, HATS, HAT_COLORS, DEFAULT_LOOK, MODES };
+export { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES };
