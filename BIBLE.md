@@ -127,3 +127,24 @@ Later: Moonmelon (Night Isle only), Breezebean (climbs bridges), Rainroot (only 
 4. **1.0:** phone app wrap and desktop (Steam page opens early to collect wishlists).
 
 **Success check for each build:** Does one day feel satisfying? Do you want to play "just one more day"?
+
+## 12. Long-Term Vision: A Guided Adventure Life Sim
+
+**One line:** your own story, a shared sky, and eventually a place to build and sell.
+
+**Layer 1: Your own journey.** Your island, garden, hut, collections, and friendships, guided by chapters so it never feels aimless. Stays single-player at heart.
+
+**Layer 2: Shared experiences.** Optional, cozy, never competitive:
+- Visit friends' islands (walk around, leave a gift, water their crops).
+- Community goals with a shared progress bar and rewards for everyone.
+- Shared real-date festivals (everyone's lanterns in one sky).
+- A village board for requests and trades.
+- Seasonal community mysteries: clues unlock as the whole community solves them.
+
+**Layer 3: Creators and businesses.** Player-made items (furniture, clothes, decor) reviewed and sold for coins or real money; a Market Isle with stalls for small businesses and artists; musicians and artists featured in festivals, the Library, and the Temple Garden.
+
+**Build order:** journey, then shared world, then creators.
+
+**Plan for now, build later:** real accounts, safety and moderation (reporting, review, filters; COPPA if kids play), payments (Stripe or similar, payouts, refunds, fraud; legal review first), and a quality review queue so creations fit the cozy style.
+
+**Safety principle:** shared features start with friendly actions only (gifts, watering, waves), no open chat.
