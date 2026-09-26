@@ -156,13 +156,18 @@ const trees = [];
 const CANOPY = [0x5fc377, 0x4fb46a, 0xf0a04b, 0xf4f7ff];
 function tree(parent, x, z, fruitKind) {
   const g = new THREE.Group(); g.position.set(x,0,z);
-  g.add(mesh(new THREE.CylinderGeometry(.18,.25,1.2,12), mat(0x9b6b4a), 0, .6, 0));
-  const canopy = new THREE.Group(); canopy.position.y = 1.2; g.add(canopy);
-  const cm = mat(0x5fc377);
-  canopy.add(mesh(sph(.9), cm, 0, .5, 0)); canopy.add(mesh(sph(.55), cm, .5, .3, .2)); canopy.add(mesh(sph(.5), cm, -.45, .35, -.2));
+  const seed = Math.abs(Math.sin(x*12.9 + z*78.2)) * 1000, r = k => { const v = Math.sin(seed + k*37.7) * 43758.5; return v - Math.floor(v); };
+  const bark = mat(0x9b6b4a);
+  const trunk = mesh(new THREE.CylinderGeometry(.16,.26,1.3,10), bark, 0, .65, 0); trunk.rotation.z = (r(1)-.5)*.12; g.add(trunk);
+  for (let i=0;i<3;i++){ const a = i*2.1 + r(2); const root = mesh(new THREE.ConeGeometry(.12,.45,6), bark, Math.cos(a)*.22, .1, Math.sin(a)*.22); root.rotation.set(Math.sin(a)*1.2, 0, -Math.cos(a)*1.2); g.add(root); }
+  [-1,1].forEach(sd => { const br = mesh(new THREE.CylinderGeometry(.05,.08,.6,6), bark, sd*.22, 1.15, 0); br.rotation.z = -sd*.9; g.add(br); });
+  const canopy = new THREE.Group(); canopy.position.y = 1.25; g.add(canopy);
+  const cm = mat(0x5fc377), cm2 = mat(0x4fb46a);
+  const blobs = [[0,.55,0,.85,cm],[.55,.35,.2,.55,cm2],[-.5,.4,-.2,.52,cm],[.1,.95,-.1,.55,cm],[-.2,.3,.5,.5,cm2],[.3,.25,-.5,.48,cm],[-.55,.75,.25,.4,cm2],[.45,.8,.35,.38,cm]];
+  blobs.forEach(([bx,by,bz,br,m], i) => { const b = mesh(sph(br * (.9 + r(i+5)*.2)), m, bx, by, bz); b.scale.y = .9; canopy.add(b); });
   const fruits = new THREE.Group(); canopy.add(fruits);
-  if (fruitKind) for (let i=0;i<6;i++){ const a=i*1.1; fruits.add(mesh(sph(.14), mat(fruitKind === 'apple' ? 0xff6b6b : 0xffb36b), Math.cos(a)*.8, .35+Math.sin(i*2)*.3, Math.sin(a)*.8)); }
-  g.userData = { canopy, cm, fruits, ph:Math.random()*6 };
+  if (fruitKind) for (let i=0;i<8;i++){ const a=i*.8 + r(9); fruits.add(mesh(sph(.13), mat(fruitKind === 'apple' ? 0xff6b6b : 0xffb36b), Math.cos(a)*.82, .3+Math.sin(i*2)*.35, Math.sin(a)*.82)); }
+  g.userData = { canopy, cm, cm2, fruits, ph:Math.random()*6 };
   parent.add(g); trees.push(g); return g;
 }
 [[-7,-1],[-6,4],[5,-6],[-2,7],[6.5,5]].forEach(([x,z]) => tree(scene, x, z));
@@ -180,11 +185,22 @@ for (let i=0;i<46;i++){ const a=Math.random()*Math.PI*2, r=3+Math.random()*5.3, 
 // --- house with windows that glow at night ---
 const house = new THREE.Group(); house.position.set(-4,0,-3);
 house.add(mesh(new THREE.BoxGeometry(2.6,1.8,2.2), mat(0xfff1d6), 0, .9, 0));
-const roof = mesh(new THREE.ConeGeometry(2.1,1.4,4), mat(0xff8fa3), 0, 2.5, 0); roof.rotation.y = Math.PI/4; house.add(roof);
+const roof = mesh(new THREE.ConeGeometry(2.35,1.5,4), mat(0xff8fa3), 0, 2.52, 0); roof.rotation.y = Math.PI/4; roof.scale.set(1, 1, .95); house.add(roof);
+const trim = mat(0xffffff), wood = mat(0x9b6b4a), woodLight = mat(0xc98f58);
+house.add(mesh(new THREE.BoxGeometry(2.75,.12,2.35), trim, 0, 1.8, 0)); // roof edge trim
+house.add(mesh(new THREE.BoxGeometry(2.8,.18,2.4), mat(0xd8cfc0), 0, .09, 0)); // stone footing
+[[-1.3,1.1],[1.3,1.1],[-1.3,-1.1],[1.3,-1.1]].forEach(([x,z]) => house.add(mesh(new THREE.BoxGeometry(.14,1.8,.14), woodLight, x, .9, z))); // corner posts
+[-.85,.85].forEach(x => { house.add(mesh(new THREE.BoxGeometry(.62,.57,.06), trim, x, 1.05, 1.11));
+  [-1,1].forEach(sd => house.add(mesh(new THREE.BoxGeometry(.16,.55,.05), mat(0x7ec8e3), x + sd*.42, 1.05, 1.13))); });
+const porch = mesh(new THREE.BoxGeometry(1.6,.12,.9), woodLight, 0, .12, 1.55); house.add(porch);
+[-.7,.7].forEach(x => house.add(mesh(new THREE.CylinderGeometry(.05,.05,1.25,8), wood, x, .75, 1.95)));
+const awning = mesh(new THREE.BoxGeometry(1.75,.08,1), mat(0xff8fa3), 0, 1.42, 1.62); awning.rotation.x = .22; house.add(awning); house.userData.awning = awning;
+const arch = mesh(new THREE.CylinderGeometry(.35,.35,.1,16,1,false,0,Math.PI), wood, 0, 1.1, 1.12); arch.rotation.set(Math.PI/2, 0, Math.PI/2); house.add(arch);
+house.add(mesh(new THREE.BoxGeometry(.3,.12,.35), mat(0xd8cfc0), 0, .06, 2.15)); // step
 house.add(mesh(new THREE.BoxGeometry(.7,1.1,.1), mat(0x9b6b4a), 0, .55, 1.12));
 const winMat = new THREE.MeshStandardMaterial({ color:0x9fd3ff, emissive:0xffc46b, emissiveIntensity:0, roughness:.4 });
 [-.85,.85].forEach(x => house.add(mesh(new THREE.BoxGeometry(.5,.45,.08), winMat, x, 1.05, 1.12)));
-house.add(mesh(new THREE.BoxGeometry(.25,.6,.25), mat(0xc98f7a), .7, 2.9, -.3)); // chimney
+house.add(mesh(new THREE.BoxGeometry(.32,.8,.32), mat(0xb0a898), .75, 2.95, -.35)); house.add(mesh(new THREE.BoxGeometry(.4,.1,.4), mat(0x8a8290), .75, 3.38, -.35)); // stone chimney
 house.userData.kind = 'house'; scene.add(house);
 [-.85,.85].forEach(x => { house.add(mesh(new THREE.BoxGeometry(.62,.14,.22), mat(0x9b6b4a), x, .77, 1.2));
   for (let i=0;i<4;i++) house.add(mesh(sph(.07), mat([0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff][i]), x - .22 + i*.15, .88, 1.22)); });
@@ -393,12 +409,12 @@ const markerMat = new THREE.MeshBasicMaterial({ color:0xffc857, fog:false });
 const mCone = new THREE.Mesh(new THREE.ConeGeometry(.28,.55,16), markerMat); mCone.rotation.x = Math.PI; marker.add(mCone);
 const mRing = new THREE.Mesh(new THREE.TorusGeometry(.2,.06,8,20), markerMat); mRing.position.y = .45; mRing.rotation.x = Math.PI/2; marker.add(mRing);
 const dressing = new THREE.Group(); scene.add(dressing); const grassPatches = [];
-if (LOOK !== 'a') {
+{ // grouped decorations: grass patches, bushes, flower beds, garden fence
   // soft light and dark patches in the grass, so the ground isn't one flat color
   const rnd = (i) => { const x = Math.sin(i*127.1)*43758.5; return x - Math.floor(x); };
   [[0,0,0,8.4],[ORCH_POS.x,ORCH_POS.y,ORCH_POS.z,7.4],[WIND_POS.x,WIND_POS.y,WIND_POS.z,7.4],[OH.x,OH.y,OH.z,10.2]].forEach(([cx,cy,cz,R], k) => {
     for (let i=0;i<14;i++){ const a = rnd(i+k*50)*Math.PI*2, r = Math.sqrt(rnd(i*3+k*70))*R*.85, f = rnd(i*7+k) > .5 ? 1.12 : .88;
-      const pm = new THREE.MeshToonMaterial({ color:0x8fdc8a, gradientMap:RAMP, transparent:true, opacity:.55 }); pm.userData.outlineParameters = NO_OUTLINE; pm.userData.f = f;
+      const pm = RAMP ? new THREE.MeshToonMaterial({ color:0x8fdc8a, gradientMap:RAMP, transparent:true, opacity:.55 }) : new THREE.MeshStandardMaterial({ color:0x8fdc8a, roughness:.95, transparent:true, opacity:.5 }); pm.userData.outlineParameters = NO_OUTLINE; pm.userData.f = f;
       const p = new THREE.Mesh(new THREE.CircleGeometry(.9 + rnd(i*11+k)*1.4, 20), pm); p.rotation.x = -Math.PI/2; p.position.set(cx + Math.cos(a)*r, cy + .012 + i*.0005, cz + Math.sin(a)*r); p.scale.set(1, .6 + rnd(i*5)*.5, 1);
       p.receiveShadow = true; dressing.add(p); grassPatches.push(p); } });
   // bushes in little groups
@@ -407,7 +423,7 @@ if (LOOK !== 'a') {
   // flower beds hugging the hut and along the path
   const bed = (x, z, n, rx, rz) => { for (let i=0;i<n;i++){ const fx = x + (rnd(i+x*13)-.5)*rx, fz = z + (rnd(i*3+z*7)-.5)*rz, c = [0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b][i%5];
     dressing.add(mesh(new THREE.CylinderGeometry(.015,.015,.22,4), mat(0x4fb46a), fx, .11, fz)); dressing.add(mesh(sph(.075), mat(c), fx, .24, fz)); } };
-  bed(-4, -1.55, 14, 2.4, .35); bed(-5.55, -3, 8, .35, 1.8); bed(-2.45, -3, 8, .35, 1.8); bed(-.9, -.1, 6, .7, .5); bed(6.3, .3, 6, .8, .6);
+  bed(-5.1, -1.25, 7, .8, .35); bed(-2.9, -1.25, 7, .8, .35); bed(-5.55, -3, 8, .35, 1.8); bed(-2.45, -3, 8, .35, 1.8); bed(-.9, -.1, 6, .7, .5); bed(6.3, .3, 6, .8, .6);
   // a low picket fence around the garden, open on the side facing the hut
   const fenceMat = mat(0xfff1d6);
   const fence = (x0, z0, x1, z1) => { const n = Math.round(Math.hypot(x1-x0, z1-z0) / .4);
@@ -694,7 +710,7 @@ function applySeason() {
   const s = season();
   HOME.top.material.color.set(GRASS[s]); ORCH.top.material.color.set(GRASS[s]); WIND.top.material.color.set(GRASS[s]);
   tuftMat.color.set([0x6cc26a, 0x5fb85c, 0xc9a24f, 0xdfe8f5][s]);
-  trees.forEach(t => t.userData.cm.color.set(CANOPY[s]));
+  trees.forEach(t => { t.userData.cm.color.set(CANOPY[s]); t.userData.cm2.color.set(CANOPY[s]).multiplyScalar(.86); });
   grassPatches.forEach(p => p.material.color.set(GRASS[s]).multiplyScalar(p.material.userData.f));
   flowers.visible = s < 2; tufts.visible = s !== 3 && !lowGfx;
   rainMat.color.set(s === 3 ? 0xffffff : 0xdfeaff); rainMat.size = s === 3 ? .14 : .08;
@@ -1040,7 +1056,7 @@ function openGoals() {
     <div class="jlist">${S.goals.list.map(g => `<button>${g.have >= g.need ? '✓ ' : ''}${GOAL_TYPES[g.t](g.need)} <span class="sub">${g.t === 'sell' ? `${g.have} of ${g.need} coins` : `${g.have} of ${g.need}`}</span></button>`).join('')}</div>`, 'Close');
 }
 $('goalsBtn').onclick = openGoals;
-function applyPaint() { roof.material.color.set(+S.roof); house.children[0].material.color.set(+S.wall); }
+function applyPaint() { roof.material.color.set(+S.roof); house.userData.awning.material.color.set(+S.roof); house.children[0].material.color.set(+S.wall); }
 document.addEventListener('click', e => { if (e.target.closest('button,.slot') && e.target.id !== 'mute') sfx('click'); });
 // S.tut: 1 Nana walks over, 2 dig the first spot, 3 plant, 4 water, 5 pick, 6 sell, 9 done
 const TUT = {
@@ -2114,7 +2130,7 @@ function tick() {
     if (c !== player) u.arms.forEach((a, i) => a.rotation.x = Math.sin(now*1.6 + i + u.blink) * .12); });
   bubbles.forEach(b => b.position.y = 2.35 + Math.sin(now*2.5 + b.userData.ph)*.06);
   winHalos.forEach(hl => hl.material.opacity = winMat.emissiveIntensity * .45);
-  smoke.forEach((sm, i) => { const k = ((now*.25 + i/5) % 1); sm.position.set(house.position.x + .7 + Math.sin(k*6 + i)*.2, 3.1 + k*2.2, house.position.z - .3); sm.scale.setScalar(.4 + k*1.1); sm.material.opacity = (1-k) * .35 * (S.where === 'hut' ? 0 : 1); });
+  smoke.forEach((sm, i) => { const k = ((now*.25 + i/5) % 1); sm.position.set(house.position.x + .75 + Math.sin(k*6 + i)*.2, 3.45 + k*2.2, house.position.z - .35); sm.scale.setScalar(.4 + k*1.1); sm.material.opacity = (1-k) * .35 * (S.where === 'hut' ? 0 : 1); });
   moonHalo.material.opacity = moonSprite.visible ? night * .35 : 0; moonHalo.position.copy(moonSprite.position);
   tileGroups.forEach(g => g.children.forEach(c => { if (c.userData.bob) c.position.y = .85 + Math.sin(now*3)*.06; if (c.userData.sway) c.rotation.z = Math.sin(now*2 + g.position.x)*.08; }));
   digGroups.forEach(g => g.children.forEach(c => { if (c.userData.spark) { c.rotation.y = now*2; c.position.y = .6 + Math.sin(now*3)*.1; } }));
