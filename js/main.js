@@ -298,7 +298,19 @@ const gbSwing = new THREE.Group(); gbSwing.add(gbBody, gbTop, crack); greatBell.
 greatBell.userData.kind = 'greatbell'; scene.add(greatBell);
 const bellFrame = new THREE.Group(); bellFrame.position.copy(OH); bellFrame.userData.kind = 'bellframe'; scene.add(bellFrame);
 const frameMarker = new THREE.Group(); bellFrame.add(frameMarker);
-[[-1.8,0],[1.8,0]].forEach(([x,z]) => frameMarker.add(mesh(new THREE.BoxGeometry(.5,.25,.5), mat(0xb0a898), x, .12, z)));
+[[-1.8,0],[1.8,0]].forEach(([x,z]) => { const st = mesh(new THREE.DodecahedronGeometry(.32), mat(0xb3aabb), x, .22, z); st.scale.y = .7; frameMarker.add(st); });
+// see-through outline of the frame you are about to build
+const ghostMat = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.28, depthWrite:false });
+[-1.8,1.8].forEach(x => frameMarker.add(mesh(new THREE.BoxGeometry(.3,4.2,.3), ghostMat, x, 2.1, 0)));
+frameMarker.add(mesh(new THREE.BoxGeometry(4.1,.35,.35), ghostMat, 0, 4.2, 0));
+// the pile of building materials you tap to build the frame and fix its gears
+const lumberPile = new THREE.Group(); lumberPile.position.set(OH.x + 3.4, OH.y, OH.z + 1.8); lumberPile.userData.kind = 'bellframe'; scene.add(lumberPile);
+for (let i=0;i<5;i++){ const bm = mesh(new THREE.BoxGeometry(1.8,.2,.26), mat(i%2 ? 0xc98f58 : 0xb87d45), 0, .12 + Math.floor(i/2)*.21, (i%2 ? .15 : -.15) + (i > 3 ? 0 : 0)); bm.rotation.y = i%2 ? .08 : -.05; lumberPile.add(bm); }
+const coil = mesh(new THREE.TorusGeometry(.28,.07,8,20), mat(0xc9a27a), -1.2, .08, .45); coil.rotation.x = Math.PI/2; lumberPile.add(coil);
+[[1.25,.5],[1.1,-.5]].forEach(([x,z],i) => { const st = mesh(new THREE.DodecahedronGeometry(.34), mat(0xb3aabb), x, .28, z); st.rotation.set(i, i*2, 0); lumberPile.add(st); });
+const pileGear = new THREE.Group(); pileGear.position.set(0, .72, 0); lumberPile.add(pileGear);
+pileGear.add(mesh(new THREE.CylinderGeometry(.35,.35,.1,20), mat(0xc98f58)));
+for (let i=0;i<10;i++){ const a = i/10*Math.PI*2; pileGear.add(mesh(new THREE.BoxGeometry(.12,.1,.12), mat(0xc98f58), Math.cos(a)*.4, 0, Math.sin(a)*.4)); }
 const framePosts = new THREE.Group(); bellFrame.add(framePosts);
 [-1.8,1.8].forEach(x => framePosts.add(mesh(new THREE.BoxGeometry(.3,4.2,.3), mat(0x9b6b4a), x, 2.1, 0)));
 framePosts.add(mesh(new THREE.BoxGeometry(4.1,.35,.35), mat(0x9b6b4a), 0, 4.2, 0));
@@ -306,7 +318,7 @@ framePosts.add(mesh(new THREE.BoxGeometry(4.1,.35,.35), mat(0x9b6b4a), 0, 4.2, 0
 const frameGear = new THREE.Group(); frameGear.position.set(2.05, 4.2, 0); bellFrame.add(frameGear);
 frameGear.add(mesh(new THREE.CylinderGeometry(.55,.55,.12,24), mat(0xc98f58), 0, 0, 0).rotateZ(Math.PI/2));
 for (let i=0;i<12;i++){ const a = i/12*Math.PI*2; frameGear.add(mesh(new THREE.BoxGeometry(.12,.14,.14), mat(0xc98f58), 0, Math.cos(a)*.62, Math.sin(a)*.62)); }
-const ship2 = new THREE.Group(); ship2.position.set(OH.x + 8.5, OH.y, OH.z + 3); ship2.rotation.y = -1.2;
+const ship2 = new THREE.Group(); ship2.position.set(OH.x + 9.3, OH.y, OH.z - .6); ship2.rotation.y = -1.45;
 const hull2 = mesh(new THREE.SphereGeometry(1.2, 20, 10, 0, Math.PI*2, Math.PI/2, Math.PI/2), mat(0x3f86c9), 0, .85, 0); hull2.scale.set(1.5,.75,.75); ship2.add(hull2);
 ship2.add(mesh(new THREE.CylinderGeometry(.07,.08,2.6,8), mat(0x9b6b4a), 0, 2.2, 0));
 ship2.add(mesh(new THREE.PlaneGeometry(1.3,1.5), new THREE.MeshStandardMaterial({ color:0xfff6e6, side:THREE.DoubleSide }), .7, 2.4, 0));
@@ -999,7 +1011,7 @@ function questTarget() {
   if (S.q2 < 5) return [npcs.drizzle, pot, ship, npcs.drizzle, npcs.drizzle][S.q2];
   if (S.q3 < 7) return [sign2, npcs.twins, windmill, windmill, windmill, npcs.nana, npcs.twins][S.bridge2 && S.q3 === 0 ? 1 : S.q3];
   if (S.q4 < 5) return [npcs.lumen, easel, darkroom, crystals, npcs.lumen][S.q4];
-  if (S.q5 < 6) return [npcs.drizzle, ship, greatBell, bellFrame, bellFrame, greatBell][S.q5];
+  if (S.q5 < 6) return [npcs.drizzle, ship, greatBell, lumberPile, lumberPile, greatBell][S.q5];
   const nextSite = BUILDINGS.findIndex(b => !S.built.includes(b.id)); return nextSite >= 0 ? siteGroups[nextSite] : null;
 }
 const MARK_H = { npc:2.4, ship:4.2, windmill:5.6, greatbell:2.2, bellframe:1.4, house:3.8 };
@@ -1310,7 +1322,7 @@ function drizzleOldHeart() {
 function flyTo(where) {
   const f = $('fade'); f.style.opacity = 1; sfx('cast');
   setTimeout(() => {
-    if (where === 'heart') player.position.set(OH.x + 6.5, OH.y, OH.z + 3.5); else player.position.set(ORCH_POS.x + 1, ORCH_POS.y, ORCH_POS.z + 1.5);
+    if (where === 'heart') player.position.set(OH.x + 7.2, OH.y, OH.z + .8); else player.position.set(ORCH_POS.x + 1, ORCH_POS.y, ORCH_POS.z + 1.5);
     S.where = 'home'; target = null; pending = null; snapCam(); S.pos = [player.position.x, player.position.y, player.position.z]; save();
     f.style.opacity = 0;
     if (where === 'heart' && S.q5 === 1) { S.q5 = 2; save(); drawHud(); setTimeout(() => toast('The Old Heart. The great bell lies fallen in the middle.'), 700); }
@@ -1628,7 +1640,7 @@ function useGreatBell() {
   if (S.q5 < 2) { toast('A huge cracked bell.'); return; }
   if (S.q5 === 2) return leverPuzzle({ kicker:'THE GREAT BELL', title:'Lift the great bell', heavy:120, push:30,
     text:'The great bell is the heaviest thing in the sky. You have a very long plank and a log. Move the log, then push down on your end.',
-    done:() => { S.q5 = 3; save(); drawHud(); sfx('dig'); burst(greatBell.position, 0xd9a441, 24); showRecall('lever2', () => toast('The bell is upright! Now it needs a frame. Tap the stones beside it.')); } });
+    done:() => { S.q5 = 3; save(); drawHud(); sfx('dig'); burst(greatBell.position, 0xd9a441, 24); showRecall('lever2', () => toast('The bell is upright! Now tap the pile of wooden beams next to it to build a frame.')); } });
   if (S.q5 < 5) { toast('The bell is upright, but it needs a frame to hang from.'); return; }
   if (S.q5 === 5) {
     const h = hour();
@@ -1638,10 +1650,10 @@ function useGreatBell() {
   chime(131); chime(196); chime(262); toast('BONNNG. Every island hums back.');
 }
 function useFrame() {
-  if (S.q5 < 3) { toast('Old stones where the bell frame used to stand.'); return; }
+  if (S.q5 < 3) { toast('A pile of wooden beams, rope, and stones for building.'); return; }
   if (S.q5 === 3) return ropePuzzle({ kicker:'THE BELL FRAME', total:36, fail:'Not square yet. The frame would lean.',
     text:'The frame posts must stand at a perfect square corner, or the bell will swing crooked. This rope has 36 spaces between its knots.',
-    done:() => { S.q5 = 4; save(); drawHud(); sfx('pick'); burst(bellFrame.position, 0x9b6b4a, 20); showRecall('rope2', () => toast('The frame stands! Tap it again to fix the gears.')); } });
+    done:() => { S.q5 = 4; save(); drawHud(); sfx('pick'); burst(bellFrame.position, 0x9b6b4a, 20); showRecall('rope2', () => toast('The frame stands! Tap the pile again to fix the gears.')); } });
   if (S.q5 === 4) return gearPuzzle({ kicker:'THE BELL FRAME', target:4, what:'The bell needs its small gear',
     done:() => { S.q5 = 5; save(); drawHud(); sfx('pick'); burst(frameGear.position, 0xc98f58, 16); showRecall('gears', () => toast('The bell hangs ready. Ring it at exactly noon.')); } });
   toast('The great bell frame. Solid and square.');
@@ -1865,7 +1877,7 @@ function sleep(passedOut) {
 // ============ INPUT ============
 const ray = new THREE.Raycaster(), down = new THREE.Raycaster(), ptr = new THREE.Vector2(), DOWN = new THREE.Vector3(0,-1,0);
 let target = null, pending = null;
-const clickables = [greatBell, bellFrame, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
+const clickables = [greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
 renderer.domElement.addEventListener('pointerdown', e => {
   if ($('title').style.display !== 'none' || $('veil').classList.contains('show')) return;
   closeDialog();
@@ -2026,7 +2038,7 @@ function tick() {
   ship.position.y = ORCH_POS.y + ship.userData.lift * (S.q2 >= 5 ? 1 : 0) + (S.q2 >= 5 ? Math.sin(now*1.3)*.12 : 0);
   lid.visible = S.q2 === 1 && S.potDay >= 0; sail.visible = S.q2 >= 3; saggy.visible = S.q2 < 3;
   lanterns.children.forEach((l, i) => { if (l.geometry.type === 'SphereGeometry') l.position.y = 1.9 + Math.sin(now*1.5 + i)*.05; });
-  { const q = S.q5; frameMarker.visible = q < 4; framePosts.visible = q >= 4; frameGear.visible = q >= 5; crack.visible = q < 6;
+  { const q = S.q5; frameMarker.visible = q < 4; ghostMat.opacity = q === 3 ? .22 + Math.sin(now*3)*.1 : 0; lumberPile.visible = q <= 4; pileGear.visible = q === 4; pileGear.rotation.y = now; framePosts.visible = q >= 4; frameGear.visible = q >= 5; crack.visible = q < 6;
     if (q < 3) { greatBell.position.set(OH.x, OH.y + .6, OH.z + .3); gbSwing.rotation.set(0, 0, 1.35); }
     else if (q < 5) { greatBell.position.set(OH.x, OH.y + .7, OH.z); gbSwing.rotation.set(0, 0, 0); }
     else { greatBell.position.set(OH.x, OH.y + 3.3, OH.z); const r = gbSwing.userData.ring || 0; gbSwing.rotation.set(0, 0, Math.sin(now*3) * .25 * Math.min(1, r)); if (r > 0) gbSwing.userData.ring = r - dt * .5; }
