@@ -15,7 +15,7 @@ for (const id of Object.keys(FESTIVAL_AHA)) if (!AHA_ORDER.includes(id)) AHA_ORD
 const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, skywheat:0, moonpumpkin:0, frostmint:0 }, bag:{},
   tiles:Array.from({length:9},()=>({s:0})), sel:'cloudberry', hearts:{ nana:0, pip:0, drizzle:0, twins:0, lumen:0, mabel:0, hoot:0, allegra:0, sage:0 }, talked:{}, gifted:{}, scenes:[],
   bridge:false, pos:[0,0,2], where:'home', quest:0, aha:[], relics:0, digs:[], asked:-1, qi:0, letter:false,
-  order:null, furn:{}, placed:[null,null,null,null,null,null], q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
+  order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
 let S;
 try {
   const saved = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
@@ -624,13 +624,56 @@ const shelfItems = {
 Object.values(shelfItems).forEach(m => shelf.add(m));
 shelf.userData.kind = 'shelf'; room.add(shelf);
 const roomLight = new THREE.PointLight(0xffd9a8, 0, 16, 1); roomLight.position.set(ROOM.x, 3, ROOM.z + .5); scene.add(roomLight);
-const SPOTS = [[-2.2,.6],[-.8,-1.1],[.9,-1.1],[2.4,.6],[-1,1.7],[1.1,1.7]];
-const spotGroups = SPOTS.map(([x,z], i) => {
-  const g = new THREE.Group(); g.position.set(x,0,z); g.userData = { kind:'spot', i };
-  const ring = mesh(new THREE.RingGeometry(.42,.5,24), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.35 }), 0, .02, 0); ring.rotation.x = -Math.PI/2;
-  g.add(ring); g.add(mesh(new THREE.CylinderGeometry(.5,.5,.03,16), new THREE.MeshBasicMaterial({ visible:false }), 0, .02, 0));
-  room.add(g); return g;
+// A designed room: every spot is meant for a certain kind of furniture.
+const FURN_CAT = { rug:'rug', table:'table', armchair:'seat', rocker:'seat', bookshelf:'tall', lamp:'decor', fern:'decor', globe:'decor', mushroom:'decor', painting:'wall', sign:'wall' };
+const CAT_INFO = {
+  rug:   { label:'Rug', need:'a rug', buy:'Pip sells a Round Rug.' },
+  table: { label:'Table', need:'a table', buy:'Pip sells a Round Table.' },
+  seat:  { label:'Chair', need:'a chair', buy:'Pip sells an Armchair. A good friend might give you one too.' },
+  tall:  { label:'Bookshelf', need:'a bookshelf', buy:'Pip sells a Bookshelf.' },
+  decor: { label:'Small decor', need:'something small, like a lamp or a plant', buy:'Pip sells a Paper Lamp, a Potted Fern, and a Star Globe.' },
+  wall:  { label:'Wall art', need:'something to hang on the wall', buy:'Wall art comes from friends. Get to know Lumen and Pip.' },
+};
+const SPOTS = [
+  { cat:'rug',   x:0,     z:.4 },
+  { cat:'table', x:0,     z:.4 },
+  { cat:'seat',  x:-1.55, z:.55, rot:Math.PI/2 },
+  { cat:'seat',  x:1.55,  z:.55, rot:-Math.PI/2 },
+  { cat:'tall',  x:-3.3,  z:.9,  rot:Math.PI/2 },
+  { cat:'decor', x:-1.45, z:-2.7 },
+  { cat:'decor', x:.95,   z:-2.8 },
+  { cat:'decor', x:3.1,   z:2.3 },
+  { cat:'wall',  x:-2.6,  z:-3.17, y:2.05 },
+  { cat:'wall',  x:3.67,  z:.6,  y:1.7, rot:-Math.PI/2 },
+];
+function labelSprite(text) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
+  g.fillStyle = 'rgba(59,47,74,.72)'; g.beginPath(); g.roundRect(4, 8, 248, 48, 24); g.fill();
+  g.fillStyle = '#fff8ee'; g.font = 'bold 26px "Baloo 2", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:new THREE.CanvasTexture(c), transparent:true, depthTest:false })); sp.scale.set(1.2, .3, 1); sp.renderOrder = 5; return sp;
+}
+const hitMat = new THREE.MeshBasicMaterial({ visible:false }), markMat = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.4, side:THREE.DoubleSide });
+const spotGroups = SPOTS.map((sp, i) => {
+  const g = new THREE.Group(); g.position.set(sp.x, sp.y || 0, sp.z); g.rotation.y = sp.rot || 0; g.userData = { kind:'spot', i };
+  const mark = new THREE.Group(), hit = new THREE.Group();
+  if (sp.cat === 'wall') {
+    mark.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(.95,.75)), new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:.6 })));
+    hit.add(new THREE.Mesh(new THREE.PlaneGeometry(1,.8), hitMat));
+  } else if (sp.cat === 'rug') {
+    const r = mesh(new THREE.RingGeometry(1.05,1.15,40), markMat, 0, .015, 0); r.rotation.x = -Math.PI/2; mark.add(r);
+    const h = new THREE.Mesh(new THREE.RingGeometry(.6,1.2,24), hitMat); h.rotation.x = -Math.PI/2; h.position.y = .02; hit.add(h);
+  } else {
+    const rr = sp.cat === 'tall' ? .55 : .42, r = mesh(new THREE.RingGeometry(rr - .07, rr, 24), markMat, 0, .02, 0); r.rotation.x = -Math.PI/2; mark.add(r);
+    hit.add(mesh(new THREE.CylinderGeometry(rr, rr, sp.cat === 'table' ? .6 : .03, 16), hitMat, 0, sp.cat === 'table' ? .3 : .02, 0));
+  }
+  const lab = labelSprite(CAT_INFO[sp.cat].label); lab.position.set(0, sp.cat === 'wall' ? -.55 : .45, sp.cat === 'wall' ? .05 : sp.cat === 'rug' ? .8 : 0); if (sp.cat === 'rug') lab.position.y = .2;
+  g.add(mark, hit, lab); room.add(g); return g;
 });
+// older saves had 6 generic spots: move each placed item into a spot that fits it
+if (S.placed.length !== SPOTS.length) {
+  const old = S.placed.filter(Boolean); S.placed = Array(SPOTS.length).fill(null);
+  old.forEach(k => { const i = SPOTS.findIndex((sp, j) => sp.cat === FURN_CAT[k] && !S.placed[j]); if (i >= 0) S.placed[i] = k; });
+}
 function furnModel(id) {
   const g = new THREE.Group();
   if (id === 'rug') g.add(mesh(new THREE.CylinderGeometry(.9,.9,.03,32), mat(0x7ec8e3), 0, .02, 0));
@@ -641,16 +684,18 @@ function furnModel(id) {
   if (id === 'bookshelf') { g.add(mesh(new THREE.BoxGeometry(1,1.5,.35), mat(0x9b6b4a), 0, .75, 0)); for (let r=0;r<3;r++) for (let b=0;b<5;b++) g.add(mesh(new THREE.BoxGeometry(.13,.33,.28), mat([0xff8fa3,0x7ec8e3,0xffc857,0x8fdc8a,0xc9b6ff][(b+r)%5]), -.32+b*.16, .3+r*.45, .04)); }
   if (id === 'globe') { g.add(mesh(new THREE.CylinderGeometry(.2,.25,.5,12), mat(0x9b6b4a), 0, .25, 0)); const s = mesh(sph(.35), mat(0x1f2a52), 0, .85, 0); g.add(s); for (let i=0;i<14;i++) s.add(mesh(sph(.025), glow(0xfff3a0), ...new THREE.Vector3().randomDirection().multiplyScalar(.35).toArray())); }
   if (id === 'rocker') { const w = mat(0xb87d45); g.add(mesh(new THREE.BoxGeometry(.7,.08,.7), w, 0, .45, 0)); g.add(mesh(new THREE.BoxGeometry(.7,.8,.08), w, 0, .85, -.32)); [-1,1].forEach(s => { const r = mesh(new THREE.TorusGeometry(.6,.03,6,20,1.2), w, s*.3, .6, 0); r.rotation.set(0, Math.PI/2, Math.PI*1.35); g.add(r); }); g.add(mesh(new THREE.BoxGeometry(.6,.1,.6), mat(0xff8fa3), 0, .52, 0)); }
-  if (id === 'sign') { g.add(mesh(new THREE.CylinderGeometry(.05,.05,1.1,8), mat(0x9b6b4a), 0, .55, 0)); g.add(mesh(new THREE.BoxGeometry(.9,.45,.08), mat(0xff8fa3), 0, 1.1, 0)); g.add(mesh(sph(.08), glow(0xffc857), 0, 1.1, .05)); }
-  if (id === 'painting') { [-.3,.3].forEach(x => g.add(mesh(new THREE.CylinderGeometry(.04,.04,1.5,6), mat(0x9b6b4a), x, .75, 0))); g.add(mesh(new THREE.BoxGeometry(.9,.7,.05), mat(0x1f2552), 0, 1.2, .06)); g.add(mesh(new THREE.CircleGeometry(.18,20), glow(0xfff3a0), .15, 1.28, .09)); g.add(mesh(new THREE.CircleGeometry(.05,10), glow(0xffffff), -.2, 1.1, .09)); }
+  if (id === 'sign') { g.add(mesh(new THREE.BoxGeometry(.9,.5,.06), mat(0xff8fa3), 0, 0, .03)); g.add(mesh(new THREE.BoxGeometry(.98,.08,.08), mat(0x9b6b4a), 0, .29, .04)); g.add(mesh(sph(.09), glow(0xffc857), 0, 0, .08)); [-.3,.3].forEach(x => g.add(mesh(sph(.05), mat(0xffffff), x, 0, .07))); return g; }
+  if (id === 'sign_old') { g.add(mesh(new THREE.CylinderGeometry(.05,.05,1.1,8), mat(0x9b6b4a), 0, .55, 0)); g.add(mesh(new THREE.BoxGeometry(.9,.45,.08), mat(0xff8fa3), 0, 1.1, 0)); g.add(mesh(sph(.08), glow(0xffc857), 0, 1.1, .05)); }
+  if (id === 'painting') { g.add(mesh(new THREE.BoxGeometry(1,.8,.06), mat(0xc98f58), 0, 0, .03)); g.add(mesh(new THREE.BoxGeometry(.86,.66,.04), mat(0x1f2552), 0, 0, .06)); g.add(mesh(new THREE.CircleGeometry(.14,20), glow(0xfff3a0), .18, .1, .09)); [[-.25,.15],[-.1,-.12],[.3,-.18],[-.3,-.2]].forEach(([x,y]) => g.add(mesh(new THREE.CircleGeometry(.025,8), glow(0xffffff), x, y, .09))); return g; }
+  if (id === 'painting_old') { [-.3,.3].forEach(x => g.add(mesh(new THREE.CylinderGeometry(.04,.04,1.5,6), mat(0x9b6b4a), x, .75, 0))); g.add(mesh(new THREE.BoxGeometry(.9,.7,.05), mat(0x1f2552), 0, 1.2, .06)); g.add(mesh(new THREE.CircleGeometry(.18,20), glow(0xfff3a0), .15, 1.28, .09)); g.add(mesh(new THREE.CircleGeometry(.05,10), glow(0xffffff), -.2, 1.1, .09)); }
   if (id === 'mushroom') { g.add(mesh(new THREE.CylinderGeometry(.1,.14,.6,10), mat(0xfff1d6), 0, .3, 0)); const cap = mesh(new THREE.SphereGeometry(.4,20,10,0,Math.PI*2,0,Math.PI/2), glow(0x9fe7e0), 0, .58, 0); g.add(cap); }
   return g;
 }
 function drawRoom() {
   spotGroups.forEach((g, i) => {
-    while (g.children.length > 2) g.remove(g.children[2]);
-    g.children[0].visible = !S.placed[i];
-    if (S.placed[i]) g.add(furnModel(S.placed[i]));
+    while (g.children.length > 3) g.remove(g.children[3]);
+    const k = S.placed[i]; g.children[0].visible = g.children[2].visible = !k;
+    if (k) g.add(furnModel(k));
   });
   Object.entries(shelfItems).forEach(([id, m]) => m.visible = S.aha.includes(id));
 }
@@ -1209,7 +1254,7 @@ function seedShop() {
 }
 function furnShop() {
   closeDialog();
-  const list = Object.entries(FURN).filter(([,f]) => !f.gift).map(([k,f]) => `<button data-f="${k}">${f.name} <span class="sub">${f.price} coins${S.furn[k] ? `, you have ${S.furn[k]}` : ''}</span></button>`).join('');
+  const list = Object.entries(FURN).filter(([,f]) => !f.gift).map(([k,f]) => `<button data-f="${k}">${f.name} <span class="sub">${f.price} coins${S.furn[k] ? `, you have ${S.furn[k]}` : ''}. Goes in a ${CAT_INFO[FURN_CAT[k]].label.toLowerCase()} spot.</span></button>`).join('');
   const swatch = (kind, map) => Object.entries(map).map(([hx, name]) => { const own = S.paints.includes(hx), on = S[kind] === hx;
     return `<button data-paint="${kind}:${hx}"><span class="dot" style="display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:6px;background:#${hx.slice(2)}"></span>${name} <span class="sub">${on ? 'on your hut now' : own ? 'owned, tap to use' : PAINT_PRICE + ' coins'}</span></button>`; }).join('');
   showCard(`<div class="kicker">PIP'S FURNITURE</div><h2>Make your hut cozy</h2><p>You have ${S.coins} coins. Place furniture inside your hut.</p><div class="jlist">${list}</div>
@@ -1944,12 +1989,14 @@ function useHouse() {
 function enterHut() { S.where = 'hut'; player.position.set(ROOM.x, 0, ROOM.z + 2.2); target = null; pending = null; snapCam(); sfx('door'); drawRoom(); drawHud(); save(); }
 function exitHut() { S.where = 'home'; player.position.set(-4, 0, -1.3); target = null; pending = null; snapCam(); sfx('door'); drawHud(); save(); }
 function useSpot(i) {
-  const cur = S.placed[i];
-  if (cur) { openDialog('Your Hut', `Pick up the ${FURN[cur].name}?`, [{ label:'Pick it up', fn:() => { S.placed[i] = null; drawRoom(); save(); closeDialog(); } }]); return; }
-  const free = Object.entries(S.furn).filter(([k,n]) => n > S.placed.filter(x => x === k).length);
-  if (!free.length) { toast('Buy furniture from Pip, then place it here.'); return; }
-  showCard(`<div class="kicker">DECORATE</div><h2>Place something here</h2><div class="jlist">${free.map(([k]) => `<button data-p="${k}">${FURN[k].name}</button>`).join('')}</div>`, 'Never mind');
-  document.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { S.placed[i] = b.dataset.p; hideCard(); drawRoom(); save(); sfx('plant'); burst(new THREE.Vector3(ROOM.x + SPOTS[i][0], 0, ROOM.z + SPOTS[i][1]), 0xffc857, 10); });
+  const cur = S.placed[i], sp = SPOTS[i], info = CAT_INFO[sp.cat];
+  if (cur) { openDialog('Your Hut', `Take down the ${FURN[cur].name}? It goes back in your bag, and you can put it somewhere else.`, [{ label:'Take it down', fn:() => { S.placed[i] = null; drawRoom(); save(); closeDialog(); } }]); return; }
+  const fits = Object.entries(S.furn).filter(([k,n]) => FURN_CAT[k] === sp.cat && n > S.placed.filter(x => x === k).length);
+  if (!fits.length) { const owned = Object.entries(S.furn).some(([k,n]) => n > 0 && FURN_CAT[k] === sp.cat);
+    toast(owned ? `This spot is for ${info.need}. Yours is already placed somewhere else.` : `This spot is for ${info.need}. ${info.buy}`); return; }
+  showCard(`<div class="kicker">DECORATE</div><h2>${info.label}</h2><p>This spot is for ${info.need}. Pick one to place here.</p><div class="jlist">${fits.map(([k]) => `<button data-p="${k}">${FURN[k].name}</button>`).join('')}</div>`, 'Never mind');
+  document.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { S.placed[i] = b.dataset.p; hideCard(); drawRoom(); save(); sfx('plant');
+    burst(new THREE.Vector3(ROOM.x + sp.x, (sp.y || 0) + .2, ROOM.z + sp.z), 0xffc857, 10); });
 }
 let raining = false;
 function seasonCheck() {
