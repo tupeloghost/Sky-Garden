@@ -94,7 +94,8 @@ Later: Moonmelon (Night Isle only), Breezebean (climbs bridges), Rainroot (only 
 - **v0.4 (built):** Chapter 3 The Windmill (Antikythera gears, Archimedes' lever, yeast and bread across faiths), Moss & Fern with Fibonacci sunflower scene and Glow Mushroom Lamp, wind-powered sprinkler, Stoic and Golden Rule questions, 23 memories.
 - **v0.5 (built):** recall moments (6-8-10 garden, Rosetta boulder, night fishing), GitHub Pages launch, pause during menus, 6-minute days.
 - **v0.6 (built):** Chapter 4 The Painter of Light (bridge of light after 8 PM, Lumen, moon phases and lunar calendars, Ibn al-Haytham's dark room, crystal chimes recall), Newton prism scene, Starbloom crop, daily goals, hut paint.
-- **v0.7:** Chapter 5 The Old Heart: ring every bell together, uses all earlier lessons.
+- **v0.7 (built):** file split (engine vs data), real-world calendar (real seasons, tonight's moon, 14 festivals on real dates), Chapter 5 The Old Heart (ship flight, lever/rope/gears/noon recalls, finale letter), village rebuilding with the Observatory and a 12-constellation star chart that takes a real year to finish.
+- **v0.8:** Library, Bakery, Music Hall, Temple Garden, each with a new neighbor and a new collection; cloud saves.
 - **v0.5:** crafting, sprinklers, museum.
 - **v0.6:** visit a friend's island (share link), festivals.
 

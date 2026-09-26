@@ -269,4 +269,29 @@ const CHIMES = [ // length as a fraction of the big chime; simple = sweet
   { label:'15/16', r:16/15 }, { label:'3/4', r:4/3, sweet:true }, { label:'8/15', r:15/8 },
 ];
 
-export { MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES };
+const QUEST5 = [
+  "Ask Captain Drizzle about the Old Heart.",
+  "Fly to the Old Heart. Tap the Puddle Jumper on Orchard Isle.",
+  "The great bell has fallen. Lift it.",
+  "Build a square frame for the bell. Tap the empty frame.",
+  "Fix the gears that swing the bell. Tap the frame.",
+  "Ring the great bell at exactly noon. Tap the bell.",
+  "The islands are home. Rebuild the village at the Old Heart!",
+];
+Object.assign(RECALL, {
+  lever2: { aha:'lever', title:'The Biggest Lift Yet', text:'The great bell is twice as heavy as the boulder. Same rule as the windmill: the log goes close to the weight, and a small push lifts almost anything.' },
+  rope2:  { aha:'rope',  title:'3-4-5, Three Times Bigger', text:'A 36-knot rope, and 9, 12, 15 makes the square corner. It is the same triangle as on Drizzle\'s ship, just three times bigger. Builders have trusted it for thousands of years.' },
+  gears:  { aha:'gears', title:'Gears, Remembered', text:'This time the small gear has to spin 4 times for each big turn. Same idea as the windmill: fewer teeth on the small gear means more spins.' },
+  sundial:{ aha:'sundial', title:'Noon, the Old Way', text:'You knew noon was the moment of the shortest shadow. That is how bell ringers set their time for thousands of years, long before clocks.' },
+});
+const BUILDINGS = [
+  { id:'observatory', name:'Observatory', coins:400, items:{ trout:2, minnow:3 }, pos:[-5,-4],
+    about:'A dome with a telescope. After 8 PM, chart the constellations. Different stars come out in different months.' },
+  { id:'library', name:'Library', soon:true, pos:[5,-4], about:'Plans arrive in a future update.' },
+  { id:'bakery', name:'Bakery', soon:true, pos:[-6,3], about:'Plans arrive in a future update.' },
+  { id:'musichall', name:'Music Hall', soon:true, pos:[6,3], about:'Plans arrive in a future update.' },
+  { id:'temple', name:'Temple Garden', soon:true, pos:[0,7], about:'Plans arrive in a future update.' },
+];
+const GRANDMA_LETTER2 = "If you are reading this, you rang it. I knew you would. I spent years trying, and I think I was missing the one thing you have: you learned it all by doing it, one small thing at a time, with friends beside you. The village was never just the islands. It was the people who remembered together. Build it back, one home at a time. The sky remembers. So will you.";
+
+export { QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES };

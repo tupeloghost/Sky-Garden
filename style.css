@@ -59,3 +59,5 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .help { font-size:14px; opacity:.75; margin-top:14px; }
 @media (max-width:520px) { .pill { font-size:13px; padding:4px 9px; } .quest { font-size:13px; } }
 .title .hemi { margin-top:12px; font-size:14px; padding:6px 16px; background:#ffffffaa; box-shadow:none; font-weight:700; }
+#fade { position:fixed; inset:0; background:#fff8ee; opacity:0; pointer-events:none; transition:opacity .6s; z-index:7; }
+.bar { scrollbar-width:none; } .bar::-webkit-scrollbar { display:none; }
