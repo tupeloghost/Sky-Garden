@@ -220,3 +220,6 @@ body.in-cine .top { opacity:0 !important; pointer-events:none !important; transi
 .founderpill { background:linear-gradient(90deg,#efe6ff,#fff3c9) !important; }
 .jlist button.mdone { opacity:.6; }
 .wallnames { display:flex; flex-wrap:wrap; gap:6px; } .wallnames span { background:var(--surface); border-radius:999px; padding:3px 12px; font-weight:700; }
+.pollrow { position:relative; display:flex; align-items:center; gap:8px; background:var(--surface); border-radius:14px; padding:8px 12px; margin-top:8px; overflow:hidden; font-weight:700; }
+.pollrow i { position:absolute; left:0; top:0; bottom:0; background:#ffc85755; z-index:0; }
+.pollrow span, .pollrow b { position:relative; z-index:1; } .pollrow span { flex:1; } .pollrow.mine { border:2px solid var(--gold); }

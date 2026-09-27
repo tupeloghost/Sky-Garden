@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sky Garden Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#3b2f4a; --card:#fff8ee; --accent:#ff8fa3; --gold:#ffc857; --gold-deep:#d99a2b; --surface:#f3e8d8; --line:#e4d6c2; --good:#2fae60; --bad:#e0566f; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Baloo 2', system-ui, sans-serif; color:var(--ink); background:#f6efe4; }
+  main { max-width:1000px; margin:0 auto; padding:22px 16px 60px; }
+  h1 { margin:0; font-size:30px; } h2 { margin:0 0 8px; font-size:20px; }
+  .sub { opacity:.7; margin:2px 0 14px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
+  .tile { background:var(--card); border-radius:18px; padding:12px 14px; box-shadow:0 4px 0 #0001; }
+  .tile b { display:block; font-size:30px; line-height:1.1; } .tile span { font-size:14px; opacity:.75; }
+  .card { background:var(--card); border-radius:20px; padding:16px 18px; margin-top:14px; box-shadow:0 4px 0 #0001; overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:left; font-size:12px; opacity:.6; padding:4px 8px; border-bottom:2px solid var(--line); white-space:nowrap; }
+  td { padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .chip { display:inline-block; border-radius:999px; padding:0 9px; font-size:12px; font-weight:800; background:var(--surface); }
+  .love { background:#dff5dc; color:#1f7a3f; } .okay { background:#fff3c9; color:#8a6a10; } .confused { background:#fde3e7; color:#b33a52; } .bored { background:#e8e2f5; color:#5a4b7a; }
+  .bar { height:10px; background:var(--surface); border-radius:6px; overflow:hidden; margin-top:3px; } .bar i { display:block; height:100%; background:var(--gold); }
+  .empty { opacity:.6; font-size:15px; }
+  .lock { max-width:420px; margin:12vh auto; background:var(--card); border-radius:22px; padding:22px; box-shadow:0 5px 0 #0002; text-align:center; }
+  input { width:100%; font:inherit; font-size:16px; border-radius:12px; border:2px solid var(--line); padding:8px 12px; margin-top:10px; }
+  button { font:inherit; font-weight:800; border:0; background:var(--gold); color:var(--ink); border-radius:999px; padding:8px 20px; margin-top:12px; cursor:pointer; box-shadow:0 4px 0 var(--gold-deep); }
+  button.ghost { background:var(--surface); box-shadow:0 4px 0 #cdbda6; }
+  pre { white-space:pre-wrap; font-size:11px; opacity:.7; margin:4px 0 0; max-height:90px; overflow:auto; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const API = 'https://sky-garden-saves.tupeloghost.workers.dev';
+const app = document.getElementById('app');
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const ago = ms => { if (!ms) return ''; const m = Math.round((Date.now() - ms) / 60000); return m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m/60)} hr ago` : `${Math.round(m/1440)} days ago`; };
+const chapter = p => p.q1 < 5 ? `Ch 1, step ${p.q1}` : p.q2 < 5 ? `Ch 2, step ${p.q2}` : p.q3 < 7 ? `Ch 3, step ${p.q3}` : p.q4 < 5 ? `Ch 4, step ${p.q4}` : p.q5 < 6 ? `Ch 5, step ${p.q5}` : 'Story done';
+let token = ''; try { token = localStorage.getItem('sg.admin') || ''; } catch {}
+
+function lock(msg) {
+  app.innerHTML = `<div class="lock"><h1>Sky Garden</h1><p class="sub">Private dashboard</p><p>${msg || 'Enter your dashboard key to see how players are doing.'}</p>
+    <input id="k" type="password" placeholder="Dashboard key" autocomplete="off"><button id="go">Open dashboard</button></div>`;
+  document.getElementById('go').onclick = () => { token = document.getElementById('k').value.trim(); try { localStorage.setItem('sg.admin', token); } catch {} load(); };
+}
+async function load() {
+  if (!token) return lock();
+  app.innerHTML = '<p class="sub">Loading...</p>';
+  let d; try { const r = await fetch(`${API}/admin`, { headers:{ Authorization:'Bearer ' + token } }); if (r.status === 403) { try { localStorage.removeItem('sg.admin'); } catch {} return lock('That key did not work. Try again.'); } d = await r.json(); }
+  catch { return lock('Could not reach Sky Garden. Check your internet and try again.'); }
+  const P = d.players, week = Date.now() - 7 * 864e5, back = P.filter(p => (p.playdays || 0) > 1).length, fJoined = d.founders.filter(f => f.used_at).length;
+  const moods = {}; d.feedback.forEach(f => { if (f.mood) moods[f.mood] = (moods[f.mood] || 0) + 1; });
+  const missions = {}; d.feedback.filter(f => (f.place || '').startsWith('Mission:')).forEach(f => { const k = f.place.slice(9); missions[k] = missions[k] || {}; missions[k][f.mood] = (missions[k][f.mood] || 0) + 1; });
+  const stops = {}; P.forEach(p => { const c = chapter(p).replace(/, step.*/, ''); stops[c] = (stops[c] || 0) + 1; });
+  app.innerHTML = `
+    <div class="row"><div><h1>Sky Garden</h1><p class="sub">Updated ${new Date(d.now).toLocaleString()}</p></div><div><button id="re">Refresh</button> <button id="out" class="ghost">Lock</button></div></div>
+    <div class="tiles">
+      <div class="tile"><b>${P.length}</b><span>players</span></div>
+      <div class="tile"><b>${P.filter(p => p.created > week).length}</b><span>new this week</span></div>
+      <div class="tile"><b>${back}</b><span>came back on another day</span></div>
+      <div class="tile"><b>${fJoined} / ${d.founders.length}</b><span>tester codes used</span></div>
+      <div class="tile"><b>${d.bugs.reduce((a, b) => a + b.n, 0)}</b><span>bug reports</span></div>
+      <div class="tile"><b>${d.feedback.length}</b><span>recent feedback notes</span></div>
+    </div>
+
+    <div class="card"><h2>Founding Gardeners</h2>${d.founders.length ? `<table><tr><th>For</th><th>Code</th><th>Status</th><th>Name in game</th></tr>${d.founders.map(f => `<tr><td>${esc(f.label)}</td><td>${esc(f.code)}</td><td>${f.used_at ? 'Joined ' + ago(f.used_at) : 'Not used yet'}</td><td>${esc(f.name || '')}</td></tr>`).join('')}</table>` : '<p class="empty">No tester codes yet.</p>'}</div>
+
+    <div class="card"><h2>Where players are in the story</h2>${Object.entries(stops).map(([c, n]) => `<div style="margin-top:6px"><b>${c}</b>: ${n}<div class="bar"><i style="width:${Math.round(n / P.length * 100)}%"></i></div></div>`).join('') || '<p class="empty">No players yet.</p>'}</div>
+
+    <div class="card"><h2>Players</h2>${P.length ? `<table><tr><th>Name</th><th>Story</th><th>Game day</th><th>Days played</th><th>Missions</th><th>Last seen</th></tr>${P.map(p => `<tr><td>${esc(p.name || '(no name)')}${p.founder ? ' <span class="chip">✦ founder</span>' : ''}</td><td>${chapter(p)}</td><td>${p.day ?? ''}</td><td>${p.playdays ?? ''}</td><td>${p.missions ? Object.keys(JSON.parse(p.missions)).length : ''}</td><td>${ago(p.updated)}</td></tr>`).join('')}</table>` : '<p class="empty">No players yet.</p>'}</div>
+
+    <div class="card"><h2>How missions felt</h2>${Object.keys(missions).length ? `<table><tr><th>Mission</th><th>Loved it</th><th>Okay</th><th>Confusing</th></tr>${Object.entries(missions).map(([k, m]) => `<tr><td>${esc(k)}</td><td>${m.love || 0}</td><td>${m.okay || 0}</td><td>${m.confused || 0}</td></tr>`).join('')}</table>` : '<p class="empty">No mission reactions yet.</p>'}</div>
+
+    <div class="card"><h2>Feedback</h2><p>${Object.entries(moods).map(([m, n]) => `<span class="chip ${m}">${m} ${n}</span>`).join(' ')}</p>${d.feedback.length ? `<table><tr><th>When</th><th>Mood</th><th>Note</th><th>Where they were</th></tr>${d.feedback.map(f => `<tr><td>${ago(f.at)}</td><td>${f.mood ? `<span class="chip ${f.mood}">${f.mood}</span>` : ''}</td><td>${esc(f.note)}</td><td>${esc(f.place)}</td></tr>`).join('')}</table>` : '<p class="empty">No feedback yet.</p>'}</div>
+
+    <div class="card"><h2>Bugs</h2>${d.bugs.length ? `<table><tr><th>Error</th><th>Times</th><th>Last</th><th>Where they were</th></tr>${d.bugs.map(b => `<tr><td>${esc(b.msg)}<pre>${esc(b.stack)}</pre></td><td>${b.n}</td><td>${ago(b.last)}</td><td>${esc(b.place)}</td></tr>`).join('')}</table>` : '<p class="empty">No bugs reported. Nice!</p>'}</div>
+
+    <div class="card"><h2>Town Hall votes</h2>${d.polls.length ? d.polls.map(p => { const opts = JSON.parse(p.options), counts = JSON.parse(p.counts || '[]'), total = counts.reduce((a, c) => a + c.n, 0) || 1;
+      return `<p><b>${esc(p.question)}</b> ${p.open ? '<span class="chip love">open</span>' : '<span class="chip">closed</span>'}</p>${opts.map((o, i) => { const n = (counts.find(c => c.c === i) || {}).n || 0; return `<div style="margin-top:4px">${esc(o)}: ${n}<div class="bar"><i style="width:${Math.round(n / total * 100)}%"></i></div></div>`; }).join('')}`; }).join('<hr>') : '<p class="empty">No votes yet.</p>'}</div>`;
+  document.getElementById('re').onclick = load;
+  document.getElementById('out').onclick = () => { token = ''; try { localStorage.removeItem('sg.admin'); } catch {} lock(); };
+}
+load();
+</script>
+</body>
+</html>

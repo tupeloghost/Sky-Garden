@@ -11,6 +11,8 @@ const FEATURES = [
   { id:'market', name:'Trading post and shops', live:false, what:'A market stall on your island. Make a logo, design products, and buy, sell, and trade with other players.' },
   { id:'villagers', name:'Visiting villagers', live:false, what:'Random travelers camp on your island for a few days. Befriend them and invite them to stay.' },
   { id:'founders', name:'Founders wall', live:false, what:'The Founding Gardeners thank-you wall on every island. Tester codes, gifts, and missions work either way.' },
+  { id:'townhall', name:'Town Hall voting', live:false, what:'A town board where every player gets one vote on what gets built next.' },
+  { id:'helpertree', name:'Helper Tree', live:false, what:'A tree that grows once a day when you send feedback, vote, or answer a tester question.' },
   { id:'switchIsle', name:'Switch island type', live:false, what:'Players can change their island type from the Bag.' },
 ];
 export { FEATURES };

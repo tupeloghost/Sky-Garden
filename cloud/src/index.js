@@ -17,6 +17,9 @@
 // POST /unlist { key, id }         -> take your own listing down
 // POST /redeem { key, code }      -> use a Founding Gardener tester code (one player per code)
 // GET  /founders                   -> names on the Founding Gardeners wall (only players who said yes)
+// POST /bug { msg, stack, where, day, player, ver }  -> automatic error reports from the game
+// GET  /polls?key=KEY  and  POST /vote { key, poll, choice }  -> Town Hall voting, one vote per player per poll
+// GET  /admin (Authorization: Bearer SECRET) -> the private dashboard data (needs the ADMIN_TOKEN secret)
 // POST /report { key, code, listing?, reason } -> report a shop; 3 different reporters hide it until reviewed
 
 const ALLOWED = ['https://tupeloghost.github.io', 'http://localhost:9011'];
@@ -67,7 +70,7 @@ const cleanName = n => String(n || '').replace(/[^\p{L}\p{N} '._-]/gu, '').trim(
 
 function cors(origin) {
   const allow = ALLOWED.includes(origin) ? origin : ALLOWED[0];
-  return { 'Access-Control-Allow-Origin': allow, 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
+  return { 'Access-Control-Allow-Origin': allow, 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Vary': 'Origin' };
 }
 function json(body, status, origin) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...cors(origin) } });
@@ -251,6 +254,49 @@ export default {
       const names = results.map(r => { try { return JSON.parse(r.data); } catch { return null; } }).filter(d => d && d.creditWall)
         .map(d => d.ageBand === 'kid' ? 'A young gardener' : cleanName(d.name));
       return json({ names }, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/bug') {
+      const text = await request.text(); if (text.length > 8000) return json({ error: 'too big' }, 413, origin);
+      let b; try { b = JSON.parse(text); } catch { return json({ error: 'bad json' }, 400, origin); }
+      const player = KEY_RE.test(b.player || '') ? (await hashKey(b.player)).slice(0, 12) : null;
+      await env.DB.prepare('INSERT INTO bugs (at, player, msg, stack, place, day, ver) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
+        .bind(Date.now(), player, String(b.msg || '').slice(0, 300), String(b.stack || '').slice(0, 1500), String(b.where || '').slice(0, 200), Number.isFinite(b.day) ? b.day : null, String(b.ver || '').slice(0, 20)).run();
+      return json({ ok: true }, 200, origin);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/polls') {
+      const key = url.searchParams.get('key') || '', me = KEY_RE.test(key) ? await hashKey(key) : null;
+      const { results } = await env.DB.prepare('SELECT * FROM polls WHERE open = 1 ORDER BY created DESC LIMIT 3').all();
+      const polls = [];
+      for (const p of results) { const opts = JSON.parse(p.options);
+        const counts = (await env.DB.prepare('SELECT choice, COUNT(*) AS n FROM votes WHERE poll = ? GROUP BY choice').bind(p.id).all()).results;
+        const mine = me ? await env.DB.prepare('SELECT choice FROM votes WHERE poll = ? AND voter = ?').bind(p.id, me).first() : null;
+        polls.push({ id:p.id, question:p.question, options:opts, counts:opts.map((_, i) => (counts.find(c => c.choice === i) || {}).n || 0), mine: mine ? mine.choice : null }); }
+      return json({ polls }, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/vote') {
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      if (!KEY_RE.test(b.key || '')) return json({ error: 'bad request' }, 400, origin);
+      const poll = await env.DB.prepare('SELECT options FROM polls WHERE id = ? AND open = 1').bind(int(b.poll, 1, 1e9)).first();
+      if (!poll) return json({ error: 'closed' }, 404, origin);
+      const choice = int(b.choice, 0, JSON.parse(poll.options).length - 1); if (choice == null) return json({ error: 'bad choice' }, 400, origin);
+      const r = await env.DB.prepare('INSERT OR IGNORE INTO votes (poll, voter, choice, at) VALUES (?1, ?2, ?3, ?4)').bind(b.poll, await hashKey(b.key), choice, Date.now()).run();
+      if (!r.meta.changes) return json({ error: 'already voted' }, 409, origin);
+      return json({ ok: true }, 200, origin);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/admin') {
+      if (!env.ADMIN_TOKEN || (request.headers.get('Authorization') || '') !== 'Bearer ' + env.ADMIN_TOKEN) return json({ error: 'no' }, 403, origin);
+      const all = async (q, ...a) => (await env.DB.prepare(q).bind(...a).all()).results;
+      const players = await all(`SELECT id, created, updated, json_extract(data,'$.name') AS name, json_extract(data,'$.quest') AS q1, json_extract(data,'$.q2') AS q2, json_extract(data,'$.q3') AS q3, json_extract(data,'$.q4') AS q4, json_extract(data,'$.q5') AS q5,
+        json_extract(data,'$.day') AS day, json_extract(data,'$.home') AS home, json_extract(data,'$.founder.code') AS founder, json_extract(data,'$.missions') AS missions, json_array_length(json_extract(data,'$.playDates')) AS playdays FROM saves ORDER BY updated DESC LIMIT 200`);
+      const founders = await all('SELECT t.code, t.label, t.used_at, json_extract(s.data,\'$.name\') AS name FROM tester_codes t LEFT JOIN saves s ON s.id = t.used_by ORDER BY t.created');
+      const feedback = await all('SELECT at, player, mood, note, place, day FROM feedback ORDER BY at DESC LIMIT 60');
+      const bugs = await all('SELECT msg, COUNT(*) AS n, MAX(at) AS last, MAX(place) AS place, MAX(stack) AS stack FROM bugs GROUP BY msg ORDER BY last DESC LIMIT 40');
+      const polls = await all('SELECT p.id, p.question, p.options, p.open, (SELECT json_group_array(json_object(\'c\', choice, \'n\', n)) FROM (SELECT choice, COUNT(*) AS n FROM votes v WHERE v.poll = p.id GROUP BY choice)) AS counts FROM polls p ORDER BY p.created DESC LIMIT 10');
+      return json({ now:Date.now(), players:players.map(p => ({ ...p, id:p.id.slice(0, 12) })), founders, feedback, bugs, polls }, 200, origin);
     }
 
     if (request.method === 'POST' && url.pathname === '/report') {

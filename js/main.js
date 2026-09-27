@@ -50,6 +50,14 @@ try {
 } catch { S = fresh(); }
 // --- cloud sync: each garden has a private sync key and backs itself up to the Sky Garden cloud ---
 const CLOUD = 'https://sky-garden-saves.tupeloghost.workers.dev';
+// automatic bug reports: if something breaks, the error and where the player was go to the cloud (never from developer mode or a local preview)
+{ const sent = new Set(); const report = (msg, stack) => { try {
+    if (sent.size >= 5 || sent.has(msg) || localStorage.getItem('sg.dev') === 'true' || /^(localhost|127\.)/.test(location.hostname)) return; sent.add(msg);
+    const q = document.getElementById('quest'), where = q ? q.innerText.replace(/\s+/g, ' ').slice(0, 180) : '';
+    fetch(`${CLOUD}/bug`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ msg:String(msg).slice(0, 300), stack:String(stack || '').slice(0, 1500), where, day:typeof S !== 'undefined' && S ? S.day : null, player:typeof S !== 'undefined' && S ? S.syncKey : null, ver:'2026-09-27' }) }).catch(() => {});
+  } catch {} };
+  addEventListener('error', e => report(e.message, e.error && e.error.stack));
+  addEventListener('unhandledrejection', e => report('Promise: ' + (e.reason && e.reason.message || e.reason), e.reason && e.reason.stack)); }
 const KEY_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O or 1/I, easy to type
 const newSyncKey = () => [...crypto.getRandomValues(new Uint8Array(24))].map(b => KEY_ABC[b % 32]).join('');
 const prettyKey = k => k.match(/.{1,4}/g).join('-');
@@ -3393,7 +3401,7 @@ function drawBuilds() {
 // places you can't build over, so the important things stay reachable
 function blockedAt(x, z) {
   if (!onLand(x, z)) return 'That is too close to the edge.';
-  const circles = [[-2.8,4.6,1.2],[4,5.1,1],[1.6,5.2,.9],[-5.2,2.1,1],[-7.2,-2.7,1],[-7.9,-2.2,.8],[3.5,-7.4,.8],[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
+  const circles = [[-4.6,-6.2,1.1],[2.6,-3.9,1],[-2.8,4.6,1.2],[4,5.1,1],[1.6,5.2,.9],[-5.2,2.1,1],[-7.2,-2.7,1],[-7.9,-2.2,.8],[3.5,-7.4,.8],[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
   if (circles.some(([cx,cz,r]) => Math.hypot(x-cx, z-cz) < r)) return 'That spot is taken by something important.';
   if (x > .2 && x < 4.8 && z > -2 && z < (S.bigGarden ? 3.9 : 2.6)) return 'That is your garden.';
   return null;
@@ -4110,7 +4118,7 @@ function askReaction(m) {
   if ($('veil').classList.contains('show')) { reactQueue.unshift(m); return; }
   showCard(`<div class="kicker">✦ QUICK QUESTION</div><h2>${m.title}</h2><p>How did that feel? One tap helps us make Sky Garden better.</p>
     <div class="steppers" style="justify-content:flex-start;margin-top:10px">${[['love','Loved it'],['okay','It was okay'],['confused','Confusing']].map(([k,l]) => `<button data-rx="${k}" class="ghost">${l}</button>`).join('')}</div>`, 'Skip');
-  document.querySelectorAll('[data-rx]').forEach(b => b.onclick = () => { api('/feedback', { mood:b.dataset.rx, text:'', where:`Mission: ${m.title}`, day:S.day, player:S.syncKey }); hideCard(); toast('Thank you, founder!'); });
+  document.querySelectorAll('[data-rx]').forEach(b => b.onclick = () => { api('/feedback', { mood:b.dataset.rx, text:'', where:`Mission: ${m.title}`, day:S.day, player:S.syncKey }); hideCard(); toast('Thank you, founder!'); helperGrow(); });
 }
 function openMissions() {
   const list = missionList(), done = list.filter(m => S.missions?.[m.id]).length;
@@ -4132,6 +4140,46 @@ async function openWall() {
   const res = await api('/founders'); if (!$('wallNames')) return;
   $('wallNames').innerHTML = res.ok && res.names.length ? `<div class="wallnames">${res.names.map(n => `<span>✦ ${esc(n)}</span>`).join('')}</div>` : res.ok ? 'The first founders are joining now.' : 'Could not load the wall right now.';
 }
+// --- Town Hall: every player gets one vote per question on what gets built next ---
+const townHall = new THREE.Group(); townHall.position.set(-4.6, 0, -6.2); townHall.rotation.y = .5; scene.add(townHall); lateClicks.push(townHall);
+{ const w = mat(0x9b6b4a); [-.8,.8].forEach(x => townHall.add(mesh(new THREE.CylinderGeometry(.07,.08,1.9,8), w, x, .95, 0)));
+  townHall.add(mesh(new THREE.BoxGeometry(1.9,1.1,.12), mat(0xc98f58), 0, 1.3, 0)); const roof = mesh(new THREE.ConeGeometry(1.35,.5,4), mat(0xff8fa3), 0, 2.1, 0); roof.rotation.y = Math.PI/4; roof.scale.z = .35; townHall.add(roof);
+  [[-.5,1.45,0xfff1d6],[.1,1.2,0xfff3a0],[.55,1.5,0xdff3ff],[-.3,1.05,0xffd1dc]].forEach(([x,y,c]) => { const pp = mesh(new THREE.BoxGeometry(.42,.34,.02), mat(c), x, y, .08); pp.rotation.z = (x * 7 % 1) * .3 - .15; townHall.add(pp); });
+  const hb = hitBox(2, 2.3, .8); hb.position.y = 1.1; townHall.add(hb); townHall.userData.kind = 'deco'; townHall.userData.use = () => openTownHall(); }
+function drawTownHall() { townHall.visible = featureOn('townhall') && !VISIT; }
+drawTownHall();
+async function openTownHall() {
+  showCard(`<div class="kicker">TOWN HALL</div><h2>What should we build next?</h2><p>Loading the vote...</p>`, 'Close');
+  const res = await api(`/polls?key=${S.syncKey}`); if (!$('card')) return;
+  if (!res.ok) { showCard(`<div class="kicker">TOWN HALL</div><h2>The Town Hall is closed</h2><p>Could not reach the town board. Check your internet and try again.</p>`, 'Close'); return; }
+  if (!res.polls.length) { showCard(`<div class="kicker">TOWN HALL</div><h2>No vote right now</h2><p>Check back soon. When there is a new question, everyone gets one vote.</p>`, 'Close'); return; }
+  const p = res.polls[0], total = p.counts.reduce((a, b) => a + b, 0) || 1, voted = p.mine != null;
+  showCard(`<div class="kicker">TOWN HALL</div><h2>${esc(p.question)}</h2><p>${voted ? 'Thanks for voting! Here is how everyone voted so far.' : 'Everyone gets one vote. Tap your choice.'}</p>
+    <div class="jlist">${p.options.map((o, i) => voted ? `<div class="pollrow ${p.mine === i ? 'mine' : ''}"><span>${esc(o)}${p.mine === i ? ' (your vote)' : ''}</span><i style="width:${Math.round(p.counts[i] / total * 100)}%"></i><b>${p.counts[i]}</b></div>`
+      : `<button data-vote="${i}">${esc(o)}</button>`).join('')}</div>`, 'Close');
+  document.querySelectorAll('[data-vote]').forEach(b => b.onclick = async () => { const r = await api('/vote', { key:S.syncKey, poll:p.id, choice:+b.dataset.vote });
+    if (r.ok || r.status === 409) { sfx('heart'); helperGrow(); openTownHall(); } else toast('Could not send your vote. Try again.'); });
+}
+// --- the Helper Tree: grows once a day when you help make Sky Garden better. Honest notes count the same as nice ones. ---
+const helperTree = new THREE.Group(); helperTree.position.set(2.6, 0, -3.9); scene.add(helperTree); lateClicks.push(helperTree);
+function drawHelperTree() {
+  helperTree.children.slice().forEach(c => helperTree.remove(c)); helperTree.visible = featureOn('helpertree') && !VISIT; if (!helperTree.visible) return;
+  const st = Math.min(6, (S.helper || {}).stage || 0), k = .45 + st * .11, founder = !!S.founder, bloomA = founder ? 0xc9b6ff : 0xffb3c6, bloomB = founder ? 0xffe07a : 0xffffff;
+  helperTree.add(mesh(new THREE.CylinderGeometry(.08*k, .14*k, 1.3*k, 8), mat(0x9b6b4a), 0, .65*k, 0));
+  const crown = new THREE.Group(); crown.position.y = 1.3*k; helperTree.add(crown);
+  [[0,.3,0,.55],[.4,.1,.2,.4],[-.38,.15,-.15,.42],[.1,.55,-.1,.38]].slice(0, 1 + Math.min(3, st)).forEach(([x,y,z,r]) => crown.add(mesh(sph(r*k*1.4), mat(0x6fcf7a), x*k*1.4, y*k*1.4, z*k*1.4)));
+  if (st >= 3) for (let i = 0; i < (st - 2) * 10; i++) { const a = i * 2.4, rr = .75*k*1.4; crown.add(mesh(sph(.13), mat(i % 3 ? bloomA : bloomB), Math.cos(a)*rr*.8, .2 + (i % 5)*.12*k, Math.sin(a)*rr*.8)); }
+  if (st >= 6) { const h = halo(founder ? 0xc9b6ff : 0xffd1dc, 3, .5); h.position.y = 1.6*k; helperTree.add(h); }
+  const hb = hitBox(1.4, 2.4, 1.4); hb.position.y = 1; helperTree.add(hb); helperTree.userData.kind = 'deco'; helperTree.userData.use = openHelperTree;
+}
+function helperGrow() { if (!featureOn('helpertree')) return; S.helper = S.helper || { stage:0, day:-1 }; if (S.helper.day === S.day || S.helper.stage >= 6) return;
+  S.helper.day = S.day; S.helper.stage++; save(); drawHelperTree(); burst(helperTree.position.clone().setY(1.5), S.founder ? 0xc9b6ff : 0xffb3c6, 18); setTimeout(() => toast('Your Helper Tree grew! Thank you for helping build Sky Garden.'), 1200); }
+function openHelperTree() { const st = (S.helper || {}).stage || 0, today = (S.helper || {}).day === S.day;
+  showCard(`<div class="kicker">HELPER TREE</div><h2>${st >= 6 ? 'In full bloom!' : `Growing: stage ${st} of 6`}</h2>
+    <p>This tree grows when you help make Sky Garden better, once a day at most.${S.founder ? ' As a Founding Gardener, yours blooms in founder violet and gold.' : ''}</p>
+    <h4>Ways to help</h4><p>• Send a note with the pink Feedback button. Honest notes count the same as nice ones.</p><p>• Vote at the Town Hall.</p>${S.founder ? '<p>• Answer a quick question after a tester mission.</p>' : ''}
+    <p style="margin-top:8px"><b>${st >= 6 ? 'It cannot grow any bigger. Thank you!' : today ? 'It already grew today. Come back tomorrow.' : 'It is ready to grow today.'}</b></p>`, 'Close'); }
+drawHelperTree();
 // --- growing the island ---
 function expandReady(e) { return e.needs === 'home' ? (S.home || 0) >= 3 : e.needs === 'kiln' ? !!S.stations.kiln && potteryOn() : !!S.stations.furnace && bronzeOn(); }
 function expandCard() {
@@ -4216,7 +4264,7 @@ function maybeNewToday() {
 function newTodayCard() {
   const d = playDays(), fresh = ROLLOUT.filter(r => r.day === d && featureOn(r.id)), next = ROLLOUT.find(r => r.day > d && FEATURES.find(f => f.id === r.id)?.live !== false);
   if (!fresh.length) return;
-  drawHud(); drawStations(); drawTradePlants(); drawStall(); spawnBugs(); drawPeople(); chime(784); setTimeout(() => chime(1047), 140);
+  drawHud(); drawStations(); drawTradePlants(); drawStall(); spawnBugs(); drawPeople(); drawTownHall(); drawHelperTree(); drawWall(); chime(784); setTimeout(() => chime(1047), 140);
   showCard(`<div class="kicker">NEW TODAY: DAY ${d}</div>${fresh.map(r => `<h2>${r.title}</h2><p>${r.text}</p>`).join('')}${next ? `<p style="opacity:.75;margin-top:10px">${next.day === d + 1 ? 'Something new unlocks tomorrow. See you then!' : 'More unlocks soon. Keep playing each day!'}</p>` : ''}`);
 }
 { const st = $('start').onclick; $('start').onclick = () => { st(); setTimeout(maybeNewToday, 1800); }; }
@@ -4239,7 +4287,7 @@ function openFeedback() {
     try {
       const r = await fetch(`${CLOUD}/feedback`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ mood, text, where: (devOn() ? '[dev] ' : '') + where, day:S.day, player:S.syncKey }) });
       if (!r.ok) throw new Error();
-      hideCard(); toast('Thank you! Your feedback was sent.'); sfx('heart');
+      hideCard(); toast('Thank you! Your feedback was sent.'); sfx('heart'); helperGrow();
     } catch { $('fbMsg').textContent = 'Could not send. Check your internet and try again. Your note is still here.'; }
   };
 }
@@ -4256,7 +4304,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
