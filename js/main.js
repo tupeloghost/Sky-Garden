@@ -219,10 +219,12 @@ const tuftMat = mat(0x6cc26a);
 const tufts = new THREE.InstancedMesh(tuftGeo, tuftMat, 680);
 const tuftData = [], dummy = new THREE.Object3D();
 for (let i=0; i<680; i++) {
+  // the home island keeps only a light scatter of grass, mostly near the edges, so the middle stays open
   const onHome = i < 330, R = onHome ? 8.6 : 7.6, c = onHome ? new THREE.Vector3() : i < 520 ? ORCH_POS : WIND_POS;
-  let x, z; do { const a = Math.random()*Math.PI*2, r = Math.sqrt(Math.random())*R; x = c.x + Math.cos(a)*r; z = c.z + Math.sin(a)*r; }
+  if (onHome && i >= 110) { tuftData.push({ x:0, y:-50, z:0, s:.01, ph:0 }); continue; }
+  let x, z; do { const a = Math.random()*Math.PI*2, r = onHome ? 5.2 + Math.random()*3.4 : Math.sqrt(Math.random())*R; x = c.x + Math.cos(a)*r; z = c.z + Math.sin(a)*r; }
   while (onHome && x > .3 && x < 4.6 && z > -1.8 && z < 3.5);
-  tuftData.push({ x, y:c.y, z, s:.6 + Math.random()*.8, ph:Math.random()*6 });
+  tuftData.push({ x, y:c.y, z, s:onHome ? .5 + Math.random()*.45 : .6 + Math.random()*.8, ph:Math.random()*6 });
 }
 tufts.receiveShadow = true; scene.add(tufts);
 function swayTufts(now) {
@@ -263,7 +265,7 @@ const fruitTrees = [[-3,-3,'apple'],[2,-4,'peach'],[-4,3,'peach'],[5,.3,'apple']
 
 // --- flowers ---
 const flowers = new THREE.Group(); scene.add(flowers);
-for (let i=0;i<46;i++){ const a=Math.random()*Math.PI*2, r=3+Math.random()*5.3, x=Math.cos(a)*r, z=Math.sin(a)*r;
+for (let i=0;i<0;i++){ const a=Math.random()*Math.PI*2, r=3+Math.random()*5.3, x=Math.cos(a)*r, z=Math.sin(a)*r;
   if (x>0 && x<5 && z>-2.5 && z<3) continue;
   flowers.add(mesh(sph(.08), mat([0xffffff,0xffd1dc,0xfff3a0,0xc9b6ff][i%4]), x, .06, z)); }
 
@@ -545,14 +547,14 @@ const dressing = new THREE.Group(); scene.add(dressing); const grassPatches = []
       const p = new THREE.Mesh(new THREE.CircleGeometry(.9 + rnd(i*11+k)*1.4, 20), pm); p.rotation.x = -Math.PI/2; p.position.set(cx + Math.cos(a)*r, cy + .012 + i*.0005, cz + Math.sin(a)*r); p.scale.set(1, .6 + rnd(i*5)*.5, 1);
       p.receiveShadow = true; dressing.add(p); grassPatches.push(p); } });
   // bushes in little groups
-  const bush = (x, z, s=1, c=0x4fb46a) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.userData = { kind:'bush', key:'bush'+bushes.length }; bushes.push(g); [[0,0,0,.45],[.35,-.05,.1,.34],[-.32,-.07,.08,.32],[.05,.15,-.15,.3]].forEach(([bx,by,bz,br]) => g.add(mesh(sph(br*s), mat(c), bx*s, br*s*.8 + by, bz*s))); dressing.add(g); return g; };
-  [[-6.2,-2.6],[-5.6,-3.4,.8],[-2.2,-4.2,.9],[-6.9,2.6,.8],[5.9,-4.4],[6.7,-3.6,.7],[-1.6,6.6],[1.2,7.4,.8],[7.2,3.6,.8],[-4.8,5.2,.7]].forEach(([x,z,s]) => bush(x, z, s || 1));
+  const bush = (x, z, s=1, c=0x4fb46a, id) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.userData = { kind:'bush', key:'bush'+(id ?? bushes.length) }; bushes.push(g); [[0,0,0,.45],[.35,-.05,.1,.34],[-.32,-.07,.08,.32],[.05,.15,-.15,.3]].forEach(([bx,by,bz,br]) => g.add(mesh(sph(br*s), mat(c), bx*s, br*s*.8 + by, bz*s))); dressing.add(g); return g; };
+  [[-6.2,-2.6,1,0],[-2.2,-4.2,.9,2],[-6.9,2.6,.8,3],[5.9,-4.4,1,4],[-1.6,6.6,1,6],[7.2,3.6,.8,8]].forEach(([x,z,s,id]) => bush(x, z, s, undefined, id));
   // flower beds hugging the hut and along the path
   const bed = (x, z, n, rx, rz) => { for (let i=0;i<n;i++){ const fx = x + (rnd(i+x*13)-.5)*rx, fz = z + (rnd(i*3+z*7)-.5)*rz, c = [0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b][i%5];
     dressing.add(mesh(new THREE.CylinderGeometry(.015,.015,.22,4), mat(0x4fb46a), fx, .11, fz)); dressing.add(mesh(sph(.075), mat(c), fx, .24, fz)); } };
   const bedAt = (x, z, rx, rz, i) => { const h = hitBox(rx + .3, .5, rz + .3); h.position.set(x, .25, z); dressing.add(h); deco(h, () => pickSeeds('bed' + i)); };
-  [[-5.1,-1.25,.8,.35],[-2.9,-1.25,.8,.35],[-5.55,-3,.35,1.8],[-2.45,-3,.35,1.8],[-.9,-.1,.7,.5],[6.3,.3,.8,.6]].forEach(([x,z,rx,rz], i) => bedAt(x, z, rx, rz, i));
-  bed(-5.1, -1.25, 7, .8, .35); bed(-2.9, -1.25, 7, .8, .35); bed(-5.55, -3, 8, .35, 1.8); bed(-2.45, -3, 8, .35, 1.8); bed(-.9, -.1, 6, .7, .5); bed(6.3, .3, 6, .8, .6);
+  [[-5.1,-1.25,.8,.35,0],[-2.9,-1.25,.8,.35,1],[-.9,-.1,.7,.5,4],[6.3,.3,.8,.6,5]].forEach(([x,z,rx,rz,i]) => bedAt(x, z, rx, rz, i));
+  bed(-5.1, -1.25, 5, .8, .35); bed(-2.9, -1.25, 5, .8, .35); bed(-.9, -.1, 4, .7, .5); bed(6.3, .3, 5, .8, .6);
   // a low picket fence around the garden, open on the side facing the hut
   const fenceMat = gardenFenceMat = mat(0xfff1d6);
   const fence = (x0, z0, x1, z1) => { const n = Math.round(Math.hypot(x1-x0, z1-z0) / .4);
@@ -2955,18 +2957,19 @@ function drawHome() {
 function spawnPickups() {
   if (VISIT) return;
   const kinds = ['stick','stick','stone','fiber'], rnd = () => Math.random();
-  while (S.pickups.length < 10) { let x, z, tries = 0; do { const land = [{ x:0, z:0, r:8.2 }, ...ownedLobes().map(L => ({ x:L.e.x, z:L.e.z, r:L.r - .8 }))], L = land[Math.floor(rnd()*land.length)], a = rnd()*Math.PI*2, r = (L.r === 8.2 ? 2 : 0) + rnd()*(L.r - (L.r === 8.2 ? 2 : 0)); x = L.x + Math.cos(a)*r; z = L.z + Math.sin(a)*r; tries++; }
-    while (tries < 20 && ((x > .2 && x < 4.8 && z > -2 && z < 3.8) || Math.hypot(x+4, z+3) < 2)); const needStone = !S.tools.pick && S.pickups.filter(p => p.t === 'stone').length < 5; S.pickups.push({ t:needStone ? 'stone' : kinds[Math.floor(rnd()*4)], x, z }); }
+  while (S.pickups.length < 6) { let x, z, tries = 0; do { const land = [{ x:0, z:0, r:8.2 }, ...ownedLobes().map(L => ({ x:L.e.x, z:L.e.z, r:L.r - .8 }))], L = land[Math.floor(rnd()*land.length)], a = rnd()*Math.PI*2, r = (L.r === 8.2 ? 4.8 : 0) + rnd()*(L.r - (L.r === 8.2 ? 4.8 : 0)); x = L.x + Math.cos(a)*r; z = L.z + Math.sin(a)*r; tries++; }
+    while (tries < 20 && ((x > .2 && x < 4.8 && z > -2 && z < 3.8) || Math.hypot(x+4, z+3) < 2)); const needStone = !S.tools.pick && S.pickups.filter(p => p.t === 'stone').length < 2, needStick = !S.tools.axe && S.pickups.filter(p => p.t === 'stick').length < 3; S.pickups.push({ t:needStone ? 'stone' : needStick ? 'stick' : kinds[Math.floor(rnd()*4)], x, z }); }
   drawPickups();
 }
 function drawPickups() {
+  S.pickups = (S.pickups || []).filter(p => Math.hypot(p.x, p.z) > 4.5).slice(0, 6); // older saves had more, closer in
   pickupGroup.clear();
   S.pickups.forEach((p, i) => {
     const g = new THREE.Group(); g.position.set(p.x, 0, p.z); g.userData = { kind:'pickup', i };
     if (p.t === 'stick') [0,1].forEach(k => { const st = mesh(new THREE.CylinderGeometry(.03,.035,.55,5), mat(0x8a6445), k*.08, .05, k*.06); st.rotation.set(Math.PI/2, 0, .3 + k); g.add(st); });
     if (p.t === 'stone') { g.add(mesh(new THREE.DodecahedronGeometry(.11), mat(0x9a93a8), 0, .08, 0)); g.add(mesh(new THREE.DodecahedronGeometry(.08), mat(0xb3aabb), .12, .06, .05)); }
     if (p.t === 'fiber') for (let k=0;k<5;k++){ const bl = mesh(new THREE.ConeGeometry(.025,.35,4), mat(0xb7c46a), (k-2)*.03, .15, 0); bl.rotation.z = (k-2)*.15; g.add(bl); }
-    const ring = new THREE.Mesh(new THREE.RingGeometry(.22,.3,20), new THREE.MeshBasicMaterial({ color:0xfff1b0, transparent:true, opacity:.55, side:THREE.DoubleSide })); ring.rotation.x = -Math.PI/2; ring.position.y = -.03; g.add(ring);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(.22,.3,20), new THREE.MeshBasicMaterial({ color:0xfff1b0, transparent:true, opacity:.3, side:THREE.DoubleSide })); ring.rotation.x = -Math.PI/2; ring.position.y = -.03; g.add(ring);
     g.add(mesh(new THREE.CylinderGeometry(.3,.3,.3,8), new THREE.MeshBasicMaterial({ visible:false }), 0, .15, 0));
     pickupGroup.add(g);
   });
