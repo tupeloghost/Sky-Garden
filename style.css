@@ -134,3 +134,19 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .space { margin:8px 0 2px; font-size:13px; font-weight:700; }
 .space i { display:block; height:8px; border-radius:6px; background:#eadbc4; margin-top:3px; overflow:hidden; }
 .space b { display:block; height:100%; border-radius:6px; }
+.mtabs { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.mtabs button { margin:0; padding:6px 12px; font-size:14px; }
+.mrow { display:flex; align-items:center; gap:10px; background:#f3e8d8; border-radius:14px; padding:8px 10px; margin-top:8px; }
+.mrow .minfo { flex:1; min-width:0; font-size:14px; }
+.mrow .minfo small { opacity:.7; display:block; }
+.mrow .mask { font-weight:700; color:#8a5a2b; margin-top:2px; }
+.mrow .mbtns { display:flex; flex-direction:column; gap:4px; align-items:flex-end; }
+.mrow .mbtns button { margin:0; padding:6px 12px; font-size:13px; }
+.mrow svg, .brandhead svg, .itile svg { flex:none; vertical-align:middle; }
+.nologo { font-size:28px; }
+.brandhead { display:flex; align-items:center; gap:10px; margin:8px 0; }
+.brandhead h2, .brandhead h3 { margin:0; }
+.chips button { margin:3px; padding:5px 10px; }
+.sw.sm { width:22px; height:22px; }
+.numin { font:16px inherit; border-radius:10px; border:2px solid #eadfd0; padding:6px 8px; width:80px; }
+select { font:15px inherit; border-radius:10px; border:2px solid #eadfd0; padding:6px; background:#fff; }

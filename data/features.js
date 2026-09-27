@@ -8,6 +8,7 @@ const FEATURES = [
   { id:'heirloom',  name:'Heirloom flowers',  live:false, what:'Each island breeds its own one-of-a-kind flower that only grows there.' },
   { id:'journey', name:'Choices and karma', live:false, what:'Neighbors bring small choices. Hidden kindness and harmony shape what happens later.' },
   { id:'expand', name:'Island expansions', live:false, what:'Nana offers to grow your home island in 3 stages: West Meadow, South Shore, North Ridge.' },
+  { id:'market', name:'Trading post and shops', live:false, what:'A market stall on your island. Make a logo, design products, and buy, sell, and trade with other players.' },
   { id:'switchIsle', name:'Switch island type', live:false, what:'Players can change their island type from the Bag.' },
 ];
 export { FEATURES };

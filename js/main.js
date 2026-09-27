@@ -9,6 +9,7 @@ import { FEATURES } from '../data/features.js';
 import { ROLLOUT } from '../data/rollout.js';
 import { DILEMMAS, islandFeel, PATHS } from '../data/journey.js';
 import { EXPANSIONS, RECLAIM_FACT } from '../data/expand.js';
+import { KID_ADJ, KID_NOUN, SHAPES, PATTERNS, SYMBOLS, PALETTE, BASES, logoSvg, productSwatch, hx, MARK_LESSON, DESIGN_LESSON } from '../data/market.js';
 import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
 import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
@@ -1420,12 +1421,14 @@ function openBag() {
   const furn = Object.entries(S.furn).filter(([,n]) => n > 0).map(([k,n]) => `<button class="itile" data-fu="${k}"><span class="ic">${icon(k)}</span><b>${n}</b><small>${FURN[k].name}</small></button>`).join('');
   showCard(`<div class="kicker">YOUR BAG</div><h2>Your stuff</h2>${spaceMeter(slotsIn(S.bag), packCap(), "Backpack")}
     ${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}
+    ${(S.products || []).length ? `<h4>Products</h4><div class="igrid">${S.products.map((p, i) => `<button class="itile" data-pr="${i}">${productSwatch(p, 34)}<small>${productName(p)}</small></button>`).join('')}</div>` : ''}
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
     <button id="lookBtn" class="ghost">Change my look</button> ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
   document.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { const k = b.dataset.it; $('itInfo').innerHTML = `<b>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}</b>. ${itemUse(k)}`; });
   document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => { const k = b.dataset.fu, p = S.placed.filter(x => x === k).length; $('itInfo').innerHTML = `<b>${icon(k)} ${FURN[k].name}</b>. ${p ? `${p} in your hut.` : 'Not placed yet. Place it inside your hut.'}`; });
+  document.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => openProduct(S.products[+b.dataset.pr], openBag));
   $('lookBtn').onclick = () => openLookEditor(openBag);
   if ($('modeBtn')) $('modeBtn').onclick = () => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); openBag(); }, { switching:true }); };
   $('bdBtn').onclick = () => birthdayPicker(openBag);
@@ -1518,6 +1521,10 @@ async function checkInbox() {
   const lines = [];
   items.forEach(it => {
     if (it.kind === 'water') { S.tiles.forEach((t, i) => { if (t.s >= 1) { t.w = true; drawTile(i); } }); lines.push(`${it.from} watered your garden.`); }
+    else if (it.kind === 'sale') { const what = it.product ? it.product.name : ITEMS[registerHeirloom(it.item)] ? `${it.qty} ${plural(it.item, it.qty)}` : 'things';
+      if (it.price) { S.coins += it.price; lines.push(`${it.from} bought your ${what} for ${it.price} coins.`); }
+      else { registerHeirloom(it.wantItem); S.bag[it.wantItem] = (S.bag[it.wantItem] || 0) + it.wantQty; lines.push(`${it.from} traded ${it.wantQty} ${ITEMS[it.wantItem] ? plural(it.wantItem, it.wantQty) : 'things'} for your ${what}.`); }
+      lean('trader'); }
     else if (ITEMS[registerHeirloom(it.item)] && ITEMS[it.item].kind !== 'quest') { bagAdd(it.item); lines.push(`${it.from} left you a ${ITEMS[it.item].name}.`); }
   });
   S.mailLog = [...(S.mailLog || []), ...lines].slice(-20); S.mailNew = true; save(); drawHud();
@@ -1671,6 +1678,7 @@ function neighborButtons(id) {
   if (id === 'hoot') b.push({ label:'Read a book', fn:() => { closeDialog(); useLibrary(); } });
   if (id === 'allegra') b.push({ label:'Play music', fn:() => { closeDialog(); useMusicHall(); } });
   if (id === 'sage') b.push({ label:"Today's saying", fn:() => { closeDialog(); useTemple(); } });
+  if (id === 'pip' && featureOn('market') && !S.brand && (S.home || 0) >= 3 && !VISIT) b.push({ label:"Maker's mark", fn:() => { closeDialog(); openDialog('Pip', "You make such good things! You know what real makers do? They put their own mark on everything, so people know who made it. Let's make yours. Then you can sell at the Trading Post by your garden.", [{ label:'Make my mark', fn:() => { closeDialog(); brandEditor(() => designStudio()); } }], S.hearts.pip); } });
   if (id === 'nana' && featureOn('expand') && EXPANSIONS[S.expand || 0] && (S.home || 0) >= 3 && !VISIT) b.push({ label:'Grow the island', fn:() => { closeDialog(); expandCard(); } });
   if (S.gifted[id] !== S.day) b.push({ label:'Give a gift', fn:() => giftPicker(id) });
   return b;
@@ -2949,7 +2957,7 @@ function drawBuilds() {
 // places you can't build over, so the important things stay reachable
 function blockedAt(x, z) {
   if (!onLand(x, z)) return 'That is too close to the edge.';
-  const circles = [[4,5.1,1],[1.6,5.2,.9],[-5.2,2.1,1],[-7.2,-2.7,1],[-7.9,-2.2,.8],[3.5,-7.4,.8],[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
+  const circles = [[-2.8,4.6,1.2],[4,5.1,1],[1.6,5.2,.9],[-5.2,2.1,1],[-7.2,-2.7,1],[-7.9,-2.2,.8],[3.5,-7.4,.8],[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
   if (circles.some(([cx,cz,r]) => Math.hypot(x-cx, z-cz) < r)) return 'That spot is taken by something important.';
   if (x > .2 && x < 4.8 && z > -2 && z < (S.bigGarden ? 3.9 : 2.6)) return 'That is your garden.';
   return null;
@@ -3064,6 +3072,7 @@ function visitGift() {
 function arrive(o) {
   const k = o.userData.kind;
   if (VISIT) {
+    if (k === 'deco' && o.userData.market && featureOn('market')) return openMarket();
     if (k === 'owner') return openDialog(VISIT.name, `Welcome to my island! Thanks for visiting.`, [{ label:'Leave a gift', fn:() => { closeDialog(); visitGift(); } }, { label:'Water my garden', fn:() => { closeDialog(); visitWater(); } }, { label:'Go home', fn:goHome }], null, 'none');
     if (k === 'tile') return S.tiles[o.userData.i].s === 2 ? visitWater() : toast(`This is ${VISIT.name}'s garden.`);
     if (k === 'house') return enterHut();
@@ -3372,6 +3381,196 @@ $('start').onclick = () => { $('title').style.display = 'none'; document.body.cl
   if (isPartyDay() && S.lastParty !== dayKey(today()) && S.letter) setTimeout(birthdayParty, 900);
   else if (S.tut === 9 && !S.birthdayAsked && !S.birthday && S.letter) setTimeout(() => birthdayPicker(null, true), 1200);
   if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">${(S.home || 0) < 3 ? 'A LETTER UNDER A STONE' : 'A LETTER ON THE TABLE'}</div><h2>Dear ${S.name || 'little one'},</h2><p class="letter">${(S.home || 0) < 3 ? 'If you are reading this, you made it. I am sorry about the hut. The Great Gust took it, so all that is left are the stones it stood on. You will build a better one. ' : 'If you are reading this, the hut is yours now. '}The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Let\'s go!', () => { if (S.tut === 0) startTutorial(); }); } };
+// --- trading post and creator shops ---
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const ME = () => VISIT ? mine : S, saveMe = () => VISIT ? saveMine() : save();
+const TRADEABLE = ['crop','fruit','fish','dish','specialty','heirloom','material'];
+const isKid = () => ageBand() === 'kid';
+async function api(path, body) {
+  try { const r = await fetch(`${CLOUD}${path}`, body ? { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body) } : undefined);
+    const j = await r.json().catch(() => ({})); return { ok:r.ok, status:r.status, ...j }; } catch { return { ok:false, status:0, error:'offline' }; }
+}
+// the trading post stall on your island
+const stall = new THREE.Group(); stall.position.set(-2.8, 0, 4.6); stall.rotation.y = .3; scene.add(stall); lateClicks.push(stall);
+{ const wood = mat(0xc98f58), dark = mat(0x9b6b4a);
+  stall.add(mesh(new THREE.BoxGeometry(1.8,.8,.7), wood, 0, .4, 0)); stall.add(mesh(new THREE.BoxGeometry(1.9,.08,.8), dark, 0, .82, 0));
+  [-.85,.85].forEach(x => stall.add(mesh(new THREE.CylinderGeometry(.05,.05,1.9,6), dark, x, .95, -.3)));
+  for (let i = 0; i < 5; i++) stall.add(mesh(new THREE.BoxGeometry(.4,.1,.9), mat(i % 2 ? 0xfff1d6 : 0xff8fa3), -.8 + i*.4, 1.9, -.05).rotateX(-.35));
+  [[-.5,0xffc857],[0,0x8fdc8a],[.5,0x7ec8e3]].forEach(([x,c]) => stall.add(mesh(new THREE.BoxGeometry(.28,.22,.28), mat(c), x, .98, .1)));
+  const hb = hitBox(2, 2.2, 1.2); hb.position.y = 1; stall.add(hb); deco(stall, () => openMarket()); stall.userData.market = true; }
+function drawStall() { stall.visible = featureOn('market'); }
+drawStall();
+function productName(p) { return esc(p.name || BASES[p.base]?.name || 'Handmade'); }
+function listingLabel(l) { if (l.product) return `${productSwatch(l.product, 30)} <b>${productName(l.product)}</b>`;
+  registerHeirloom(l.item); const it = ITEMS[l.item]; return it ? `${icon(l.item, it.kind)} <b>${l.qty} ${esc(plural(l.item, l.qty))}</b>` : null; }
+function askText(l) { if (l.price) return `${l.price} coins`; registerHeirloom(l.wantItem); const w = ITEMS[l.wantItem]; return w ? `Trade for ${l.wantQty} ${icon(l.wantItem, w.kind)} ${esc(w.name)}` : 'Trade'; }
+function marketTabs(on) { const tabs = VISIT ? [['market','Their shop']] : [['market','Market'],['sell','Sell'],['make','Design'],['mine','My listings'],['brand','My brand']];
+  return `<div class="mtabs">${tabs.map(([k,l]) => `<button data-mt="${k}" class="${on === k ? '' : 'ghost'}">${l}</button>`).join('')}</div>`; }
+function wireTabs() { document.querySelectorAll('[data-mt]').forEach(b => b.onclick = () => openMarket(b.dataset.mt)); }
+async function openMarket(tab = 'market') {
+  if (!featureOn('market') && !VISIT) return;
+  if (tab === 'sell') return sellTab(); if (tab === 'make') return designStudio(); if (tab === 'mine') return myListings(); if (tab === 'brand') return brandEditor(() => openMarket('brand'));
+  showCard(`<div class="kicker">TRADING POST</div><h2>${VISIT ? `${esc(VISIT.name)}'s shop` : 'The market'}</h2>${marketTabs('market')}<p>Loading...</p>`, 'Close');
+  const res = VISIT ? await api(`/shop?code=${VISIT_CODE}`) : await api('/market');
+  if (!res.ok) { $('card').querySelector('p').textContent = 'Could not reach the market. Check your internet and try again.'; wireTabs(); return; }
+  const rows = (res.listings || []).map(l => { const lab = listingLabel(l); if (!lab) return ''; const mineL = l.code === myCode;
+    return `<div class="mrow">${l.logo ? logoSvg(l.logo, 40) : '<span class="nologo">🏪</span>'}<div class="minfo"><small>${esc(l.shop || 'A shop')} · island ${l.code}</small><div>${lab}</div><div class="mask">${askText(l)}</div></div>
+      <div class="mbtns">${mineL ? '<small>Yours</small>' : `<button data-buy="${l.id}">${l.price ? 'Buy' : 'Trade'}</button>`}${!VISIT && !mineL ? `<button class="ghost" data-shop="${l.code}">Shop</button>` : ''}</div></div>`; }).join('');
+  showCard(`<div class="kicker">TRADING POST</div><h2>${VISIT ? `${esc(res.brand?.shop || VISIT.name + "'s shop")}` : 'The market'}</h2>${marketTabs('market')}
+    ${VISIT && res.brand ? `<div class="brandhead">${logoSvg(res.brand.logo, 56)}<p>Everything here was made or grown on this island.</p></div>` : ''}
+    ${rows || `<p>${VISIT ? 'Nothing for sale here right now.' : 'Nothing for sale yet. Be the first! Tap Sell.'}</p>`}
+    ${!VISIT && !S.brand ? '<p class="itinfo">Want to sell your own things? Talk to Pip about a maker\'s mark first.</p>' : ''}`, 'Close');
+  wireTabs();
+  const byId = Object.fromEntries((res.listings || []).map(l => [l.id, l]));
+  document.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyListing(byId[b.dataset.buy]));
+  document.querySelectorAll('[data-shop]').forEach(b => b.onclick = () => openShop(b.dataset.shop));
+}
+async function openShop(code) {
+  const res = await api(`/shop?code=${code}`); if (!res.ok) { toast('Could not load that shop.'); return; }
+  const rows = (res.listings || []).map(l => { const lab = listingLabel(l); return lab ? `<div class="mrow"><div class="minfo"><div>${lab}</div><div class="mask">${askText(l)}</div></div></div>` : ''; }).join('');
+  showCard(`<div class="kicker">A SHOP ON ISLAND ${code}</div><div class="brandhead">${res.brand ? logoSvg(res.brand.logo, 64) : ''}<h2>${esc(res.brand?.shop || 'A shop')}</h2></div>
+    ${rows || '<p>Nothing for sale right now.</p>'}<button id="goVisit">Visit their island</button>`, 'Back', () => openMarket());
+  $('goVisit').onclick = () => { location.href = `${location.pathname}?visit=${code}`; };
+}
+async function buyListing(l) {
+  const T = ME(); T.bag = T.bag || {};
+  if (l.price && (T.coins || 0) < l.price) { toast(`You need ${l.price} coins.`); return; }
+  if (!l.price && (T.bag[l.wantItem] || 0) < l.wantQty) { toast(`You need ${l.wantQty} ${ITEMS[l.wantItem]?.name.toLowerCase()} to trade.`); return; }
+  if (!VISIT && !l.product && !canCarry(l.item, l.qty)) return bagFull();
+  if (l.price) T.coins -= l.price; else { T.bag[l.wantItem] -= l.wantQty; if (T.bag[l.wantItem] <= 0) delete T.bag[l.wantItem]; }
+  saveMe(); drawHud();
+  const res = await api('/buy', { key:T.syncKey, id:l.id });
+  if (!res.ok) { if (l.price) T.coins += l.price; else T.bag[l.wantItem] = (T.bag[l.wantItem] || 0) + l.wantQty; saveMe(); drawHud();
+    toast(res.status === 409 ? 'Someone else got it first. Sorry!' : 'Could not reach the market. Nothing was spent.'); return; }
+  if (l.product) { T.products = [...(T.products || []), { ...l.product, uid:Date.now().toString(36), maker:{ code:l.code, shop:l.shop, logo:l.logo } }]; }
+  else { registerHeirloom(l.item); T.bag[l.item] = (T.bag[l.item] || 0) + l.qty; if (!VISIT) noteFind(l.item); }
+  lean('trader'); saveMe(); drawHud(); sfx('coin');
+  toast(`You got ${l.product ? l.product.name : `${l.qty} ${ITEMS[l.item].name.toLowerCase()}`} from ${l.shop || 'a shop'}! ${VISIT ? 'It is waiting in your bag at home.' : ''}`);
+  openMarket();
+}
+function sellTab() {
+  if (!S.brand) return brandEditor(() => sellTab());
+  const goods = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && TRADEABLE.includes(ITEMS[k].kind)), prods = S.products || [];
+  const wants = Object.keys(ITEMS).filter(k => TRADEABLE.includes(ITEMS[k].kind) && !isHeirloom(k));
+  showCard(`<div class="kicker">TRADING POST</div><h2>Sell something</h2>${marketTabs('sell')}
+    <p>Pick what to sell, then set a price in coins or ask for something in trade.</p>
+    ${prods.length ? `<h4>Your products</h4><div class="igrid">${prods.map((p, i) => `<button class="itile" data-sp="${i}">${productSwatch(p, 34)}<small>${productName(p)}</small></button>`).join('')}</div>` : ''}
+    <h4>From your bag</h4>${goods.length ? `<div class="igrid">${goods.map(([k,n]) => `<button class="itile" data-si="${k}"><span class="ic">${icon(k, ITEMS[k].kind)}</span><b>${n}</b><small>${esc(ITEMS[k].name)}</small></button>`).join('')}</div>` : '<p>Your bag is empty.</p>'}
+    <div id="sellForm"></div>`, 'Close');
+  wireTabs();
+  const form = (label, max, value, onPost) => {
+    $('sellForm').innerHTML = `<h4>Selling: ${label}</h4>
+      ${max > 1 ? `<p>How many? <input id="sQty" type="number" min="1" max="${max}" value="1" class="numin"> of ${max}</p>` : ''}
+      <div class="steppers" style="justify-content:flex-start"><button id="sCoins">For coins</button><button id="sTrade" class="ghost">For a trade</button></div>
+      <p id="sAsk">Price: <input id="sPrice" type="number" min="1" max="99999" value="${value}" class="numin"> coins</p>
+      <p class="itinfo">Tip: it sells for about ${value} coins at your crate. Price it too high and no one buys. Too low and you lose out. Real sellers look at what similar things sell for.</p>
+      <button id="sPost">Put it up for sale</button>`;
+    let trade = false;
+    $('sCoins').onclick = () => { trade = false; $('sCoins').className = ''; $('sTrade').className = 'ghost'; $('sAsk').innerHTML = `Price: <input id="sPrice" type="number" min="1" max="99999" value="${value}" class="numin"> coins`; };
+    $('sTrade').onclick = () => { trade = true; $('sTrade').className = ''; $('sCoins').className = 'ghost';
+      $('sAsk').innerHTML = `Ask for <input id="wQty" type="number" min="1" max="99" value="1" class="numin"> <select id="wItem">${wants.map(k => `<option value="${k}">${esc(ITEMS[k].name)}</option>`).join('')}</select>`; };
+    $('sPost').onclick = () => { const qty = Math.max(1, Math.min(max, +($('sQty')?.value || 1)));
+      const ask = trade ? { wantItem:$('wItem').value, wantQty:Math.max(1, Math.min(99, +$('wQty').value || 1)) } : { price:Math.max(1, Math.min(99999, Math.round(+$('sPrice').value || 1))) };
+      onPost(qty, ask); };
+  };
+  document.querySelectorAll('[data-si]').forEach(b => b.onclick = () => { const k = b.dataset.si;
+    form(`${icon(k, ITEMS[k].kind)} ${esc(ITEMS[k].name)}`, Math.min(99, S.bag[k]), Math.max(1, Math.round(sellPrice(k))), async (qty, ask) => {
+      if ((S.bag[k] || 0) < qty) return; bagAdd(k, -qty); save(); drawHud();
+      const res = await api('/list', { key:S.syncKey, item:k, qty, ...ask });
+      if (!res.ok) { S.bag[k] = (S.bag[k] || 0) + qty; save(); drawHud(); toast(res.status === 409 ? 'You can have up to 8 things for sale at once.' : 'Could not reach the market. Your items are safe.'); return; }
+      sfx('coin'); lean('trader'); toast('It is up for sale! When someone buys it, you get paid through your mailbox.'); myListings(); }); });
+  document.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { const i = +b.dataset.sp, p = prods[i];
+    form(`${productSwatch(p, 24)} ${productName(p)}`, 1, BASES[p.base]?.value || 60, async (qty, ask) => {
+      const [taken] = S.products.splice(i, 1); save();
+      const res = await api('/list', { key:S.syncKey, item:'product', qty:1, product:{ base:taken.base, name:taken.name, color:taken.color, color2:taken.color2, pattern:taken.pattern }, ...ask });
+      if (!res.ok) { S.products.push(taken); save(); toast(res.status === 409 ? 'You can have up to 8 things for sale at once.' : 'Could not reach the market. Your product is safe.'); return; }
+      sfx('coin'); lean('trader'); toast('Your product is up for sale! Your logo goes with it.'); myListings(); }); });
+}
+async function myListings() {
+  showCard(`<div class="kicker">TRADING POST</div><h2>My listings</h2>${marketTabs('mine')}<p>Loading...</p>`, 'Close'); wireTabs();
+  const res = await api(`/shop?code=${myCode}`); if (!res.ok) { $('card').querySelector('p').textContent = 'Could not reach the market.'; return; }
+  const rows = (res.listings || []).map(l => { const lab = listingLabel(l); return lab ? `<div class="mrow"><div class="minfo"><div>${lab}</div><div class="mask">${askText(l)}</div></div><div class="mbtns"><button class="ghost" data-un="${l.id}">Take down</button></div></div>` : ''; }).join('');
+  showCard(`<div class="kicker">TRADING POST</div><h2>My listings</h2>${marketTabs('mine')}${rows || '<p>You have nothing for sale. Tap Sell to put something up.</p>'}
+    <p class="itinfo">When something sells, the payment arrives in your mailbox the next time you play.</p>`, 'Close'); wireTabs();
+  const byId = Object.fromEntries((res.listings || []).map(l => [l.id, l]));
+  document.querySelectorAll('[data-un]').forEach(b => b.onclick = async () => { const res2 = await api('/unlist', { key:S.syncKey, id:+b.dataset.un });
+    if (!res2.ok) { toast(res2.status === 409 ? 'It already sold!' : 'Could not reach the market.'); return myListings(); }
+    const l = byId[b.dataset.un]; if (l.product) S.products = [...(S.products || []), { ...l.product, uid:Date.now().toString(36), maker:{ code:myCode, shop:S.brand?.shop, logo:S.brand?.logo } }];
+    else { registerHeirloom(l.item); S.bag[l.item] = (S.bag[l.item] || 0) + l.qty; }
+    save(); drawHud(); toast('Taken down. It is back in your bag.'); myListings(); });
+}
+// your maker's mark: a logo and a shop name
+function brandEditor(done) {
+  const b = S.brand ? JSON.parse(JSON.stringify(S.brand)) : { shop:'', logo:{ shape:'circle', bg:0xffc857, fg:0x3b2f4a, sym:'🌸', letters:'' } }, L = b.logo, kid = isKid();
+  const [ka, kn] = (b.shop || 'Sunny Workshop').split(' ');
+  const draw = () => {
+    showCard(`<div class="kicker">MY BRAND</div><h2>Your maker's mark</h2>${S.brand ? marketTabs('brand') : ''}
+      <div class="brandhead">${logoSvg(L, 84)}<h3>${esc(kid ? `${$('kA')?.value || ka} ${$('kN')?.value || kn}` : b.shop || 'Your shop name')}</h3></div>
+      <h4>Shape</h4><div class="chips">${SHAPES.map(s => `<button data-sh="${s}" class="${L.shape === s ? '' : 'ghost'}">${logoSvg({ ...L, shape:s, sym:'', letters:'' }, 26)}</button>`).join('')}</div>
+      <h4>Colors</h4><div class="chips">${PALETTE.map(c => `<button class="sw ${L.bg === c ? 'on' : ''}" data-bg="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
+      <div class="chips" style="margin-top:6px">${PALETTE.map(c => `<button class="sw sm ${L.fg === c ? 'on' : ''}" data-fg="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
+      <h4>Symbol</h4><div class="chips">${['', ...SYMBOLS].map(s => `<button data-sy="${s}" class="${L.sym === s ? '' : 'ghost'}">${s || 'None'}</button>`).join('')}</div>
+      <h4>Letters (up to 2)</h4><input id="bLet" maxlength="2" value="${esc(L.letters)}" class="numin" style="width:70px;text-transform:uppercase">
+      <h4>Shop name</h4>${kid ? `<select id="kA">${KID_ADJ.map(w => `<option ${w === ka ? 'selected' : ''}>${w}</option>`).join('')}</select> <select id="kN">${KID_NOUN.map(w => `<option ${w === kn ? 'selected' : ''}>${w}</option>`).join('')}</select>`
+        : `<input id="bShop" maxlength="24" value="${esc(b.shop)}" placeholder="Like Moonpetal Goods" class="numin" style="width:100%">`}
+      <p style="font-size:13px;opacity:.7;margin-top:6px">Everyone who shops at the Trading Post will see your logo and shop name.</p>
+      <button id="bSave">Save my brand</button>`, S.brand ? 'Close' : 'Later');
+    wireTabs();
+    const keep = () => { L.letters = ($('bLet').value || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2); if ($('bShop')) b.shop = $('bShop').value; };
+    document.querySelectorAll('[data-sh]').forEach(x => x.onclick = () => { keep(); L.shape = x.dataset.sh; draw(); });
+    document.querySelectorAll('[data-bg]').forEach(x => x.onclick = () => { keep(); L.bg = +x.dataset.bg; draw(); });
+    document.querySelectorAll('[data-fg]').forEach(x => x.onclick = () => { keep(); L.fg = +x.dataset.fg; draw(); });
+    document.querySelectorAll('[data-sy]').forEach(x => x.onclick = () => { keep(); L.sym = x.dataset.sy; draw(); });
+    $('bSave').onclick = async () => { keep(); const shop = kid ? `${$('kA').value} ${$('kN').value}` : b.shop.trim();
+      if (!shop) { toast('Give your shop a name.'); return; }
+      const res = await api('/brand', { key:S.syncKey, shop, logo:L });
+      if (!res.ok) { toast('Could not save your brand. Check your internet and try again.'); return; }
+      const first = !S.brand; S.brand = { shop:res.shop || shop, logo:L }; save(); sfx('heart');
+      if (first) { S.coins += 100; save(); drawHud(); lean('maker', 2); return showCard(`<div class="kicker">MAKER'S MARK</div><h2>${esc(S.brand.shop)} is open!</h2><div class="brandhead">${logoSvg(L, 72)}</div><h4>In real life</h4><p>${MARK_LESSON}</p><p><b>Pip gave you 100 coins to get started.</b> Next, design your first product at the Trading Post.</p>`, 'Okay', () => done && done()); }
+      toast('Brand saved.'); done && done(); };
+  };
+  draw();
+}
+// the design studio: turn things you made into one-of-a-kind products
+function designStudio() {
+  if (!S.brand) return brandEditor(() => designStudio());
+  const kid = isKid(), avail = Object.entries(BASES).filter(([, b]) => !b.age || S.stations[b.age]);
+  const d = designStudio.d = designStudio.d || { base:avail[0][0], color:0xff8fa3, color2:0xffffff, pattern:'stripes', name:'', adj:KID_ADJ[0] };
+  const draw = () => { const B = BASES[d.base], nm = kid ? `${d.adj} ${B.name}` : (d.name || B.name);
+    showCard(`<div class="kicker">DESIGN STUDIO</div><h2>Make a product</h2>${marketTabs('make')}
+      <div class="brandhead">${productSwatch(d, 84)}${logoSvg(S.brand.logo, 40)}<h3>${esc(nm)}</h3></div>
+      <h4>What to make</h4><div class="chips">${avail.map(([k, b]) => `<button data-ba="${k}" class="${d.base === k ? '' : 'ghost'}" ${enough(b.needs) ? '' : 'style="opacity:.5"'}>${esc(b.name)}</button>`).join('')}</div>
+      <p style="font-size:14px">Needs ${needText(B.needs)}.</p>
+      <h4>Main color</h4><div class="chips">${PALETTE.map(c => `<button class="sw ${d.color === c ? 'on' : ''}" data-c1="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
+      <h4>Pattern and its color</h4><div class="chips">${PATTERNS.map(p => `<button data-pa="${p}" class="${d.pattern === p ? '' : 'ghost'}">${p[0].toUpperCase() + p.slice(1)}</button>`).join('')}</div>
+      <div class="chips" style="margin-top:6px">${PALETTE.map(c => `<button class="sw sm ${d.color2 === c ? 'on' : ''}" data-c2="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
+      <h4>Name it</h4>${kid ? `<select id="pdAdj">${KID_ADJ.map(w => `<option ${w === d.adj ? 'selected' : ''}>${w}</option>`).join('')}</select> ${esc(B.name)}`
+        : `<input id="pdName" maxlength="30" value="${esc(d.name)}" placeholder="${esc(B.name)}" class="numin" style="width:100%">`}
+      <p style="font-size:13px;opacity:.7;margin-top:6px">Your logo goes on it, and it carries your shop name wherever it goes.</p>
+      <button id="dMake">Make it</button>`, 'Close');
+    wireTabs();
+    const keep = () => { if ($('pdName')) d.name = $('pdName').value.slice(0, 30); if ($('pdAdj')) d.adj = $('pdAdj').value; };
+    document.querySelectorAll('[data-ba]').forEach(x => x.onclick = () => { keep(); d.base = x.dataset.ba; draw(); });
+    document.querySelectorAll('[data-c1]').forEach(x => x.onclick = () => { keep(); d.color = +x.dataset.c1; draw(); });
+    document.querySelectorAll('[data-c2]').forEach(x => x.onclick = () => { keep(); d.color2 = +x.dataset.c2; draw(); });
+    document.querySelectorAll('[data-pa]').forEach(x => x.onclick = () => { keep(); d.pattern = x.dataset.pa; draw(); });
+    $('dMake').onclick = () => { keep(); if (!enough(B.needs)) { toast(`Not enough yet. Needs ${needText(B.needs)}.`); return; }
+      Object.entries(B.needs).forEach(([k,n]) => bagAdd(k, -n));
+      const first = !(S.madeProducts > 0); S.madeProducts = (S.madeProducts || 0) + 1;
+      S.products = [...(S.products || []), { uid:Date.now().toString(36), base:d.base, name:(kid ? `${d.adj} ${B.name}` : (d.name.trim() || B.name)), color:d.color, color2:d.color2, pattern:d.pattern, maker:{ code:myCode, shop:S.brand.shop, logo:S.brand.logo } }];
+      lean('maker', 2); save(); drawHud(); sfx('pick'); burst(player.position.clone().setY(1), d.color, 16);
+      if (first) return showCard(`<div class="kicker">YOUR FIRST PRODUCT</div><h2>${esc(S.products.at(-1).name)}</h2><div class="brandhead">${productSwatch(d, 72)}${logoSvg(S.brand.logo, 40)}</div><h4>In real life</h4><p>${DESIGN_LESSON}</p><p>Sell it at the Trading Post, or keep it. No one else has one exactly like it.</p>`, 'Okay', () => openMarket('sell'));
+      toast('Made! Find it in your bag, or sell it at the Trading Post.'); };
+  };
+  draw();
+}
+function openProduct(p, back) {
+  const mineP = p.maker?.code === myCode;
+  showCard(`<div class="kicker">PRODUCT</div><div class="brandhead">${productSwatch(p, 84)}<h2>${productName(p)}</h2></div>
+    <div class="brandhead">${p.maker?.logo ? logoSvg(p.maker.logo, 40) : ''}<p>${mineP ? 'Made by you' : `Made by <b>${esc(p.maker?.shop || 'a maker')}</b> on island ${p.maker?.code || '?'}`}</p></div>
+    ${!mineP && p.maker?.code && !VISIT ? '<button id="pShop">See their shop</button> <button id="pVisit" class="ghost">Visit their island</button>' : ''}`, 'Back', back);
+  if ($('pShop')) { $('pShop').onclick = () => openShop(p.maker.code); $('pVisit').onclick = () => { location.href = `${location.pathname}?visit=${p.maker.code}`; }; }
+}
 // --- growing the island ---
 function expandReady(e) { return e.needs === 'home' ? (S.home || 0) >= 3 : e.needs === 'kiln' ? !!S.stations.kiln && potteryOn() : !!S.stations.furnace && bronzeOn(); }
 function expandCard() {
@@ -3496,7 +3695,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
