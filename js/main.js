@@ -95,7 +95,9 @@ const playDays = () => (S.playDates || []).length + (S.bonusDays || 0);
 // On the live site, the Creator's test island is her developer profile and her real island stays a normal player's.
 const LOCALDEV = /^(localhost|127\.)/.test(location.hostname);
 const DEV_OK = (() => { if (LOCALDEV) return true; try { return sessionStorage.getItem('sg.devok') === '1'; } catch { return false; } })();
-const devOn = () => { if (!DEV_OK) return false; if (!LOCALDEV) return TESTSLOT; try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
+if (location.hash === '#dev') { try { localStorage.setItem('sg.dev', 'true'); } catch {} }
+const devFlag = () => { try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
+const devOn = () => devFlag() || (DEV_OK && !LOCALDEV && TESTSLOT); // #dev in the address turns it on; the Creator's test island has it on by itself
 // the real island's key, even while on the test island (the Creator's tools are tied to it)
 const mainKey = () => { if (!TESTSLOT) return S.syncKey; try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '{}').syncKey || S.syncKey; } catch { return S.syncKey; } };
 async function cloudPush(force) {
@@ -4878,7 +4880,6 @@ window.__sg = { founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKin
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
-if (location.hash === '#dev' && LOCALDEV) { try { localStorage.setItem('sg.dev', 'true'); } catch {} }
 // ask the server once per visit whether this game is the Creator's; only then can developer mode turn on
 if (!DEV_OK && mainKey() && !VISIT) fetch(`${CLOUD}/me?key=${mainKey()}`).then(r => r.json()).then(r => { if (!(r && r.founder && r.level >= 4)) return;
   try { sessionStorage.setItem('sg.devok', '1'); } catch {} if (TESTSLOT && !playing) location.reload(); }).catch(() => {});
