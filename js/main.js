@@ -4853,7 +4853,9 @@ const MODCTX = { get S() { return S; }, THREE, api, showCard, hideCard, toast, c
   PREVIEW, MYTHS, extraTools, mythMenu, mythSighting, mythCount, mythKind, mythF, mythOn, mythAppear, mythBless, mp, mythExtras, mythActions, mythHooks, logKeeper };
 function loadMods(list) { (list || []).forEach(n => { if (loadedMods.has(n) || !/^[a-z]+$/.test(n)) return; loadedMods.add(n);
   const who = PREVIEW ? `key=${PREVIEW.key}&as=${PREVIEW.code}` : `key=${S.syncKey}`;
-  import(`${CLOUD}/mod?name=${n}&${who}`).then(m => m.default(MODCTX)).catch(() => loadedMods.delete(n)); }); }
+  // fetched fresh every time (never a cached copy), then run from a local blob so browsers treat it like our own code
+  fetch(`${CLOUD}/mod?name=${n}&${who}&t=${Date.now()}`, { cache:'no-store' }).then(r => { if (!r.ok) throw 0; return r.text(); })
+    .then(src => import(URL.createObjectURL(new Blob([src], { type:'text/javascript' })))).then(m => m.default(MODCTX)).catch(() => loadedMods.delete(n)); }); }
 // preview: show exactly what one founder sees. Runs on the test island, where nothing reaches the server.
 function previewStart() { if (!PREVIEW) return; const d = PREVIEW.data || {};
   if (S.previewOf !== PREVIEW.code) { S.myth = null; S.mythForm = false; S.loveNotes = []; S.loveRead = []; S.previewOf = PREVIEW.code; }
