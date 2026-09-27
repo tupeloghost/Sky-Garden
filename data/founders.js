@@ -1,4 +1,4 @@
-// Founding Gardeners: testers who help build Sky Garden. Their extras are looks only, so the game stays fair.
+// Founding Gardeners: testers who help build Sky Garden. Their extras are looks only.
 // Tester missions point testers at the things we most want tried. `feature` hides a mission until that feature is on.
 const MISSIONS = [
   { id:'fish',    title:'Catch a fish off a dock', how:'Tap a dock, watch the shadows, and reel one in.', done:S => Object.keys(S.fishLog || {}).length > 0 },
@@ -16,6 +16,6 @@ const MISSIONS = [
 const FOUNDER_GIFTS = [
   "The Founder's Lantern: a glowing lantern for your island. Find it in Build mode.",
   'The Sky Pioneer hat: pick it in Change my look.',
-  'A Founder star next to your name and shop, forever.',
+  'A Founder star next to your name and shop.',
 ];
 export { MISSIONS, FOUNDER_GIFTS };

@@ -4091,9 +4091,9 @@ function founderWelcome() {
   [523,659,784,1047,1319].forEach((f,i) => setTimeout(() => chime(f), i*140)); burst(player.position.clone().setY(1.5), 0xc9b6ff, 30);
   const kid = ageBand() === 'kid';
   showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>Welcome, founder!</h2>
-    <p>You are one of the very first people to play Sky Garden, and you are helping build it. That makes you a Founding Gardener, forever.</p>
+    <p>You are one of the very first people to play Sky Garden, and you are helping build it. That makes you a Founding Gardener.</p>
     <h4>Your founder gifts</h4>${FOUNDER_GIFTS.map(g => `<p>• ${g}</p>`).join('')}
-    <p style="margin-top:6px">Only Founding Gardeners will ever have these. They are just for looks, so the game stays fair for everyone.</p>
+    <p style="margin-top:6px">A thank-you for being one of the first.</p>
     <h4>Tester missions</h4><p>Tap the ✦ Missions button at the top to see things we would love you to try. Each one pays 50 coins, and you can tell us how it felt with one tap.</p>
     <h4>The Founding Gardeners wall</h4><p>${kid ? 'We would like to thank you on the wall. Your name stays private, so it will say "A young gardener".' : 'May we put your name on the thank-you wall that every player can see?'}</p>
     <button id="wallYes">${kid ? 'Yes, thank me on the wall' : 'Yes, add my name'}</button> <button id="wallNo" class="ghost">No thanks</button>`, null);
