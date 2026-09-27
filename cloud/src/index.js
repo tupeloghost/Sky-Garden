@@ -15,6 +15,8 @@
 // GET  /shop?code=FRIEND           -> one player's shop: their brand and open listings
 // POST /buy { key, id }            -> buy a listing (the seller is paid through /inbox)
 // POST /unlist { key, id }         -> take your own listing down
+// POST /redeem { key, code }      -> use a Founding Gardener tester code (one player per code)
+// GET  /founders                   -> names on the Founding Gardeners wall (only players who said yes)
 // POST /report { key, code, listing?, reason } -> report a shop; 3 different reporters hide it until reviewed
 
 const ALLOWED = ['https://tupeloghost.github.io', 'http://localhost:9011'];
@@ -58,7 +60,8 @@ function cleanProduct(p, kid) { if (!p || !BASES.includes(p.base)) return null;
   return { base:p.base, name, color:int(p.color, 0, 0xffffff) ?? 0xffc857, color2:int(p.color2, 0, 0xffffff) ?? 0xffffff, pattern:PATTERNS.includes(p.pattern) ? p.pattern : 'plain' }; }
 async function whoAmI(env, key) { const id = await hashKey(key); const row = await env.DB.prepare('SELECT data FROM saves WHERE id = ?').bind(id).first();
   const d = row ? JSON.parse(row.data) : {}; return { id, kid:d.ageBand === 'kid' || !d.birthday || !d.birthday.y, name:d.ageBand === 'kid' ? 'A young gardener' : cleanName(d.name) }; }
-const listingOut = r => ({ id:r.id, code:r.code, item:r.item, qty:r.qty, product:r.product ? JSON.parse(r.product) : null, price:r.price, wantItem:r.want_item, wantQty:r.want_qty,
+const TESTER_RE = /^SKY-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+const listingOut = r => ({ founder:!!r.founder, id:r.id, code:r.code, item:r.item, qty:r.qty, product:r.product ? JSON.parse(r.product) : null, price:r.price, wantItem:r.want_item, wantQty:r.want_qty,
   shop:r.shop || null, logo:r.logo ? JSON.parse(r.logo) : null, created:r.created });
 const cleanName = n => String(n || '').replace(/[^\p{L}\p{N} '._-]/gu, '').trim().slice(0, 16) || 'A friend';
 
@@ -175,12 +178,12 @@ export default {
       if (br && br.hidden) return json(url.pathname === '/brand' ? { brand:null } : { brand:null, listings:[] }, 200, origin);
       const brand = br ? { code, shop:br.shop, logo:JSON.parse(br.logo) } : null;
       if (url.pathname === '/brand') return json({ brand }, 200, origin);
-      const { results } = await env.DB.prepare("SELECT l.*, b.shop, b.logo FROM listings l LEFT JOIN brands b ON b.id = l.seller_id WHERE l.code = ? AND l.status = 'open' ORDER BY l.created DESC LIMIT 20").bind(code).all();
+      const { results } = await env.DB.prepare("SELECT l.*, b.shop, b.logo, (SELECT 1 FROM tester_codes t WHERE t.used_by = l.seller_id) AS founder FROM listings l LEFT JOIN brands b ON b.id = l.seller_id WHERE l.code = ? AND l.status = 'open' ORDER BY l.created DESC LIMIT 20").bind(code).all();
       return json({ brand, listings: results.map(listingOut) }, 200, origin);
     }
 
     if (request.method === 'GET' && url.pathname === '/market') {
-      const { results } = await env.DB.prepare("SELECT l.*, b.shop, b.logo FROM listings l LEFT JOIN brands b ON b.id = l.seller_id WHERE l.status = 'open' AND COALESCE(b.hidden, 0) = 0 ORDER BY l.created DESC LIMIT 40").all();
+      const { results } = await env.DB.prepare("SELECT l.*, b.shop, b.logo, (SELECT 1 FROM tester_codes t WHERE t.used_by = l.seller_id) AS founder FROM listings l LEFT JOIN brands b ON b.id = l.seller_id WHERE l.status = 'open' AND COALESCE(b.hidden, 0) = 0 ORDER BY l.created DESC LIMIT 40").all();
       return json({ listings: results.map(listingOut) }, 200, origin);
     }
 
@@ -230,6 +233,24 @@ export default {
       if (!GOAL_RE.test(goal)) return json({ error: 'bad goal' }, 400, origin);
       const row = await env.DB.prepare('SELECT count FROM community WHERE goal = ?').bind(goal).first();
       return json({ goal, count: row ? row.count : 0 }, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/redeem') {
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      const code = String(b.code || '').toUpperCase().trim();
+      if (!KEY_RE.test(b.key || '') || !TESTER_RE.test(code)) return json({ error: 'bad code' }, 400, origin);
+      const me = await hashKey(b.key), row = await env.DB.prepare('SELECT used_by FROM tester_codes WHERE code = ?').bind(code).first();
+      if (!row) return json({ error: 'not found' }, 404, origin);
+      if (row.used_by && row.used_by !== me) return json({ error: 'used' }, 409, origin);
+      if (!row.used_by) await env.DB.prepare('UPDATE tester_codes SET used_by = ?1, used_at = ?2 WHERE code = ?3 AND used_by IS NULL').bind(me, Date.now(), code).run();
+      return json({ ok: true, founder: true }, 200, origin);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/founders') {
+      const { results } = await env.DB.prepare('SELECT s.data FROM tester_codes t JOIN saves s ON s.id = t.used_by ORDER BY t.used_at').all();
+      const names = results.map(r => { try { return JSON.parse(r.data); } catch { return null; } }).filter(d => d && d.creditWall)
+        .map(d => d.ageBand === 'kid' ? 'A young gardener' : cleanName(d.name));
+      return json({ names }, 200, origin);
     }
 
     if (request.method === 'POST' && url.pathname === '/report') {

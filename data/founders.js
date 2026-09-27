@@ -1,0 +1,21 @@
+// Founding Gardeners: testers who help build Sky Garden. Their extras are looks only, so the game stays fair.
+// Tester missions point testers at the things we most want tried. `feature` hides a mission until that feature is on.
+const MISSIONS = [
+  { id:'fish',    title:'Catch a fish off a dock', how:'Tap a dock, watch the shadows, and reel one in.', done:S => Object.keys(S.fishLog || {}).length > 0 },
+  { id:'row',     title:'Plant a whole row', how:'Plant 3 plots in one row, then water one of them.', done:S => [0,3,6,9].some(r => [0,1,2].every(c => S.tiles[r + c] && S.tiles[r + c].s === 2)) },
+  { id:'crate',   title:'Choose what to sell', how:'Tap the sell crate and pick what goes.', done:S => !!S.soldPick },
+  { id:'stars',   title:'Sleep under the stars', how:'Tap the campfire at night and sleep outside.', done:S => !!S.sleptOutside },
+  { id:'build',   title:'Build something', how:'Tap Build and place a piece anywhere on your island.', done:S => (S.builds || []).length > 0 },
+  { id:'taste',   title:'Learn what a neighbor loves', how:'Give gifts and watch how they react.', done:S => Object.values(S.tastesKnown || {}).some(t => Object.values(t).includes(0)) },
+  { id:'bug',     title:'Catch a bug with a net', how:'Make a Bug Net at the workbench, then swing at an insect.', feature:'butterflies', done:S => !!S.tools.net && (S.bugs || []).length > 0 },
+  { id:'choice',  title:'Make a choice for a neighbor', how:'Neighbors sometimes ask you to decide something. There are no wrong answers.', feature:'journey', done:S => (S.choices || []).length > 0 },
+  { id:'grow',    title:'Grow your island', how:'Ask Nana about growing the island.', feature:'expand', done:S => (S.expand || 0) > 0 },
+  { id:'visitor', title:'Befriend a visitor', how:'When a traveler camps on your island, talk to them and bring gifts.', feature:'villagers', done:S => Object.values(S.people || {}).some(p => p.hearts >= 3) },
+  { id:'product', title:'Design a product', how:'Make your maker\'s mark with Pip, then design something at the Trading Post.', feature:'market', done:S => (S.madeProducts || 0) > 0 },
+];
+const FOUNDER_GIFTS = [
+  "The Founder's Lantern: a glowing lantern for your island. Find it in Build mode.",
+  'The Sky Pioneer hat: pick it in Change my look.',
+  'A Founder star next to your name and shop, forever.',
+];
+export { MISSIONS, FOUNDER_GIFTS };

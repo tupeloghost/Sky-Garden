@@ -11,3 +11,7 @@ q "SELECT COUNT(*) AS total, SUM(updated - created > 86400000) AS returned_next_
 echo "== Trading post reports waiting for review (3 reports pause a shop)"
 q "SELECT r.code, b.shop, b.hidden AS paused, COUNT(*) AS reports, GROUP_CONCAT(r.reason) AS reasons FROM reports r LEFT JOIN brands b ON b.code = r.code WHERE r.reviewed = 0 GROUP BY r.code ORDER BY reports DESC"
 echo "(To clear a shop after review: npx wrangler d1 execute sky-garden-saves --remote --command \"UPDATE reports SET reviewed = 1 WHERE code = 'CODE'; UPDATE brands SET hidden = 0 WHERE code = 'CODE';\")"
+echo "== Founding Gardeners (tester codes)"
+q "SELECT t.code, t.label, CASE WHEN t.used_by IS NULL THEN 'not used yet' ELSE 'joined ' || datetime(t.used_at/1000,'unixepoch') END AS status, json_extract(s.data,'\$.name') AS name, json_extract(s.data,'\$.missions') AS missions_done FROM tester_codes t LEFT JOIN saves s ON s.id = t.used_by ORDER BY t.created"
+echo "== Quick reactions to features (from tester missions)"
+q "SELECT place, mood, COUNT(*) AS n FROM feedback WHERE place LIKE 'Mission:%' GROUP BY place, mood ORDER BY place"

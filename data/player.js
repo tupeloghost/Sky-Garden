@@ -15,6 +15,7 @@ const HATS = {
   bow:    'Bow',
   straw:  'Straw hat',
 };
+const FOUNDER_HATS = { pioneer:'Sky Pioneer hat' }; // only for Founding Gardeners
 const HAT_COLORS = [0x7ec8e3, 0xff8fa3, 0xffc857, 0x8fdc8a, 0xc9b6ff, 0x3b2f4a];
 const DEFAULT_LOOK = { human:true, skin:0xf6c9a4, hair:'short', hairColor:0x5a3a28, shirt:0x7ec8e3, bottom:'pants', bottomColor:0x3f5a8c, hat:'none', hatColor:0x7ec8e3 };
 
@@ -32,4 +33,4 @@ const MODES = [
     perks:['Days last twice as long', 'Crops never wilt when the season changes'] },
 ];
 
-export { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES };
+export { FOUNDER_HATS, SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES };

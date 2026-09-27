@@ -215,3 +215,8 @@ body.in-cine .top { opacity:0 !important; pointer-events:none !important; transi
 .craft .needs em { font-style:normal; font-size:13px; font-weight:800; padding:1px 8px; border-radius:999px; }
 .craft .needs em.ok { background:#dff5dc; color:#1f7a3f; }
 .craft .needs em.no { background:#fde3e7; color:#b33a52; }
+.founder { display:inline-block; background:linear-gradient(90deg,#c9b6ff,#ffe07a); color:var(--ink); font-weight:800; font-size:12px; border-radius:999px; padding:2px 10px; margin:2px 0 4px; }
+.fstar { color:#b08ae0; font-weight:900; }
+.founderpill { background:linear-gradient(90deg,#efe6ff,#fff3c9) !important; }
+.jlist button.mdone { opacity:.6; }
+.wallnames { display:flex; flex-wrap:wrap; gap:6px; } .wallnames span { background:var(--surface); border-radius:999px; padding:3px 12px; font-weight:700; }
