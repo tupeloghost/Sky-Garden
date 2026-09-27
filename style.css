@@ -255,3 +255,6 @@ body.in-cine .top { opacity:0 !important; pointer-events:none !important; transi
 @keyframes pulse2 { 50% { opacity:.4; } }
 .pnext { margin-top:18px; border:0; font:inherit; font-weight:800; background:var(--gold); color:var(--ink); padding:10px 26px; border-radius:999px; cursor:pointer; box-shadow:0 4px 0 var(--gold-deep); opacity:0; pointer-events:none; transition:opacity .3s .8s; }
 .pstage.opened .pnext { opacity:1; pointer-events:auto; }
+.petpick { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:8px; }
+.card .petpick button { margin:0; display:flex; flex-direction:column; align-items:center; gap:2px; background:var(--surface); border:3px solid transparent; border-radius:18px; padding:8px 4px; box-shadow:0 3px 0 #0001; font-size:13px; }
+.card .petpick button.on { border-color:var(--accent); background:#fff; }

@@ -11,6 +11,7 @@ import { DILEMMAS, islandFeel, PATHS } from '../data/journey.js';
 import { EXPANSIONS, RECLAIM_FACT } from '../data/expand.js';
 import { SHIP_PATHS, HEADINGS, WAYFINDING, FLOATING } from '../data/ship.js';
 import { MISSIONS, FOUNDER_GIFTS } from '../data/founders.js';
+import { COMPANIONS, KID_PET_NAMES, BALLOON_FACT } from '../data/companions.js';
 import { KID_ADJ, KID_NOUN, SHAPES, PATTERNS, SYMBOLS, PALETTE, BASES, logoSvg, productSwatch, hx, MARK_LESSON, DESIGN_LESSON } from '../data/market.js';
 import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
 import { INSECTS } from '../data/insects.js';
@@ -752,7 +753,7 @@ function critter({ body, belly, ear, earType, beak, hat, hatType, tail, frog, ca
     if (o.acc === 'scarf') { inner.add(mesh(new THREE.TorusGeometry(.33,.08,8,24), mat(o.trim || 0x9fe7e0), 0, .92, 0).rotateX(Math.PI/2)); const tail2 = mesh(new THREE.BoxGeometry(.12,.35,.06), mat(o.trim || 0x9fe7e0), .18, .75, .36); tail2.rotation.z = .2; inner.add(tail2); }
   }
   if (!beak) { const smile = mesh(new THREE.TorusGeometry(.06, .016, 6, 12, Math.PI), mat(0x2b2233), 0, frog ? 1.12 : 1.1, frog ? .48 : .39); smile.rotation.z = Math.PI; inner.add(smile); }
-  g.userData.inner = inner; inner.userData.eyes = eyes; inner.userData.arms = arms; inner.userData.blink = Math.random()*4;
+  g.userData.inner = inner; inner.userData.eyes = eyes; inner.userData.arms = arms; if (!inner.userData.scarf) inner.userData.scarf = null; inner.userData.blink = Math.random()*4;
   scene.add(g); return g;
 }
 // the player's character is rebuilt from their chosen look
@@ -772,10 +773,16 @@ function person(lk) {
   // body
   inner.add(mesh(new THREE.CylinderGeometry(.22,.26,.52,16), shirt, 0, .95, 0));
   const shoulders = mesh(sph(.23), shirt, 0, 1.18, 0); shoulders.scale.set(1.1, .5, .85); inner.add(shoulders);
+  const jacket = lk.jacket === 'pioneer' ? mat(0x8a5a3a) : null;
+  if (jacket) { inner.add(mesh(new THREE.CylinderGeometry(.245,.285,.5,16), jacket, 0, .96, 0)); const sh2 = mesh(sph(.25), jacket, 0, 1.18, 0); sh2.scale.set(1.12, .5, .9); inner.add(sh2);
+    inner.add(mesh(new THREE.TorusGeometry(.19,.06,8,20), mat(0xfff1d6), 0, 1.22, 0).rotateX(Math.PI/2)); [-1,1].forEach(sd => inner.add(mesh(sph(.025), mat(0xd9a441, { metalness:.6 }), sd*.06, 1.05 - .12, .27)));
+    const scarf = new THREE.Group(); scarf.position.set(.08, 1.25, -.16); inner.add(scarf); inner.add(mesh(new THREE.TorusGeometry(.15,.05,8,20), mat(0xd2334c), 0, 1.27, 0).rotateX(Math.PI/2));
+    let seg = scarf; for (let i = 0; i < 4; i++) { const p = new THREE.Group(); p.position.set(0, i ? -.13 : 0, i ? -.02 : 0); p.add(mesh(new THREE.BoxGeometry(.1,.14,.03), mat(i % 2 ? 0xfff1d6 : 0xd2334c), 0, -.07, 0)); seg.add(p); seg = p; }
+    inner.userData.scarf = scarf; }
   // arms that swing from the shoulder
   [-1,1].forEach(sd => {
     const arm = new THREE.Group(); arm.position.set(sd*.3, 1.15, 0); arm.rotation.z = sd*.08;
-    arm.add(mesh(new THREE.CylinderGeometry(.07,.065,.28,10), shirt, 0, -.13, 0));
+    arm.add(mesh(new THREE.CylinderGeometry(.07,.065,.28,10), jacket || shirt, 0, -.13, 0));
     arm.add(mesh(new THREE.CylinderGeometry(.06,.055,.24,10), skin, 0, -.37, 0));
     arm.add(mesh(sph(.065), skin, 0, -.5, 0));
     inner.add(arm); arms.push(arm);
@@ -1199,14 +1206,14 @@ function drawHud() {
   $('bar').style.display = S.where === 'hut' || buildMode ? 'none' : 'flex';
   $('buildBtn').hidden = VISIT || (S.home || 0) < 3 || S.where !== 'home'; $('buildBtn').innerHTML = `${ICON.hammer}<span class="lbl">${buildMode ? 'Building' : 'Build'}</span>`;
   // the hotbar: your tools on the left (tap one to see what it does), then your seeds
-  const tools = [['axe','🪓','Stone Axe', 'Tap a tree to chop logs.'], ['pick','⛏️','Stone Pickaxe','Tap a rock to break it for stone.'], ['net','🦋','Bug Net','Tap an insect or butterfly to swing.'], ['rod','🎣','Fishing Rod','Tap a dock to fish.']]
-    .filter(([k]) => k === 'rod' ? S.bridge || S.mode === 'fisher' : S.tools[k]).map(([k, ic, name, how]) => { const bronze = (k === 'axe' && S.tools.bronzeAxe) || (k === 'pick' && S.tools.bronzePick);
+  const tools = [['axe','🪓','Stone Axe', 'Tap a tree to chop logs.'], ['pick','⛏️','Stone Pickaxe','Tap a rock to break it for stone.'], ['net','🦋','Bug Net','Tap an insect or butterfly to swing.'], ['rod','🎣','Fishing Rod','Tap a dock to fish.'], ['balloon','🎈','Founder Balloon','Fly to any island.']]
+    .filter(([k]) => k === 'rod' ? S.bridge || S.mode === 'fisher' : k === 'balloon' ? S.founderBalloon && !VISIT : S.tools[k]).map(([k, ic, name, how]) => { const bronze = (k === 'axe' && S.tools.bronzeAxe) || (k === 'pick' && S.tools.bronzePick);
       return `<div class="hslot tool ${bronze ? 'bronze' : ''}" data-tool="${k}" data-how="${(bronze ? name.replace('Stone', 'Bronze') : name) + ': ' + how}"><span>${ic}</span></div>`; }).join('');
   $('bar').innerHTML = (tools ? tools + '<i class="hdiv"></i>' : '') + shown.map(([k,c]) => { const n = S.seeds[k] || 0, now = c.seasons.includes(s);
     return `<div class="hslot seed ${S.sel===k?'on':''} ${now ? '' : 'late'} ${n ? '' : 'none'}" data-k="${k}" title="${c.name}"><span>${icon(k)}</span><b>${n}</b><small>${now ? c.name : 'Not now'}</small></div>`; }).join('');
   document.querySelectorAll('.hslot.seed').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); const c = CROPS[S.sel], n = S.seeds[S.sel] || 0;
     toast(n ? `${c.name} seeds ready. Tap an empty plot to plant.` : `No ${c.name} seeds. Buy some from Pip.`); });
-  document.querySelectorAll('.hslot.tool').forEach(el => el.onclick = () => toast(el.dataset.how));
+  document.querySelectorAll('.hslot.tool').forEach(el => el.onclick = () => el.dataset.tool === 'balloon' ? balloonMenu() : toast(el.dataset.how));
 }
 function openDialog(name, text, btns=[], hearts, voice) {
   babble(voice || (name.startsWith('Nana') ? 'nana' : name.startsWith('Pip') ? 'pip' : name.startsWith('Captain') ? 'drizzle' : name.startsWith('Moss') ? 'twins' : name.startsWith('Lumen') ? 'lumen' : ({ Mabel:'mabel', Professor:'hoot', Allegra:'allegra', Sage:'sage' })[name.split(' ')[0]] || 'none'), text);
@@ -1815,7 +1822,7 @@ function giftPicker(id) {
     hideCard(); bagAdd(k, -1); S.gifted[id] = S.day; goal('gift');
     S.hearts[id] = Math.max(0, Math.min(10, S.hearts[id] + dh));
     S.tastesKnown = S.tastesKnown || {}; S.tastesKnown[id] = { ...(S.tastesKnown[id] || {}), [k]:tier };
-    if (dh > 0 && featureOn('journey')) karma('kind', dh > 1 ? 1 : 0);
+    if (dh > 0 && featureOn('journey')) karma('kind', dh > 1 ? 1 : 0); if (tier === 0) petHappy();
     sfx(tier === 0 ? 'heart' : tier <= 2 ? 'pick' : 'click'); burst(npcs[id].position, [0xff8fa3, 0xffe27a, 0xffffff, 0xb3aabb, 0x7a7a8a][tier]);
     const said = (REACT[id] || REACT.nana)[tier], note = dh > 0 ? ` (+${dh} heart${dh > 1 ? 's' : ''})` : dh < 0 ? ` (${dh} heart${dh < -1 ? 's' : ''})` : '';
     save(); drawHud(); if (!(dh > 0 && heartScene(id))) openDialog(NEIGHBORS[id].name, said + note, [], S.hearts[id]);
@@ -2779,7 +2786,7 @@ function fishing3D(d = dock, o = {}) {
   const drawLine = (end, sag) => { const a = new THREE.Vector3(); tip.getWorldPosition(a); const pts = lineGeo.attributes.position;
     for (let i = 0; i < 16; i++) { const k = i / 15, p = a.clone().lerp(end, k); p.y -= Math.sin(k * Math.PI) * sag; pts.setXYZ(i, p.x, p.y, p.z); } pts.needsUpdate = true; };
   const land = () => {
-    state = 'caught'; t0 = now; const f = cur.f, size = cur.size;
+    state = 'caught'; t0 = now; const f = cur.f, size = cur.size; petHappy();
     caught = fishMesh(f, f.ray ? .9 : Math.min(1.1, .25 + size / 160)); scene.add(caught); caught.position.copy(bob.position);
     bob.visible = false; line.visible = false; splash(bob.position, true); sfx('splash'); [523,659,784,1047].forEach((fr,i) => setTimeout(() => chime(fr), i*110));
     S.fishLog = S.fishLog || {}; const rec = S.fishLog[f.id] || { n:0, best:0 }, isNew = !S.found.includes(f.id), isRecord = rec.n > 0 && size > rec.best;
@@ -3201,7 +3208,8 @@ function pieceModel(id) {
   if (id === 'flantern') { const gold = mat(0xd9a441, { metalness:.55, roughness:.35 });
     g.add(mesh(new THREE.CylinderGeometry(.18,.24,.2,8), gold, 0, .1, 0)); g.add(mesh(new THREE.CylinderGeometry(.04,.05,1.5,8), gold, 0, .85, 0));
     const cage = mesh(new THREE.OctahedronGeometry(.28), glow(0xc9b6ff), 0, 1.75, 0); cage.scale.y = 1.3; g.add(cage); g.add(mesh(new THREE.OctahedronGeometry(.1), glow(0xffe07a), 0, 2.2, 0));
-    const lh = halo(0xc9b6ff, 2.6, 0); lh.position.y = 1.75; g.add(lh); lampLights.push(lh); }
+    const lh = halo(0xc9b6ff, 2.6, 0); lh.position.y = 1.75; g.add(lh); lampLights.push(lh);
+    for (let i = 0; i < 8; i++) { const f = mesh(sph(.035), new THREE.MeshBasicMaterial({ color:0xf6ff9a, transparent:true, opacity:0 })); g.add(f); lanternFF.push(f); } }
   if (id === 'chest') { g.add(mesh(new THREE.BoxGeometry(.8,.42,.52), wood, 0, .21, 0)); const lid = mesh(new THREE.CylinderGeometry(.26,.26,.8,12,1,false,0,Math.PI), mat(0xd9a066), 0, .42, 0); lid.rotation.z = Math.PI/2; g.add(lid);
     [-.28,.28].forEach(x => { g.add(mesh(new THREE.BoxGeometry(.06,.44,.54), dark, x, .22, 0)); }); g.add(mesh(new THREE.BoxGeometry(.12,.14,.04), mat(0xd9a441, { metalness:.5, roughness:.4 }), 0, .38, .27)); g.userData.kind = 'chest'; }
   if (id === 'arch') { [-.45,.45].forEach(x => g.add(mesh(new THREE.BoxGeometry(.1,1.6,.1), mat(0xfff1d6), x, .8, 0))); const top = mesh(new THREE.TorusGeometry(.45,.05,6,16,Math.PI), mat(0xfff1d6), 0, 1.6, 0); g.add(top);
@@ -3310,7 +3318,7 @@ function swingNet(g, b, onMiss) {
   setTimeout(() => {
     if (!got) { onMiss && onMiss(); toast(`Missed! The ${b.name.toLowerCase()} got away.`); return; }
     if (g.parent === bugGroup) bugGroup.remove(g); else g.userData.flee = 1.2;
-    const isNew = !(S.bugs || []).includes(b.id); if (isNew) S.bugs = [...(S.bugs || []), b.id]; lean('explorer'); save(); drawHud();
+    petHappy(); const isNew = !(S.bugs || []).includes(b.id); if (isNew) S.bugs = [...(S.bugs || []), b.id]; lean('explorer'); save(); drawHud();
     [784,988,1175].forEach((f,i) => setTimeout(() => chime(f), i*90)); burst(wp, 0xfff3a0, 12);
     showCard(`<div class="kicker">${isNew ? `NEW BUG! ${(S.bugs || []).length} of ${BUTTERFLIES.length + INSECTS.length}` : 'BUG NET'}</div><h2>${icon(b.id)} You caught a ${b.name}!</h2>
       ${isNew ? `<h4>In real life</h4><p>${b.fact}</p>` : `<p>It sells for ${ITEMS[b.id].sell} coins, or you can let it go.</p>`}
@@ -3346,7 +3354,7 @@ function spotButterfly(g) {
   if (first) { S.bugs.push(sp.id); save(); drawHud(); showCard(`<div class="kicker">NEW BUTTERFLY ${S.bugs.length} of ${BUTTERFLIES.length}</div><h2>${sp.name}</h2><h4>In real life</h4><p>${sp.fact}</p><p>Saved to Collections.</p>`); }
   else toast(`A ${sp.name}! You already have this one in Collections.`);
 }
-let sitting = null, danceT = 0;
+let sitting = null, danceT = 0; const lastPP = new THREE.Vector3(); const lanternFF = [];
 const onPath = () => S.where === 'home' && (S.builds || []).some(b => (b.p === 'path' || b.p === 'bpath') && Math.abs(player.position.x - b.x) < .5 && Math.abs(player.position.z - b.z) < .5);
 function usePiece(o) {
   const b = o.userData.b, p = PIECES.find(x => x.id === b.p);
@@ -3390,7 +3398,7 @@ function openChest(chest) {
     bagAdd('bronze', -2); chest.band = true; drawBuilds(); save(); drawHud(); sfx('ting'); toast('Bronze bands added. This chest now holds 48 slots.'); openChest(chest); };
 }
 function drawBuilds() {
-  buildGroup.clear(); lampLights.length = 0;
+  buildGroup.clear(); lampLights.length = 0; lanternFF.length = 0;
   (S.builds || []).forEach(b => { const m = pieceModel(b.p); m.position.set(b.x, 0, b.z); m.rotation.y = (b.r || 0) * Math.PI/2; buildGroup.add(m);
     if (!m.userData.kind) m.userData = { kind:'piece', b }; else m.userData.b = b;
     if (b.p === 'chest' && b.band) [-.2,.2].forEach(z => m.add(mesh(new THREE.BoxGeometry(.84,.06,.05), mat(0xd9a441, { metalness:.55, roughness:.4 }), 0, .3, z*1.35)));
@@ -3536,6 +3544,7 @@ function arrive(o) {
   if (k === 'workbench') return useWorkbench();
   if (k === 'chest') return openChest(o.userData.b);
   if (k === 'visitor') return talkPerson(o.userData.vid);
+  if (k === 'pet') return petPet();
   if (k === 'deco') return o.userData.use(o);
   if (k === 'piece') return usePiece(o);
   if ((k === 'claypit' || k === 'ore') && o.visible) return gatherNode(o);
@@ -3699,7 +3708,10 @@ function tick() {
     b.rotation.y = Math.atan2(Math.cos(t), -Math.sin(t*.8)); const f = Math.sin(now*18 + i)*1.1; u.l.rotation.z = f; u.r.rotation.z = -f;
     if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
   lobes.forEach(L => { if (!L.rise) return; L.rise = Math.max(0, L.rise - dt / 2.5); const k = 1 - L.rise; L.g.position.y = -5 * (1 - k) * (1 - k); if (!L.rise) { L.g.position.y = 0; L.extra.forEach(o => o.visible = true); burst(new THREE.Vector3(L.e.x, .5, L.e.z), 0x8fdc8a, 30); } });
-  animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt);
+  animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt); updatePet(dt, now);
+  { const sp = player.position.distanceTo(lastPP) / Math.max(dt, .001); lastPP.copy(player.position); const sc = player.userData.inner?.userData.scarf;
+    if (sc) { let seg = sc, i = 0; while (seg && seg.children.length) { const k = Math.min(1, sp / 4); seg.rotation.x = -.15 - k * (.35 + i * .12) + Math.sin(now * (6 + i) + i) * (.06 + k * .12); seg = seg.children.find(c => c.isGroup); i++; } } }
+  if (lanternFF.length) { const nf = Math.min(1, Math.max(0, (hour() - 19) / 2)); lanternFF.forEach((f, i) => { f.visible = nf > .2; const a = now * .8 + i * .78; f.position.set(Math.cos(a) * (.55 + Math.sin(now + i) * .15), 1.4 + Math.sin(now * 1.3 + i) * .45, Math.sin(a) * (.55 + Math.cos(now + i) * .15)); f.material.opacity = nf * (.5 + Math.sin(now * 4 + i) * .5); }); }
   pulsers.forEach(h => { h.userData.pulse = Math.max(0, h.userData.pulse - dt); h.scale.setScalar(h.userData.base * (1 + h.userData.pulse)); if (!h.userData.pulse) pulsers.delete(h); });
   if (bell.userData.ring > 0) { bell.userData.ring = Math.max(0, bell.userData.ring - dt); bellBody.rotation.z = Math.sin(now*12) * .35 * bell.userData.ring; }
   balloons.children.forEach(b => { if (b.userData.fly) { b.position.y += dt * 1.6; b.position.x += Math.sin(now*2) * dt * .3; if (b.position.y > 25) b.visible = false; } });
@@ -3782,7 +3794,7 @@ function lookPicker(title, done, withName) {
       <h4>Shirt</h4><div class="chips">${sw(SHIRTS, lk.shirt, 'shirt')}</div>
       <h4>Bottoms</h4><div class="chips">${Object.entries(BOTTOMS).map(([k,v]) => `<button data-bt="${k}" class="${lk.bottom === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
       <div class="chips">${sw(BOTTOM_COLORS, lk.bottomColor, 'bcol')}</div>
-      <h4>Hat</h4><div class="chips">${Object.entries({ ...HATS, ...(S.partyHat ? { party:'Party hat' } : {}), ...(S.founder ? FOUNDER_HATS : {}) }).map(([k,v]) => `<button data-hat="${k}" class="${lk.hat === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
+      ${S.founder ? `<h4>Founder outfit</h4><div class="chips"><button data-jk="pioneer" class="${lk.jacket === 'pioneer' ? '' : 'ghost'}">Sky Pioneer jacket and scarf</button><button data-jk="" class="${lk.jacket ? 'ghost' : ''}">My own shirt</button></div>` : ''}<h4>Hat</h4><div class="chips">${Object.entries({ ...HATS, ...(S.partyHat ? { party:'Party hat' } : {}), ...(S.founder ? FOUNDER_HATS : {}) }).map(([k,v]) => `<button data-hat="${k}" class="${lk.hat === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
       ${lk.hat !== 'none' ? `<h4>Hat color</h4><div class="chips">${sw(HAT_COLORS, lk.hatColor, 'hc')}</div>` : ''}
       <p id="lkMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
       <button id="lkDone">${withName ? 'Next' : 'Done'}</button>`, null);
@@ -3791,6 +3803,7 @@ function lookPicker(title, done, withName) {
     const pick = (attr, key, num) => document.querySelectorAll(`[data-${attr}]`).forEach(b => b.onclick = () => { lk[key] = num ? +b.dataset[attr] : b.dataset[attr]; upd(); draw(); });
     pick('skin','skin',1); pick('hs','hair'); pick('hcol','hairColor',1); pick('shirt','shirt',1); pick('bt','bottom'); pick('bcol','bottomColor',1);
     document.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { lk.hat = b.dataset.hat; upd(); draw(); });
+    document.querySelectorAll('[data-jk]').forEach(b => b.onclick = () => { lk.jacket = b.dataset.jk || undefined; upd(); draw(); });
     document.querySelectorAll('[data-hc]').forEach(b => b.onclick = () => { lk.hatColor = +b.dataset.hc; upd(); draw(); });
     $('lkDone').onclick = () => {
       if (withName && !name.trim()) { $('lkMsg').textContent = 'Type a name for your character first.'; return; }
@@ -4116,13 +4129,15 @@ function openPresents(gifts, done) {
   addEventListener('resize', size); show();
 }
 function founderWelcome() {
+  S.founderBalloon = true; save(); drawBalloon(); drawHud();
   showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>Welcome, founder!</h2>
     <p>You are one of the very first people to play Sky Garden, and you are helping build it. That makes you a Founding Gardener.</p>
     <p style="margin-top:8px">We wrapped a few things for you.</p>`, 'Open my presents', () => openPresents([
-    { icon:'🏮', title:"The Founder's Lantern", text:'A glowing lantern for your island. Find it in Build mode and put it anywhere.', wrap:['#c9b6ff','#ffe07a'] },
-    { icon:'🧢', title:'The Sky Pioneer hat', text:'An aviator cap with goggles. Put it on in Bag, then Change my look.', wrap:['#7ec8e3','#fff1d6'] },
-    { icon:'✦', title:'Your Founder star', text:'It shines next to your name and your shop.', wrap:['#ff8fa3','#ffc857'] },
-  ], () => showCard(`<div class="kicker">✦ ONE MORE THING</div><h2>Tester missions</h2><p>Tap the ✦ Missions button at the top to see things we would love you to try. Each one pays 50 coins, and you can tell us how it felt with one tap.</p>`, "Let's go")));
+    { icon:'🏮', title:"The Founder's Lantern", text:'A glowing lantern for your island. At night, fireflies gather around it. Find it in Build mode.', wrap:['#c9b6ff','#ffe07a'] },
+    { icon:'🧥', title:'The Sky Pioneer outfit', text:'A flight jacket, a long scarf that trails in the wind, and an aviator cap with goggles. Put it on in Bag, then Change my look.', wrap:['#7ec8e3','#fff1d6'] },
+    { icon:'🎈', title:'Your own hot-air balloon', text:'It flies you to any island you have opened. Tap the balloon on your hotbar, anywhere, anytime.', wrap:['#ffc857','#ff8fa3'] },
+    { icon:'🐾', title:'A companion!', text:'A little friend who follows you everywhere. Who will it be?', wrap:['#8fdc8a','#fff6e6'], last:'Choose my companion' },
+  ], () => choosePet(() => showCard(`<div class="kicker">✦ ONE MORE THING</div><h2>Tester missions</h2><p>Tap the ✦ Missions button at the top to see things we would love you to try. Each one pays 50 coins, and you can tell us how it felt with one tap.</p>`, "Let's go"))));
 }
 function testerCodeCard() {
   showCard(`<div class="kicker">TESTER CODE</div><h2>Enter your code</h2><p>If Sky Garden sent you a tester code, type it here. It looks like SKY-AB12-CD34.</p>
@@ -4204,6 +4219,108 @@ function openHelperTree() { const st = (S.helper || {}).stage || 0, today = (S.h
     <h4>Ways to help</h4><p>• Send a note with the pink Feedback button. Honest notes count the same as nice ones.</p><p>• Vote at the Town Hall.</p>${S.founder ? '<p>• Answer a quick question after a tester mission.</p>' : ''}
     <p style="margin-top:8px"><b>${st >= 6 ? 'It cannot grow any bigger. Thank you!' : today ? 'It already grew today. Come back tomorrow.' : 'It is ready to grow today.'}</b></p>`, 'Close'); }
 drawHelperTree();
+// ============ FOUNDER COMPANION ============
+const petGroup = new THREE.Group(); scene.add(petGroup); lateClicks.push(petGroup);
+var pet = null; // var: the game loop can start before this part loads
+function petModel(kind) {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body); const M = mat;
+  const eye = (x, y, z, r = .045) => { body.add(mesh(sph(r), M(0x2b2233, { roughness:.2 }), x, y, z)); body.add(mesh(sph(r * .35), glow(0xffffff), x + r*.3, y + r*.35, z + r*.7)); };
+  if (kind === 'fox') { const fur = M(0xf2d29b), cream = M(0xfff6e6);
+    const b = mesh(sph(.2), fur, 0, .22, 0); b.scale.set(.85, .8, 1.15); body.add(b); body.add(mesh(sph(.13), cream, 0, .2, .12));
+    const h = mesh(sph(.17), fur, 0, .44, .14); body.add(h); body.add(mesh(sph(.08), cream, 0, .4, .27)); body.add(mesh(sph(.025), M(0x2b2233), 0, .42, .34));
+    [-1,1].forEach(sd => { const e = mesh(new THREE.ConeGeometry(.08,.26,8), fur, sd*.1, .64, .1); e.rotation.z = -sd*.35; body.add(e); const ei = mesh(new THREE.ConeGeometry(.045,.18,8), M(0xffc4a3), sd*.1, .63, .115); ei.rotation.z = -sd*.35; body.add(ei); eye(sd*.065, .47, .28); });
+    const t = mesh(new THREE.CapsuleGeometry(.06,.2,4,8), fur, 0, .3, -.28); t.rotation.x = -1; body.add(t); body.add(mesh(sph(.065), cream, 0, .38, -.38)); body.userData.tail = t; }
+  if (kind === 'panda') { const fur = M(0xc2562b), dark = M(0x3b2a26), white = M(0xfff6e6);
+    const b = mesh(sph(.2), fur, 0, .22, 0); b.scale.set(.9, .85, 1.1); body.add(b); [-1,1].forEach(sd => body.add(mesh(new THREE.CylinderGeometry(.045,.05,.14,8), dark, sd*.1, .07, .08)));
+    const h = mesh(sph(.17), fur, 0, .46, .12); body.add(h); body.add(mesh(sph(.085), white, 0, .42, .24)); body.add(mesh(sph(.025), dark, 0, .43, .32));
+    [-1,1].forEach(sd => { body.add(mesh(sph(.05), white, sd*.1, .52, .23)); body.add(mesh(sph(.07), fur, sd*.13, .62, .08)); body.add(mesh(sph(.045), white, sd*.13, .62, .11)); eye(sd*.07, .48, .27); });
+    const t = new THREE.Group(); t.position.set(0, .25, -.2); body.add(t); for (let i = 0; i < 5; i++) t.add(mesh(sph(.065 - i*.004), i % 2 ? white : fur, 0, i*.02, -i*.07)); body.userData.tail = t; }
+  if (kind === 'owl') { const down = M(0xf3e6cf), face = M(0xfffaf0), buff = M(0xe0b97e);
+    const b = mesh(sph(.24), down, 0, .3, 0); b.scale.set(1, 1.05, .95); body.add(b); const f = mesh(sph(.17), face, 0, .36, .14); f.scale.set(1.1, 1.15, .6); body.add(f);
+    [-1,1].forEach(sd => { eye(sd*.07, .38, .23, .055); const w = mesh(sph(.12), buff, sd*.2, .28, -.02); w.scale.set(.4, 1, .9); body.add(w); body.userData['wing' + sd] = w; body.add(mesh(new THREE.ConeGeometry(.035,.08,6), buff, sd*.14, .54, .05)); });
+    const bk = mesh(new THREE.ConeGeometry(.03,.07,6), M(0xffb347), 0, .32, .26); bk.rotation.x = Math.PI/2 + .3; body.add(bk); [-1,1].forEach(sd => body.add(mesh(sph(.035), M(0xffb347), sd*.07, .08, .08)));
+    body.userData.owl = true; }
+  const hb = hitBox(.7, .8, .7); hb.position.y = .35; g.add(hb); g.scale.setScalar(1.45); g.userData = { kind:'pet', body }; return g;
+}
+function drawPet() { petGroup.children.slice().forEach(c => petGroup.remove(c)); pet = null;
+  if (!S.pet || VISIT) return; pet = petModel(S.pet.kind); petGroup.add(pet); pet.position.copy(player.position).add(new THREE.Vector3(.8, 0, -.6));
+  pet.userData.idle = 0; pet.userData.chase = null; pet.userData.happy = 0; pet.userData.nextChase = 8; }
+function petHappy() { if (pet) pet.userData.happy = 1.2; }
+function petPet() { if (!pet) return; petHappy(); burst(pet.position.clone().setY(.8), 0xff8fa3, 10); tone(1175, { dur:.1, vol:.04 }); tone(1568, { t:.1, dur:.15, vol:.035 });
+  const C = COMPANIONS[S.pet.kind]; S.petPets = (S.petPets || 0) + 1; save();
+  if (S.petPets === 1) showCard(`<div class="kicker">${esc(S.pet.name).toUpperCase()}</div><h2>Your ${C.name.toLowerCase()}</h2><h4>In real life</h4><p>${C.fact}</p>`); else toast(`${S.pet.name} loves that!`); }
+function updatePet(dt, now, moving) {
+  if (!pet) return; const u = pet.userData, b = u.body, p = pet.position, pp = player.position;
+  if (p.distanceTo(pp) > 12 || Math.abs(p.y - pp.y) > 3) { p.copy(pp).add(new THREE.Vector3(.8, 0, -.6)); }
+  const back = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y)).multiplyScalar(-.45), side = new THREE.Vector3(Math.cos(player.rotation.y), 0, -Math.sin(player.rotation.y)).multiplyScalar(1.05);
+  let goal = pp.clone().add(back).add(side);
+  u.nextChase -= dt;
+  if (!u.chase && u.nextChase <= 0 && typeof butterflies !== 'undefined') { u.nextChase = 9 + Math.random() * 8; const bf = butterflies.find(x => x.visible && x.position.distanceTo(p) < 5); if (bf) u.chase = { t:1.6, bf }; }
+  if (u.chase) { u.chase.t -= dt; goal = u.chase.bf.position.clone().setY(pp.y); if (u.chase.t <= 0) u.chase = null; }
+  const d = goal.clone().sub(p); d.y = 0; const dist = d.length(), fast = dist > 3 ? 5.5 : u.chase ? 4.6 : 3.4;
+  const walking = dist > .25;
+  if (walking) { d.normalize().multiplyScalar(Math.min(dist, fast * dt)); p.add(d); pet.rotation.y = Math.atan2(d.x, d.z); p.y += (pp.y - p.y) * Math.min(1, dt * 6); u.idle = 0; }
+  else { u.idle += dt; pet.rotation.y += (Math.atan2(pp.x - p.x, pp.z - p.z) - pet.rotation.y) * Math.min(1, dt * 3); }
+  const nightNap = hour() >= 21 && u.idle > 6;
+  if (u.happy > 0) { u.happy -= dt; b.position.y = Math.abs(Math.sin(now * 12)) * .25; b.rotation.y = u.happy * 5; }
+  else if (b.userData.owl) { b.position.y = .55 + Math.sin(now * (walking ? 10 : 2)) * (walking ? .08 : .03); b.rotation.y = 0;
+    [-1,1].forEach(sd => { const w = b.userData['wing' + sd]; if (w) w.rotation.z = walking ? Math.sin(now * 20) * sd * .9 : 0; }); if (nightNap) b.position.y = .05; }
+  else { b.rotation.y = 0; b.position.y = walking ? Math.abs(Math.sin(now * 11)) * .09 : 0; b.scale.y = nightNap ? .7 : u.idle > 4 ? .9 : 1; b.rotation.z = nightNap ? .9 : 0;
+    if (b.userData.tail) b.userData.tail.rotation.y = Math.sin(now * (walking ? 9 : 3)) * .5; }
+}
+drawPet();
+function choosePet(done) {
+  const kid = ageBand() === 'kid';
+  const face = k => ({ fox:`<svg width="70" height="70" viewBox="0 0 100 100"><path d="M18 20 L38 52 L22 58 Z M82 20 L62 52 L78 58 Z" fill="#f2d29b"/><circle cx="50" cy="60" r="28" fill="#f2d29b"/><ellipse cx="50" cy="72" rx="15" ry="11" fill="#fff6e6"/><circle cx="40" cy="56" r="5" fill="#2b2233"/><circle cx="60" cy="56" r="5" fill="#2b2233"/><circle cx="50" cy="68" r="3.5" fill="#2b2233"/></svg>`,
+    panda:`<svg width="70" height="70" viewBox="0 0 100 100"><circle cx="26" cy="34" r="12" fill="#c2562b"/><circle cx="74" cy="34" r="12" fill="#c2562b"/><circle cx="26" cy="34" r="6" fill="#fff6e6"/><circle cx="74" cy="34" r="6" fill="#fff6e6"/><circle cx="50" cy="58" r="30" fill="#c2562b"/><ellipse cx="50" cy="70" rx="14" ry="10" fill="#fff6e6"/><circle cx="37" cy="46" r="7" fill="#fff6e6"/><circle cx="63" cy="46" r="7" fill="#fff6e6"/><circle cx="39" cy="55" r="5" fill="#2b2233"/><circle cx="61" cy="55" r="5" fill="#2b2233"/><circle cx="50" cy="66" r="3.5" fill="#2b2233"/></svg>`,
+    owl:`<svg width="70" height="70" viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="32" ry="34" fill="#e0b97e" stroke="#9b7b5a" stroke-width="3"/><path d="M50 32 C28 30 22 52 34 66 C42 74 58 74 66 66 C78 52 72 30 50 32 Z" fill="#fffaf0"/><circle cx="40" cy="52" r="7" fill="#2b2233"/><circle cx="60" cy="52" r="7" fill="#2b2233"/><path d="M47 60 L53 60 L50 67 Z" fill="#ffb347"/></svg>` })[k];
+  let pick = 'fox';
+  const draw = () => { showCard(`<div class="kicker">✦ YOUR COMPANION</div><h2>Who will come with you?</h2><p>A little friend who follows you everywhere. Pick one.</p>
+    <div class="petpick">${Object.entries(COMPANIONS).map(([k, c]) => `<button data-pk="${k}" class="${pick === k ? 'on' : ''}">${face(k)}<b>${c.name}</b></button>`).join('')}</div>
+    <h4>Name them</h4>${kid ? `<select id="petName">${KID_PET_NAMES.map(n => `<option>${n}</option>`).join('')}</select>` : `<input id="petName" maxlength="14" placeholder="Like Biscuit" class="numin" style="width:100%">`}
+    <button id="petGo">Welcome home!</button>`, null);
+    document.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => { const nm = $('petName').value; pick = b.dataset.pk; draw(); $('petName').value = nm; });
+    $('petGo').onclick = () => { const nm = String($('petName').value || '').replace(/[^\p{L} '-]/gu, '').trim().slice(0, 14) || KID_PET_NAMES[Math.floor(Math.random() * KID_PET_NAMES.length)];
+      S.pet = { kind:pick, name:nm, since:S.day }; save(); drawPet(); hideCard(); petHappy(); burst(pet.position.clone().setY(.6), 0xffc857, 24); [659,784,988,1319].forEach((f,i) => setTimeout(() => chime(f), i*120));
+      toast(`${nm} the ${COMPANIONS[pick].name.toLowerCase()} is here! Tap ${nm} anytime to say hi.`); setTimeout(() => done && done(), 2600); }; };
+  draw();
+}
+// ============ FOUNDER BALLOON: fly to any island you have opened ============
+function makeBalloon() { const g = new THREE.Group(); const cols = [0xc9b6ff, 0xffe07a];
+  for (let i = 0; i < 8; i++) { const lune = new THREE.Mesh(new THREE.SphereGeometry(1.1, 6, 16, i * Math.PI / 4, Math.PI / 4), mat(cols[i % 2])); lune.scale.set(1, 1.25, 1); lune.position.y = 3; g.add(lune); }
+  g.add(mesh(new THREE.CylinderGeometry(.35, .6, .5, 16, 1, true), mat(0xc9b6ff), 0, 1.75, 0)); g.add(mesh(new THREE.CylinderGeometry(.45, .38, .45, 12), mat(0xa9744a), 0, .45, 0));
+  [[.3,.3],[-.3,.3],[.3,-.3],[-.3,-.3]].forEach(([x,z]) => { const r = mesh(new THREE.CylinderGeometry(.012,.012,1.2,4), mat(0x6b4f3a), x*.9, 1.15, z*.9); g.add(r); });
+  g.add(mesh(new THREE.OctahedronGeometry(.12), glow(0xffe07a), 0, 4.45, 0)); return g; }
+const balloon = makeBalloon(); balloon.position.set(3.1, 0, -6.5); scene.add(balloon); lateClicks.push(balloon);
+{ const hb = hitBox(1.6, 4.6, 1.6); hb.position.y = 2.2; balloon.add(hb); balloon.userData.kind = 'deco'; balloon.userData.use = () => balloonMenu(); }
+function drawBalloon() { balloon.visible = !!S.founderBalloon && !VISIT; }
+drawBalloon();
+function balloonMenu() {
+  const D = [['home','Home island', true], ['orchard','Orchard Isle', S.bridge], ['windmill','Windmill Isle', S.bridge2], ['night','Night Isle', S.q4 >= 1], ['heart','The Old Heart', S.q5 >= 1]].filter(d => d[2]);
+  showCard(`<div class="kicker">✦ FOUNDER BALLOON</div><h2>Where to?</h2><p>Your balloon flies you to any island you have opened.</p>
+    <div class="jlist">${D.map(([k, n]) => `<button data-fly="${k}">🎈 ${n}</button>`).join('')}</div>`, 'Not now');
+  document.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { hideCard(); balloonTo(b.dataset.fly); });
+}
+async function balloonTo(where) {
+  if (cine) return; closeDialog(); target = null; pending = null; cine = { hold:true }; document.body.classList.add('in-cine');
+  const V = (x, y, z) => new THREE.Vector3(x, y, z), fly = makeBalloon(); scene.add(fly);
+  const start = player.position.clone(); fly.position.copy(start); if (pet) pet.visible = false; const ride = () => player.position.copy(fly.position).add(V(0, .25, 0));
+  const rider = player.clone ? null : null; sfx('cast'); tone(200, { to:500, dur:1.5, vol:.05 });
+  let t0 = performance.now(); const lift = () => { const k = (performance.now() - t0) / 3000; fly.position.y = start.y + Math.pow(Math.min(1, k), 1.6) * 9; fly.rotation.y += .004; ride(); if (k < 1.2 && fly.parent) requestAnimationFrame(lift); }; lift();
+  await shot(3, camera.position.clone(), start.clone().add(V(6, 4, 8)), start.clone().setY(start.y + 1.5), start.clone().setY(start.y + 8));
+  await fadeTo(true, false);
+  const dest = { home:V(2.2, 0, -5.6), orchard:V(ORCH_POS.x + 1, ORCH_POS.y, ORCH_POS.z + 1.5), windmill:V(WIND_POS.x, WIND_POS.y, WIND_POS.z + 2.5), night:V(NIGHT_POS.x, NIGHT_POS.y, NIGHT_POS.z + 2), heart:V(OH.x + 7.2, OH.y, OH.z + .8) }[where];
+  S.where = 'home'; fly.position.copy(dest).setY(dest.y + 8); ride(); save();
+  camera.position.copy(dest.clone().add(V(6, 5, 8))); cine = { t:0, dur:.01, p0:camera.position.clone(), p1:camera.position.clone(), l0:dest.clone().setY(dest.y + 5), l1:dest.clone().setY(dest.y + 5), res:() => {} };
+  await wait(300); await fadeTo(false, false);
+  t0 = performance.now(); const land = () => { const k = Math.min(1, (performance.now() - t0) / 2600); fly.position.y = dest.y + 8 * (1 - easeIO(k)); ride(); if (k < 1 && fly.parent) requestAnimationFrame(land); }; land();
+  await shot(2.6, camera.position.clone(), dest.clone().add(V(4, 3, 6)), dest.clone().setY(dest.y + 5), dest.clone().setY(dest.y + .8));
+  player.position.copy(dest).add(V(1.1, 0, .6)); if (pet) { pet.visible = true; pet.position.copy(dest).add(V(.8, 0, -.6)); petHappy(); } burst(dest.clone().setY(dest.y + .6), 0xffe07a, 18); chime(784); chime(1047);
+  t0 = performance.now(); const away = () => { const k = (performance.now() - t0) / 2500; fly.position.y = dest.y + k * 12; fly.position.x += .01; if (k < 1) requestAnimationFrame(away); else scene.remove(fly); }; away();
+  cine = null; document.body.classList.remove('in-cine'); snapCam();
+  if (where === 'heart' && S.q5 === 1) { S.q5 = 2; save(); drawHud(); setTimeout(() => toast('The Old Heart. The great bell lies fallen in the middle.'), 700); }
+  if (!S.balloonFact) { S.balloonFact = true; save(); setTimeout(() => showCard(`<div class="kicker">FIRST FLIGHT</div><h2>People first flew in a balloon</h2><h4>In real life</h4><p>${BALLOON_FACT}</p>`), 900); }
+}
 // --- growing the island ---
 function expandReady(e) { return e.needs === 'home' ? (S.home || 0) >= 3 : e.needs === 'kiln' ? !!S.stations.kiln && potteryOn() : !!S.stations.furnace && bronzeOn(); }
 function expandCard() {
@@ -4328,7 +4445,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }

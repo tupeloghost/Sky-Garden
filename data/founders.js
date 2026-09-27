@@ -14,8 +14,9 @@ const MISSIONS = [
   { id:'product', title:'Design a product', how:'Make your maker\'s mark with Pip, then design something at the Trading Post.', feature:'market', done:S => (S.madeProducts || 0) > 0 },
 ];
 const FOUNDER_GIFTS = [
-  "The Founder's Lantern: a glowing lantern for your island. Find it in Build mode.",
-  'The Sky Pioneer hat: pick it in Change my look.',
-  'A Founder star next to your name and shop.',
+  "The Founder's Lantern: fireflies gather around it at night. Find it in Build mode.",
+  'The Sky Pioneer outfit: flight jacket, trailing scarf, and aviator cap. Pick it in Change my look.',
+  'Your own hot-air balloon: fly to any island you have opened, from the hotbar.',
+  'A companion: a fennec fox kit, red panda cub, or barn owl chick that follows you everywhere.',
 ];
 export { MISSIONS, FOUNDER_GIFTS };
