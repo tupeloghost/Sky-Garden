@@ -8,6 +8,7 @@ import { icon } from '../data/icons.js';
 import { FEATURES } from '../data/features.js';
 import { ROLLOUT } from '../data/rollout.js';
 import { DILEMMAS, islandFeel, PATHS } from '../data/journey.js';
+import { EXPANSIONS, RECLAIM_FACT } from '../data/expand.js';
 import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
 import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
@@ -157,9 +158,9 @@ function halo(color, size, opacity = .8, additive = true) {
 
 // --- islands ---
 const GRASS = [0x8fdc8a, 0x7fd07a, 0xd9b86a, 0xeef3ff];
-function island(r, x, y, z) {
+function island(r, x, y, z, o = {}) {
   const g = new THREE.Group(); g.position.set(x,y,z);
-  const top = mesh(new THREE.CylinderGeometry(r, r*.97, 1, 48), mat(0x8fdc8a), 0, -.5, 0); g.add(top);
+  const top = mesh(new THREE.CylinderGeometry(r, r*.97, 1, 48), o.mat || mat(0x8fdc8a), 0, -.5, 0); g.add(top);
   g.add(mesh(new THREE.CylinderGeometry(r*.97, r*.9, .6, 48), mat(0xb98a63), 0, -1.3, 0));
   const rock = mesh(new THREE.ConeGeometry(r*.9, r*.8, 48), mat(0x9c7fa8), 0, -1.6 - r*.4, 0); rock.rotation.x = Math.PI; g.add(rock);
   const lip = mesh(new THREE.TorusGeometry(r - .05, .3, 10, 72), top.material, 0, -.14, 0); lip.rotation.x = Math.PI/2; g.add(lip);
@@ -167,7 +168,7 @@ function island(r, x, y, z) {
     const root = mesh(new THREE.CylinderGeometry(.035, .012, len, 5), mat(vine ? 0x5fb85c : 0x7a5236), Math.cos(a)*rr, -1.7 - len/2 - (1 - rr/r)*r*.5, Math.sin(a)*rr);
     root.rotation.z = Math.sin(i)*.15; g.add(root);
     if (vine) root.add(mesh(sph(.08), mat(0x7fd88a), 0, -len/2, 0)); }
-  scene.add(g); walkables.push(top); return { g, top };
+  scene.add(g); if (!o.hidden) walkables.push(top); return { g, top, lip, r };
 }
 const HOME = island(9, 0, 0, 0);
 const ORCH_POS = new THREE.Vector3(28, -1.5, 3);
@@ -640,6 +641,40 @@ function drawTile(i) {
   }
 }
 S.tiles.forEach((_, i) => drawTile(i));
+// --- island expansions: new land that joins the home island ---
+const lobes = EXPANSIONS.map((e, i) => {
+  const L = island(e.r, e.x, 0, e.z, { mat:HOME.top.material, hidden:true }); L.e = e; L.g.visible = false; L.lip.visible = false; L.extra = [];
+  e.trees.forEach(([x,z], j) => { const t = tree(scene, x, z); t.userData.kind = 'tree'; t.userData.key = `x${e.id}t${j}`; L.extra.push(t); });
+  e.rocks.forEach(([x,z,r], j) => { const rk = mesh(new THREE.DodecahedronGeometry(r), mat(0xb3aabb), x, r*.5, z); rk.rotation.set(j, j*2, 0); rk.userData = { kind:'rock', key:`x${e.id}r${j}` }; scene.add(rk); L.extra.push(rk); });
+  e.bushes.forEach(([x,z], j) => { const b = new THREE.Group(); b.position.set(x, 0, z); b.userData = { kind:'bush', key:`x${e.id}b${j}` };
+    [[0,0,0,.45],[.35,-.05,.1,.34],[-.32,-.07,.08,.32],[.05,.15,-.15,.3]].forEach(([bx,by,bz,br]) => b.add(mesh(sph(br), mat(0x4fb46a), bx, by + br*.8, bz))); scene.add(b); L.extra.push(b); });
+  for (let k = 0; k < 18; k++) { const a = k*2.4, rr = 1.5 + (k*1.37) % (e.r - 2); L.g.add(mesh(sph(.08), mat([0xffffff,0xffd1dc,0xfff3a0,0xc9b6ff][k%4]), Math.cos(a)*rr, .06, Math.sin(a)*rr)); }
+  L.extra.forEach(o => o.visible = false);
+  return L;
+});
+const ownedLobes = () => lobes.filter((L, i) => i < (S.expand || 0));
+// the grassy rim of each piece of land, drawn only where it is not inside other land (so joins look seamless)
+function drawLips() {
+  const lands = [HOME, ...ownedLobes()];
+  lands.forEach(L => {
+    if (L.lipArcs) L.lipArcs.forEach(a => L.g.remove(a)); L.lipArcs = []; L.lip.visible = false;
+    const cx = L.g.position.x, cz = L.g.position.z, N = 144, R = L.r - .05, inside = t => lands.some(M => M !== L && Math.hypot(cx + Math.cos(t)*R - M.g.position.x, cz + Math.sin(t)*R - M.g.position.z) < M.r - .35);
+    const out = [...Array(N)].map((_, i) => !inside(i / N * Math.PI * 2)); if (out.every(Boolean)) { L.lip.visible = true; return; }
+    let i0 = out.findIndex(v => !v);
+    for (let k = 1; k <= N; k++) { const i = (i0 + k) % N; if (!out[i]) continue; let n = 0; while (out[(i + n) % N] && n < N) n++;
+      const arc = new THREE.Mesh(new THREE.TorusGeometry(R, .3, 10, Math.max(4, n), n / N * Math.PI * 2), L.top.material); arc.rotation.x = Math.PI/2;
+      const w = new THREE.Group(); w.position.y = -.14; w.rotation.y = -(i / N * Math.PI * 2); w.add(arc); L.g.add(w); L.lipArcs.push(w); k += n - 1; }
+  });
+}
+function showLobes(animate) {
+  ownedLobes().forEach((L, i) => { const fresh = animate && i === (S.expand || 0) - 1;
+    if (!walkables.includes(L.top)) walkables.push(L.top);
+    L.g.visible = true; L.extra.forEach(o => o.visible = !fresh);
+    if (fresh) { L.g.position.y = -5; L.rise = 1; } });
+  drawLips();
+}
+const onLand = (x, z, m = .8) => Math.hypot(x, z) < 9 - m || ownedLobes().some(L => Math.hypot(x - L.e.x, z - L.e.z) < L.r - m);
+showLobes(false);
 const stakes = new THREE.Group(); stakes.position.set(2.45, 0, 2.9);
 for (let i=0;i<4;i++) stakes.add(mesh(new THREE.CylinderGeometry(.05,.06,.7,6), mat(0xc98f58), -.4 + i*.27, .35, (i%2)*.12));
 stakes.add(mesh(new THREE.TorusGeometry(.2,.05,6,14), mat(0xc9a27a), .45, .08, .1).rotateX(Math.PI/2));
@@ -1636,6 +1671,7 @@ function neighborButtons(id) {
   if (id === 'hoot') b.push({ label:'Read a book', fn:() => { closeDialog(); useLibrary(); } });
   if (id === 'allegra') b.push({ label:'Play music', fn:() => { closeDialog(); useMusicHall(); } });
   if (id === 'sage') b.push({ label:"Today's saying", fn:() => { closeDialog(); useTemple(); } });
+  if (id === 'nana' && featureOn('expand') && EXPANSIONS[S.expand || 0] && (S.home || 0) >= 3 && !VISIT) b.push({ label:'Grow the island', fn:() => { closeDialog(); expandCard(); } });
   if (S.gifted[id] !== S.day) b.push({ label:'Give a gift', fn:() => giftPicker(id) });
   return b;
 }
@@ -2515,7 +2551,7 @@ function drawHome() {
 function spawnPickups() {
   if (VISIT) return;
   const kinds = ['stick','stick','stone','fiber'], rnd = () => Math.random();
-  while (S.pickups.length < 10) { let x, z, tries = 0; do { const a = rnd()*Math.PI*2, r = 2 + rnd()*6.2; x = Math.cos(a)*r; z = Math.sin(a)*r; tries++; }
+  while (S.pickups.length < 10) { let x, z, tries = 0; do { const land = [{ x:0, z:0, r:8.2 }, ...ownedLobes().map(L => ({ x:L.e.x, z:L.e.z, r:L.r - .8 }))], L = land[Math.floor(rnd()*land.length)], a = rnd()*Math.PI*2, r = (L.r === 8.2 ? 2 : 0) + rnd()*(L.r - (L.r === 8.2 ? 2 : 0)); x = L.x + Math.cos(a)*r; z = L.z + Math.sin(a)*r; tries++; }
     while (tries < 20 && ((x > .2 && x < 4.8 && z > -2 && z < 3.8) || Math.hypot(x+4, z+3) < 2)); S.pickups.push({ t:kinds[Math.floor(rnd()*4)], x, z }); }
   drawPickups();
 }
@@ -2744,6 +2780,7 @@ function sleep(passedOut) {
 // ============ INPUT ============
 const ray = new THREE.Raycaster(), down = new THREE.Raycaster(), ptr = new THREE.Vector2(), DOWN = new THREE.Vector3(0,-1,0);
 let target = null, pending = null;
+lobes.forEach(L => lateClicks.push(...L.extra));
 const clickables = [...decos, ...nodes, kiln, furnace, pickupGroup, buildSite, workbench, campfire, ...woodTrees, ...rocks, ...bushes, ...(ownerNpc ? [ownerNpc] : []), mailbox, homeDock, greatBell, bellFrame, lumberPile, ship2, ...siteGroups, house, crate, sign, sign2, windmill, stakes, boulder, easel, darkroom, crystals, sundial, ship, pot, dock, bed, doormat, shelf, ...spotGroups, ...fruitTrees, ...tileGroups, ...Object.values(npcs)];
 // ============ FREE BUILDING ============
 const PIECES = [
@@ -2911,7 +2948,7 @@ function drawBuilds() {
 }
 // places you can't build over, so the important things stay reachable
 function blockedAt(x, z) {
-  if (Math.hypot(x, z) > 8.2) return 'That is too close to the edge.';
+  if (!onLand(x, z)) return 'That is too close to the edge.';
   const circles = [[4,5.1,1],[1.6,5.2,.9],[-5.2,2.1,1],[-7.2,-2.7,1],[-7.9,-2.2,.8],[3.5,-7.4,.8],[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
   if (circles.some(([cx,cz,r]) => Math.hypot(x-cx, z-cz) < r)) return 'That spot is taken by something important.';
   if (x > .2 && x < 4.8 && z > -2 && z < (S.bigGarden ? 3.9 : 2.6)) return 'That is your garden.';
@@ -2919,20 +2956,25 @@ function blockedAt(x, z) {
 }
 let buildMode = false, buildSel = 'path', buildRot = 0, removing = false, moving = false, held = null;
 const ghost = new THREE.Mesh(new THREE.PlaneGeometry(.96,.96), new THREE.MeshBasicMaterial({ color:0x8fdc8a, transparent:true, opacity:.45, depthWrite:false })); ghost.rotation.x = -Math.PI/2; ghost.visible = false; scene.add(ghost);
-const gridLines = (() => { const pts = []; for (let i=-8;i<=8;i++){ pts.push(i,0.015,-8, i,0.015,8, -8,0.015,i, 8,0.015,i); }
-  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-  const l = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:.22 })); l.visible = false; scene.add(l); return l; })();
+const gridLines = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:.22 })); gridLines.visible = false; scene.add(gridLines);
+function drawGrid() { const pts = [], seg = (x0, z0, x1, z1) => { if (onLand(x0, z0, .2) && onLand(x1, z1, .2)) pts.push(x0, .015, z0, x1, .015, z1); };
+  for (let i = -20; i <= 20; i++) for (let j = -20; j < 20; j++) { seg(i, j, i, j + 1); seg(j, i, j + 1, i); }
+  gridLines.geometry.dispose(); gridLines.geometry = new THREE.BufferGeometry(); gridLines.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); }
 function drawBuildBar() {
   const bar = $('buildbar');
   bar.innerHTML = `<p class="bhelp">${held ? `Holding your ${PIECES.find(x => x.id === held.p).name.toLowerCase()}. Tap an empty square to set it down. Rotate turns it.` : moving ? 'Tap a piece you built to pick it up and move it.' : removing ? 'Tap a piece to pick it up. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
     <div class="bpieces">${PIECES.filter(p => (!p.age || S.stations[p.age]) && (p.id !== 'chest' || featureOn('chest'))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
-    <div class="bctl"><button id="bRot">Rotate</button><button id="bMove" class="${moving ? 'on' : ''}">Move</button><button id="bRem" class="${removing ? 'on' : ''}">Remove</button><button id="bDone" class="done">Done</button></div>`;
+    <div class="bctl"><button id="bRot">Rotate</button><button id="bMove" class="${moving ? 'on' : ''}">Move</button><button id="bRem" class="${removing ? 'on' : ''}">Remove</button><button id="bTidy">Tidy up</button><button id="bDone" class="done">Done</button></div>`;
   bar.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { dropHeld(); buildSel = b.dataset.pc; removing = moving = false; drawBuildBar(); });
   ghostPiece();
   $('bRot').onclick = () => { if (held) { held.r = ((held.r || 0) + 1) % 4; ghostPiece(); toast('Turned the piece you are holding.'); return; }
     buildRot = (buildRot + 1) % 4; toast('Turned. Pieces you place now face the new way.'); };
   $('bMove').onclick = () => { dropHeld(); moving = !moving; removing = false; drawBuildBar(); };
   $('bRem').onclick = () => { dropHeld(); removing = !removing; moving = false; drawBuildBar(); };
+  $('bTidy').onclick = () => { let got = 0, left = 0;
+    for (let i = S.pickups.length - 1; i >= 0; i--) { const p = S.pickups[i]; if (canCarry(p.t)) { bagAdd(p.t); S.pickups.splice(i, 1); got++; } else left++; }
+    drawPickups(); save(); drawHud(); drawBuildBar(); sfx(got ? 'pick' : 'click');
+    toast(got ? `Tidied up! ${got} sticks, stones, and grass went into your bag.${left ? ' Your bag is too full for the rest.' : ''}` : left ? 'Your bag is too full to tidy up.' : 'Nothing to tidy. Your island is neat!'); };
   $('bDone').onclick = () => setBuildMode(false);
 }
 // put a held piece back where it came from (when you switch tools or finish)
@@ -2945,13 +2987,13 @@ function ghostPiece() { if (ghostModel) { ghost.remove(ghostModel); ghostModel =
 function setBuildMode(on) {
   if (!on) dropHeld();
   if (on && ((S.home || 0) < 3 || S.where !== 'home' || VISIT)) { toast((S.home || 0) < 3 ? 'Finish building your home first.' : 'You can build on your home island.'); return; }
-  buildMode = on; removing = moving = false; ghostPiece(); gridLines.visible = on; ghost.visible = false; document.body.classList.toggle('building', on);
+  buildMode = on; removing = moving = false; ghostPiece(); gridLines.visible = on; if (on) drawGrid(); ghost.visible = false; document.body.classList.toggle('building', on);
   if (on) { closeDialog(); drawBuildBar(); if (player.position.distanceTo(new THREE.Vector3(0,0,0)) > 10) { player.position.set(0,0,2); } }
   drawHud();
 }
 function cellAt(e) {
   ptr.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1); ray.setFromCamera(ptr, camera);
-  const h = ray.intersectObject(HOME.top, false)[0]; if (!h) return null;
+  const h = ray.intersectObjects([HOME.top, ...ownedLobes().map(L => L.top)], false)[0]; if (!h) return null;
   return { x: Math.floor(h.point.x) + .5, z: Math.floor(h.point.z) + .5 };
 }
 function buildTap(e) {
@@ -3198,6 +3240,7 @@ function tick() {
     b.position.set(u.cx + Math.sin(t)*3 + Math.sin(t*2.3)*.8, u.cy + .8 + Math.sin(t*3.1)*.4, u.cz + Math.cos(t*.8)*3);
     b.rotation.y = Math.atan2(Math.cos(t), -Math.sin(t*.8)); const f = Math.sin(now*18 + i)*1.1; u.l.rotation.z = f; u.r.rotation.z = -f;
     if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
+  lobes.forEach(L => { if (!L.rise) return; L.rise = Math.max(0, L.rise - dt / 2.5); const k = 1 - L.rise; L.g.position.y = -5 * (1 - k) * (1 - k); if (!L.rise) { L.g.position.y = 0; L.extra.forEach(o => o.visible = true); burst(new THREE.Vector3(L.e.x, .5, L.e.z), 0x8fdc8a, 30); } });
   pulsers.forEach(h => { h.userData.pulse = Math.max(0, h.userData.pulse - dt); h.scale.setScalar(h.userData.base * (1 + h.userData.pulse)); if (!h.userData.pulse) pulsers.delete(h); });
   if (bell.userData.ring > 0) { bell.userData.ring = Math.max(0, bell.userData.ring - dt); bellBody.rotation.z = Math.sin(now*12) * .35 * bell.userData.ring; }
   balloons.children.forEach(b => { if (b.userData.fly) { b.position.y += dt * 1.6; b.position.x += Math.sin(now*2) * dt * .3; if (b.position.y > 25) b.visible = false; } });
@@ -3329,6 +3372,24 @@ $('start').onclick = () => { $('title').style.display = 'none'; document.body.cl
   if (isPartyDay() && S.lastParty !== dayKey(today()) && S.letter) setTimeout(birthdayParty, 900);
   else if (S.tut === 9 && !S.birthdayAsked && !S.birthday && S.letter) setTimeout(() => birthdayPicker(null, true), 1200);
   if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">${(S.home || 0) < 3 ? 'A LETTER UNDER A STONE' : 'A LETTER ON THE TABLE'}</div><h2>Dear ${S.name || 'little one'},</h2><p class="letter">${(S.home || 0) < 3 ? 'If you are reading this, you made it. I am sorry about the hut. The Great Gust took it, so all that is left are the stones it stood on. You will build a better one. ' : 'If you are reading this, the hut is yours now. '}The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Let\'s go!', () => { if (S.tut === 0) startTutorial(); }); } };
+// --- growing the island ---
+function expandReady(e) { return e.needs === 'home' ? (S.home || 0) >= 3 : e.needs === 'kiln' ? !!S.stations.kiln && potteryOn() : !!S.stations.furnace && bronzeOn(); }
+function expandCard() {
+  const e = EXPANSIONS[S.expand || 0]; if (!e) { toast('Your island is as big as it can grow for now.'); return; }
+  const ok = enough(e.cost) && S.coins >= e.coins, ready = expandReady(e);
+  showCard(`<div class="kicker">NANA GALE</div><h2>Grow the island: ${e.name}</h2>
+    <p>"When I was young, we made new land by piling earth and stone at the edge until it held. We can do it again."</p>
+    <p>New land joins your island with room to build, plus new trees, rocks, and bushes.</p>
+    ${ready ? `<h4>It needs</h4><p>${needText(e.cost)}, and ${e.coins} coins (you have ${S.coins}).</p>` : `<h4>Not yet</h4><p>${e.why}</p>`}
+    ${ready ? `<button id="exGo" ${ok ? '' : 'style="opacity:.55"'}>Build the ${e.name}</button>` : ''}`, 'Later');
+  if ($('exGo')) $('exGo').onclick = () => {
+    if (!enough(e.cost) || S.coins < e.coins) { toast(`Not enough yet. Needs ${needText(e.cost)}, and ${e.coins} coins.`); return; }
+    Object.entries(e.cost).forEach(([k,n]) => bagAdd(k, -n)); S.coins -= e.coins; S.expand = (S.expand || 0) + 1; lean('maker', 3);
+    save(); drawHud(); hideCard(); showLobes(true); sfx('dig'); [392,523,659,784].forEach((f,i) => setTimeout(() => chime(f), 400 + i*200));
+    const first = S.expand === 1;
+    setTimeout(() => first ? showCard(`<div class="kicker">NEW LAND</div><h2>The ${e.name} is yours</h2><h4>In real life</h4><p>${RECLAIM_FACT}</p>`) : toast(`The ${e.name} joined your island!`), 2900);
+  };
+}
 // --- the quiet journey: hidden karma, paths, choices, and rewards that come later ---
 function karma(k, n) { S.karma = S.karma || { kind:0, harmony:0 }; S.karma[k] = Math.max(-20, Math.min(30, (S.karma[k] || 0) + n)); }
 function lean(path, n = 1) { if (!path || VISIT) return; S.paths = S.paths || {}; S.paths[path] = (S.paths[path] || 0) + n; }
@@ -3435,7 +3496,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
