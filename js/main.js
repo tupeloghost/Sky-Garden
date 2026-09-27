@@ -92,8 +92,12 @@ function featureOn(id) { const f = FEATURES.find(x => x.id === id), d = devOn() 
 function unlockedToday(id) { const r = ROLLOUT.find(x => x.id === id); return !r || (S.unlocked || []).includes(id) || playDays() >= r.day; }
 const playDays = () => (S.playDates || []).length + (S.bonusDays || 0);
 // developer mode only works for the Creator (checked with the server) or on a local test copy
-const DEV_OK = (() => { if (/^(localhost|127\.)/.test(location.hostname)) return true; try { return sessionStorage.getItem('sg.devok') === '1'; } catch { return false; } })();
-const devOn = () => { try { return DEV_OK && localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
+// On the live site, the Creator's test island is her developer profile and her real island stays a normal player's.
+const LOCALDEV = /^(localhost|127\.)/.test(location.hostname);
+const DEV_OK = (() => { if (LOCALDEV) return true; try { return sessionStorage.getItem('sg.devok') === '1'; } catch { return false; } })();
+const devOn = () => { if (!DEV_OK) return false; if (!LOCALDEV) return TESTSLOT; try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
+// the real island's key, even while on the test island (the Creator's tools are tied to it)
+const mainKey = () => { if (!TESTSLOT) return S.syncKey; try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '{}').syncKey || S.syncKey; } catch { return S.syncKey; } };
 async function cloudPush(force) {
   if (devOn() || VISIT || TESTSLOT) return; // developer mode, visits, and the test island never touch the cloud
   if (!cloudDirty || (!force && Date.now() - lastPush < 60000)) return;
@@ -1533,7 +1537,7 @@ function openBag() {
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
-    ${(founderOn() && fGot('testisland') && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}<button id="lookBtn" class="ghost">Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" class="ghost">I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+    ${(founderOn() && (fGot('testisland') || DEV_OK || (S.trust && S.trust.level >= 4)) && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}<button id="lookBtn" class="ghost">Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" class="ghost">I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
   document.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { const k = b.dataset.it; $('itInfo').innerHTML = `<b>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}</b>. ${itemUse(k)}`; });
   document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => { const k = b.dataset.fu, p = S.placed.filter(x => x === k).length; $('itInfo').innerHTML = `<b>${icon(k)} ${FURN[k].name}</b>. ${p ? `${p} in your hut.` : 'Not placed yet. Place it inside your hut.'}`; });
   document.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => openProduct(S.products[+b.dataset.pr], openBag));
@@ -3940,7 +3944,7 @@ const ME = () => VISIT ? mine : S, saveMe = () => VISIT ? saveMine() : save();
 const TRADEABLE = ['crop','fruit','fish','dish','specialty','heirloom','material','bug'];
 const isKid = () => ageBand() === 'kid';
 async function api(path, body) {
-  if (TESTSLOT && body && !['/feedback','/bug'].includes(path.split('?')[0])) { setTimeout(() => toast('That only works on your real island. Switch back in Bag.'), 60); return { ok:false, status:0, error:'test island' }; }
+  if (TESTSLOT && body && !['/feedback','/bug'].includes(path.split('?')[0]) && !(DEV_OK && path.startsWith('/creator/'))) { setTimeout(() => toast('That only works on your real island. Switch back in Bag.'), 60); return { ok:false, status:0, error:'test island' }; }
   if (TESTSLOT && body && path === '/feedback') body = { ...body, where:'[test island] ' + (body.where || '') };
   try { const r = await fetch(`${CLOUD}${path}`, body ? { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body) } : undefined);
     const j = await r.json().catch(() => ({})); return { ok:r.ok, status:r.status, ...j }; } catch { return { ok:false, status:0, error:'offline' }; }
@@ -4461,7 +4465,8 @@ function founderOn() { return !!S.founder && !(S.trust && S.trust.revoked); }
 function paused(p) { return !!(S.trust && (S.trust.paused || []).includes(p)); }
 function keeperLevel() { if (devOn()) return 3; return founderOn() && featureOn('keepers') ? (S.trust && S.trust.level) || 1 : 0; }
 async function syncTrust() { if (VISIT || TESTSLOT || !S.syncKey) return;
-  try { const r = await (await fetch(`${CLOUD}/me?key=${S.syncKey}`)).json(); if (r && 'level' in r) { if (r.founder && r.code && (!S.founder || S.founder.code !== r.code)) S.founder = { code:r.code, at:Date.now(), day0:(S.founder && S.founder.day0) ?? playDays() - 1 }; // the server knows this game is a founder's
+  try { const r = await (await fetch(`${CLOUD}/me?key=${S.syncKey}`)).json(); if (r && 'level' in r) { if (r.founder && r.level >= 4) { try { sessionStorage.setItem('sg.devok', '1'); } catch {} }
+    if (r.founder && r.code && (!S.founder || S.founder.code !== r.code)) S.founder = { code:r.code, at:Date.now(), day0:(S.founder && S.founder.day0) ?? playDays() - 1 }; // the server knows this game is a founder's
     S.trust = { level:r.level, paused:r.paused || [], revoked:!!r.revoked, myth:r.myth || null, seen:r.seen || 0, missions:r.missions || [], mythData:r.mythData || null, link:r.link || null }; save(); dressPlayer(); drawHud(); drawKeepers(); mythReveal(); loadMods(r.mods); } } catch {}
   try { const w = await (await fetch(`${CLOUD}/world`)).json(); if (w && w.world) { S.world = w.world; save(); drawWorld(); } } catch {} }
 addEventListener('sg-playing', () => setTimeout(syncTrust, 2500));
@@ -4699,7 +4704,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
 var mythShrooms = null, mythSky = null; // var: the game loop can start before this part loads
 var mythExtras = [], mythActions = {}, mythHooks = {}, extraTools = []; // var: used by the game loop. Filled in by private modules the server sends to the right people
 function mythKind() { const k = (S.trust && S.trust.myth) || (devOn() && S.devMyth) || null; return k && MYTHS[k] ? k : null; }
-function mythOn() { return (featureOn('myths') || !!PREVIEW || (S.trust && S.trust.level >= 4)) && (founderOn() || devOn()) && !!mythKind() && !paused('myth') && !VISIT && (!TESTSLOT || !!PREVIEW); }
+function mythOn() { return (featureOn('myths') || !!PREVIEW || (S.trust && S.trust.level >= 4)) && (founderOn() || devOn()) && !!mythKind() && !paused('myth') && !VISIT && (!TESTSLOT || !!PREVIEW || devOn()); }
 function mythF() { const k = mythKind(); return { ...MYTHS[k], ...((S.trust && S.trust.myth === k && S.trust.mythData) || DEV_CONTENT) }; }
 function mp() { S.myth = S.myth || { light:0, list:[], day:0, done:0, journal:[], shrooms:[] }; return S.myth; }
 // a legendary creature, built from simple shapes. Wings sit where arms would, so walking flaps them.
@@ -4851,10 +4856,10 @@ function mythReveal() { if (!mythOn() || mp().revealed) return; const F = mythF(
   logKeeper('mythfirst', F.name); }
 // private modules: extra parts of the game the server only sends to the people they are for
 const loadedMods = new Set();
-const MODCTX = { get S() { return S; }, THREE, api, showCard, hideCard, toast, chime, burst, player, esc, save, drawHud, dressPlayer, $, hour, devOn:() => devOn() || !!PREVIEW, CLOUD, switchIsland,
+const MODCTX = { get S() { return S; }, key:mainKey, THREE, api, showCard, hideCard, toast, chime, burst, player, esc, save, drawHud, dressPlayer, $, hour, devOn:() => devOn() || !!PREVIEW, CLOUD, switchIsland,
   PREVIEW, MYTHS, extraTools, mythMenu, mythSighting, mythCount, mythKind, mythF, mythOn, mythAppear, mythBless, mp, mythExtras, mythActions, mythHooks, logKeeper };
 function loadMods(list) { (list || []).forEach(n => { if (loadedMods.has(n) || !/^[a-z]+$/.test(n)) return; loadedMods.add(n);
-  const who = PREVIEW ? `key=${PREVIEW.key}&as=${PREVIEW.code}` : `key=${S.syncKey}`;
+  const who = PREVIEW ? `key=${PREVIEW.key}&as=${PREVIEW.code}` : `key=${mainKey()}`;
   // fetched fresh every time (never a cached copy), then run from a local blob so browsers treat it like our own code
   fetch(`${CLOUD}/mod?name=${n}&${who}&t=${Date.now()}`, { cache:'no-store' }).then(r => { if (!r.ok) throw 0; return r.text(); })
     .then(src => import(URL.createObjectURL(new Blob([src], { type:'text/javascript' })))).then(m => m.default(MODCTX)).catch(() => loadedMods.delete(n)); }); }
@@ -4872,10 +4877,11 @@ addEventListener('sg-playing', () => setTimeout(() => { if (PREVIEW) return prev
 window.__sg = { founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
-{ let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && DEV_OK && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
-if (location.hash === '#dev' && DEV_OK) { try { localStorage.setItem('sg.dev', 'true'); } catch {} }
+{ let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
+if (location.hash === '#dev' && LOCALDEV) { try { localStorage.setItem('sg.dev', 'true'); } catch {} }
 // ask the server once per visit whether this game is the Creator's; only then can developer mode turn on
-if (!DEV_OK && S.syncKey && !VISIT && !TESTSLOT) fetch(`${CLOUD}/me?key=${S.syncKey}`).then(r => r.json()).then(r => { if (!(r && r.founder && r.level >= 4)) return;
-  try { sessionStorage.setItem('sg.devok', '1'); } catch {} let on = false; try { on = localStorage.getItem('sg.dev') === 'true'; } catch {}
-  if (on || location.hash === '#dev') { if (location.hash === '#dev') { try { localStorage.setItem('sg.dev', 'true'); } catch {} } if (!playing) location.reload(); } }).catch(() => {});
+if (!DEV_OK && mainKey() && !VISIT) fetch(`${CLOUD}/me?key=${mainKey()}`).then(r => r.json()).then(r => { if (!(r && r.founder && r.level >= 4)) return;
+  try { sessionStorage.setItem('sg.devok', '1'); } catch {} if (TESTSLOT && !playing) location.reload(); }).catch(() => {});
+// on the Creator's test island, bring in her tools (the real island's key unlocks them)
+if (DEV_OK && TESTSLOT && !PREVIEW) addEventListener('sg-playing', () => setTimeout(() => loadMods(['creator']), 1500));
 if (devOn()) import('./dev.js?v=' + Date.now());
