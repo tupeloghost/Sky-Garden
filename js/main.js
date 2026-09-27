@@ -12,6 +12,7 @@ import { EXPANSIONS, RECLAIM_FACT } from '../data/expand.js';
 import { SHIP_PATHS, HEADINGS, WAYFINDING, FLOATING } from '../data/ship.js';
 import { MISSIONS, FOUNDER_GIFTS } from '../data/founders.js';
 import { COMPANIONS, KID_PET_NAMES, BALLOON_FACT } from '../data/companions.js';
+import { MENTOR, TRIALS, LANDMARKS } from '../data/keepers.js';
 import { KID_ADJ, KID_NOUN, SHAPES, PATTERNS, SYMBOLS, PALETTE, BASES, logoSvg, productSwatch, hx, MARK_LESSON, DESIGN_LESSON } from '../data/market.js';
 import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
 import { INSECTS } from '../data/insects.js';
@@ -1204,7 +1205,7 @@ function drawHud() {
   $('goalsBtn').hidden = !featureOn('goals'); ensureGoals(); $('goalsBtn').innerHTML = `${ICON.goal}<span class="lbl">Goals</span> ${S.goals.list.filter(g => g.have >= g.need).length}/3`;
   drawQuest();
   { let tb = $('testBtn'); if (TESTSLOT) { if (!tb) { tb = document.createElement('button'); tb.id = 'testBtn'; tb.className = 'pill testpill'; tb.onclick = testerTools; tb.innerHTML = '🧪<span class="lbl"> Test island</span>'; $('coins').before(tb); } } }
-  { let mb = $('missionsBtn'); if (S.founder && !VISIT) { if (!mb) { mb = document.createElement('button'); mb.id = 'missionsBtn'; mb.className = 'pill founderpill'; mb.onclick = openMissions; $('goalsBtn').after(mb); } const L = missionList(); mb.innerHTML = `✦<span class="lbl"> Missions</span> ${L.filter(m => S.missions?.[m.id]).length}/${L.length}`; } else if (mb) mb.remove(); }
+  { let mb = $('missionsBtn'); if (founderOn() && !paused('missions') && !VISIT) { if (!mb) { mb = document.createElement('button'); mb.id = 'missionsBtn'; mb.className = 'pill founderpill'; mb.onclick = openMissions; $('goalsBtn').after(mb); } const L = missionList(); mb.innerHTML = `✦<span class="lbl"> Missions</span> ${L.filter(m => S.missions?.[m.id]).length}/${L.length}`; } else if (mb) mb.remove(); }
   try { missionCheck(); } catch {}
   const s = season(), shown = Object.entries(CROPS).filter(([k,c]) => (c.seasons.includes(s) && (!c.locked || S.q4 >= 5)) || S.seeds[k] > 0);
   if (!shown.some(([k]) => k === S.sel) && shown.length) S.sel = shown[0][0];
@@ -1474,13 +1475,13 @@ function openBag() {
   const goods = GROUPS.map(([kind, label]) => { const list = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && ITEMS[k].kind === kind);
     return list.length ? `<h4>${label}</h4><div class="igrid">${list.map(([k,n]) => tile(k, n, ITEMS[k].name)).join('')}</div>` : ''; }).join('');
   const furn = Object.entries(S.furn).filter(([,n]) => n > 0).map(([k,n]) => `<button class="itile" data-fu="${k}"><span class="ic">${icon(k)}</span><b>${n}</b><small>${FURN[k].name}</small></button>`).join('');
-  showCard(`<div class="kicker">YOUR BAG</div>${S.founder ? '<div class="founder">✦ Founding Gardener</div>' : ''}<h2>Your stuff</h2>${spaceMeter(slotsIn(S.bag), packCap(), "Backpack")}
+  showCard(`<div class="kicker">YOUR BAG</div>${founderOn() ? `<div class="founder">✦ ${keeperLevel() >= 3 ? 'Elder Keeper' : keeperLevel() >= 2 ? 'Keeper' : 'Founding Gardener'}</div>` : ''}<h2>Your stuff</h2>${spaceMeter(slotsIn(S.bag), packCap(), "Backpack")}
     ${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}
     ${(S.products || []).length ? `<h4>Products</h4><div class="igrid">${S.products.map((p, i) => `<button class="itile" data-pr="${i}">${productSwatch(p, 34)}<small>${productName(p)}</small></button>`).join('')}</div>` : ''}
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
-    ${S.founder || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}<button id="lookBtn" class="ghost">Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" class="ghost">I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+    ${(founderOn() && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}<button id="lookBtn" class="ghost">Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" class="ghost">I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
   document.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { const k = b.dataset.it; $('itInfo').innerHTML = `<b>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}</b>. ${itemUse(k)}`; });
   document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => { const k = b.dataset.fu, p = S.placed.filter(x => x === k).length; $('itInfo').innerHTML = `<b>${icon(k)} ${FURN[k].name}</b>. ${p ? `${p} in your hut.` : 'Not placed yet. Place it inside your hut.'}`; });
   document.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => openProduct(S.products[+b.dataset.pr], openBag));
@@ -1747,6 +1748,7 @@ function talk(id) {
   if (id === 'lumen' && S.q4 < 5) return lumenQuest();
   if (id === 'nana' && S.q3 === 5) return nanaBread();
   if (id === 'drizzle' && featureOn('journey') && S.q2 >= 5 && (!S.shipPath || (S.shipYear && S.shipYear < islandYear() && S.shipAsked !== islandYear()))) return shipChoice();
+  if (S.secretFor && S.secretFor[id]) { const it = S.secretFor[id]; delete S.secretFor[id]; save(); return openDialog(n.name, `Someone left a lovely ${ITEMS[it]?.name.toLowerCase() || 'gift'} on my doorstep last night. No note, nothing. I wonder who it was. Whoever it was, they made my whole week.`, neighborButtons(id), S.hearts[id]); }
   if (firstToday && startDilemma(id)) return;
   if (id === 'pip' && S.asked !== S.day && (S.quest >= 1 || S.day > 1)) return pipQuestion();
   const pool = S.hearts[id] >= 3 ? [...n.lines, ...n.heartLines] : [...n.lines];
@@ -3714,6 +3716,7 @@ function tick() {
     b.rotation.y = Math.atan2(Math.cos(t), -Math.sin(t*.8)); const f = Math.sin(now*18 + i)*1.1; u.l.rotation.z = f; u.r.rotation.z = -f;
     if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
   lobes.forEach(L => { if (!L.rise) return; L.rise = Math.max(0, L.rise - dt / 2.5); const k = 1 - L.rise; L.g.position.y = -5 * (1 - k) * (1 - k); if (!L.rise) { L.g.position.y = 0; L.extra.forEach(o => o.visible = true); burst(new THREE.Vector3(L.e.x, .5, L.e.z), 0x8fdc8a, 30); } });
+  if (lighthouse && lighthouse.visible) { const nb = Math.min(1, Math.max(0, (hour() - 18.5) / 1.5)); lighthouse.userData.pivot.rotation.y = now * .8; lighthouse.userData.beam.material.opacity = .04 + nb * .14; }
   animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt); updatePet(dt, now);
   { const sp = player.position.distanceTo(lastPP) / Math.max(dt, .001); lastPP.copy(player.position); const sc = player.userData.inner?.userData.scarf;
     if (sc) { let seg = sc, i = 0; while (seg && seg.children.length) { const k = Math.min(1, sp / 4); seg.rotation.x = -.15 - k * (.35 + i * .12) + Math.sin(now * (6 + i) + i) * (.06 + k * .12); seg = seg.children.find(c => c.isGroup); i++; } } }
@@ -4157,7 +4160,7 @@ function testerCodeCard() {
 function missionList() { return MISSIONS.filter(m => !m.feature || featureOn(m.feature)); }
 var reactQueue = [];
 function missionCheck() {
-  if (!S.founder || VISIT) return; S.missions = S.missions || {};
+  if (!founderOn() || paused('missions') || VISIT) return; S.missions = S.missions || {};
   missionList().forEach(m => { if (!S.missions[m.id] && m.done(S)) { S.missions[m.id] = S.day; S.coins += 50; save(); setTimeout(() => { toast(`✦ Mission done: ${m.title}! +50 coins`); chime(988); }, 600); reactQueue.push(m); } });
   if (reactQueue.length && !$('veil').classList.contains('show') && !$('dialog').classList.contains('show') && !cine) { const m = reactQueue.shift(); setTimeout(() => askReaction(m), 2200); }
 }
@@ -4200,12 +4203,12 @@ async function openTownHall() {
   const res = await api(`/polls?key=${S.syncKey}`); if (!$('card')) return;
   if (!res.ok) { showCard(`<div class="kicker">TOWN HALL</div><h2>The Town Hall is closed</h2><p>Could not reach the town board. Check your internet and try again.</p>`, 'Close'); return; }
   if (!res.polls.length) { showCard(`<div class="kicker">TOWN HALL</div><h2>No vote right now</h2><p>Check back soon. When there is a new question, everyone gets one vote.</p>`, 'Close'); return; }
-  const p = res.polls[0], total = p.counts.reduce((a, b) => a + b, 0) || 1, voted = p.mine != null;
-  showCard(`<div class="kicker">TOWN HALL</div><h2>${esc(p.question)}</h2><p>${voted ? 'Thanks for voting! Here is how everyone voted so far.' : 'Everyone gets one vote. Tap your choice.'}</p>
-    <div class="jlist">${p.options.map((o, i) => voted ? `<div class="pollrow ${p.mine === i ? 'mine' : ''}"><span>${esc(o)}${p.mine === i ? ' (your vote)' : ''}</span><i style="width:${Math.round(p.counts[i] / total * 100)}%"></i><b>${p.counts[i]}</b></div>`
-      : `<button data-vote="${i}">${esc(o)}</button>`).join('')}</div>`, 'Close');
-  document.querySelectorAll('[data-vote]').forEach(b => b.onclick = async () => { const r = await api('/vote', { key:S.syncKey, poll:p.id, choice:+b.dataset.vote });
-    if (r.ok || r.status === 409) { sfx('heart'); helperGrow(); openTownHall(); } else toast('Could not send your vote. Try again.'); });
+  const label = a => a === 'keepers' ? "✦ KEEPERS' COUNCIL" : a === 'elders' ? '✦ ELDERS\' COUNCIL' : 'EVERYONE VOTES';
+  showCard(`<div class="kicker">TOWN HALL</div><h2>Your voice</h2>${res.polls.map(p => { const total = p.counts.reduce((a, b) => a + b, 0) || 1, voted = p.mine != null;
+    return `<h4>${label(p.audience)}</h4><p><b>${esc(p.question)}</b></p><div class="jlist">${p.options.map((o, i) => voted ? `<div class="pollrow ${p.mine === i ? 'mine' : ''}"><span>${esc(o)}${p.mine === i ? ' (your vote)' : ''}</span><i style="width:${Math.round(p.counts[i] / total * 100)}%"></i><b>${p.counts[i]}</b></div>`
+      : `<button data-vote="${p.id}:${i}" data-aud="${p.audience}">${esc(o)}</button>`).join('')}</div>`; }).join('')}`, 'Close');
+  document.querySelectorAll('[data-vote]').forEach(b => b.onclick = async () => { const [pid, ch] = b.dataset.vote.split(':').map(Number), r = await api('/vote', { key:S.syncKey, poll:pid, choice:ch });
+    if (r.ok || r.status === 409) { sfx('heart'); helperGrow(); if (b.dataset.aud !== 'all') { kp().voted = true; save(); } openTownHall(); } else if (r.error !== 'test island') toast(r.status === 403 ? 'Your vote is paused right now.' : 'Could not send your vote. Try again.'); });
 }
 // --- the Helper Tree: grows once a day when you help make Sky Garden better. Honest notes count the same as nice ones. ---
 const helperTree = new THREE.Group(); helperTree.position.set(2.6, 0, -3.9); scene.add(helperTree); lateClicks.push(helperTree);
@@ -4304,7 +4307,7 @@ const balloon = makeBalloon(); balloon.position.set(3.1, 0, -6.5); scene.add(bal
 function drawBalloon() { balloon.visible = !!S.founderBalloon && !VISIT; }
 drawBalloon();
 function balloonMenu() {
-  const D = [['home','Home island', true], ['orchard','Orchard Isle', S.bridge], ['windmill','Windmill Isle', S.bridge2], ['night','Night Isle', S.q4 >= 1], ['heart','The Old Heart', S.q5 >= 1]].filter(d => d[2]);
+  const D = [['home','Home island', true], ['orchard','Orchard Isle', S.bridge], ['windmill','Windmill Isle', S.bridge2], ['night','Night Isle', S.q4 >= 1], ['heart','The Old Heart', S.q5 >= 1], ['lighthouse','Lighthouse Rock', keeperLevel() >= 2]].filter(d => d[2]);
   showCard(`<div class="kicker">✦ FOUNDER BALLOON</div><h2>Where to?</h2><p>Your balloon flies you to any island you have opened.</p>
     <div class="jlist">${D.map(([k, n]) => `<button data-fly="${k}">🎈 ${n}</button>`).join('')}</div>`, 'Not now');
   document.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { hideCard(); balloonTo(b.dataset.fly); });
@@ -4317,7 +4320,7 @@ async function balloonTo(where) {
   let t0 = performance.now(); const lift = () => { const k = (performance.now() - t0) / 3000; fly.position.y = start.y + Math.pow(Math.min(1, k), 1.6) * 9; fly.rotation.y += .004; ride(); if (k < 1.2 && fly.parent) requestAnimationFrame(lift); }; lift();
   await shot(3, camera.position.clone(), start.clone().add(V(6, 4, 8)), start.clone().setY(start.y + 1.5), start.clone().setY(start.y + 8));
   await fadeTo(true, false);
-  const dest = { home:V(2.2, 0, -5.6), orchard:V(ORCH_POS.x + 1, ORCH_POS.y, ORCH_POS.z + 1.5), windmill:V(WIND_POS.x, WIND_POS.y, WIND_POS.z + 2.5), night:V(NIGHT_POS.x, NIGHT_POS.y, NIGHT_POS.z + 2), heart:V(OH.x + 7.2, OH.y, OH.z + .8) }[where];
+  const dest = { home:V(2.2, 0, -5.6), orchard:V(ORCH_POS.x + 1, ORCH_POS.y, ORCH_POS.z + 1.5), windmill:V(WIND_POS.x, WIND_POS.y, WIND_POS.z + 2.5), night:V(NIGHT_POS.x, NIGHT_POS.y, NIGHT_POS.z + 2), heart:V(OH.x + 7.2, OH.y, OH.z + .8), lighthouse:V(LH.x - .2, LH.y, LH.z + 2) }[where];
   S.where = 'home'; fly.position.copy(dest).setY(dest.y + 8); ride(); save();
   camera.position.copy(dest.clone().add(V(6, 5, 8))); cine = { t:0, dur:.01, p0:camera.position.clone(), p1:camera.position.clone(), l0:dest.clone().setY(dest.y + 5), l1:dest.clone().setY(dest.y + 5), res:() => {} };
   await wait(300); await fadeTo(false, false);
@@ -4337,7 +4340,7 @@ function switchIsland() {
   if (has) return go();
   showCard(`<div class="kicker">🧪 TEST ISLAND</div><h2>Your test island</h2><p>A separate island just for trying things. Skip days, get coins and materials, and try new things right away. Nothing you do there changes your real island.</p>
     <p style="margin-top:8px">How should it start?</p><button id="tFresh">Start fresh</button> <button id="tCopy" class="ghost">Copy my island</button>`, 'Not now');
-  const founderBits = () => ({ founder:S.founder, founderBalloon:S.founderBalloon, pet:S.pet, missions:S.missions, look:S.look, birthday:S.birthday, name:S.name });
+  const founderBits = () => ({ trust:S.trust, founder:S.founder, founderBalloon:S.founderBalloon, pet:S.pet, missions:S.missions, look:S.look, birthday:S.birthday, name:S.name });
   $('tFresh').onclick = () => { try { localStorage.setItem('sg.save.test', JSON.stringify(founderBits())); } catch {} go(); };
   $('tCopy').onclick = () => { const copy = JSON.parse(JSON.stringify(S)); copy.syncKey = undefined; try { localStorage.setItem('sg.save.test', JSON.stringify(copy)); } catch {} go(); };
 }
@@ -4364,6 +4367,119 @@ function testerTools() {
       $('tReset').onclick = () => { try { localStorage.setItem('sg.save.test', JSON.stringify({ founder:S.founder, founderBalloon:S.founderBalloon, pet:S.pet, look:S.look, birthday:S.birthday, name:S.name })); } catch {} location.reload(); }; return; }
     save(); drawHud(); });
 }
+// ============ THE KEEPERS' PATH ============
+// trust comes from the server: 1 founder, 2 keeper, 3 elder keeper. The creator can change or pause it anytime.
+function founderOn() { return !!S.founder && !(S.trust && S.trust.revoked); }
+function paused(p) { return !!(S.trust && (S.trust.paused || []).includes(p)); }
+function keeperLevel() { if (devOn()) return 3; return founderOn() && featureOn('keepers') ? (S.trust && S.trust.level) || 1 : 0; }
+async function syncTrust() { if (VISIT || TESTSLOT || !S.syncKey) return;
+  try { const r = await (await fetch(`${CLOUD}/me?key=${S.syncKey}`)).json(); if (r && 'level' in r) { S.trust = { level:r.level, paused:r.paused || [], revoked:!!r.revoked }; save(); drawHud(); drawKeepers(); } } catch {}
+  try { const w = await (await fetch(`${CLOUD}/world`)).json(); if (w && w.world) { S.world = w.world; save(); drawWorld(); } } catch {} }
+addEventListener('sg-playing', () => setTimeout(syncTrust, 2500));
+function logKeeper(kind, detail) { if (!TESTSLOT && !VISIT) fetch(`${CLOUD}/event`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ key:S.syncKey, kind, detail }) }).catch(() => {}); }
+// Lighthouse Rock: a little island only keepers can see. Reach it by balloon.
+const LH = new THREE.Vector3(-15, -1.2, -11);
+const LHI = island(3.4, LH.x, LH.y, LH.z, { hidden:true }); LHI.g.visible = false;
+var lighthouse = new THREE.Group(); lighthouse.position.set(LH.x + .9, LH.y, LH.z - .7); scene.add(lighthouse);
+{ for (let i = 0; i < 5; i++) lighthouse.add(mesh(new THREE.CylinderGeometry(.62 - i*.07, .66 - i*.07, .62, 20), mat(i % 2 ? 0xd2334c : 0xfff6e6), 0, .31 + i*.62, 0));
+  lighthouse.add(mesh(new THREE.CylinderGeometry(.55,.55,.08,20), mat(0x3b2f4a), 0, 3.14, 0)); lighthouse.add(mesh(new THREE.CylinderGeometry(.3,.3,.5,12), glow(0xfff3a0), 0, 3.42, 0));
+  lighthouse.add(mesh(new THREE.ConeGeometry(.42,.45,16), mat(0xd2334c), 0, 3.9, 0));
+  const beam = new THREE.Mesh(new THREE.ConeGeometry(1.4, 9, 20, 1, true), new THREE.MeshBasicMaterial({ color:0xfff3a0, transparent:true, opacity:.12, side:THREE.DoubleSide, depthWrite:false }));
+  beam.rotation.z = Math.PI/2; beam.position.set(4.5, 0, 0); const pivot = new THREE.Group(); pivot.position.y = 3.42; pivot.add(beam); lighthouse.add(pivot); lighthouse.userData.pivot = pivot; lighthouse.userData.beam = beam; }
+const wren = critter({ body:0x9b7b5a, belly:0xf3e2c4, beak:0xd9a441, outfit:{ style:'coat', color:0x2d3a6b, trim:0xffc857, acc:'scarf' } }); wren.scale.setScalar(.8);
+wren.position.set(LH.x - 1, LH.y, LH.z + .7); wren.userData = { ...wren.userData, kind:'deco', use:() => openKeeper() }; wren.rotation.y = .6;
+const keeperGroup = new THREE.Group(); scene.add(keeperGroup); lateClicks.push(keeperGroup, wren, LHI.g);
+const SAPLING_SPOTS = [[1.9, 1.2], [-1.6, 1.9], [.2, -2.2]];
+const EDGE_STONES = [[5.4, 5.3], [-5.5, 5.2], [-5.4, -5.5], [5.4, -5.2]];
+function kp() { S.kp = S.kp || { done:[], stones:[], planted:[], secret:0 }; return S.kp; }
+function currentTrial() { const lvl = keeperLevel(); return TRIALS.find(t => t.level <= lvl && !kp().done.includes(t.id)) || null; }
+function drawKeepers() {
+  keeperGroup.children.slice().forEach(c => keeperGroup.remove(c));
+  const on = keeperLevel() >= 2 && !VISIT;
+  LHI.g.visible = lighthouse.visible = wren.visible = on;
+  if (on && !walkables.includes(LHI.top)) walkables.push(LHI.top); if (!on && walkables.includes(LHI.top)) walkables.splice(walkables.indexOf(LHI.top), 1);
+  if (!on) return; const k = kp(), t = currentTrial();
+  // the marker stones for the Trial of the Map
+  if (t && t.id === 'map') EDGE_STONES.forEach(([x, z], i) => { if (k.stones.includes(i)) return; const g = new THREE.Group(); g.position.set(x, 0, z);
+    const st = mesh(new THREE.CylinderGeometry(.18, .26, .9, 6), mat(0xb3aabb), 0, .45, 0); g.add(st); g.add(mesh(new THREE.OctahedronGeometry(.1), glow(0x9fe7e0), 0, 1.05, 0)); const h = halo(0x9fe7e0, 1.6, .5); h.position.y = .9; g.add(h);
+    const hb = hitBox(.8, 1.4, .8); hb.position.y = .6; g.add(hb); g.userData = { kind:'deco', use:() => { k.stones.push(i); save(); sfx('ting'); burst(g.position.clone().setY(1), 0x9fe7e0, 14); drawKeepers();
+      toast(k.stones.length < 4 ? `Marker stone ${k.stones.length} of 4 charted.` : 'All 4 marker stones charted! Fly to the lighthouse and tell Wren.'); } }; keeperGroup.add(g); });
+  // saplings in the Keepers' Grove on Lighthouse Rock (they grow one stage for each day you come back)
+  SAPLING_SPOTS.forEach(([x, z], i) => { const g = new THREE.Group(); g.position.set(LH.x + x, LH.y, LH.z + z); const planted = k.planted[i];
+    if (planted == null) { if (!(t && t.id === 'seeds')) return; g.add(mesh(new THREE.CylinderGeometry(.35, .35, .05, 16), mat(0x7a5236), 0, .03, 0)); const h = halo(0x8fdc8a, 1.2, .5); h.position.y = .3; g.add(h);
+      const hb = hitBox(.8, .8, .8); hb.position.y = .3; g.add(hb); g.userData = { kind:'deco', use:() => { k.planted[i] = playDays(); save(); sfx('plant'); burst(g.position.clone().setY(.5), 0x8fdc8a, 12); drawKeepers();
+        toast(k.planted.filter(p => p != null).length < 3 ? 'Sapling planted. It grows a little each day you come back.' : 'All 3 saplings planted! Talk to Wren.'); } }; }
+    else { const age = Math.min(4, playDays() - planted), sc = .35 + age * .2; g.add(mesh(new THREE.CylinderGeometry(.05*sc, .08*sc, 1*sc, 6), mat(0x9b6b4a), 0, .5*sc, 0)); g.add(mesh(sph(.45*sc), mat(0x5fc377), 0, 1.05*sc, 0)); }
+    keeperGroup.add(g); });
+}
+function reflectCard(t, after) {
+  showCard(`<div class="kicker">${t.name.toUpperCase()}</div><h2>Wisdom</h2><p>${t.wisdom}</p>
+    <h4>A question to sit with</h4><p><i>${t.reflect}</i></p>
+    <textarea id="rfText" rows="3" maxlength="800" placeholder="Write your answer here, just for you (optional)" style="width:100%;margin-top:8px;font:16px inherit;border-radius:12px;border:2px solid var(--line);padding:8px"></textarea>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px"><input type="checkbox" id="rfShare"> Share my answer with the person who made Sky Garden</label>
+    <button id="rfDone">Keep it in my journal</button>`, null);
+  $('rfDone').onclick = () => { const text = $('rfText').value.trim(); S.reflections = S.reflections || {}; if (text) S.reflections[t.id] = { text, day:S.day };
+    if (text && $('rfShare').checked) logKeeper('reflection', `${t.name}: ${text}`); save(); hideCard(); after && after(); };
+}
+function finishTrial(t) { const k = kp(); if (k.done.includes(t.id)) return; k.done.push(t.id); save(); logKeeper('trial', `Finished ${t.name}`);
+  [392,523,659,784,1047].forEach((f,i) => setTimeout(() => chime(f), i*160)); burst(wren.position.clone().setY(1.5), 0xfff3a0, 30);
+  reflectCard(t, () => { drawKeepers(); const next = currentTrial();
+    showCard(`<div class="kicker">${MENTOR.name.toUpperCase()}, ${MENTOR.title.toUpperCase()}</div><h2>${next ? 'Well done, Keeper' : 'You walked the whole path'}</h2><p>${next ? `"You are ready for the next one. Come see me when you can. ${next.name} is waiting."` : keeperLevel() >= 3 ? '"There is nothing more I can teach you. Keep the sky well, Elder."' : '"You have done all a Keeper can do, for now. The last trial is for Elders. Keep being kind. It gets noticed."'}</p>`, 'Okay'); drawHud(); });
+}
+function openKeeper() {
+  const t = currentTrial(), k = kp();
+  if (!t) { showCard(`<div class="kicker">${MENTOR.name.toUpperCase()}, ${MENTOR.title.toUpperCase()}</div><h2>The light is kept</h2><p>"The lamp stays lit because someone climbs those stairs every night. That is all keeping is."</p>
+    ${Object.keys(S.reflections || {}).length ? '<button id="rfJournal" class="ghost">My reflections</button>' : ''}`, 'Okay'); if ($('rfJournal')) $('rfJournal').onclick = keeperJournal; return; }
+  const ready = t.id === 'map' ? k.stones.length >= 4 : t.id === 'seeds' ? k.planted.filter(p => p != null).length >= 3 : t.id === 'voice' ? !!k.voted : t.id === 'unseen' ? k.secret >= 3 : false;
+  const progress = t.id === 'map' ? `${k.stones.length} of 4 stones charted` : t.id === 'seeds' ? `${k.planted.filter(p => p != null).length} of 3 saplings planted` : t.id === 'voice' ? (k.voted ? 'You voted' : 'Not voted yet') : t.id === 'unseen' ? `${k.secret} of 3 secret gifts left` : '';
+  showCard(`<div class="kicker">${MENTOR.name.toUpperCase()}, ${MENTOR.title.toUpperCase()}</div><h2>${t.name}</h2><p>"${t.intro}"</p><h4>Your task</h4><p>${t.task}</p>${progress ? `<p><b>${progress}</b></p>` : ''}
+    <div id="kpAct"></div>${Object.keys(S.reflections || {}).length ? '<button id="rfJournal" class="ghost">My reflections</button>' : ''}`, 'Later');
+  if ($('rfJournal')) $('rfJournal').onclick = keeperJournal;
+  const act = $('kpAct');
+  if (t.id === 'map' && ready) { act.innerHTML = `<h4>Name the village square</h4><input id="kpName" maxlength="24" placeholder="Like Lantern Square" class="numin" style="width:100%"><p id="kpMsg" style="min-height:20px;font-weight:700"></p><button id="kpSend">Send my name</button>`;
+    $('kpSend').onclick = async () => { const name = $('kpName').value.trim(); if (!name) return; $('kpMsg').textContent = 'Sending...';
+      const r = await api('/propose', { key:S.syncKey, kind:'placename', payload:{ name } });
+      if (r.ok || devOn()) { finishTrial(t); } else $('kpMsg').textContent = r.error === 'not allowed' ? 'That name is not allowed. Try another.' : r.error === 'too many' ? 'You already have ideas waiting for approval.' : 'Could not send it. Try again.'; }; }
+  if (t.id === 'gift') { let d = { type:'fountain', color:0x7ec8e3, color2:0xfff1d6 };
+    const draw = () => { act.innerHTML = `<h4>Choose a landmark</h4><div class="chips">${Object.entries(LANDMARKS).map(([k2, n]) => `<button data-lm="${k2}" class="${d.type === k2 ? '' : 'ghost'}">${n}</button>`).join('')}</div>
+      <h4>Main color</h4><div class="chips">${PALETTE.map(c => `<button class="sw ${d.color === c ? 'on' : ''}" data-lc="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
+      <h4>Trim color</h4><div class="chips">${PALETTE.map(c => `<button class="sw sm ${d.color2 === c ? 'on' : ''}" data-lc2="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
+      <p style="font-size:13px;opacity:.7;margin-top:6px">If it is chosen, it appears in the village for everyone. It goes to Sky Garden's creator first.</p><p id="kpMsg" style="min-height:20px;font-weight:700"></p><button id="kpSend">Send my design</button>`;
+      act.querySelectorAll('[data-lm]').forEach(b => b.onclick = () => { d.type = b.dataset.lm; draw(); }); act.querySelectorAll('[data-lc]').forEach(b => b.onclick = () => { d.color = +b.dataset.lc; draw(); }); act.querySelectorAll('[data-lc2]').forEach(b => b.onclick = () => { d.color2 = +b.dataset.lc2; draw(); });
+      $('kpSend').onclick = async () => { $('kpMsg').textContent = 'Sending...'; const r = await api('/propose', { key:S.syncKey, kind:'landmark', payload:d }); if (r.ok || devOn()) finishTrial(t); else $('kpMsg').textContent = r.error === 'too many' ? 'You already have ideas waiting for approval.' : 'Could not send it. Try again.'; }; };
+    draw(); }
+  if (t.id === 'voice' && !ready) act.innerHTML = '<p>Fly home and tap the Town Hall board. The Keepers\' Council vote is there.</p>';
+  if (t.id === 'unseen' && !ready) { act.innerHTML = '<button id="kpSecret">Leave a secret gift</button>'; $('kpSecret').onclick = secretGift; }
+  if (ready && ['seeds','voice','unseen'].includes(t.id)) { act.innerHTML = '<button id="kpDone">Tell Wren you are done</button>'; $('kpDone').onclick = () => finishTrial(t); }
+}
+function secretGift() {
+  const who = Object.keys(NEIGHBORS).filter(id => npcs[id] && S.talked[id] != null), items = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && !['quest','material'].includes(ITEMS[k].kind));
+  if (!items.length) { toast('Bring something from your bag to give.'); return; }
+  let to = who[0];
+  const draw = () => { showCard(`<div class="kicker">THE TRIAL OF THE UNSEEN</div><h2>A secret gift</h2><p>Pick who, then pick the gift. They will never know it came from you.</p>
+    <div class="chips">${who.map(id => `<button data-sw="${id}" class="${to === id ? '' : 'ghost'}">${NEIGHBORS[id].name}</button>`).join('')}</div>
+    <div class="igrid" style="margin-top:8px">${items.map(([k,n]) => `<button class="itile" data-sg="${k}"><span class="ic">${icon(k, ITEMS[k].kind)}</span><b>${n}</b><small>${esc(ITEMS[k].name)}</small></button>`).join('')}</div>`, 'Cancel', openKeeper);
+    document.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { to = b.dataset.sw; draw(); });
+    document.querySelectorAll('[data-sg]').forEach(b => b.onclick = () => { const k = b.dataset.sg; bagAdd(k, -1); kp().secret++; S.secretFor = { ...(S.secretFor || {}), [to]:k }; if (featureOn('journey')) karma('kind', 1); save(); logKeeper('secretgift', `Secret gift to ${to}`);
+      sfx('heart'); hideCard(); toast(`You left a ${ITEMS[k].name.toLowerCase()} on ${NEIGHBORS[to].name}'s doorstep. No one saw.`); }); };
+  draw();
+}
+function keeperJournal() { const R = S.reflections || {};
+  showCard(`<div class="kicker">MY REFLECTIONS</div><h2>Keeper's journal</h2><p>Your answers, just for you.</p>${TRIALS.filter(t => R[t.id]).map(t => `<h4>${t.name}</h4><p><i>${t.reflect}</i></p><p>${esc(R[t.id].text)}</p>`).join('')}`, 'Back', openKeeper); }
+// approved world changes everyone sees: the village square's name and a landmark, at the Old Heart
+const worldGroup = new THREE.Group(); worldGroup.position.copy(OH); scene.add(worldGroup);
+function landmarkModel(d) { const g = new THREE.Group(), a = mat(d.color), b = mat(d.color2), stone = mat(0xd8cfc0);
+  if (d.type === 'fountain') { g.add(mesh(new THREE.CylinderGeometry(1.1,1.2,.4,24), stone, 0, .2, 0)); g.add(mesh(new THREE.CylinderGeometry(.95,.95,.05,24), glow(0x9fd3ff), 0, .41, 0)); g.add(mesh(new THREE.CylinderGeometry(.15,.2,1.1,12), a, 0, .9, 0)); g.add(mesh(new THREE.CylinderGeometry(.45,.2,.2,16), b, 0, 1.5, 0)); }
+  if (d.type === 'sundial') { g.add(mesh(new THREE.CylinderGeometry(1,1.1,.25,24), stone, 0, .12, 0)); const gn = mesh(new THREE.BoxGeometry(.06,.7,.7), a, 0, .5, 0); gn.rotation.x = .6; g.add(gn); for (let i = 0; i < 12; i++) { const an = i/12*Math.PI*2; g.add(mesh(sph(.06), b, Math.cos(an)*.85, .27, Math.sin(an)*.85)); } }
+  if (d.type === 'belltower') { [-.4,.4].forEach(x => g.add(mesh(new THREE.BoxGeometry(.18,2.4,.18), a, x, 1.2, 0))); g.add(mesh(new THREE.BoxGeometry(1.1,.2,.4), a, 0, 2.45, 0)); const r = mesh(new THREE.ConeGeometry(.75,.6,4), b, 0, 2.85, 0); r.rotation.y = Math.PI/4; g.add(r); g.add(mesh(new THREE.CylinderGeometry(.14,.26,.36,16), mat(0xffc857, { metalness:.5 }), 0, 1.95, 0)); }
+  if (d.type === 'stonecircle') for (let i = 0; i < 7; i++) { const an = i/7*Math.PI*2, st = mesh(new THREE.BoxGeometry(.35,1.1 + (i%3)*.2,.25), i % 2 ? a : b, Math.cos(an)*1.1, .55, Math.sin(an)*1.1); st.rotation.y = -an; g.add(st); }
+  return g; }
+function drawWorld() { worldGroup.children.slice().forEach(c => worldGroup.remove(c)); const W = S.world || {};
+  if (W.landmark) { const lm = landmarkModel(W.landmark); lm.position.set(0, 0, -5.4); worldGroup.add(lm); }
+  if (W.placename) { const c = document.createElement('canvas'); c.width = 512; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#fff1d6'; x.fillRect(0, 0, 512, 128); x.fillStyle = '#3b2f4a'; x.font = 'bold 54px "Baloo 2", sans-serif'; x.textAlign = 'center'; x.fillText(W.placename.name, 256, 82);
+    const sign = new THREE.Group(); sign.position.set(-2.4, 0, 5.3); sign.rotation.y = .3; sign.add(mesh(new THREE.CylinderGeometry(.06,.07,1.6,8), mat(0x9b6b4a), 0, .8, 0));
+    sign.add(new THREE.Mesh(new THREE.PlaneGeometry(1.6, .4), new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(c), side:THREE.DoubleSide }))); sign.children[1].position.y = 1.5; worldGroup.add(sign); } }
+drawKeepers(); drawWorld();
 // --- growing the island ---
 function expandReady(e) { return e.needs === 'home' ? (S.home || 0) >= 3 : e.needs === 'kiln' ? !!S.stations.kiln && potteryOn() : !!S.stations.furnace && bronzeOn(); }
 function expandCard() {
@@ -4488,7 +4604,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }

@@ -20,6 +20,11 @@
 // POST /bug { msg, stack, where, day, player, ver }  -> automatic error reports from the game
 // GET  /polls?key=KEY  and  POST /vote { key, poll, choice }  -> Town Hall voting, one vote per player per poll
 // GET  /admin (Authorization: Bearer SECRET) -> the private dashboard data (needs the ADMIN_TOKEN secret)
+// GET  /me?key=KEY                 -> your founder status and trust level (1 founder, 2 keeper, 3 elder keeper)
+// POST /event { key, kind, detail } -> activity history (missions, trials, shared reflections)
+// POST /propose { key, kind, payload } -> keepers suggest world changes; nothing shows until approved
+// GET  /world                       -> approved world changes everyone sees
+// POST /admin/act (Bearer)          -> set levels, pause privileges, revoke, approve proposals, start council polls
 // POST /report { key, code, listing?, reason } -> report a shop; 3 different reporters hide it until reviewed
 
 const ALLOWED = ['https://tupeloghost.github.io', 'http://localhost:9011'];
@@ -64,6 +69,11 @@ function cleanProduct(p, kid) { if (!p || !BASES.includes(p.base)) return null;
 async function whoAmI(env, key) { const id = await hashKey(key); const row = await env.DB.prepare('SELECT data FROM saves WHERE id = ?').bind(id).first();
   const d = row ? JSON.parse(row.data) : {}; return { id, kid:d.ageBand === 'kid' || !d.birthday || !d.birthday.y, name:d.ageBand === 'kid' ? 'A young gardener' : cleanName(d.name) }; }
 const TESTER_RE = /^SKY-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+async function memberOf(env, key) { if (!KEY_RE.test(key || '')) return null; const id = await hashKey(key);
+  const r = await env.DB.prepare('SELECT code, level, paused, revoked FROM tester_codes WHERE used_by = ?').bind(id).first();
+  return r ? { id, code:r.code, level:r.level, paused:JSON.parse(r.paused || '[]'), revoked:!!r.revoked } : { id, code:null, level:0, paused:[], revoked:false }; }
+async function logEvent(env, m, kind, detail) { try { await env.DB.prepare('INSERT INTO events (at, player, code, kind, detail) VALUES (?1, ?2, ?3, ?4, ?5)').bind(Date.now(), m ? m.id.slice(0, 12) : null, m ? m.code : null, kind, String(detail || '').slice(0, 1000)).run(); } catch {} }
+const audienceOk = (a, lvl) => a === 'all' || (a === 'keepers' && lvl >= 2) || (a === 'elders' && lvl >= 3);
 const listingOut = r => ({ founder:!!r.founder, id:r.id, code:r.code, item:r.item, qty:r.qty, product:r.product ? JSON.parse(r.product) : null, price:r.price, wantItem:r.want_item, wantQty:r.want_qty,
   shop:r.shop || null, logo:r.logo ? JSON.parse(r.logo) : null, created:r.created });
 const cleanName = n => String(n || '').replace(/[^\p{L}\p{N} '._-]/gu, '').trim().slice(0, 16) || 'A friend';
@@ -116,6 +126,7 @@ export default {
       const note = String(b.text || '').slice(0, 2000).trim();
       if (!mood && !note) return json({ error: 'empty' }, 400, origin);
       const player = KEY_RE.test(b.player || '') ? (await hashKey(b.player)).slice(0, 12) : null;
+      { const m = await memberOf(env, b.player); if (m && m.code) await logEvent(env, m, 'feedback', `${mood || ''} ${note.slice(0, 120)}`); }
       await env.DB.prepare('INSERT INTO feedback (at, player, mood, note, place, day) VALUES (?1, ?2, ?3, ?4, ?5, ?6)')
         .bind(Date.now(), player, mood, note, String(b.where || '').slice(0, 200), Number.isFinite(b.day) ? b.day : null).run();
       return json({ ok: true }, 200, origin);
@@ -245,7 +256,7 @@ export default {
       const me = await hashKey(b.key), row = await env.DB.prepare('SELECT used_by FROM tester_codes WHERE code = ?').bind(code).first();
       if (!row) return json({ error: 'not found' }, 404, origin);
       if (row.used_by && row.used_by !== me) return json({ error: 'used' }, 409, origin);
-      if (!row.used_by) await env.DB.prepare('UPDATE tester_codes SET used_by = ?1, used_at = ?2 WHERE code = ?3 AND used_by IS NULL').bind(me, Date.now(), code).run();
+      if (!row.used_by) { await env.DB.prepare('UPDATE tester_codes SET used_by = ?1, used_at = ?2 WHERE code = ?3 AND used_by IS NULL').bind(me, Date.now(), code).run(); await logEvent(env, { id:me, code }, 'joined', 'Used their founder code'); }
       return json({ ok: true, founder: true }, 200, origin);
     }
 
@@ -267,23 +278,27 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/polls') {
       const key = url.searchParams.get('key') || '', me = KEY_RE.test(key) ? await hashKey(key) : null;
-      const { results } = await env.DB.prepare('SELECT * FROM polls WHERE open = 1 ORDER BY created DESC LIMIT 3').all();
+      const mm = KEY_RE.test(key) ? await memberOf(env, key) : null, lvl = mm && !mm.revoked ? mm.level : 0;
+      const { results: rawPolls } = await env.DB.prepare('SELECT * FROM polls WHERE open = 1 ORDER BY created DESC LIMIT 6').all();
+      const results = rawPolls.filter(p => audienceOk(p.audience || 'all', lvl));
       const polls = [];
       for (const p of results) { const opts = JSON.parse(p.options);
         const counts = (await env.DB.prepare('SELECT choice, COUNT(*) AS n FROM votes WHERE poll = ? GROUP BY choice').bind(p.id).all()).results;
         const mine = me ? await env.DB.prepare('SELECT choice FROM votes WHERE poll = ? AND voter = ?').bind(p.id, me).first() : null;
-        polls.push({ id:p.id, question:p.question, options:opts, counts:opts.map((_, i) => (counts.find(c => c.choice === i) || {}).n || 0), mine: mine ? mine.choice : null }); }
+        polls.push({ id:p.id, audience:p.audience || 'all', question:p.question, options:opts, counts:opts.map((_, i) => (counts.find(c => c.choice === i) || {}).n || 0), mine: mine ? mine.choice : null }); }
       return json({ polls }, 200, origin);
     }
 
     if (request.method === 'POST' && url.pathname === '/vote') {
       let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
       if (!KEY_RE.test(b.key || '')) return json({ error: 'bad request' }, 400, origin);
-      const poll = await env.DB.prepare('SELECT options FROM polls WHERE id = ? AND open = 1').bind(int(b.poll, 1, 1e9)).first();
+      const poll = await env.DB.prepare('SELECT options, audience FROM polls WHERE id = ? AND open = 1').bind(int(b.poll, 1, 1e9)).first();
       if (!poll) return json({ error: 'closed' }, 404, origin);
+      { const m = await memberOf(env, b.key); const lvl = m && !m.revoked ? m.level : 0; if (!audienceOk(poll.audience || 'all', lvl) || (m && m.paused.includes('vote'))) return json({ error: 'not allowed' }, 403, origin); }
       const choice = int(b.choice, 0, JSON.parse(poll.options).length - 1); if (choice == null) return json({ error: 'bad choice' }, 400, origin);
       const r = await env.DB.prepare('INSERT OR IGNORE INTO votes (poll, voter, choice, at) VALUES (?1, ?2, ?3, ?4)').bind(b.poll, await hashKey(b.key), choice, Date.now()).run();
       if (!r.meta.changes) return json({ error: 'already voted' }, 409, origin);
+      { const m = await memberOf(env, b.key); if (m && m.code) await logEvent(env, m, 'vote', `Poll ${b.poll}: ${JSON.parse(poll.options)[choice]}`); }
       return json({ ok: true }, 200, origin);
     }
 
@@ -292,11 +307,63 @@ export default {
       const all = async (q, ...a) => (await env.DB.prepare(q).bind(...a).all()).results;
       const players = await all(`SELECT id, created, updated, json_extract(data,'$.name') AS name, json_extract(data,'$.quest') AS q1, json_extract(data,'$.q2') AS q2, json_extract(data,'$.q3') AS q3, json_extract(data,'$.q4') AS q4, json_extract(data,'$.q5') AS q5,
         json_extract(data,'$.day') AS day, json_extract(data,'$.home') AS home, json_extract(data,'$.founder.code') AS founder, json_extract(data,'$.missions') AS missions, json_array_length(json_extract(data,'$.playDates')) AS playdays FROM saves ORDER BY updated DESC LIMIT 200`);
-      const founders = await all('SELECT t.code, t.label, t.used_at, json_extract(s.data,\'$.name\') AS name FROM tester_codes t LEFT JOIN saves s ON s.id = t.used_by ORDER BY t.created');
+      const founders = await all('SELECT t.code, t.label, t.used_at, t.level, t.paused, t.revoked, json_extract(s.data,\'$.name\') AS name FROM tester_codes t LEFT JOIN saves s ON s.id = t.used_by ORDER BY t.created');
       const feedback = await all('SELECT at, player, mood, note, place, day FROM feedback ORDER BY at DESC LIMIT 60');
       const bugs = await all('SELECT msg, COUNT(*) AS n, MAX(at) AS last, MAX(place) AS place, MAX(stack) AS stack FROM bugs GROUP BY msg ORDER BY last DESC LIMIT 40');
-      const polls = await all('SELECT p.id, p.question, p.options, p.open, (SELECT json_group_array(json_object(\'c\', choice, \'n\', n)) FROM (SELECT choice, COUNT(*) AS n FROM votes v WHERE v.poll = p.id GROUP BY choice)) AS counts FROM polls p ORDER BY p.created DESC LIMIT 10');
-      return json({ now:Date.now(), players:players.map(p => ({ ...p, id:p.id.slice(0, 12) })), founders, feedback, bugs, polls }, 200, origin);
+      const polls = await all('SELECT p.id, p.question, p.options, p.open, p.audience, (SELECT json_group_array(json_object(\'c\', choice, \'n\', n)) FROM (SELECT choice, COUNT(*) AS n FROM votes v WHERE v.poll = p.id GROUP BY choice)) AS counts FROM polls p ORDER BY p.created DESC LIMIT 10');
+      const events = await all('SELECT at, code, kind, detail FROM events ORDER BY at DESC LIMIT 300');
+      const proposals = await all('SELECT id, code, kind, payload, status, created, decided FROM proposals ORDER BY created DESC LIMIT 80');
+      return json({ now:Date.now(), events, proposals, players:players.map(p => ({ ...p, id:p.id.slice(0, 12) })), founders, feedback, bugs, polls }, 200, origin);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/me') {
+      const m = await memberOf(env, url.searchParams.get('key') || ''); if (!m) return json({ error: 'bad key' }, 400, origin);
+      return json({ founder: !!m.code && !m.revoked, level: m.revoked ? 0 : m.level, paused: m.paused, revoked: m.revoked }, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/event') {
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      const kinds = ['mission','trial','reflection','keeperstep','secretgift'];
+      if (!kinds.includes(b.kind)) return json({ error: 'bad kind' }, 400, origin);
+      const m = await memberOf(env, b.key); if (!m || !m.code) return json({ error: 'not a founder' }, 403, origin);
+      await logEvent(env, m, b.kind, String(b.detail || '').slice(0, 1000)); return json({ ok: true }, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/propose') {
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      const m = await memberOf(env, b.key); if (!m || !m.code || m.revoked || m.level < 2) return json({ error: 'not a keeper' }, 403, origin);
+      if (m.paused.includes('propose')) return json({ error: 'paused' }, 403, origin);
+      const kind = ['placename','landmark'].includes(b.kind) ? b.kind : null; if (!kind) return json({ error: 'bad kind' }, 400, origin);
+      let payload = {};
+      if (kind === 'placename') { const name = cleanText(b.payload && b.payload.name, 24); if (!name || badName(name)) return json({ error: 'not allowed' }, 400, origin); payload = { name }; }
+      if (kind === 'landmark') { const t = ['fountain','sundial','belltower','stonecircle'].includes(b.payload && b.payload.type) ? b.payload.type : null; if (!t) return json({ error: 'bad landmark' }, 400, origin);
+        payload = { type:t, color:int(b.payload.color, 0, 0xffffff) ?? 0xffc857, color2:int(b.payload.color2, 0, 0xffffff) ?? 0xffffff }; }
+      const open = await env.DB.prepare("SELECT COUNT(*) AS n FROM proposals WHERE code = ? AND status = 'pending'").bind(m.code).first();
+      if (open.n >= 3) return json({ error: 'too many' }, 409, origin);
+      await env.DB.prepare('INSERT INTO proposals (code, kind, payload, created) VALUES (?1, ?2, ?3, ?4)').bind(m.code, kind, JSON.stringify(payload), Date.now()).run();
+      await logEvent(env, m, 'propose', `${kind}: ${JSON.stringify(payload)}`); return json({ ok: true }, 200, origin);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/world') {
+      const { results } = await env.DB.prepare("SELECT kind, payload FROM proposals WHERE status = 'approved' ORDER BY decided DESC").all();
+      const world = {}; results.forEach(r => { if (!world[r.kind]) world[r.kind] = JSON.parse(r.payload); });
+      return json({ world }, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/admin/act') {
+      if (!env.ADMIN_TOKEN || (request.headers.get('Authorization') || '') !== 'Bearer ' + env.ADMIN_TOKEN) return json({ error: 'no' }, 403, origin);
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      const code = String(b.code || '');
+      if (b.action === 'level') await env.DB.prepare('UPDATE tester_codes SET level = ? WHERE code = ?').bind(int(b.value, 1, 3) || 1, code).run();
+      else if (b.action === 'paused') await env.DB.prepare('UPDATE tester_codes SET paused = ? WHERE code = ?').bind(JSON.stringify((b.value || []).filter(x => ['propose','vote','missions','testisland'].includes(x))), code).run();
+      else if (b.action === 'revoke') await env.DB.prepare('UPDATE tester_codes SET revoked = ? WHERE code = ?').bind(b.value ? 1 : 0, code).run();
+      else if (b.action === 'decide') await env.DB.prepare('UPDATE proposals SET status = ?, decided = ? WHERE id = ?').bind(b.value === 'approved' ? 'approved' : 'rejected', Date.now(), int(b.id, 1, 1e9)).run();
+      else if (b.action === 'poll') { const opts = (b.options || []).map(o => cleanText(o, 80)).filter(Boolean).slice(0, 6); const aud = ['all','keepers','elders'].includes(b.audience) ? b.audience : 'all';
+        if (!b.question || opts.length < 2) return json({ error: 'need a question and 2 options' }, 400, origin);
+        await env.DB.prepare('UPDATE polls SET open = 0 WHERE audience = ?').bind(aud).run();
+        await env.DB.prepare('INSERT INTO polls (question, options, audience, created) VALUES (?1, ?2, ?3, ?4)').bind(cleanText(b.question, 120), JSON.stringify(opts), aud, Date.now()).run(); }
+      else return json({ error: 'bad action' }, 400, origin);
+      return json({ ok: true }, 200, origin);
     }
 
     if (request.method === 'POST' && url.pathname === '/report') {
@@ -304,6 +371,7 @@ export default {
       const code = String(b.code || '').toUpperCase(), reason = ['rude','personal','other'].includes(b.reason) ? b.reason : 'other';
       if (!KEY_RE.test(b.key || '') || !CODE_RE.test(code)) return json({ error: 'bad request' }, 400, origin);
       const me = await hashKey(b.key); if (friendCode(me) === code) return json({ error: 'that is you' }, 400, origin);
+      { const m = await memberOf(env, b.key); if (m && m.code) await logEvent(env, m, 'report', `Reported ${code}: ${reason}`); }
       await env.DB.prepare('INSERT OR IGNORE INTO reports (reporter, code, listing, reason, at) VALUES (?1, ?2, ?3, ?4, ?5)').bind(me, code, int(b.listing, 1, 1e12), reason, Date.now()).run();
       const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM reports WHERE code = ? AND reviewed = 0').bind(code).first();
       if (n.n >= 3) await env.DB.prepare('UPDATE brands SET hidden = 1 WHERE code = ?').bind(code).run(); // paused until a person reviews it

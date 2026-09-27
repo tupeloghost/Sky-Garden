@@ -29,6 +29,9 @@
   button { font:inherit; font-weight:800; border:0; background:var(--gold); color:var(--ink); border-radius:999px; padding:8px 20px; margin-top:12px; cursor:pointer; box-shadow:0 4px 0 var(--gold-deep); }
   button.ghost { background:var(--surface); box-shadow:0 4px 0 #cdbda6; }
   pre { white-space:pre-wrap; font-size:11px; opacity:.7; margin:4px 0 0; max-height:90px; overflow:auto; }
+  .prop { background:var(--surface); border-radius:14px; padding:10px 12px; margin-top:8px; } .prop button { margin-top:6px; } .pv { margin:6px 0; }
+  .sw { display:inline-block; width:18px; height:18px; border-radius:50%; vertical-align:middle; margin-left:4px; border:2px solid #fff; }
+  .pz { display:block; font-size:13px; white-space:nowrap; } .pz input { width:auto; margin:0 4px 0 0; } select { font:inherit; border-radius:10px; border:2px solid var(--line); padding:4px 6px; }
   .row { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
 </style>
 </head>
@@ -55,6 +58,17 @@ async function load() {
   const P = d.players, week = Date.now() - 7 * 864e5, back = P.filter(p => (p.playdays || 0) > 1).length, fJoined = d.founders.filter(f => f.used_at).length;
   const moods = {}; d.feedback.forEach(f => { if (f.mood) moods[f.mood] = (moods[f.mood] || 0) + 1; });
   const missions = {}; d.feedback.filter(f => (f.place || '').startsWith('Mission:')).forEach(f => { const k = f.place.slice(9); missions[k] = missions[k] || {}; missions[k][f.mood] = (missions[k][f.mood] || 0) + 1; });
+  const who = code => (d.founders.find(f => f.code === code) || {}).label || code || 'someone';
+  const pending = d.proposals.filter(p => p.status === 'pending'), decided = d.proposals.filter(p => p.status !== 'pending').slice(0, 20);
+  const weekAgo = Date.now() - 7 * 864e5, heads = [];
+  d.founders.forEach(f => { const ev = d.events.filter(e => e.code === f.code && e.at > weekAgo), n = k => ev.filter(e => e.kind === k).length;
+    if (n('report') >= 3) heads.push(`${esc(f.label)} reported ${n('report')} shops this week.`);
+    if (n('feedback') >= 20) heads.push(`${esc(f.label)} sent ${n('feedback')} feedback notes this week, much more than usual.`);
+    if (n('propose') >= 5) heads.push(`${esc(f.label)} made ${n('propose')} suggestions this week.`);
+    if (d.proposals.filter(p => p.code === f.code && p.status === 'rejected').length >= 3) heads.push(`You have said no to ${esc(f.label)}'s suggestions 3 or more times.`); });
+  const histHtml = ev => ev.length ? `<table><tr><th>When</th><th>Who</th><th>What</th><th>Details</th></tr>${ev.slice(0, 150).map(e => `<tr><td>${ago(e.at)}</td><td>${esc(who(e.code))}</td><td><span class="chip">${esc(e.kind)}</span></td><td>${esc(e.detail)}</td></tr>`).join('')}</table>` : '<p class="empty">Nothing yet.</p>';
+  const LMN = { fountain:'Fountain', sundial:'Sundial garden', belltower:'Bell tower', stonecircle:'Standing stones' };
+  const landmarkPreview = l => `<b style="font-size:18px">${esc(LMN[l.type] || l.type)}</b> <span class="sw" style="background:#${(l.color >>> 0).toString(16).padStart(6,'0')}"></span><span class="sw" style="background:#${(l.color2 >>> 0).toString(16).padStart(6,'0')}"></span>`;
   const stops = {}; P.forEach(p => { const c = chapter(p).replace(/, step.*/, ''); stops[c] = (stops[c] || 0) + 1; });
   app.innerHTML = `
     <div class="row"><div><h1>Sky Garden</h1><p class="sub">Updated ${new Date(d.now).toLocaleString()}</p></div><div><button id="re">Refresh</button> <button id="out" class="ghost">Lock</button></div></div>
@@ -67,7 +81,27 @@ async function load() {
       <div class="tile"><b>${d.feedback.length}</b><span>recent feedback notes</span></div>
     </div>
 
-    <div class="card"><h2>Founding Gardeners</h2>${d.founders.length ? `<table><tr><th>For</th><th>Code</th><th>Status</th><th>Name in game</th></tr>${d.founders.map(f => `<tr><td>${esc(f.label)}</td><td>${esc(f.code)}</td><td>${f.used_at ? 'Joined ' + ago(f.used_at) : 'Not used yet'}</td><td>${esc(f.name || '')}</td></tr>`).join('')}</table>` : '<p class="empty">No tester codes yet.</p>'}</div>
+    ${heads.length ? `<div class="card" style="border:3px solid var(--bad)"><h2>Heads-up</h2>${heads.map(h => `<p>⚠️ ${h}</p>`).join('')}</div>` : ''}
+
+    <div class="card"><h2>Waiting for your approval</h2>${pending.length ? pending.map(p => `<div class="prop"><div><span class="chip">${p.kind === 'placename' ? 'Place name' : 'Landmark'}</span> from ${esc(who(p.code))} · ${ago(p.created)}</div>
+      <div class="pv">${p.kind === 'placename' ? `<b style="font-size:20px">${esc(JSON.parse(p.payload).name)}</b> <span class="sub">(for the village square)</span>` : landmarkPreview(JSON.parse(p.payload))}</div>
+      <div><button data-dec="${p.id}:approved">Approve</button> <button class="ghost" data-dec="${p.id}:rejected">Say no</button></div></div>`).join('') : '<p class="empty">Nothing waiting. When Keepers suggest something, it shows up here first.</p>'}
+      ${decided.length ? `<details style="margin-top:10px"><summary>Past decisions</summary>${decided.map(p => `<p><span class="chip ${p.status === 'approved' ? 'love' : 'confused'}">${p.status}</span> ${p.kind === 'placename' ? esc(JSON.parse(p.payload).name) : 'Landmark: ' + esc(LMN[JSON.parse(p.payload).type] || JSON.parse(p.payload).type)} · ${esc(who(p.code))}</p>`).join('')}</details>` : ''}</div>
+
+    <div class="card"><h2>Founders and Keepers</h2><p class="sub">Change anyone's level, pause a privilege, or switch someone off. Changes apply the next time they open the game.</p>
+      ${d.founders.length ? `<table><tr><th>For</th><th>Status</th><th>Level</th><th>Paused</th><th></th></tr>${d.founders.map(f => { const pz = JSON.parse(f.paused || '[]');
+        return `<tr><td><b>${esc(f.label)}</b><br><span class="sub">${esc(f.code)}${f.name ? ' · ' + esc(f.name) : ''}</span></td><td>${f.revoked ? '<span class="chip confused">switched off</span>' : f.used_at ? 'Joined ' + ago(f.used_at) : 'Not used yet'}</td>
+        <td><select data-lvl="${f.code}">${[[1,'Founder'],[2,'Keeper'],[3,'Elder Keeper']].map(([v, n]) => `<option value="${v}" ${f.level === v ? 'selected' : ''}>${n}</option>`).join('')}</select></td>
+        <td>${[['propose','Suggestions'],['vote','Voting'],['missions','Missions'],['testisland','Test island']].map(([k, n]) => `<label class="pz"><input type="checkbox" data-pz="${f.code}" value="${k}" ${pz.includes(k) ? 'checked' : ''}> ${n}</label>`).join('')}</td>
+        <td><button class="ghost" data-hist="${f.code}">History</button> <button class="ghost" data-rev="${f.code}:${f.revoked ? 0 : 1}">${f.revoked ? 'Switch back on' : 'Switch off'}</button></td></tr>`; }).join('')}</table>` : '<p class="empty">No tester codes yet.</p>'}</div>
+
+    <div class="card" id="histCard"><h2>Activity history</h2><p class="sub" id="histFor">Everyone, newest first. Tap History next to a person to see just theirs.</p><div id="hist">${histHtml(d.events)}</div></div>
+
+    <div class="card"><h2>Start a council vote</h2><p class="sub">Starting a new vote closes the old one for the same group.</p>
+      <input id="pq" placeholder="Question, like: Which traveler should move into the village next?">
+      <textarea id="po" rows="4" placeholder="One choice per line" style="width:100%;font:inherit;font-size:16px;border-radius:12px;border:2px solid var(--line);padding:8px 12px;margin-top:10px"></textarea>
+      <select id="pa" style="margin-top:10px"><option value="all">Everyone votes</option><option value="keepers">Keepers' Council (Keepers and Elders)</option><option value="elders">Elders' Council (Elders only)</option></select>
+      <button id="pgo">Start the vote</button> <span id="pmsg" class="sub"></span></div>
 
     <div class="card"><h2>Where players are in the story</h2>${Object.entries(stops).map(([c, n]) => `<div style="margin-top:6px"><b>${c}</b>: ${n}<div class="bar"><i style="width:${Math.round(n / P.length * 100)}%"></i></div></div>`).join('') || '<p class="empty">No players yet.</p>'}</div>
 
@@ -81,6 +115,15 @@ async function load() {
 
     <div class="card"><h2>Town Hall votes</h2>${d.polls.length ? d.polls.map(p => { const opts = JSON.parse(p.options), counts = JSON.parse(p.counts || '[]'), total = counts.reduce((a, c) => a + c.n, 0) || 1;
       return `<p><b>${esc(p.question)}</b> ${p.open ? '<span class="chip love">open</span>' : '<span class="chip">closed</span>'}</p>${opts.map((o, i) => { const n = (counts.find(c => c.c === i) || {}).n || 0; return `<div style="margin-top:4px">${esc(o)}: ${n}<div class="bar"><i style="width:${Math.round(n / total * 100)}%"></i></div></div>`; }).join('')}`; }).join('<hr>') : '<p class="empty">No votes yet.</p>'}</div>`;
+  const act = async body => { const r = await fetch(`${API}/admin/act`, { method:'POST', headers:{ Authorization:'Bearer ' + token, 'Content-Type':'application/json' }, body:JSON.stringify(body) }); return r.ok; };
+  document.querySelectorAll('[data-dec]').forEach(b => b.onclick = async () => { const [id, v] = b.dataset.dec.split(':'); b.disabled = true; if (await act({ action:'decide', id:+id, value:v })) load(); });
+  document.querySelectorAll('[data-lvl]').forEach(s => s.onchange = async () => { await act({ action:'level', code:s.dataset.lvl, value:+s.value }); load(); });
+  document.querySelectorAll('[data-pz]').forEach(c => c.onchange = async () => { const code = c.dataset.pz, vals = [...document.querySelectorAll(`[data-pz="${code}"]:checked`)].map(x => x.value); await act({ action:'paused', code, value:vals }); });
+  document.querySelectorAll('[data-rev]').forEach(b => b.onclick = async () => { const [code, v] = b.dataset.rev.split(':'); if (v === '1' && !confirm('Switch off this person\'s founder extras? You can switch them back on anytime.')) return; await act({ action:'revoke', code, value:v === '1' }); load(); });
+  document.querySelectorAll('[data-hist]').forEach(b => b.onclick = () => { const code = b.dataset.hist; document.getElementById('hist').innerHTML = histHtml(d.events.filter(e => e.code === code)); document.getElementById('histFor').textContent = 'Showing ' + who(code) + ' only.'; document.getElementById('histCard').scrollIntoView({ behavior:'smooth' }); });
+  document.getElementById('pgo').onclick = async () => { const q = document.getElementById('pq').value.trim(), o = document.getElementById('po').value.split('\n').map(x => x.trim()).filter(Boolean), a = document.getElementById('pa').value;
+    if (!q || o.length < 2) { document.getElementById('pmsg').textContent = 'Add a question and at least 2 choices.'; return; }
+    if (await act({ action:'poll', question:q, options:o, audience:a })) load(); else document.getElementById('pmsg').textContent = 'Could not start the vote.'; };
   document.getElementById('re').onclick = load;
   document.getElementById('out').onclick = () => { token = ''; try { localStorage.removeItem('sg.admin'); } catch {} lock(); };
 }
