@@ -3,94 +3,74 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sky Garden Founders</title>
+<title>Sky Garden Invitation</title>
+<meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --ink:#3b2f4a; --card:#fff8ee; --accent:#ff8fa3; --gold:#ffc857; --gold-deep:#d99a2b; --surface:#f3e8d8; --line:#e4d6c2; --violet:#c9b6ff; }
+  :root { --ink:#f7f0ff; --soft:#cfc3ea; --gold:#ffd77a; --gold-deep:#c9962f; --night:#1b1433; --night2:#2d2256; --card:rgba(255,255,255,.07); --line:rgba(255,215,122,.35); }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:'Baloo 2', system-ui, sans-serif; color:var(--ink); background:linear-gradient(#ffd9cf, #cfe7ff 60%, #e9f4ff); min-height:100vh; }
-  main { max-width:680px; margin:0 auto; padding:28px 16px 60px; }
-  .hero { text-align:center; padding:18px 0 8px; }
-  .star { font-size:28px; color:#b08ae0; }
-  h1 { font-size:clamp(34px, 8vw, 52px); margin:4px 0 0; color:#fff; text-shadow:0 4px 0 var(--accent); line-height:1.05; }
-  .tag { display:inline-block; margin-top:10px; background:linear-gradient(90deg, var(--violet), #ffe07a); border-radius:999px; padding:3px 14px; font-weight:800; }
-  .card { background:var(--card); border-radius:22px; padding:18px 20px; margin-top:16px; box-shadow:0 5px 0 #0002; }
-  h2 { margin:0 0 6px; font-size:22px; }
+  body { margin:0; font-family:'Baloo 2', system-ui, sans-serif; color:var(--ink); min-height:100vh;
+    background:radial-gradient(ellipse at 50% -10%, #5b3f9e 0%, var(--night2) 38%, var(--night) 75%); background-attachment:fixed; }
+  .sky { position:fixed; inset:0; pointer-events:none; overflow:hidden; }
+  .sky i { position:absolute; width:2px; height:2px; border-radius:50%; background:#fff; opacity:.7; animation:tw 3s ease-in-out infinite; }
+  @keyframes tw { 50% { opacity:.15; } }
+  @media (prefers-reduced-motion: reduce) { .sky i { animation:none; } }
+  main { position:relative; max-width:560px; margin:0 auto; padding:56px 16px 60px; }
+  .hero { text-align:center; }
+  .seal { width:74px; height:74px; margin:0 auto 14px; border-radius:50%; display:grid; place-items:center; font-size:32px; color:var(--night);
+    background:radial-gradient(circle at 35% 30%, #fff1c2, var(--gold) 55%, var(--gold-deep)); box-shadow:0 0 0 4px rgba(255,215,122,.25), 0 0 40px rgba(255,215,122,.45); }
+  .kicker { letter-spacing:.28em; font-size:13px; font-weight:800; color:var(--gold); }
+  h1 { font-size:clamp(40px, 11vw, 60px); margin:6px 0 0; line-height:1; background:linear-gradient(180deg, #fff, #ffe7a8); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .lede { font-size:19px; line-height:1.45; color:var(--soft); margin:14px auto 0; max-width:420px; }
+  .btn { display:inline-block; margin-top:22px; background:linear-gradient(180deg, #ffe39a, var(--gold)); color:var(--night); text-decoration:none; font-weight:800; font-size:20px;
+    padding:12px 34px; border-radius:999px; box-shadow:0 4px 0 var(--gold-deep), 0 0 28px rgba(255,215,122,.35); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:22px; padding:18px 20px; margin-top:18px; backdrop-filter:blur(6px); }
+  h2 { margin:0 0 6px; font-size:21px; color:var(--gold); font-weight:700; }
   p, li { font-size:17px; line-height:1.45; margin:6px 0; }
-  ol, ul { padding-left:22px; margin:6px 0; }
-  .btn { display:inline-block; margin-top:10px; background:var(--gold); color:var(--ink); text-decoration:none; font-weight:800; padding:9px 22px; border-radius:999px; box-shadow:0 4px 0 var(--gold-deep); }
-  .gifts { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-top:8px; }
-  .gift { background:var(--surface); border-radius:16px; padding:10px 12px; }
-  .gift b { display:block; font-size:16px; }
-  .gift span { font-size:14px; opacity:.8; }
-  .ic { font-size:26px; }
-  .missions li { margin:4px 0; }
-  .note { font-size:14px; opacity:.75; }
-  footer { text-align:center; margin-top:26px; font-size:14px; opacity:.7; }
+  ol { padding-left:22px; margin:6px 0; }
+  .note { font-size:14px; color:var(--soft); }
+  code { font-family:inherit; font-weight:800; color:var(--gold); letter-spacing:.04em; }
+  footer { text-align:center; margin-top:28px; font-size:14px; color:var(--soft); }
 </style>
 </head>
 <body>
+<div class="sky" id="sky" aria-hidden="true"></div>
 <main>
   <div class="hero">
-    <div class="star">✦</div>
-    <h1>Sky Garden Founders</h1>
-    <div class="tag">Founding Gardeners only</div>
+    <div class="seal" aria-hidden="true">✦</div>
+    <div class="kicker">BY INVITATION</div>
+    <h1>Sky Garden</h1>
+    <p class="lede">You are one of a small handful of people invited in before anyone else. Welcome, founder.</p>
     <div id="startTop"></div>
-  </div>
-
-  <div class="card">
-    <h2>Welcome, founder</h2>
-    <p>You are one of the very first people to play Sky Garden. You play the real game, the same way everyone will. The difference is that you help shape it.</p>
   </div>
 
   <div class="card">
     <h2>How to start</h2>
     <ol>
-      <li>Tap the <b>Start playing</b> button on this page. Your tester code is already in it.</li>
-      <li>Tap Play and make your character.</li>
-      <li>Play the first few steps with Nana. Then a "Welcome, founder!" card appears. That means it worked.</li>
+      <li>Tap <b>Start playing</b>. Your code is already in it.</li>
+      <li>Make your character and say hi to Nana.</li>
+      <li>Keep playing. Something special is waiting for you.</li>
     </ol>
-    <p>Already played Sky Garden on this phone or computer? Tap Start playing anyway. Your progress stays.</p>
     <p id="codeLine" class="note"></p>
-    <p class="note">Each code works for one player. Please don't share yours.</p>
   </div>
 
   <div class="card">
-    <h2>Surprises</h2>
-    <p>A few surprises are waiting for you in the game. They arrive one at a time over your first days, so keep coming back.</p>
+    <h2>Your part</h2>
+    <p>Love something? Stuck on something? Something broke? Tap the pink <b>Feedback</b> button in the game and say so. It comes straight to the creator.</p>
   </div>
 
-  <div class="card">
-    <h2>New things unlock each day</h2>
-    <p>Sky Garden opens up a little more every day you play. Come back tomorrow and a "New today" card shows what is new. You don't have to play every day. Nothing is missed.</p>
-  </div>
-
-  <div class="card">
-    <h2>Tell us anything</h2>
-    <p>Tap the pink Feedback button in the game anytime. Tell us what you loved, where you got stuck, or what felt boring. It goes straight to the people making Sky Garden.</p>
-    <p>Something broke? Tell us what you were doing right before it happened. That helps us find it fast.</p>
-  </div>
-
-  <div class="card">
-    <h2>Your privacy</h2>
-    <p>We save your game so it is there when you come back. Your name is not shown to other players.</p>
-  </div>
-
-  <div class="card" style="text-align:center">
-    <h2>Ready?</h2>
-    <div id="startBottom"></div>
-  </div>
-
-  <footer>✦ Thank you for helping build Sky Garden ✦</footer>
+  <footer>Your code is yours alone. Please keep it to yourself.<br>Your name isn't shown to other players.</footer>
 </main>
 <script>
   // this page is each tester's one personal link: it carries their code into the game
   const code = (new URLSearchParams(location.search).get('tester') || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
   const ok = /^SKY-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code), go = ok ? './?tester=' + code : './';
-  const btn = big => `<a class="btn" href="${go}" style="${big ? 'font-size:20px;padding:12px 30px;margin-top:18px' : ''}">${ok ? 'Start playing' : 'Open Sky Garden'}</a>`;
-  document.getElementById('startTop').innerHTML = btn(true);
-  document.getElementById('startBottom').innerHTML = ok ? '<p>Tap below to start. Save this page so you can come back anytime.</p>' + btn(false) : '<p>Use the personal link we sent you so your founder gifts show up.</p>' + btn(false);
-  document.getElementById('codeLine').textContent = ok ? 'Your tester code is ' + code + '. If the game ever asks, tap Bag, then "I have a tester code", and type it in.' : '';
+  document.getElementById('startTop').innerHTML = `<a class="btn" href="${go}">${ok ? 'Start playing' : 'Open Sky Garden'}</a>`;
+  document.getElementById('codeLine').innerHTML = ok ? `Your code is <code>${code}</code>. If the game ever asks for it: tap Bag, then "I have a tester code".` : 'Use the personal link you were sent, so your code comes with you.';
+  // a quiet field of stars
+  const sky = document.getElementById('sky');
+  for (let i = 0; i < 70; i++) { const s = document.createElement('i'); s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
+    s.style.animationDelay = (Math.random() * 3).toFixed(2) + 's'; if (Math.random() < .2) s.style.width = s.style.height = '3px'; sky.appendChild(s); }
 </script>
 </body>
 </html>
