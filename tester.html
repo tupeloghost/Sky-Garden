@@ -35,6 +35,7 @@
     <div class="star">✦</div>
     <h1>Sky Garden Founders</h1>
     <div class="tag">Founding Gardeners only</div>
+    <div id="startTop"></div>
   </div>
 
   <div class="card">
@@ -45,11 +46,12 @@
   <div class="card">
     <h2>How to start</h2>
     <ol>
-      <li>Open the personal link we sent you. It has your own tester code in it.</li>
+      <li>Tap the <b>Start playing</b> button on this page. Your tester code is already in it.</li>
       <li>Tap Play and make your character.</li>
-      <li>A "Welcome, founder!" card appears. That means your code worked.</li>
+      <li>A "Welcome, founder!" card appears. That means it worked.</li>
     </ol>
-    <p>Already playing on this device? Open your link anyway. Your progress stays. Lost your link? In the game, tap Bag, then "I have a tester code", and type the code we sent you.</p>
+    <p>Already played Sky Garden on this phone or computer? Tap Start playing anyway. Your progress stays.</p>
+    <p id="codeLine" class="note"></p>
     <p class="note">Each code works for one player. Please don't share yours.</p>
   </div>
 
@@ -97,11 +99,19 @@
 
   <div class="card" style="text-align:center">
     <h2>Ready?</h2>
-    <p>Open your personal link to start. This button opens the game without a code.</p>
-    <a class="btn" href="./">Open Sky Garden</a>
+    <div id="startBottom"></div>
   </div>
 
   <footer>✦ Thank you for helping build Sky Garden ✦</footer>
 </main>
+<script>
+  // this page is each tester's one personal link: it carries their code into the game
+  const code = (new URLSearchParams(location.search).get('tester') || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
+  const ok = /^SKY-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code), go = ok ? './?tester=' + code : './';
+  const btn = big => `<a class="btn" href="${go}" style="${big ? 'font-size:20px;padding:12px 30px;margin-top:18px' : ''}">${ok ? 'Start playing' : 'Open Sky Garden'}</a>`;
+  document.getElementById('startTop').innerHTML = btn(true);
+  document.getElementById('startBottom').innerHTML = ok ? '<p>Tap below to start. Save this page so you can come back anytime.</p>' + btn(false) : '<p>Use the personal link we sent you so your founder gifts show up.</p>' + btn(false);
+  document.getElementById('codeLine').textContent = ok ? 'Your tester code is ' + code + '. If the game ever asks, tap Bag, then "I have a tester code", and type it in.' : '';
+</script>
 </body>
 </html>
