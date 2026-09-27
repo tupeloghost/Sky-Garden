@@ -57,6 +57,7 @@ function draw() {
     <h5>DATE (festivals, seasons, moon)</h5><div class="row">
       <input type="date" id="dvDate" value="${d.toISOString().slice(0,10)}"> <button id="dvDateGo">Use date</button> <button id="dvToday">Real today</button></div>
     <p style="margin:4px 0 0;opacity:.8">Now: ${document.getElementById('day').textContent}</p>
+    ${(g.MODCTX.extraTools || []).length ? `<h5>CREATOR</h5><div class="row">${g.MODCTX.extraTools.map((x, i) => `<button data-ct="${i}" style="background:#ffc857;color:#3b2f4a">${x.icon} ${x.title}</button>`).join('')}</div>` : ''}
     <h5>TELEPORT</h5><div class="row">${Object.keys(TELEPORT).map(k => `<button data-tp="${k}">${k}</button>`).join('')}<button id="dvHut">Inside hut</button></div>
     <h5>GIVE</h5><div class="row">
       <button id="dvCoins">+1,000 coins</button><button id="dvBag">5 of every item</button><button id="dvSeeds">10 of every seed</button><button id="dvFurn">All furniture</button></div>
@@ -89,6 +90,7 @@ function draw() {
   panel.querySelector('#dvNone').onclick = () => { Object.assign(S, { found:[], cooked:[], charted:[], read:[], songs:[], penta:false, sayings:[] }); g.save(); g.drawHud(); msg('Collections cleared. Story memories were kept.'); };
   panel.querySelectorAll('[data-dm]').forEach(b => b.onclick = () => { S.devMyth = b.dataset.dm || null; if (S.myth) S.myth.revealed = 0; S.mythForm = false; g.save(); g.drawHud(); if (S.devMyth) { g.mythReveal(); msg('Legend set. Its button is on the hotbar.'); } else msg('No legend.'); draw(); });
   panel.querySelectorAll('[data-ds]').forEach(b => b.onclick = () => { g.mythSighting({ id:0, form:b.dataset.ds }); msg('Look up. Tap it to be blessed.'); });
+  panel.querySelectorAll('[data-ct]').forEach(b => b.onclick = () => { panel.classList.remove('show'); g.MODCTX.extraTools[+b.dataset.ct].run(); });
   panel.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { const f = g.FEATURES.find(x => x.id === b.dataset.ft); if (f.live) { msg(`${f.name} is live for everyone. Change it in data/features.js.`); return; }
     let d = {}; try { d = JSON.parse(localStorage.getItem('sg.features') || '{}'); } catch {} d[f.id] = !g.featureOn(f.id); try { localStorage.setItem('sg.features', JSON.stringify(d)); } catch {}
     reloadWith(`${f.name} is now ${d[f.id] ? 'on' : 'off'} in developer mode.`); });
