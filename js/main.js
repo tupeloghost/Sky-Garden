@@ -4389,7 +4389,11 @@ const balloon = makeBalloon(); balloon.position.set(3.1, 0, -6.5); scene.add(bal
 function drawBalloon() { balloon.visible = !!S.founderBalloon && !VISIT; }
 drawBalloon();
 function balloonMenu() {
-  const D = [['home','Home island', true], ['orchard','Orchard Isle', S.bridge], ['windmill','Windmill Isle', S.bridge2], ['night','Night Isle', S.q4 >= 1], ['heart','The Old Heart', S.q5 >= 1], ['lighthouse','Lighthouse Rock', keeperLevel() >= 2]].filter(d => d[2]);
+  // the island you are standing on is left out: you are already there
+  const C = { home:new THREE.Vector3(0, 0, 0), orchard:ORCH_POS, windmill:WIND_POS, night:NIGHT_POS, heart:OH, lighthouse:LH }, p = player.position;
+  const here = S.where === 'hut' ? 'home' : Object.keys(C).sort((a, b) => Math.hypot(p.x - C[a].x, p.z - C[a].z) - Math.hypot(p.x - C[b].x, p.z - C[b].z))[0];
+  const D = [['home','Home island', true], ['orchard','Orchard Isle', S.bridge], ['windmill','Windmill Isle', S.bridge2], ['night','Night Isle', S.q4 >= 1], ['heart','The Old Heart', S.q5 >= 1], ['lighthouse','Lighthouse Rock', keeperLevel() >= 2]].filter(d => d[2] && d[0] !== here);
+  if (!D.length) return showCard(`<div class="kicker">✦ FOUNDER BALLOON</div><h2>Nowhere to fly yet</h2><p>Your balloon can take you to any other island you open. Build a bridge to your first new island, and your balloon can fly you there anytime.</p>`, 'Okay');
   showCard(`<div class="kicker">✦ FOUNDER BALLOON</div><h2>Where to?</h2><p>Your balloon flies you to any island you have opened.</p>
     <div class="jlist">${D.map(([k, n]) => `<button data-fly="${k}">🎈 ${n}</button>`).join('')}</div>`, 'Not now');
   document.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { hideCard(); balloonTo(b.dataset.fly); });
@@ -4455,7 +4459,8 @@ function founderOn() { return !!S.founder && !(S.trust && S.trust.revoked); }
 function paused(p) { return !!(S.trust && (S.trust.paused || []).includes(p)); }
 function keeperLevel() { if (devOn()) return 3; return founderOn() && featureOn('keepers') ? (S.trust && S.trust.level) || 1 : 0; }
 async function syncTrust() { if (VISIT || TESTSLOT || !S.syncKey) return;
-  try { const r = await (await fetch(`${CLOUD}/me?key=${S.syncKey}`)).json(); if (r && 'level' in r) { S.trust = { level:r.level, paused:r.paused || [], revoked:!!r.revoked, myth:r.myth || null, seen:r.seen || 0, missions:r.missions || [], mythData:r.mythData || null, link:r.link || null }; save(); dressPlayer(); drawHud(); drawKeepers(); mythReveal(); loadMods(r.mods); } } catch {}
+  try { const r = await (await fetch(`${CLOUD}/me?key=${S.syncKey}`)).json(); if (r && 'level' in r) { if (r.founder && r.code && (!S.founder || S.founder.code !== r.code)) S.founder = { code:r.code, at:Date.now(), day0:(S.founder && S.founder.day0) ?? playDays() - 1 }; // the server knows this game is a founder's
+    S.trust = { level:r.level, paused:r.paused || [], revoked:!!r.revoked, myth:r.myth || null, seen:r.seen || 0, missions:r.missions || [], mythData:r.mythData || null, link:r.link || null }; save(); dressPlayer(); drawHud(); drawKeepers(); mythReveal(); loadMods(r.mods); } } catch {}
   try { const w = await (await fetch(`${CLOUD}/world`)).json(); if (w && w.world) { S.world = w.world; save(); drawWorld(); } } catch {} }
 addEventListener('sg-playing', () => setTimeout(syncTrust, 2500));
 function logKeeper(kind, detail) { if (!TESTSLOT && !VISIT) fetch(`${CLOUD}/event`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ key:S.syncKey, kind, detail }) }).catch(() => {}); }

@@ -332,7 +332,7 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/me') {
       const m = await memberOf(env, url.searchParams.get('key') || ''); if (!m) return json({ error: 'bad key' }, 400, origin);
-      const out = { founder: !!m.code && !m.revoked, level: m.revoked ? 0 : m.level, paused: m.paused, revoked: m.revoked };
+      const out = { founder: !!m.code && !m.revoked, code: m.code || null, level: m.revoked ? 0 : m.level, paused: m.paused, revoked: m.revoked };
       if (m.code && !m.revoked) {
         // a founder only ever learns about their own form, never anyone else's
         out.myth = m.myth; if (m.myth) out.seen = (await env.DB.prepare('SELECT COUNT(*) AS n FROM blessings b JOIN sightings s ON s.id = b.sighting WHERE s.code = ?').bind(m.code).first()).n;
