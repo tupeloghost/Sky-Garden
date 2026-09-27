@@ -35,5 +35,12 @@
 </div>
 
 <script type="module" src="js/main.js"></script>
+<script>
+  // if the game ever fails to start (usually an old copy saved in the browser), say how to fix it instead of doing nothing
+  document.getElementById('start').addEventListener('click', () => setTimeout(() => { if (window.__sg) return;
+    const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:16px;right:16px;bottom:24px;z-index:99;background:#3b2f4a;color:#fff;border-radius:18px;padding:14px 16px;font:17px Baloo 2,system-ui,sans-serif;text-align:center';
+    d.innerHTML = 'Sky Garden just updated. <b>Reload the page</b> to get the new version.<br><button style="margin-top:8px;border:0;border-radius:999px;padding:8px 20px;background:#ffc857;font:inherit;font-weight:800">Reload now</button>';
+    d.querySelector('button').onclick = () => location.reload(); document.body.appendChild(d); }, 1500));
+</script>
 </body>
 </html>

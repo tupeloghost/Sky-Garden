@@ -19,7 +19,8 @@ import { INSECTS } from '../data/insects.js';
 import { TASTES, REACT, TIERS, TIER_HEARTS, tasteOf } from '../data/tastes.js';
 import { SPECIES, NAMES, OUTFITS, TOP_COLORS, PERSONALITIES, REQUEST_LINES } from '../data/visitors.js';
 import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
-import { MYTHS, FINDS as SHROOM_FINDS, DEV_CONTENT, glowName } from '../data/myths.js';
+import * as MYTHDATA from '../data/myths.js'; // read as a whole, so an older cached copy can never stop the game from starting
+const MYTHS = MYTHDATA.MYTHS || {}, SHROOM_FINDS = MYTHDATA.FINDS || ['It glows softly.'], DEV_CONTENT = MYTHDATA.DEV_CONTENT || { path:'', legend:[], power:{ name:'Power', text:'' }, missions:[], reflect:['?'], learn:['?'] }, glowName = MYTHDATA.glowName || (n => `Level ${n + 1}`);
 import { EYE_COLORS, EYE_STYLES, BROWS, FACE_EXTRAS, TOPS, SHOES, SHOE_COLORS, FOUNDER_HATS, SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
