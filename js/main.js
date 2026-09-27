@@ -1252,7 +1252,7 @@ function drawHud() {
   $('goalsBtn').hidden = !featureOn('goals'); ensureGoals(); $('goalsBtn').innerHTML = `${ICON.goal}<span class="lbl">Goals</span> ${S.goals.list.filter(g => g.have >= g.need).length}/3`;
   drawQuest();
   { let tb = $('testBtn'); if (TESTSLOT) { if (!tb) { tb = document.createElement('button'); tb.id = 'testBtn'; tb.className = 'pill testpill'; tb.onclick = testerTools; tb.innerHTML = '🧪<span class="lbl"> Test island</span>'; $('coins').before(tb); } } }
-  { let mb = $('missionsBtn'); if (founderOn() && !paused('missions') && !VISIT) { if (!mb) { mb = document.createElement('button'); mb.id = 'missionsBtn'; mb.className = 'pill founderpill'; mb.onclick = openMissions; $('goalsBtn').after(mb); } const L = missionList(); mb.innerHTML = `✦<span class="lbl"> Missions</span> ${L.filter(m => S.missions?.[m.id]).length}/${L.length}`; } else if (mb) mb.remove(); }
+  { let mb = $('missionsBtn'); if (founderOn() && fGot('missions') && !paused('missions') && !VISIT) { if (!mb) { mb = document.createElement('button'); mb.id = 'missionsBtn'; mb.className = 'pill founderpill'; mb.onclick = openMissions; $('goalsBtn').after(mb); } const L = missionList(); mb.innerHTML = `✦<span class="lbl"> Missions</span> ${L.filter(m => S.missions?.[m.id]).length}/${L.length}`; } else if (mb) mb.remove(); }
   try { missionCheck(); } catch {}
   const s = season(), shown = Object.entries(CROPS).filter(([k,c]) => (c.seasons.includes(s) && (!c.locked || S.q4 >= 5)) || S.seeds[k] > 0);
   if (!shown.some(([k]) => k === S.sel) && shown.length) S.sel = shown[0][0];
@@ -1260,13 +1260,15 @@ function drawHud() {
   $('buildBtn').hidden = VISIT || (S.home || 0) < 3 || S.where !== 'home'; $('buildBtn').innerHTML = `${ICON.hammer}<span class="lbl">${buildMode ? 'Building' : 'Build'}</span>`;
   // the hotbar: your tools on the left (tap one to see what it does), then your seeds
   const tools = [['axe','🪓','Stone Axe', 'Tap a tree to chop logs.'], ['pick','⛏️','Stone Pickaxe','Tap a rock to break it for stone.'], ['net','🦋','Bug Net','Tap an insect or butterfly to swing.'], ['rod','🎣','Fishing Rod','Tap a dock to fish.'], ['balloon','🎈','Founder Balloon','Fly to any island.'], ['myth','🪽','Legend','']]
-    .filter(([k]) => k === 'rod' ? S.bridge || S.mode === 'fisher' : k === 'balloon' ? S.founderBalloon && !VISIT : k === 'myth' ? mythOn() : S.tools[k]).map(([k, ic, name, how]) => { const bronze = (k === 'axe' && S.tools.bronzeAxe) || (k === 'pick' && S.tools.bronzePick);
+    .filter(([k]) => k === 'rod' ? S.bridge || S.mode === 'fisher' : k === 'balloon' ? S.founderBalloon && !VISIT : k === 'myth' ? mythOn() && !!mp().revealed : S.tools[k]).map(([k, ic, name, how]) => { const bronze = (k === 'axe' && S.tools.bronzeAxe) || (k === 'pick' && S.tools.bronzePick);
       return `<div class="hslot tool ${bronze ? 'bronze' : ''}" data-tool="${k}" data-how="${(bronze ? name.replace('Stone', 'Bronze') : name) + ': ' + how}"><span>${ic}</span></div>`; }).join('');
-  $('bar').innerHTML = (tools ? tools + '<i class="hdiv"></i>' : '') + shown.map(([k,c]) => { const n = S.seeds[k] || 0, now = c.seasons.includes(s);
+  const xt = VISIT ? '' : (typeof extraTools === 'undefined' ? [] : extraTools).map((x, i) => `<div class="hslot tool" data-xt="${i}" title="${x.title}"><span>${x.icon}</span></div>`).join('');
+  $('bar').innerHTML = (tools || xt ? xt + tools + '<i class="hdiv"></i>' : '') + shown.map(([k,c]) => { const n = S.seeds[k] || 0, now = c.seasons.includes(s);
     return `<div class="hslot seed ${S.sel===k?'on':''} ${now ? '' : 'late'} ${n ? '' : 'none'}" data-k="${k}" title="${c.name}"><span>${icon(k)}</span><b>${n}</b><small>${now ? c.name : 'Not now'}</small></div>`; }).join('');
   document.querySelectorAll('.hslot.seed').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); const c = CROPS[S.sel], n = S.seeds[S.sel] || 0;
     toast(n ? `${c.name} seeds ready. Tap an empty plot to plant.` : `No ${c.name} seeds. Buy some from Pip.`); });
-  document.querySelectorAll('.hslot.tool').forEach(el => el.onclick = () => el.dataset.tool === 'balloon' ? balloonMenu() : el.dataset.tool === 'myth' ? mythMenu() : toast(el.dataset.how));
+  document.querySelectorAll('[data-xt]').forEach(el => el.onclick = () => extraTools[+el.dataset.xt].run());
+  document.querySelectorAll('.hslot.tool:not([data-xt])').forEach(el => el.onclick = () => el.dataset.tool === 'balloon' ? balloonMenu() : el.dataset.tool === 'myth' ? mythMenu() : toast(el.dataset.how));
 }
 function openDialog(name, text, btns=[], hearts, voice) {
   babble(voice || (name.startsWith('Nana') ? 'nana' : name.startsWith('Pip') ? 'pip' : name.startsWith('Captain') ? 'drizzle' : name.startsWith('Moss') ? 'twins' : name.startsWith('Lumen') ? 'lumen' : ({ Mabel:'mabel', Professor:'hoot', Allegra:'allegra', Sage:'sage' })[name.split(' ')[0]] || 'none'), text);
@@ -1528,7 +1530,7 @@ function openBag() {
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
-    ${(founderOn() && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}<button id="lookBtn" class="ghost">Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" class="ghost">I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+    ${(founderOn() && fGot('testisland') && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}<button id="lookBtn" class="ghost">Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" class="ghost">I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
   document.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { const k = b.dataset.it; $('itInfo').innerHTML = `<b>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}</b>. ${itemUse(k)}`; });
   document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => { const k = b.dataset.fu, p = S.placed.filter(x => x === k).length; $('itInfo').innerHTML = `<b>${icon(k)} ${FURN[k].name}</b>. ${p ? `${p} in your hut.` : 'Not placed yet. Place it inside your hut.'}`; });
   document.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => openProduct(S.products[+b.dataset.pr], openBag));
@@ -1679,7 +1681,7 @@ function tutTile(i) {
 }
 function tutSold() {
   if (S.tut !== 6) return;
-  S.tut = 9; save(); drawHud();
+  S.tut = 9; save(); drawHud(); setTimeout(founderDrip, 2500);
   setTimeout(() => {
     openDialog('Nana Gale', (S.home || 0) < 3 ? "Your first coins! Now, the important part. You need a roof over your head, and no, the sky is not a roof, whatever Pip tells you. See the sticks and stones lying about? Gather some and make yourself a stone axe at that old tree stump." : "Your first coins! That is how it works up here: grow things, sell them, and use the coins to rebuild. Now, there are more memories buried out there. New sparkles appear every morning. Off you go, dear!", [], S.hearts.nana);
     spawnDigs(); nanaWalk = { to: NANA_HOME.clone(), back:true };
@@ -3169,7 +3171,7 @@ function sleep(passedOut, where) {
   else if (S.sprinklers && !raining) msg += ' Your sprinkler watered the garden.';
   const fz = festival(); if (fz && !S.fests[fz.id + fz.year]) msg = `Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`;
   S.tiles.forEach((_, i) => drawTile(i));
-  spawnDigs(); applySeason(); S.goals = null; ensureGoals(); peopleNewDay(); drawShrooms(); mythLookUp();
+  spawnDigs(); applySeason(); S.goals = null; ensureGoals(); peopleNewDay(); drawShrooms(); mythLookUp(); setTimeout(founderDrip, 6000);
   S.pickups = S.pickups || []; spawnPickups();
   if (where === 'outside') { if (S.where === 'hut') S.where = 'home'; } // you wake up right where you slept
   else if ((S.home || 0) < 3) { S.where = 'home'; player.position.set(campfire.position.x + .8, 0, campfire.position.z + .6); } else { S.where = 'hut'; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); }
@@ -3479,7 +3481,7 @@ function drawGrid() { const pts = [], seg = (x0, z0, x1, z1) => { if (onLand(x0,
 function drawBuildBar() {
   const bar = $('buildbar');
   bar.innerHTML = `<p class="bhelp">${held ? `Holding your ${PIECES.find(x => x.id === held.p).name.toLowerCase()}. Tap an empty square to set it down. Rotate turns it.` : moving ? 'Tap a piece you built to pick it up and move it.' : removing ? 'Tap a piece to pick it up. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
-    <div class="bpieces">${PIECES.filter(p => (!p.founder || (S.founder && !(S.builds || []).some(b => b.p === p.id))) && (!p.age || S.stations[p.age]) && (p.id !== 'chest' || featureOn('chest'))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
+    <div class="bpieces">${PIECES.filter(p => (!p.founder || (S.founder && fGot('lantern') && !(S.builds || []).some(b => b.p === p.id))) && (!p.age || S.stations[p.age]) && (p.id !== 'chest' || featureOn('chest'))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
     <div class="bctl"><button id="bRot">Rotate</button><button id="bMove" class="${moving ? 'on' : ''}">Move</button><button id="bRem" class="${removing ? 'on' : ''}">Remove</button><button id="bTidy">Tidy up</button><button id="bDone" class="done">Done</button></div>`;
   bar.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { dropHeld(); buildSel = b.dataset.pc; removing = moving = false; drawBuildBar(); });
   ghostPiece();
@@ -3672,7 +3674,9 @@ function tameOutlines() { scene.traverse(o => { const ms = Array.isArray(o.mater
 if (LOOK === 'b') renderer.domElement.style.filter = 'saturate(1.12) contrast(1.04)';
 if (LOOK === 'c') { renderer.domElement.style.filter = 'saturate(.88) brightness(1.04) sepia(.08)'; document.body.classList.add('paper'); }
 const clock = new THREE.Clock(); let playing = false, hudTick = 0, stepDist = 0;
-function tick() {
+// the game loop keeps running even if one frame hits an error, so the game never freezes. The first error is reported once.
+function tick() { requestAnimationFrame(tick); try { tickFrame(); } catch (e) { if (!tick.err) { tick.err = e; window.__tickErr = String(e && e.stack || e); setTimeout(() => { throw e; }); } } }
+function tickFrame() {
   const dt = Math.min(.05, clock.getDelta()), now = clock.elapsedTime;
   const menuOpen = $('veil').classList.contains('show') || $('dialog').classList.contains('show');
   if (playing) {
@@ -3819,7 +3823,6 @@ function tick() {
   else { camera.position.lerp(player.position.clone().add(camOffset()), 1 - Math.pow(.02, dt));
   camera.lookAt(player.position.x, player.position.y + .6, player.position.z - ahead()); }
   if (outline) outline.render(scene, camera); else renderer.render(scene, camera);
-  requestAnimationFrame(tick);
 }
 snapCam(); tameOutlines();
 bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); drawHome(); drawBuilds(); drawStations(); if (!(S.pickups || []).length) spawnPickups(); else drawPickups(); homeDock.visible = S.mode === 'fisher'; if (lowGfx) setLowGfx(true);
@@ -3857,7 +3860,7 @@ function lookPicker(title, done, withName) {
         ${lk.top === 'dress' ? '' : `<h4>${lk.top === 'overalls' ? 'Overalls and bottoms' : 'Bottoms'}</h4>${chips(BOTTOMS, 'bottom', 'bt')}`}
         ${lk.top === 'dress' ? '' : `<div class="chips">${sw(BOTTOM_COLORS, lk.bottomColor, 'bcol')}</div>`}
         <h4>Shoes</h4>${chips(SHOES, 'shoes', 'shs')}<div class="chips">${sw(SHOE_COLORS, lk.shoeColor, 'scol')}</div>
-        ${S.founder ? `<h4>Founder outfit</h4><div class="chips"><button data-jk="pioneer" class="${lk.jacket === 'pioneer' ? '' : 'ghost'}">Sky Pioneer jacket and scarf</button><button data-jk="" class="${lk.jacket ? 'ghost' : ''}">My own top</button></div>` : ''}`,
+        ${S.founder && fGot('outfit') ? `<h4>Founder outfit</h4><div class="chips"><button data-jk="pioneer" class="${lk.jacket === 'pioneer' ? '' : 'ghost'}">Sky Pioneer jacket and scarf</button><button data-jk="" class="${lk.jacket ? 'ghost' : ''}">My own top</button></div>` : ''}`,
       hat:`<h4>Hat</h4><div class="chips">${Object.entries({ ...HATS, ...(S.partyHat ? { party:'Party hat' } : {}), ...(S.founder ? FOUNDER_HATS : {}) }).map(([k,v]) => `<button data-hat="${k}" class="${lk.hat === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
         ${lk.hat !== 'none' ? `<h4>Hat color</h4><div class="chips">${sw(HAT_COLORS, lk.hatColor, 'hc')}</div>` : ''}`,
     };
@@ -4180,12 +4183,7 @@ async function redeemTester(code) {
   const res = await api('/redeem', { key:S.syncKey, code:String(code).toUpperCase().trim() });
   if (!res.ok) return res.error === 'used' ? 'That code was already used by someone else.' : res.error === 'not found' || res.error === 'bad code' ? 'That code does not look right. Check it and try again.' : 'Could not reach Sky Garden. Check your internet and try again.';
   const first = !S.founder; S.founder = { code:String(code).toUpperCase().trim(), at:Date.now() }; S.missions = S.missions || {}; save(); drawHud();
-  if (first) welcomeWhenFree(); return null;
-}
-// wait until character setup is finished and no chat or card is open, so the welcome never covers anything
-function welcomeWhenFree() {
-  const busy = !S.setupDone || !S.letter || S.tut === 1 || setupCam || $('dialog').classList.contains('show') || $('veil').classList.contains('show');
-  if (busy) setTimeout(welcomeWhenFree, 1000); else founderWelcome();
+  if (first) { S.founder.day0 = playDays(); save(); setTimeout(founderDrip, 2000); } return null;
 }
 // --- opening presents: tap a wrapped box, it shakes, the lid pops, confetti flies, and the gift rises out ---
 function openPresents(gifts, done) {
@@ -4215,17 +4213,24 @@ function openPresents(gifts, done) {
   };
   addEventListener('resize', size); show();
 }
-function founderWelcome() {
-  S.founderBalloon = true; save(); drawBalloon(); drawHud();
-  showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>Welcome, founder!</h2>
-    <p>You are one of the very first people to play Sky Garden, and you are helping build it. That makes you a Founding Gardener.</p>
-    <p style="margin-top:8px">We wrapped a few things for you.</p>`, 'Open my presents', () => openPresents([
-    { icon:'🏮', title:"The Founder's Lantern", text:'A glowing lantern for your island. At night, fireflies gather around it. Once your hut is rebuilt, place it from Build mode.', wrap:['#c9b6ff','#ffe07a'] },
-    { icon:'🧥', title:'The Sky Pioneer outfit', text:'A flight jacket, a long scarf that trails in the wind, and an aviator cap with goggles. Put it on in Bag, then Change my look.', wrap:['#7ec8e3','#fff1d6'] },
-    { icon:'🎈', title:'Your own hot-air balloon', text:'It flies you to any island you have opened. Tap the balloon on your hotbar, anywhere, anytime.', wrap:['#ffc857','#ff8fa3'] },
-    { icon:'🐾', title:'A companion!', text:'A little friend who follows you everywhere. Who will it be?', wrap:['#8fdc8a','#fff6e6'], last:'Choose my companion' },
-  ], () => choosePet(() => showCard(`<div class="kicker">✦ ONE MORE THING</div><h2>Tester missions</h2><p>Tap the ✦ Missions button at the top to see things we would love you to try. Each one pays 50 coins, and you can tell us how it felt with one tap.</p>`, "Let's go"))));
+// Founder gifts arrive one at a time over the first days, so each one is a surprise and nothing piles up.
+const F_GIFTS = {
+  pet:{ icon:'🐾', title:'A companion!', text:'A little friend who follows you everywhere. Who will it be?', wrap:['#8fdc8a','#fff6e6'], last:'Choose my companion' },
+  outfit:{ icon:'🧥', title:'The Sky Pioneer outfit', text:'A flight jacket, a long scarf that trails in the wind, and an aviator cap with goggles. To wear it, tap Bag, then Change my look, then Clothes.', wrap:['#7ec8e3','#fff1d6'] },
+  balloon:{ icon:'🎈', title:'Your own hot-air balloon', text:'It flies you to any island you have opened. Tap the 🎈 on your hotbar.', wrap:['#ffc857','#ff8fa3'] },
+  lantern:{ icon:'🏮', title:"The Founder's Lantern", text:'A glowing lantern for your island. At night, fireflies gather around it. Tap Build to place it.', wrap:['#c9b6ff','#ffe07a'] },
+};
+function fGot(k) { if (S.founder && !S.fGot && S.founderBalloon) S.fGot = ['pet','outfit','balloon','lantern','missions','testisland']; return (S.fGot || []).includes(k); } // older founder saves already had everything
+function fDay() { return S.founder ? playDays() - (S.founder.day0 != null ? S.founder.day0 : playDays() - 1) + 1 : 0; }
+function founderDrip() { if (!founderOn() || VISIT || TESTSLOT || PREVIEW) return;
+  const busy = !S.setupDone || S.tut !== 9 || $('dialog').classList.contains('show') || $('veil').classList.contains('show') || document.querySelector('.presents'); if (busy) return;
+  const d = fDay(), give = (keys, head, body, then) => { S.fGot = [...(S.fGot || []), ...keys]; save(); showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>${head}</h2><p>${body}</p>`, 'Open it', () => openPresents(keys.filter(k => F_GIFTS[k]).map(k => F_GIFTS[k]), then)); };
+  if (!fGot('pet')) return give(['pet'], 'Welcome, founder!', 'You are one of the very first people to play Sky Garden, and you are helping build it. We wrapped something for you. More surprises will come over your first few days.', () => choosePet(() => {}));
+  if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', 'A founder gift for your second day. There is also something new at the top of your screen: ✦ Missions. They are things we would love you to try, and each one pays 50 coins.', () => drawHud());
+  if (d >= 3 && !fGot('balloon')) return give(['balloon', 'testisland'], 'A present for day 3!', 'This one is big. You also have a test island now: a separate island for trying things. Tap Bag, then Go to my test island.', () => { S.founderBalloon = true; save(); drawBalloon(); drawHud(); });
+  if (d >= 4 && (S.home || 0) >= 3 && !fGot('lantern')) return give(['lantern'], 'A present for your new home', 'Your hut is rebuilt. Here is something to light it up.', () => drawHud());
 }
+addEventListener('sg-playing', () => setTimeout(founderDrip, 4000));
 function testerCodeCard() {
   showCard(`<div class="kicker">TESTER CODE</div><h2>Enter your code</h2><p>If Sky Garden sent you a tester code, type it here. It looks like SKY-AB12-CD34.</p>
     <input id="tcIn" maxlength="13" placeholder="SKY-XXXX-XXXX" class="numin" style="width:100%;text-transform:uppercase;font-size:18px;margin-top:8px"><p id="tcMsg" style="min-height:22px;font-weight:700;margin-top:6px"></p><button id="tcGo">Use my code</button>`, 'Cancel', openBag);
@@ -4684,7 +4689,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
 // Rare creatures. A few players are secretly given one by the Creator. Everything personal about it
 // (its story, missions, and questions) comes from the server, only to that player. Anyone might see one fly by.
 var mythShrooms = null, mythSky = null; // var: the game loop can start before this part loads
-var mythExtras = [], mythActions = {}, mythHooks = {}; // var: used by the game loop. Filled in by private modules the server sends to the right people
+var mythExtras = [], mythActions = {}, mythHooks = {}, extraTools = []; // var: used by the game loop. Filled in by private modules the server sends to the right people
 function mythKind() { const k = (S.trust && S.trust.myth) || (devOn() && S.devMyth) || null; return k && MYTHS[k] ? k : null; }
 function mythOn() { return (featureOn('myths') || !!PREVIEW || (S.trust && S.trust.level >= 4)) && (founderOn() || devOn()) && !!mythKind() && !paused('myth') && !VISIT && (!TESTSLOT || !!PREVIEW); }
 function mythF() { const k = mythKind(); return { ...MYTHS[k], ...((S.trust && S.trust.myth === k && S.trust.mythData) || DEV_CONTENT) }; }
@@ -4830,6 +4835,7 @@ async function mythLookUp() { if (!featureOn('myths') || VISIT || TESTSLOT || S.
   try { const r = await (await fetch(`${CLOUD}/sighting?key=${S.syncKey}`)).json(); S.sightDay = S.day; save(); if (r.sighting && Math.random() < .7) setTimeout(() => mythSighting(r.sighting), 20000 + Math.random() * 60000); } catch {} }
 // the first time: the reveal
 function mythReveal() { if (!mythOn() || mp().revealed) return; const F = mythF();
+  if (!PREVIEW && (fDay() < 5 || hour() < 19 || S.where === 'hut')) return; // a surprise for a later night, never on the first days
   const busy = !S.setupDone || S.tut === 1 || $('dialog').classList.contains('show') || $('veil').classList.contains('show') || document.querySelector('.presents'); if (busy) return setTimeout(mythReveal, 3000);
   mp().revealed = S.day; save(); [392, 523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 220));
   showCard(`<div class="kicker">✦ SOMETHING HAS CHOSEN YOU ✦</div><h2>${F.name}</h2>${F.legend.map(l => `<p>${l}</p>`).join('')}
@@ -4838,7 +4844,7 @@ function mythReveal() { if (!mythOn() || mp().revealed) return; const F = mythF(
 // private modules: extra parts of the game the server only sends to the people they are for
 const loadedMods = new Set();
 const MODCTX = { get S() { return S; }, THREE, api, showCard, hideCard, toast, chime, burst, player, esc, save, drawHud, dressPlayer, $, hour, devOn:() => devOn() || !!PREVIEW, CLOUD, switchIsland,
-  PREVIEW, MYTHS, mythMenu, mythSighting, mythCount, mythKind, mythF, mythOn, mythAppear, mythBless, mp, mythExtras, mythActions, mythHooks, logKeeper };
+  PREVIEW, MYTHS, extraTools, mythMenu, mythSighting, mythCount, mythKind, mythF, mythOn, mythAppear, mythBless, mp, mythExtras, mythActions, mythHooks, logKeeper };
 function loadMods(list) { (list || []).forEach(n => { if (loadedMods.has(n) || !/^[a-z]+$/.test(n)) return; loadedMods.add(n);
   const who = PREVIEW ? `key=${PREVIEW.key}&as=${PREVIEW.code}` : `key=${S.syncKey}`;
   import(`${CLOUD}/mod?name=${n}&${who}`).then(m => m.default(MODCTX)).catch(() => loadedMods.delete(n)); }); }
@@ -4852,8 +4858,8 @@ function previewStart() { if (!PREVIEW) return; const d = PREVIEW.data || {};
   $('pvStop').onclick = () => { try { localStorage.removeItem('sg.preview'); localStorage.setItem('sg.profile', 'main'); } catch {} location.reload(); };
   $('pvFly').onclick = () => { const others = Object.keys(MYTHS).filter(k => k !== d.myth); mythSighting({ id:0, form:others[Math.floor(Math.random() * others.length)] }); };
   if (!d.myth) toast(`${PREVIEW.label} has no legend yet. Pick one for them on the dashboard.`); else setTimeout(mythReveal, 1500); }
-addEventListener('sg-playing', () => setTimeout(() => { if (PREVIEW) return previewStart(); mythLookUp(); drawShrooms(); mythReveal(); }, PREVIEW ? 1500 : 5000));
-window.__sg = { MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+addEventListener('sg-playing', () => setTimeout(() => { if (PREVIEW) return previewStart(); mythLookUp(); drawShrooms(); mythReveal(); setInterval(() => { if (playing) mythReveal(); }, 20000); }, PREVIEW ? 1500 : 5000));
+window.__sg = { founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
