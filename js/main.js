@@ -4087,15 +4087,42 @@ async function redeemTester(code) {
   const first = !S.founder; S.founder = { code:String(code).toUpperCase().trim(), at:Date.now() }; S.missions = S.missions || {}; save(); drawHud();
   if (first) founderWelcome(); return null;
 }
+// --- opening presents: tap a wrapped box, it shakes, the lid pops, confetti flies, and the gift rises out ---
+function openPresents(gifts, done) {
+  const ov = document.createElement('div'); ov.className = 'presents'; document.body.appendChild(ov);
+  const cv = document.createElement('canvas'); cv.className = 'confetti'; ov.appendChild(cv); const g = cv.getContext('2d');
+  let bits = [], raf; const size = () => { cv.width = innerWidth; cv.height = innerHeight; }; size();
+  const pop = (x, y, colors) => { for (let i = 0; i < 90; i++) { const a = Math.random() * Math.PI * 2, v = 4 + Math.random() * 9; bits.push({ x, y, vx:Math.cos(a) * v, vy:Math.sin(a) * v - 6, r:Math.random() * 6.3, vr:(Math.random() - .5) * .4, w:5 + Math.random() * 6, c:colors[i % colors.length], life:1 }); } };
+  const tick = () => { g.clearRect(0, 0, cv.width, cv.height); bits = bits.filter(b => b.life > 0);
+    bits.forEach(b => { b.vy += .28; b.vx *= .99; b.x += b.vx; b.y += b.vy; b.r += b.vr; b.life -= .008; g.save(); g.translate(b.x, b.y); g.rotate(b.r); g.globalAlpha = Math.min(1, b.life * 2); g.fillStyle = b.c; g.fillRect(-b.w/2, -b.w/4, b.w, b.w/2); g.restore(); });
+    raf = requestAnimationFrame(tick); }; tick();
+  let i = 0;
+  const show = () => {
+    const gf = gifts[i], wrap = gf.wrap || ['#ff8fa3','#ffc857'];
+    ov.querySelectorAll('.pstage').forEach(e => e.remove());
+    const st = document.createElement('div'); st.className = 'pstage';
+    st.innerHTML = `<div class="pcount">${gifts.length > 1 ? `Gift ${i + 1} of ${gifts.length}` : 'A gift for you'}</div>
+      <div class="pbox" style="--w1:${wrap[0]};--w2:${wrap[1]}"><div class="plid"><i class="bow"></i></div><div class="pbody"></div><div class="prays"></div><div class="pitem">${gf.icon}</div></div>
+      <div class="ptext"><h2>${gf.title}</h2><p>${gf.text}</p></div><div class="phint">Tap the present to open it</div><button class="pnext">${i < gifts.length - 1 ? 'Next gift' : (gf.last || 'Yay!')}</button>`;
+    ov.appendChild(st);
+    const box = st.querySelector('.pbox'); let opened = false, taps = 0;
+    box.onclick = () => { if (opened) return; taps++;
+      if (taps === 1 && gifts.length) { box.classList.add('wiggle'); tone(700, { dur:.08, vol:.03 }); setTimeout(() => box.classList.remove('wiggle'), 350); st.querySelector('.phint').textContent = 'Tap again!'; return; }
+      opened = true; box.classList.add('open'); st.classList.add('opened'); try { navigator.vibrate && navigator.vibrate([20, 40, 30]); } catch {}
+      const r = box.getBoundingClientRect(); pop(r.left + r.width / 2, r.top + r.height * .35, ['#ff8fa3','#ffc857','#8fdc8a','#7ec8e3','#c9b6ff','#ffffff']);
+      tone(300, { to:900, dur:.25, vol:.06 }); [523,659,784,1047,1319].forEach((f,k) => setTimeout(() => chime(f), 180 + k*90)); };
+    st.querySelector('.pnext').onclick = () => { if (!opened) { box.onclick(); box.onclick(); return; } i++; if (i < gifts.length) show(); else { cancelAnimationFrame(raf); ov.classList.add('bye'); setTimeout(() => { ov.remove(); done && done(); }, 300); } };
+  };
+  addEventListener('resize', size); show();
+}
 function founderWelcome() {
-  [523,659,784,1047,1319].forEach((f,i) => setTimeout(() => chime(f), i*140)); burst(player.position.clone().setY(1.5), 0xc9b6ff, 30);
-  const kid = ageBand() === 'kid';
   showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>Welcome, founder!</h2>
     <p>You are one of the very first people to play Sky Garden, and you are helping build it. That makes you a Founding Gardener.</p>
-    <h4>Your founder gifts</h4>${FOUNDER_GIFTS.map(g => `<p>• ${g}</p>`).join('')}
-    <p style="margin-top:6px">A thank-you for being one of the first.</p>
-    <h4>Tester missions</h4><p>Tap the ✦ Missions button at the top to see things we would love you to try. Each one pays 50 coins, and you can tell us how it felt with one tap.</p>
-    `, "Let's go");
+    <p style="margin-top:8px">We wrapped a few things for you.</p>`, 'Open my presents', () => openPresents([
+    { icon:'🏮', title:"The Founder's Lantern", text:'A glowing lantern for your island. Find it in Build mode and put it anywhere.', wrap:['#c9b6ff','#ffe07a'] },
+    { icon:'🧢', title:'The Sky Pioneer hat', text:'An aviator cap with goggles. Put it on in Bag, then Change my look.', wrap:['#7ec8e3','#fff1d6'] },
+    { icon:'✦', title:'Your Founder star', text:'It shines next to your name and your shop.', wrap:['#ff8fa3','#ffc857'] },
+  ], () => showCard(`<div class="kicker">✦ ONE MORE THING</div><h2>Tester missions</h2><p>Tap the ✦ Missions button at the top to see things we would love you to try. Each one pays 50 coins, and you can tell us how it felt with one tap.</p>`, "Let's go")));
 }
 function testerCodeCard() {
   showCard(`<div class="kicker">TESTER CODE</div><h2>Enter your code</h2><p>If Sky Garden sent you a tester code, type it here. It looks like SKY-AB12-CD34.</p>
