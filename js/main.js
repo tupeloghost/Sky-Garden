@@ -877,8 +877,7 @@ function dressPlayer() {
 dressPlayer();
 let ownerNpc = null;
 if (VISIT) {
-  const vl = { ...DEFAULT_LOOK, ...(VISIT.look && VISIT.look.human ? VISIT.look : {}) }; delete vl.jacket; if (vl.hat === 'pioneer') vl.hat = 'none'; // founder outfit stays private
-  ownerNpc = person(vl); ownerNpc.position.set(-3.1, 0, -1.2); ownerNpc.rotation.y = .6;
+  ownerNpc = person({ ...DEFAULT_LOOK, ...(VISIT.look && VISIT.look.human ? VISIT.look : {}) }); ownerNpc.position.set(-3.1, 0, -1.2); ownerNpc.rotation.y = .6;
   ownerNpc.userData.kind = 'owner'; scene.add(ownerNpc);
   const tag = labelSprite(VISIT.name); tag.position.y = 2.25; ownerNpc.add(tag);
 }
@@ -3451,8 +3450,7 @@ function openChest(chest) {
 }
 function drawBuilds() {
   buildGroup.clear(); lampLights.length = 0; lanternFF.length = 0;
-  // founders stay hidden from each other: founder-only pieces never show when someone visits
-  (S.builds || []).filter(b => !(VISIT && PIECES.find(p => p.id === b.p)?.founder)).forEach(b => { const m = pieceModel(b.p); m.position.set(b.x, 0, b.z); m.rotation.y = (b.r || 0) * Math.PI/2; buildGroup.add(m);
+  (S.builds || []).forEach(b => { const m = pieceModel(b.p); m.position.set(b.x, 0, b.z); m.rotation.y = (b.r || 0) * Math.PI/2; buildGroup.add(m);
     if (!m.userData.kind) m.userData = { kind:'piece', b }; else m.userData.b = b;
     if (b.p === 'chest' && b.band) [-.2,.2].forEach(z => m.add(mesh(new THREE.BoxGeometry(.84,.06,.05), mat(0xd9a441, { metalness:.55, roughness:.4 }), 0, .3, z*1.35)));
     if (b.c) m.traverse(o => { if (o.isMesh && o.material?.color && !o.material.isMeshBasicMaterial) { o.material = o.material.clone(); o.material.color.lerp(new THREE.Color(b.c), .7); } });
