@@ -136,7 +136,8 @@ Object.assign(sun.shadow.camera, { left:-14, right:14, top:14, bottom:-14 });
 scene.add(sun); scene.add(sun.target);
 
 // --- art style: a = original, b = diorama (cel shading + outlines), c = storybook (soft, pastel, paper grain) ---
-const LOOK = (() => { const q = new URLSearchParams(location.search).get('look'); if (q) { try { localStorage.setItem('sg.look', q); } catch {} return q; } try { return localStorage.getItem('sg.look') || 'a'; } catch { return 'a'; } })();
+const LOOK = 'a'; // the original chunky toy look (the diorama and storybook tests were retired); clear any old test choice
+try { localStorage.removeItem('sg.look'); } catch {}
 const makeRamp = (steps, lo) => { const d = new Uint8Array(steps); for (let i=0;i<steps;i++) d[i] = Math.round(255 * (lo + (1-lo) * i/(steps-1))); const t = new THREE.DataTexture(d, steps, 1, THREE.RedFormat); t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t; };
 const RAMP = LOOK === 'b' ? makeRamp(3, .5) : LOOK === 'c' ? makeRamp(5, .62) : null;
 const CREAM = new THREE.Color(0xfff4e6);
