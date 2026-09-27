@@ -44,6 +44,8 @@ const btn = document.createElement('button'); btn.id = 'devBtn'; btn.textContent
 const panel = document.createElement('div'); panel.id = 'devPanel';
 document.body.append(btn, panel);
 btn.onclick = () => { draw(); panel.classList.toggle('show'); };
+// the Creator's tools come from the server a moment after the game starts; fill them in if the panel is already open
+setInterval(() => { if (panel.classList.contains('show') && S.trust && S.trust.level >= 4 && !panel.querySelector('[data-ct]') && (g.MODCTX.extraTools || []).length) draw(); }, 1000);
 
 function draw() {
   const d = g.dateOverride ? new Date(g.dateOverride) : new Date();
@@ -57,7 +59,7 @@ function draw() {
     <h5>DATE (festivals, seasons, moon)</h5><div class="row">
       <input type="date" id="dvDate" value="${d.toISOString().slice(0,10)}"> <button id="dvDateGo">Use date</button> <button id="dvToday">Real today</button></div>
     <p style="margin:4px 0 0;opacity:.8">Now: ${document.getElementById('day').textContent}</p>
-    ${(g.MODCTX.extraTools || []).length ? `<h5>CREATOR</h5><div class="row">${g.MODCTX.extraTools.map((x, i) => `<button data-ct="${i}" style="background:#ffc857;color:#3b2f4a">${x.icon} ${x.title}</button>`).join('')}</div>` : ''}
+    ${(g.MODCTX.extraTools || []).length ? `<h5>CREATOR</h5><div class="row">${g.MODCTX.extraTools.map((x, i) => `<button data-ct="${i}" style="background:#ffc857;color:#3b2f4a">${x.icon} ${x.title}</button>`).join('')}</div>` : S.trust && S.trust.level >= 4 ? `<h5>CREATOR</h5><p style="margin:2px 0 0;opacity:.7">Loading your Creator tools...</p>` : ''}
     <h5>TELEPORT</h5><div class="row">${Object.keys(TELEPORT).map(k => `<button data-tp="${k}">${k}</button>`).join('')}<button id="dvHut">Inside hut</button></div>
     <h5>GIVE</h5><div class="row">
       <button id="dvCoins">+1,000 coins</button><button id="dvBag">5 of every item</button><button id="dvSeeds">10 of every seed</button><button id="dvFurn">All furniture</button></div>

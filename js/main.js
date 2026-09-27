@@ -4890,7 +4890,9 @@ window.__sg = { devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSig
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
 // ask the server once per visit whether this game is the Creator's; only then can developer mode turn on
-if (!DEV_OK && mainKey() && !VISIT) fetch(`${CLOUD}/me?key=${mainKey()}`).then(r => r.json()).then(r => { if (!(r && r.founder && r.level >= 4)) return;
+// also starts loading the Creator's tools right away, before Play is tapped
+if (mainKey() && !VISIT && !PREVIEW) fetch(`${CLOUD}/me?key=${mainKey()}`).then(r => r.json()).then(r => { if (!(r && r.founder && r.level >= 4)) return;
+  loadMods(['creator']); if (DEV_OK) return;
   try { sessionStorage.setItem('sg.devok', '1'); } catch {} if (TESTSLOT && !playing) location.reload(); }).catch(() => {});
 // on the Creator's test island, bring in her tools (the real island's key unlocks them)
 if (DEV_OK && TESTSLOT && !PREVIEW) addEventListener('sg-playing', () => setTimeout(() => loadMods(['creator']), 1500));
