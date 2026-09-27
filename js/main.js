@@ -9,6 +9,7 @@ import { FEATURES } from '../data/features.js';
 import { ROLLOUT } from '../data/rollout.js';
 import { DILEMMAS, islandFeel, PATHS } from '../data/journey.js';
 import { EXPANSIONS, RECLAIM_FACT } from '../data/expand.js';
+import { SHIP_PATHS, HEADINGS, WAYFINDING, FLOATING } from '../data/ship.js';
 import { KID_ADJ, KID_NOUN, SHAPES, PATTERNS, SYMBOLS, PALETTE, BASES, logoSvg, productSwatch, hx, MARK_LESSON, DESIGN_LESSON } from '../data/market.js';
 import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
 import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
@@ -847,6 +848,15 @@ ship.add(mesh(new THREE.CylinderGeometry(.07,.08,3,8), mat(0x9b6b4a), 0, 2.4, 0)
 const stripe = mesh(new THREE.TorusGeometry(1.3, .07, 6, 40), mat(0xffffff), 0, .88, 0); stripe.rotation.x = Math.PI/2; stripe.scale.set(1.6, .8, 1); ship.add(stripe);
 const flag = mesh(new THREE.PlaneGeometry(.55,.32), new THREE.MeshStandardMaterial({ color:0xff5a5a, side:THREE.DoubleSide }), .3, 3.75, 0); ship.add(flag);
 const sail = mesh(new THREE.PlaneGeometry(1.5,1.7), new THREE.MeshStandardMaterial({ color:0xfff6e6, side:THREE.DoubleSide }), .8, 2.6, 0); sail.visible = false; ship.add(sail);
+const shipExplore = new THREE.Group(), shipMarket = new THREE.Group(); ship.add(shipExplore, shipMarket);
+{ shipExplore.add(mesh(new THREE.CylinderGeometry(.28,.22,.25,10), mat(0x9b6b4a), 0, 3.3, 0)); // crow's nest
+  const scope = mesh(new THREE.CylinderGeometry(.05,.08,.6,8), mat(0xd9a441, { metalness:.5, roughness:.4 }), -1.1, 1.25, 0); scope.rotation.z = 1.1; shipExplore.add(scope);
+  shipExplore.add(mesh(new THREE.BoxGeometry(.5,.05,.4), mat(0xfff1d6), -.6, .99, .15)); // chart
+  for (let i = 0; i < 5; i++) shipMarket.add(mesh(new THREE.BoxGeometry(.5,.08,1), mat(i % 2 ? 0xfff1d6 : 0xff8fa3), -1.4 + i*.5, 2.15, 0).rotateX(.25));
+  [-1.3,1.3].forEach(x => shipMarket.add(mesh(new THREE.CylinderGeometry(.04,.04,1.2,6), mat(0x9b6b4a), x, 1.55, .35)));
+  [[-.9,0xffc857],[-.4,0x8fdc8a],[.9,0xff9a3c]].forEach(([x,c]) => { shipMarket.add(mesh(new THREE.BoxGeometry(.34,.26,.34), mat(0xc98f58), x, 1.08, .1)); shipMarket.add(mesh(sph(.12), mat(c), x, 1.28, .1)); }); }
+function drawShip() { shipExplore.visible = S.shipPath === 'explore'; shipMarket.visible = S.shipPath === 'market'; }
+drawShip();
 const saggy = mesh(new THREE.PlaneGeometry(1.2,.8), new THREE.MeshStandardMaterial({ color:0xe8dcc8, side:THREE.DoubleSide }), .6, 1.6, 0); saggy.rotation.z = .5; ship.add(saggy);
 ship.userData = { kind:'ship', lift:0 }; scene.add(ship);
 const pot = new THREE.Group(); pot.position.set(ORCH_POS.x - 3.2, ORCH_POS.y, ORCH_POS.z + 3.3);
@@ -1636,7 +1646,7 @@ function useTile(i) {
   drawTile(i); drawHud(); save(); tutTile(i);
 }
 // what one item sells for at your crate: a specialty from another island is worth 5 times more here
-const sellPrice = k => ITEMS[k].sell * (S.mode === 'fisher' && ITEMS[k].kind === 'fish' ? 1.25 : 1) * (ITEMS[k].kind === 'specialty' && k !== S.specialty ? AWAY_MULT : 1);
+const sellPrice = k => ((S.perks || []).includes('marketRep') ? 1.1 : 1) * ITEMS[k].sell * (S.mode === 'fisher' && ITEMS[k].kind === 'fish' ? 1.25 : 1) * (ITEMS[k].kind === 'specialty' && k !== S.specialty ? AWAY_MULT : 1);
 function useCrate() {
   let total = 0;
   for (const k in S.bag) { if (ITEMS[k].kind === 'quest' || ITEMS[k].kind === 'material') continue; total += Math.round(S.bag[k] * sellPrice(k)); delete S.bag[k]; }
@@ -1656,6 +1666,7 @@ function talk(id) {
   if (id === 'twins' && S.q3 < 7) return twinsQuest();
   if (id === 'lumen' && S.q4 < 5) return lumenQuest();
   if (id === 'nana' && S.q3 === 5) return nanaBread();
+  if (id === 'drizzle' && featureOn('journey') && S.q2 >= 5 && (!S.shipPath || (S.shipYear && S.shipYear < islandYear() && S.shipAsked !== islandYear()))) return shipChoice();
   if (firstToday && startDilemma(id)) return;
   if (id === 'pip' && S.asked !== S.day && (S.quest >= 1 || S.day > 1)) return pipQuestion();
   const pool = S.hearts[id] >= 3 ? [...n.lines, ...n.heartLines] : [...n.lines];
@@ -1923,6 +1934,10 @@ function flyTo(where) {
   }, 700);
 }
 function useShip() {
+  if (S.q2 >= 5 && S.shipPath && featureOn('journey')) { const b = [];
+    if (S.q5 >= 1) b.push({ label:'Fly to the Old Heart', fn:() => { closeDialog(); flyTo('heart'); } });
+    if (S.shipPath === 'explore') b.push({ label:'Go on a voyage', fn:() => { closeDialog(); voyage(); } }); else b.push({ label:'Market day', fn:() => { closeDialog(); marketDay(); } });
+    openDialog('The Puddle Jumper', S.shipPath === 'explore' ? 'The explorer\'s ship, ready to sail.' : 'The floating market is open for business.', b); return; }
   if (S.q5 >= 1) { openDialog('The Puddle Jumper', 'Fly north to the Old Heart?', [{ label:'Fly!', fn:() => { closeDialog(); flyTo('heart'); } }]); return; }
   if (S.q2 < 2) { toast('The Puddle Jumper. Her sail is a mess.'); return; }
   if (S.q2 === 2) return ropePuzzle();
@@ -2005,7 +2020,7 @@ function starPuzzle(o = {}) {
 function drizzleFinale() {
   S.q2 = 5; S.coins += 100; ship.userData.lift = 1.4; save(); drawHud();
   [392,523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*180)); burst(ship.position, 0xffc857, 24);
-  openDialog('Captain Drizzle', "She flies! Well. She hovers. That is a start! Listen, sailor: when you rang that bell, I heard one more answer. Far north, past the old Windmill. Someone else is waiting. Here, 100 coins for the best crew I ever had.", [], S.hearts.drizzle);
+  openDialog('Captain Drizzle', "She flies! Well. She hovers. That is a start! Listen, sailor: when you rang that bell, I heard one more answer. Far north, past the old Windmill. Someone else is waiting. Here, 100 coins for the best crew I ever had.", featureOn('journey') ? [{ label:'What happens to her now?', fn:() => { closeDialog(); shipChoice(); } }] : [], S.hearts.drizzle);
 }
 function useSign2() {
   if (S.bridge2) { toast('The bridge to Windmill Isle. Walk across!'); return; }
@@ -2743,7 +2758,7 @@ function homeStep() { // what the home-building goal says right now
   return { text:`Gather for ${stage.name}: ${needText(stage.needs)}.`, target: tg || buildSite };
 }
 function homeHint() { return (S.home || 0) < 3 ? homeStep().text : ''; }
-function useCampfire() { openDialog('Campfire', (S.home || 0) < 3 ? 'Until your home is built, you sleep out here under the stars. Sleep until morning?' : 'A cozy fire. Sleep out here tonight, under the stars?', [{ label:'Sleep', fn:() => { closeDialog(); sleep(); } }]); }
+function useCampfire() { openDialog('Campfire', (S.home || 0) < 3 ? 'Until your home is built, you sleep out here under the stars. Sleep until morning?' : 'A cozy fire. Sleep out here tonight, under the stars?', [{ label:'Sleep', fn:() => { closeDialog(); player.position.set(campfire.position.x + .9, 0, campfire.position.z + .9); player.rotation.y = -2.4; goSleep('outside'); } }]); }
 function useHouse() {
   if ((S.home || 0) < 3) return useBuildSite();
   openDialog('Your Hut', 'Home sweet home.', [{ label:'Go inside', fn:() => { closeDialog(); enterHut(); } }]);
@@ -2768,7 +2783,7 @@ function seasonCheck() {
   S.tiles.forEach((_, i) => drawTile(i)); applySeason();
   return `${SEASONS[now]} is here!${lost ? ` ${lost} out-of-season plant${lost>1?'s':''} wilted.` : ''} Pip has new seeds.`;
 }
-function sleep(passedOut) {
+function sleep(passedOut, where) {
   S.day++; S.t = 0;
   S.tiles.forEach(t => { if (t.s === 2 && t.w) t.d++; t.w = false; });
   raining = Math.random() < .25;
@@ -2780,11 +2795,47 @@ function sleep(passedOut) {
   S.tiles.forEach((_, i) => drawTile(i));
   spawnDigs(); applySeason(); S.goals = null; ensureGoals();
   S.pickups = S.pickups || []; spawnPickups();
-  if ((S.home || 0) < 3) { S.where = 'home'; player.position.set(campfire.position.x + .8, 0, campfire.position.z + .6); } else { S.where = 'hut'; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); }
-  target = null; pending = null; snapCam();
+  if (where === 'outside') { if (S.where === 'hut') S.where = 'home'; } // you wake up right where you slept
+  else if ((S.home || 0) < 3) { S.where = 'home'; player.position.set(campfire.position.x + .8, 0, campfire.position.z + .6); } else { S.where = 'hut'; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); }
+  target = null; pending = null; if (!cine) snapCam();
   toast(msg); drawRoom(); drawHud(); save(); cloudPush(true);
 }
 
+// --- going to sleep and waking up, as little film scenes ---
+let cine = null, lying = false;
+const easeIO = k => k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2, wait = ms => new Promise(r => setTimeout(r, ms));
+function shot(dur, p0, p1, l0, l1) { return new Promise(res => { cine = { t:0, dur, p0:p0.clone(), p1:p1.clone(), l0:l0.clone(), l1:l1.clone(), res }; }); }
+function fadeTo(on, dark) { const f = $('fade'); if (dark) f.style.background = on ? '#1b1530' : f.style.background; f.style.opacity = on ? 1 : 0;
+  return wait(750).then(() => { if (!on) f.style.background = ''; }); }
+async function goSleep(where, passedOut) {
+  if (cine) return; closeDialog(); target = null; pending = null; sitting = null;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  cine = { hold:true }; document.body.classList.add('in-cine'); // take the camera and hide the buttons
+  if (where === 'outside') {
+    lying = true; if (S.t < .89) S.t = .89; // late enough that the stars are out
+    const p = player.position.clone(), low = p.clone().add(V(1.9, 1.3, 2.1)), eye = p.clone().add(V(1.1, 1.0, 1.3)), body = p.clone().setY(p.y + .3), sky = p.clone().add(V(-6, 26, -18));
+    if (passedOut) toast('You were so tired you lay down right where you were.');
+    await shot(1.4, camera.position, low, p.clone().setY(p.y + .6), body);
+    await shot(4.4, low, eye, body, sky); sfx('cricket'); await wait(900); sfx('cricket');
+    await fadeTo(true, true);
+    sleep(passedOut, 'outside'); lying = true;
+    camera.position.copy(eye); cine = { t:0, dur:.01, p0:eye, p1:eye, l0:sky, l1:sky, res:() => {} };
+    await wait(400); await fadeTo(false, true); sfx('bird'); await wait(700); sfx('bird');
+    await shot(3.2, eye, low, sky, body); await wait(300);
+    lying = false; burst(p.clone().setY(p.y + .5), 0xfff3a0, 10);
+  } else {
+    const bw = new THREE.Vector3(); bed.getWorldPosition(bw);
+    player.position.set(bw.x, .42, bw.z + .15); player.rotation.y = 0; lying = true;
+    const up = bw.clone().add(V(1.4, 2.4, 2.4)), look = bw.clone().setY(.5);
+    await shot(1.5, camera.position, up, player.position.clone().setY(.8), look); await wait(900);
+    await fadeTo(true, true);
+    sleep(passedOut, 'bed'); player.position.set(bw.x, .42, bw.z + .15); lying = true; camera.position.copy(up);
+    cine = { t:0, dur:.01, p0:up, p1:up, l0:look, l1:look, res:() => {} };
+    await wait(500); await fadeTo(false, true); sfx('bird'); await wait(1300);
+    lying = false; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); await wait(200);
+  }
+  cine = null; document.body.classList.remove('in-cine');
+}
 // ============ INPUT ============
 const ray = new THREE.Raycaster(), down = new THREE.Raycaster(), ptr = new THREE.Vector2(), DOWN = new THREE.Vector3(0,-1,0);
 let target = null, pending = null;
@@ -3035,6 +3086,7 @@ renderer.domElement.addEventListener('pointermove', e => {
   ghost.material.color.set(removing || (moving && !held) ? 0xffc857 : bad ? 0xff5a5a : 0x8fdc8a);
 });
 renderer.domElement.addEventListener('pointerdown', e => {
+  if (cine) return;
   if ($('title').style.display !== 'none' || $('veil').classList.contains('show')) return;
   if (buildMode) return buildTap(e);
   closeDialog();
@@ -3117,7 +3169,7 @@ function arrive(o) {
   else if (k === 'pot') usePot();
   else if (k === 'dock') fishing();
   else if (k === 'fruitTree') useFruitTree(o);
-  else if (k === 'bed') openDialog('Your Bed', 'Go to sleep and start a new day? Watered crops will grow.', [{ label:'Sleep', fn:() => { closeDialog(); sleep(); } }]);
+  else if (k === 'bed') openDialog('Your Bed', 'Go to sleep and start a new day? Watered crops will grow.', [{ label:'Sleep', fn:() => { closeDialog(); goSleep('bed'); } }]);
   else if (k === 'door') exitHut();
   else if (k === 'shelf') openJournal();
   else if (k === 'spot') useSpot(o.userData.i);
@@ -3164,7 +3216,7 @@ function tick() {
   const menuOpen = $('veil').classList.contains('show') || $('dialog').classList.contains('show');
   if (playing) {
     if (!menuOpen) S.t += dt * (window.__sgSpeed || 1) * (sitting ? 3 : 1) / (DAY_LEN * (S.mode === 'cozy' ? 2 : 1)); // the clock stops while any menu or conversation is open
-    if (S.t >= 1) sleep(true);
+    if (S.t >= 1 && !cine) goSleep(S.where === 'hut' ? 'bed' : 'outside', true);
     if ((hudTick += dt) > .5) { hudTick = 0; drawHud(); ambience(); cloudPush(); }
     playMusic(dt);
     setChord(S.t < .3 ? 0 : S.t < .65 ? 1 : S.t < .85 ? 2 : 3);
@@ -3196,8 +3248,9 @@ function tick() {
   winMat.emissiveIntensity = night * 1.4 + (h > 18 ? .3 : 0);
   lampLights.forEach(l => l.material.opacity = night * .8);
   // movement
+  if (cine) { target = null; pending = null; }
   if (sitting && (target || keys.w || keys.a || keys.s || keys.d || keys.arrowup || keys.arrowdown || keys.arrowleft || keys.arrowright)) sitting = null;
-  let mv = new THREE.Vector3((keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0), 0, (keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0));
+  let mv = cine ? new THREE.Vector3() : new THREE.Vector3((keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0), 0, (keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0));
   if (mv.lengthSq()) { target = null; pending = null; }
   else if (target) {
     mv.subVectors(target, player.position); mv.y = 0;
@@ -3254,6 +3307,7 @@ function tick() {
   if (bell.userData.ring > 0) { bell.userData.ring = Math.max(0, bell.userData.ring - dt); bellBody.rotation.z = Math.sin(now*12) * .35 * bell.userData.ring; }
   balloons.children.forEach(b => { if (b.userData.fly) { b.position.y += dt * 1.6; b.position.x += Math.sin(now*2) * dt * .3; if (b.position.y > 25) b.visible = false; } });
   if (sitting) { inner.position.y = -.28; }
+  if (lying) { inner.rotation.x = -Math.PI/2; inner.position.y = .22; inner.rotation.z = 0; } else if (inner.rotation.x) inner.rotation.x = 0;
   if (danceT > 0) { danceT = Math.max(0, danceT - dt); inner.rotation.y = danceT ? danceT * 6 : 0; inner.position.y = Math.abs(Math.sin(now*10)) * .18 * (danceT ? 1 : 0); }
   const ffOn = !inside && night > .3 && season() < 3;
   fireflies.forEach(f => { f.visible = ffOn; if (!ffOn) return; const u = f.userData, t = now*.3 + u.ph;
@@ -3289,7 +3343,9 @@ function tick() {
   rain.visible = !inside && raining && S.t < .5;
   if (rain.visible) { const p = rainGeo.attributes.position, sp = season() === 3 ? 3 : 14; for (let i=0;i<RN;i++){ let y = p.getY(i) - sp*dt; if (y<0) y += 12; p.setY(i,y); } p.needsUpdate = true; rain.position.set(player.position.x, player.position.y, player.position.z); }
   // camera
-  if (setupCam) { const wide = innerWidth >= 760, off = wide ? new THREE.Vector3(1.25, 1, 0) : new THREE.Vector3(0, .15, 0);
+  if (cine) { if (cine.p0) { cine.t += dt; const k = easeIO(Math.min(1, cine.t / cine.dur)); camera.position.lerpVectors(cine.p0, cine.p1, k); camera.lookAt(new THREE.Vector3().lerpVectors(cine.l0, cine.l1, k));
+      if (cine.t >= cine.dur && cine.res) { const r = cine.res; cine.res = null; r(); } } }
+  else if (setupCam) { const wide = innerWidth >= 760, off = wide ? new THREE.Vector3(1.25, 1, 0) : new THREE.Vector3(0, .15, 0);
     camera.position.lerp(player.position.clone().add(new THREE.Vector3(off.x, 2.2, 4.6)), 1 - Math.pow(.001, dt)); camera.lookAt(player.position.x + off.x, player.position.y + off.y + .15 + (wide ? 0 : -.9), player.position.z); player.rotation.y = Math.sin(now*.6)*.5; }
   else if (!playing) { const a = now*.07; camera.position.set(Math.sin(a)*17, 9.5, Math.cos(a)*17); camera.lookAt(0, .5, 0); }
   else if (buildMode) { camera.position.lerp(new THREE.Vector3(0, 17, 13), 1 - Math.pow(.02, dt)); camera.lookAt(0, 0, 1); }
@@ -3582,6 +3638,50 @@ function openProduct(p, back) {
   if ($('pRep')) $('pRep').onclick = () => reportShop(p.maker.code, null, () => openProduct(p, back));
   if ($('pShop')) { $('pShop').onclick = () => openShop(p.maker.code); $('pVisit').onclick = () => { location.href = `${location.pathname}?visit=${p.maker.code}`; }; }
 }
+// --- Chapter 2's fork: explorer's ship or floating market ---
+function shipChoice() {
+  const again = !!S.shipPath; if (again) { S.shipAsked = islandYear(); save(); }
+  openDialog('Captain Drizzle', again ? `A new year, sailor! Last year she was ${SHIP_PATHS[S.shipPath].name.toLowerCase()}. Want to keep her that way, or try the other road?`
+    : "Now, what should the Puddle Jumper be, day to day? Some captains chase the horizon. Some bring the whole world to their deck. It is your call, sailor.", [], S.hearts.drizzle);
+  const opts = Object.entries(SHIP_PATHS).filter(([k]) => !again || true);
+  showCard(`<div class="kicker">CAPTAIN DRIZZLE ASKS</div><h2>What should the ship become?</h2>
+    ${opts.map(([k, p]) => `<button data-sp2="${k}" class="${S.shipPath === k ? '' : 'ghost'}" style="display:block;width:100%;text-align:left;margin-top:8px"><b>${p.name}</b>${S.shipPath === k ? ' (this year)' : ''}<br><span class="sub">${p.short}</span></button>`).join('')}
+    <p style="font-size:13px;opacity:.7;margin-top:8px">She can still fly you anywhere either way. You can change your mind on your next island year.</p>`, again ? 'Keep it as is' : null, () => closeDialog());
+  document.querySelectorAll('[data-sp2]').forEach(b => b.onclick = () => { const k = b.dataset.sp2, changed = k !== S.shipPath; S.shipPath = k; S.shipYear = islandYear();
+    lean(k === 'explore' ? 'explorer' : 'trader', 3); if (changed) S.bigChoices = [...(S.bigChoices || []), k === 'explore' ? 'You made the Puddle Jumper an explorer\'s ship.' : 'You made the Puddle Jumper a floating market.'];
+    save(); drawShip(); hideCard(); closeDialog(); burst(ship.position, 0xffc857, 22); [523,659,784].forEach((f,i) => setTimeout(() => chime(f), i*150));
+    openDialog('Captain Drizzle', k === 'explore' ? "An explorer! I knew it. I put up a crow's nest and dug out my old charts. Tap the ship once a day and we sail." : "A market! I will stack the crates. Folks from every island will shout their orders. Tap the ship each day to see what they want.", [], S.hearts.drizzle); });
+}
+function voyage() {
+  if (S.voyageDay === S.day) { toast('The crew is resting. One voyage a day, sailor.'); return; }
+  showCard(`<div class="kicker">VOYAGE</div><h2>Which way, navigator?</h2><p>No map, no compass. Drizzle says: "Pick how we find our way."</p>
+    <div class="jlist">${HEADINGS.map(h => `<button data-hd="${h.id}">${h.label}<span class="sub"> ${h.hint}</span></button>`).join('')}</div>`, 'Not now');
+  document.querySelectorAll('[data-hd]').forEach(b => b.onclick = () => { const hd = b.dataset.hd; S.voyageDay = S.day; S.voyages = (S.voyages || 0) + 1; lean('explorer', 2);
+    const pool = { birds:['apple','peach','minnow'], swells:['trout','koi','guppy'], stars:['sunfish','frostchar','lanterneel'] }[hd];
+    const haul = { [pool[Math.floor(Math.random()*3)]]:2, [pool[Math.floor(Math.random()*3)]]:1 }, rare = Math.random() < .2 ? (Math.random() < .5 ? 'puffer' : 'moonray') : null;
+    if (rare) haul[rare] = (haul[rare] || 0) + 1;
+    const coins = 30 + Math.floor(Math.random()*40), got = giveReward({ coins, items:haul }); save(); drawHud(); sfx('splash');
+    const first = S.voyages === 1, done = S.voyages === 3;
+    showCard(`<div class="kicker">VOYAGE ${S.voyages}</div><h2>${rare ? 'A rare catch!' : 'Land ho!'}</h2><p>You came home with ${got.join(', ')}.</p>
+      ${first ? `<h4>In real life</h4><p>${WAYFINDING}</p>` : ''}
+      ${done ? `<h4>Drizzle is proud</h4><p>"Three voyages, three safe returns. You are a real navigator now. Take my old Star Globe. It showed me the way for forty years."</p>` : ''}`, 'Okay');
+    if (done) { S.furn.globe = (S.furn.globe || 0) + 1; save(); } });
+}
+function marketDay() {
+  const s = season();
+  if (!S.boat || S.boat.day !== S.day) { const pool = [...Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(s) && !CROPS[k].locked), 'apple', 'peach', 'minnow', 'trout'];
+    S.boat = { day:S.day, orders:[...Array(3)].map(() => { const k = pool[Math.floor(Math.random()*pool.length)], n = 1 + Math.floor(Math.random()*3); return { k, n, pay:Math.round(ITEMS[k].sell * n * 1.5), done:false }; }) }; save(); }
+  showCard(`<div class="kicker">THE FLOATING MARKET</div><h2>Today's orders</h2><p>Shoppers from all over the sky call out what they want. These pay 50% more than your crate.</p>
+    <div class="jlist">${S.boat.orders.map((o, i) => `<button data-mo="${i}" ${o.done ? 'class="locked"' : ''}>${o.done ? '✓ ' : ''}${icon(o.k)} ${o.n} ${esc(plural(o.k, o.n))} <span class="sub">${o.done ? 'Delivered' : `pays ${o.pay} coins (you have ${have(o.k)})`}</span></button>`).join('')}</div>`, 'Close');
+  document.querySelectorAll('[data-mo]').forEach(b => b.onclick = () => { const o = S.boat.orders[+b.dataset.mo]; if (o.done) return;
+    if (have(o.k) < o.n) { toast(`You need ${o.n} ${plural(o.k, o.n)}.`); return; }
+    bagAdd(o.k, -o.n); S.coins += o.pay; o.done = true; S.marketFilled = (S.marketFilled || 0) + 1; lean('trader'); goal('sell', o.pay); sfx('coin'); save(); drawHud();
+    const first = S.marketFilled === 1, done = S.marketFilled === 6;
+    if (done) { S.perks = [...new Set([...(S.perks || []), 'marketRep'])]; S.coins += 300; save(); drawHud(); }
+    if (first || done) return showCard(`<div class="kicker">THE FLOATING MARKET</div><h2>${first ? 'Your first sale on the water' : 'The market is famous!'}</h2>
+      ${first ? `<h4>In real life</h4><p>${FLOATING}</p>` : `<p>"Six orders filled! Word is spreading, sailor. Shoppers trust us now." Drizzle hands you 300 coins from the market's savings, and from now on your crate pays 10% more.</p>`}`, 'Okay', marketDay);
+    marketDay(); });
+}
 // --- growing the island ---
 function expandReady(e) { return e.needs === 'home' ? (S.home || 0) >= 3 : e.needs === 'kiln' ? !!S.stations.kiln && potteryOn() : !!S.stations.furnace && bronzeOn(); }
 function expandCard() {
@@ -3654,7 +3754,7 @@ function openStory() {
   showCard(`<div class="kicker">YOUR STORY</div><h2>${S.name ? S.name + "'s" : 'Your'} journey</h2>
     <p style="font-style:italic">${islandFeel(kk.kind || 0, kk.harmony || 0)}</p>
     <h4>Who you are becoming</h4>${ps.length ? ps.map(([k]) => `<p><b>${PATHS[k][0]}.</b> ${PATHS[k][1]}</p>`).join('') : '<p>Keep playing. Your path will show here.</p>'}
-    <h4>Choices you made</h4>${(S.choices || []).length ? `<div class="jlist">${S.choices.map(c => { const d = DILEMMAS.find(x => x.id === c.id); return `<p>• ${d[c.pick].story}</p>`; }).join('')}</div>` : '<p>None yet. Neighbors sometimes ask you to decide things. There are no wrong answers.</p>'}`, 'Back', openJournal);
+    <h4>Choices you made</h4>${(S.bigChoices || []).map(t => `<p><b>• ${t}</b></p>`).join('')}${(S.choices || []).length ? `<div class="jlist">${S.choices.map(c => { const d = DILEMMAS.find(x => x.id === c.id); return `<p>• ${d[c.pick].story}</p>`; }).join('')}</div>` : (S.bigChoices || []).length ? '' : '<p>None yet. Neighbors sometimes ask you to decide things. There are no wrong answers.</p>'}`, 'Back', openJournal);
 }
 // --- rolling unlocks: a "New today" card the first time you play each day ---
 function maybeNewToday() {
@@ -3706,7 +3806,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
