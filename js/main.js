@@ -588,10 +588,11 @@ scene.add(bell);
 // --- festival lanterns ---
 const lanterns = new THREE.Group(); lanterns.visible = false; scene.add(lanterns);
 const lanternMat = glow(0xffb45c);
-for (let i=0;i<8;i++){ const a = i/8*Math.PI*2 + .3, x = Math.cos(a)*7.2, z = Math.sin(a)*7.2;
-  lanterns.add(mesh(new THREE.CylinderGeometry(.05,.05,1.8,6), mat(0x9b6b4a), x, .9, z));
-  const l = mesh(sph(.22), lanternMat, x, 1.9, z); l.scale.y = 1.25; lanterns.add(l); const lh = halo(0xffb45c, 1.6, .7); lh.position.set(x, 1.9, z); lanterns.add(lh);
-  const h = hitBox(.6, 2.2, .6); h.position.set(x, 1.1, z); lanterns.add(h); deco(h, () => { pulse(lh, 1.2); chime(880); toast('You made a wish on the lantern. People light lanterns at festivals all over the world.'); }); }
+// 6 spots checked to be clear of trees, rocks, the hut, and everything else you can tap
+[[7.9,-1.4],[5.4,3.8],[-4.1,6.9],[-8,0],[-.5,-8],[3.4,-5.6]].forEach(([lx, lz]) => { const one = new THREE.Group(); one.position.set(lx, 0, lz); lanterns.add(one);
+  one.add(mesh(new THREE.CylinderGeometry(.05,.05,1.8,6), mat(0x9b6b4a), 0, .9, 0));
+  const l = mesh(sph(.22), lanternMat, 0, 1.9, 0); l.scale.y = 1.25; one.add(l); const lh = halo(0xffb45c, 1.6, .7); lh.position.set(0, 1.9, 0); one.add(lh);
+  const h = hitBox(.6, 2.2, .6); h.position.set(0, 1.1, 0); one.add(h); deco(h, () => { pulse(lh, 1.2); chime(880); toast('You made a wish on the lantern. People light lanterns at festivals all over the world.'); }); });
 
 // --- dig spots ---
 const DIG_SPOTS = [[-6.5,2],[2.5,6],[-2.5,-7.2],[7,-1.5],[.5,-3.8],[-3.5,5.8],[4.2,3.8],[-7.5,-3.5]];
@@ -1401,7 +1402,8 @@ function birthdayPicker(done, fromNana) {
   draw();
 }
 const balloons = new THREE.Group(); balloons.visible = false; scene.add(balloons);
-[[-5.6,-1.6],[-2.4,-1.6],[-5.6,-4.4],[-2.4,-4.4],[-4,-1.2],[-1.2,-2.4]].forEach(([x,z], i) => {
+balloons.add(mesh(new THREE.CylinderGeometry(.05,.06,1.1,6), mat(0x9b6b4a), -.25, .55, -3.1)); // the post the bunch is tied to, in a clear spot by the hut
+[[-.75,-3.1],[.25,-3.1],[-.25,-2.6],[-.25,-3.6],[-.65,-2.65],[.15,-3.55]].forEach(([x,z], i) => {
   const c = [0xff8fa3,0x7ec8e3,0xffc857,0x8fdc8a,0xc9b6ff,0xff9a3c][i];
   const b = mesh(sph(.26), new THREE.MeshStandardMaterial({ color:c, roughness:.3 }), x, 2.6 + (i%2)*.3, z); b.scale.y = 1.2; balloons.add(b);
   deco(b, () => { if (b.userData.fly) return; b.userData.fly = 1; tone(700, { to:1400, dur:.4, vol:.05 }); toast('Whoosh! The balloon floats up into the sky.'); });
@@ -2954,15 +2956,17 @@ function drawHome() {
   siteFrame.visible = st >= 1; siteWalls.visible = st >= 2; siteStones.children.slice(-2).forEach(c => c.visible = st === 0);
   campfire.visible = !VISIT;
 }
+// true if a spot is too close to something else you can tap
+function nearThing(x, z) { try { const p = new THREE.Vector3(); return tappables().some(o => { if (o.userData.kind === 'pickup' || o.userData.kind === 'tile' || o.parent === pickupGroup) return false; o.getWorldPosition(p); return Math.hypot(p.x - x, p.z - z) < 1.3; }); } catch { return false; } }
 function spawnPickups() {
   if (VISIT) return;
   const kinds = ['stick','stick','stone','fiber'], rnd = () => Math.random();
   while (S.pickups.length < 6) { let x, z, tries = 0; do { const land = [{ x:0, z:0, r:8.2 }, ...ownedLobes().map(L => ({ x:L.e.x, z:L.e.z, r:L.r - .8 }))], L = land[Math.floor(rnd()*land.length)], a = rnd()*Math.PI*2, r = (L.r === 8.2 ? 4.8 : 0) + rnd()*(L.r - (L.r === 8.2 ? 4.8 : 0)); x = L.x + Math.cos(a)*r; z = L.z + Math.sin(a)*r; tries++; }
-    while (tries < 20 && ((x > .2 && x < 4.8 && z > -2 && z < 3.8) || Math.hypot(x+4, z+3) < 2)); const needStone = !S.tools.pick && S.pickups.filter(p => p.t === 'stone').length < 2, needStick = !S.tools.axe && S.pickups.filter(p => p.t === 'stick').length < 3; S.pickups.push({ t:needStone ? 'stone' : needStick ? 'stick' : kinds[Math.floor(rnd()*4)], x, z }); }
+    while (tries < 20 && ((x > .2 && x < 4.8 && z > -2 && z < 3.8) || Math.hypot(x+4, z+3) < 2 || nearThing(x, z))); const needStone = !S.tools.pick && S.pickups.filter(p => p.t === 'stone').length < 2, needStick = !S.tools.axe && S.pickups.filter(p => p.t === 'stick').length < 3; S.pickups.push({ t:needStone ? 'stone' : needStick ? 'stick' : kinds[Math.floor(rnd()*4)], x, z }); }
   drawPickups();
 }
 function drawPickups() {
-  S.pickups = (S.pickups || []).filter(p => Math.hypot(p.x, p.z) > 4.5).slice(0, 6); // older saves had more, closer in
+  S.pickups = (S.pickups || []).filter(p => Math.hypot(p.x, p.z) > 4.5 && !nearThing(p.x, p.z)).slice(0, 6); // older saves had more, closer in, some under other things
   pickupGroup.clear();
   S.pickups.forEach((p, i) => {
     const g = new THREE.Group(); g.position.set(p.x, 0, p.z); g.userData = { kind:'pickup', i };
@@ -3558,6 +3562,18 @@ renderer.domElement.addEventListener('pointermove', e => {
   const bad = !removing && !(moving && !held) && (blockedAt(c.x, c.z) || S.builds.some(b => b.x === c.x && b.z === c.z));
   ghost.material.color.set(removing || (moving && !held) ? 0xffc857 : bad ? 0xff5a5a : 0x8fdc8a);
 });
+// what a tap means: of everything under the finger, the thing whose middle is closest to it wins.
+// Without this, a big tree, the hut, or your companion in front would catch taps meant for something smaller.
+const tapBox = new THREE.Box3(), tapC = new THREE.Vector3();
+function tapTarget(sx, sy) { ptr.set(sx/innerWidth*2-1, -(sy/innerHeight)*2+1); ray.setFromCamera(ptr, camera);
+  const seen = new Set(), cands = [];
+  for (const h of ray.intersectObjects([...clickables, ...lateClicks, ...digGroups], true)) {
+    let vis = true, top = h.object; for (let a = h.object; a; a = a.parent) { if (!a.visible) { vis = false; break; } top = a; } if (!vis || top !== scene) continue; // hidden or not placed yet
+    let o = h.object; while (o && !o.userData.kind) o = o.parent; if (!o || seen.has(o)) continue; seen.add(o);
+    tapBox.setFromObject(o); tapBox.getCenter(tapC); tapC.y = Math.min(tapC.y, tapBox.min.y + 1); tapC.project(camera);
+    const px = Math.hypot((tapC.x - ptr.x) * innerWidth / 2, (tapC.y - ptr.y) * innerHeight / 2);
+    cands.push({ o, score:px + h.distance * 2 + (o.userData.kind === 'pet' ? 60 : 0) }); if (cands.length >= 6) break; }
+  cands.sort((a, b) => a.score - b.score); return cands.length ? cands[0].o : null; }
 renderer.domElement.addEventListener('contextmenu', e => e.preventDefault()); // a long press is for flying, not a menu
 renderer.domElement.addEventListener('pointerdown', e => {
   if (fish3) { fish3.press(true); return; }
@@ -3566,13 +3582,8 @@ renderer.domElement.addEventListener('pointerdown', e => {
   if ($('title').style.display !== 'none' || $('veil').classList.contains('show')) return;
   if (buildMode) return buildTap(e);
   closeDialog();
-  ptr.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1);
-  ray.setFromCamera(ptr, camera);
-  const hit = ray.intersectObjects([...clickables, ...lateClicks, ...digGroups], true).find(h => { for (let o = h.object; o; o = o.parent) if (!o.visible) return false; return true; });
-  if (hit) {
-    let o = hit.object; while (o && !o.userData.kind) o = o.parent;
-    if (o) { const wp = new THREE.Vector3(); o.getWorldPosition(wp); target = wp; pending = o; return; }
-  }
+  const o = tapTarget(e.clientX, e.clientY);
+  if (o) { const wp = new THREE.Vector3(); o.getWorldPosition(wp); target = wp; pending = o; return; }
   const g = ray.intersectObjects(walkables, false)[0];
   if (g) { target = g.point.clone(); pending = null; markTap(g.point); }
 });
@@ -3824,7 +3835,7 @@ function tickFrame() {
   ripple.scale.setScalar(1 + (now % 2) * .6); ripple.material.opacity = 1 - (now % 2) / 2; ripple.material.transparent = true;
   ship.position.y = ORCH_POS.y + ship.userData.lift * (S.q2 >= 5 ? 1 : 0) + (S.q2 >= 5 ? Math.sin(now*1.3)*.12 : 0);
   lid.visible = S.q2 === 1 && S.potDay >= 0; sail.visible = S.q2 >= 3; saggy.visible = S.q2 < 3;
-  lanterns.children.forEach((l, i) => { if (l.geometry.type === 'SphereGeometry') l.position.y = 1.9 + Math.sin(now*1.5 + i)*.05; });
+  lanterns.children.forEach((one, i) => { const l = one.children[1]; if (l) l.position.y = 1.9 + Math.sin(now*1.5 + i)*.05; });
   { const q = S.q5; frameMarker.visible = q < 4; ghostMat.opacity = q === 3 ? .22 + Math.sin(now*3)*.1 : 0; lumberPile.visible = q <= 4; pileGear.visible = q === 4; pileGear.rotation.y = now; framePosts.visible = q >= 4; frameGear.visible = q >= 5; crack.visible = q < 6;
     if (q < 3) { greatBell.position.set(OH.x, OH.y + .6, OH.z + .3); gbSwing.rotation.set(0, 0, 1.35); }
     else if (q < 5) { greatBell.position.set(OH.x, OH.y + .7, OH.z); gbSwing.rotation.set(0, 0, 0); }
@@ -4420,7 +4431,7 @@ function makeBalloon() { const g = new THREE.Group(); const cols = [0xc9b6ff, 0x
   g.add(mesh(new THREE.CylinderGeometry(.35, .6, .5, 16, 1, true), mat(0xc9b6ff), 0, 1.75, 0)); g.add(mesh(new THREE.CylinderGeometry(.45, .38, .45, 12), mat(0xa9744a), 0, .45, 0));
   [[.3,.3],[-.3,.3],[.3,-.3],[-.3,-.3]].forEach(([x,z]) => { const r = mesh(new THREE.CylinderGeometry(.012,.012,1.2,4), mat(0x6b4f3a), x*.9, 1.15, z*.9); g.add(r); });
   g.add(mesh(new THREE.OctahedronGeometry(.12), glow(0xffe07a), 0, 4.45, 0)); return g; }
-const balloon = makeBalloon(); balloon.position.set(3.1, 0, -6.5); scene.add(balloon); lateClicks.push(balloon);
+const balloon = makeBalloon(); balloon.position.set(1.2, 0, -4.6); scene.add(balloon); lateClicks.push(balloon);
 { const hb = hitBox(1.6, 4.6, 1.6); hb.position.y = 2.2; balloon.add(hb); balloon.userData.kind = 'deco'; balloon.userData.use = () => balloonMenu(); }
 function drawBalloon() { balloon.visible = !!S.founderBalloon && !VISIT; }
 drawBalloon();
@@ -4830,7 +4841,7 @@ function openNotice() { const fz = festival(), rows = [];
 function squareTick(dt, now) { if (!squareBits) return;
   squareBits.drops.forEach(d => { const k = (now * .6 + d.userData.ph) % 1, a = d.userData.ph * Math.PI * 2; d.position.set(Math.cos(a) * (.1 + k * .95), 1.55 + k * .5 - k * k * 1.4, Math.sin(a) * (.1 + k * .95)); });
   if (squareBits.water) squareBits.water.material.opacity = .72 + Math.sin(now * 2) * .06; }
-drawSquare(); if (S.squareNew) addEventListener('sg-playing', () => setTimeout(squareIntro, 4000));
+lateClicks.push(squareBits.g); drawSquare(); if (S.squareNew) addEventListener('sg-playing', () => setTimeout(squareIntro, 4000));
 
 // ============ LEGENDS ============
 // Rare creatures. A few players are secretly given one by the Creator. Everything personal about it
@@ -5018,7 +5029,11 @@ function previewStart() { if (!PREVIEW) return; const d = PREVIEW.data || {};
   $('pvFly').onclick = () => { const others = Object.keys(MYTHS).filter(k => k !== d.myth); mythSighting({ id:0, form:others[Math.floor(Math.random() * others.length)] }); };
   if (!d.myth) toast(`${PREVIEW.label} has no legend yet. Pick one for them on the dashboard.`); else setTimeout(mythReveal, 1500); }
 addEventListener('sg-playing', () => setTimeout(() => { if (PREVIEW) return previewStart(); mythLookUp(); drawShrooms(); mythReveal(); setInterval(() => { if (playing) mythReveal(); }, 20000); }, PREVIEW ? 1500 : 5000));
-window.__sg = { SQ, openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+// test helpers: what a tap at a screen point would hit, and every tappable thing in the world
+function pickAt(sx, sy) { return tapTarget(sx, sy); }
+function tappables() { const out = new Set(); const walk = o => { if (!o.visible) return; if (o.userData && o.userData.kind) { out.add(o); } o.children.forEach(walk); };
+  [...clickables, ...lateClicks, ...digGroups].forEach(walk); decos.forEach(d => { let v = true; for (let o = d; o; o = o.parent) if (!o.visible) v = false; if (v) out.add(d); }); return [...out]; }
+window.__sg = { lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
