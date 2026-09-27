@@ -12,6 +12,7 @@ import { EXPANSIONS, RECLAIM_FACT } from '../data/expand.js';
 import { SHIP_PATHS, HEADINGS, WAYFINDING, FLOATING } from '../data/ship.js';
 import { KID_ADJ, KID_NOUN, SHAPES, PATTERNS, SYMBOLS, PALETTE, BASES, logoSvg, productSwatch, hx, MARK_LESSON, DESIGN_LESSON } from '../data/market.js';
 import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
+import { INSECTS } from '../data/insects.js';
 import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
@@ -19,6 +20,7 @@ import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NA
 Object.assign(NEIGHBORS, VILLAGERS); Object.assign(LOVES, VILLAGER_LOVES);
 RECIPES.forEach(r => ITEMS[r.id] = { name:r.name, sell:r.sell, kind:'dish' });
 Object.assign(AHA, FESTIVAL_AHA);
+INSECTS.forEach(b => ITEMS[b.id] = { name:b.name, sell:b.sell, kind:'bug' }); BUTTERFLIES.forEach(b => ITEMS[b.id] = { name:b.name, sell:50, kind:'bug' });
 SPECIALTIES.forEach(sp => { ITEMS[sp.id] = { name:sp.name, sell:HOME_PRICE, kind:'specialty' }; FINDS[sp.id] = { fact:sp.fact, hint:'Every island grows one specialty. Trade with friends to get the others.' }; });
 // heirloom flowers are named after the island they came from, so register any we hold
 const registerHeirloom = id => { if (isHeirloom(id) && !ITEMS[id]) ITEMS[id] = { name:heirloomOf(codeOfHeirloom(id)).name, sell:60, kind:'heirloom' }; return id; };
@@ -1236,7 +1238,7 @@ function noteFind(k) {
   el.classList.add('show'); chime(1047); setTimeout(() => chime(1319), 120);
   clearTimeout(noteFind.t); noteFind.t = setTimeout(() => el.classList.remove('show'), 7000);
 }
-function collectionCats() { return allCats().filter(c => !({ Butterflies:'butterflies', Specialties:'specialty', Heirlooms:'heirloom' })[c.name] || featureOn({ Butterflies:'butterflies', Specialties:'specialty', Heirlooms:'heirloom' }[c.name])); }
+function collectionCats() { return allCats().filter(c => !({ Bugs:'butterflies', Specialties:'specialty', Heirlooms:'heirloom' })[c.name] || featureOn({ Bugs:'butterflies', Specialties:'specialty', Heirlooms:'heirloom' }[c.name])); }
 function allCats() {
   const month = m => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
   const itemCard = (k, kick) => () => showCard(`<div class="kicker">${kick}</div><h2>${ITEMS[k]?.name || FURN[k]?.name}</h2><h4>In real life</h4><p>${FINDS[k].fact}</p><h4>In Sky Garden</h4><p>${FINDS[k].hint}${CROPS[k] ? ` It grows in ${CROPS[k].days} days here, and sells for ${CROPS[k].sell} coins.` : ITEMS[k] ? ` It sells for ${ITEMS[k].sell} coins.` : ''}${S.fishLog?.[k] ? ` Your biggest: ${S.fishLog[k].best} cm.` : ''}</p>`, 'Back', () => openCategory(kick));
@@ -1246,7 +1248,7 @@ function allCats() {
     { name:'Fish', ids:['minnow','trout','koi','sunfish','frostchar','guppy','lanterneel','puffer','moonray'], has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => itemCard(k, 'Fish'), hint:k => FINDS[k].hint },
     { name:'Specialties', ids:SPECIALTIES.map(x => x.id), has:k => S.found.includes(k), label:k => ITEMS[k].name, open:k => () => showCard(`<div class="kicker">SPECIALTIES</div><h2>${ITEMS[k].name}</h2><h4>In real life</h4><p>${FINDS[k].fact}</p><p>${TRADE_FACT}</p><h4>In Sky Garden</h4><p>${k === S.specialty ? 'This is your island\'s specialty.' : 'This grows on a friend\'s island.'} It sells for ${HOME_PRICE * AWAY_MULT} coins on any island where it does not grow.</p>`, 'Back', () => openCategory('Specialties')), hint:() => 'Trade with friends. Each island grows a different one.' },
     { name:'Heirlooms', ids:S.found.filter(isHeirloom), has:() => true, label:k => `${registerHeirloom(k) && ITEMS[k].name} (${codeOfHeirloom(k) === myCode ? 'yours' : 'island ' + codeOfHeirloom(k)})`, open:k => () => showCard(`<div class="kicker">HEIRLOOM FLOWERS</div><h2>${ITEMS[k].name}</h2><p>Only grows on island ${codeOfHeirloom(k)}.</p><h4>In real life</h4><p>Gardeners breed and name their own flower and vegetable varieties. In the 1930s one man bred the Mortgage Lifter tomato and paid off his house selling the seedlings.</p>`, 'Back', () => openCategory('Heirlooms')), hint:() => '' },
-    { name:'Butterflies', ids:BUTTERFLIES.map(b => b.id), has:k => (S.bugs || []).includes(k), label:k => BUTTERFLIES.find(b => b.id === k).name, open:k => () => { const b = BUTTERFLIES.find(x => x.id === k); showCard(`<div class="kicker">BUTTERFLIES</div><h2>${b.name}</h2><h4>In real life</h4><p>${b.fact}</p>`, 'Back', () => openCategory('Butterflies')); }, hint:() => 'Tap a butterfly when you see one flying on the islands.' },
+    { name:'Bugs', ids:[...BUTTERFLIES.map(b => b.id), ...INSECTS.map(b => b.id)], has:k => (S.bugs || []).includes(k), label:k => (BUTTERFLIES.find(b => b.id === k) || INSECTS.find(b => b.id === k)).name, open:k => () => { const b = BUTTERFLIES.find(x => x.id === k) || INSECTS.find(x => x.id === k); showCard(`<div class="kicker">BUGS</div><h2>${icon(k)} ${b.name}</h2><h4>In real life</h4><p>${b.fact}</p>`, 'Back', () => openCategory('Bugs')); }, hint:k => { const b = INSECTS.find(x => x.id === k); return b ? `Look ${ { air:'in the air', flower:'on flowers', ground:'on the ground', tree:'on tree trunks' }[b.where] } in ${b.seasons.map(x => SEASONS[x].toLowerCase()).join(' or ')}${b.time === 'night' ? ', at night' : b.time === 'day' ? ', in the day' : ''}.` : 'Tap a butterfly when you see one flying.'; } },
     { name:'Furniture', ids:Object.keys(FURN), has:k => S.found.includes(k), label:k => FURN[k].name, open:k => itemCard(k, 'Furniture'), hint:k => FINDS[k].hint },
     { name:'Memories', ids:AHA_ORDER, has:k => S.aha.includes(k), label:k => AHA[k].title + (S.used.includes(k) ? ' ★' : ''), open:k => () => showCard(ahaHtml(k), 'Back', () => openCategory('Memories')), hint:() => 'Keep playing the story, digging, and celebrating festivals.' },
     { name:'Dishes', ids:RECIPES.map(r => r.id), has:k => S.cooked.includes(k), label:k => RECIPES.find(r => r.id === k).name, open:k => () => showCard(lessonHtml(RECIPES.find(r => r.id === k).aha), 'Back', () => openCategory('Dishes')), hint:k => `Cook it at the Bakery. Needs ${Object.entries(RECIPES.find(r => r.id === k).needs).map(([i,n]) => `${n} ${ITEMS[i].name}`).join(' and ')}.` },
@@ -1258,7 +1260,7 @@ function allCats() {
 }
 function openCategory(name) {
   const c = collectionCats().find(x => x.name === name), got = c.ids.filter(c.has).length;
-  showCard(`<div class="kicker">COLLECTIONS</div><h2>${name}: ${got} of ${c.ids.length}</h2><div class="jlist">${c.ids.map(k => c.has(k) ? `<button data-ck="${k}">${name === 'Butterflies' ? '🦋 ' : ['Crops','Fruit','Fish','Furniture','Dishes'].includes(name) ? icon(k, ITEMS[k]?.kind) + ' ' : ''}${c.label(k)}</button>` : `<button class="locked">??? <span class="sub">${c.hint(k)}</span></button>`).join('')}</div>`, 'Back', openJournal);
+  showCard(`<div class="kicker">COLLECTIONS</div><h2>${name}: ${got} of ${c.ids.length}</h2><div class="jlist">${c.ids.map(k => c.has(k) ? `<button data-ck="${k}">${name === 'Bugs' ? icon(k) + ' ' : ['Crops','Fruit','Fish','Furniture','Dishes'].includes(name) ? icon(k, ITEMS[k]?.kind) + ' ' : ''}${c.label(k)}</button>` : `<button class="locked">??? <span class="sub">${c.hint(k)}</span></button>`).join('')}</div>`, 'Back', openJournal);
   document.querySelectorAll('[data-ck]').forEach(b => b.onclick = c.open(b.dataset.ck));
 }
 const MONTH_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1424,7 +1426,7 @@ function itemUse(k) {
   return `Sells for ${it.sell} each.${uses.length ? ` Cook into: ${uses.join(', ')}.` : ''}`;
 }
 function openBag() {
-  const GROUPS = [['specialty','Specialties'],['heirloom','Heirlooms'],['crop','Crops'],['fruit','Fruit'],['fish','Fish'],['dish','Dishes'],['material','Materials'],['quest','Special']];
+  const GROUPS = [['bug','Bugs'],['specialty','Specialties'],['heirloom','Heirlooms'],['crop','Crops'],['fruit','Fruit'],['fish','Fish'],['dish','Dishes'],['material','Materials'],['quest','Special']];
   const tile = (k, n, name, sub) => `<button class="itile" data-it="${k}" title="${name}"><span class="ic">${icon(k, ITEMS[k]?.kind)}</span><b>${n}</b><small>${name}</small></button>`;
   const goods = GROUPS.map(([kind, label]) => { const list = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && ITEMS[k].kind === kind);
     return list.length ? `<h4>${label}</h4><div class="igrid">${list.map(([k,n]) => tile(k, n, ITEMS[k].name)).join('')}</div>` : ''; }).join('');
@@ -2768,6 +2770,7 @@ const CRAFTS = [
   { id:'pick',  name:'Stone Pickaxe', needs:{ stick:2, stone:3, fiber:1 }, does:'Break rocks for stone and dig ore.' },
   { id:'kiln',  name:'Kiln',          needs:{ stone:12, clay:6 }, does:'A clay oven for firing pots and bricks. Starts the Pottery Age.', station:true, after:'pick' },
   { id:'furnace', name:'Furnace',     needs:{ brick:8, stone:6 }, does:'A very hot oven for melting metal. Starts the Bronze Age.', station:true, after:'kiln' },
+  { id:'net', name:'Bug Net', needs:{ fiber:5, stick:3 }, does:'Swing it at insects and butterflies to catch them. People have made nets from plant fibers for over 10,000 years.', after:'axe' },
   { id:'bag1', name:'Woven Grass Bag', needs:{ fiber:10, stick:4 }, does:'A bigger backpack: 18 slots instead of 12. People have woven bags from grass and reeds for thousands of years.', after:'axe' },
   { id:'bag2', name:'Clay-Bead Satchel', needs:{ fiber:8, pot:1, clay:4 }, does:'A bigger backpack: 24 slots. Fired clay beads make strong fastenings.', after:'kiln' },
   { id:'bag3', name:'Bronze-Buckle Pack', needs:{ bronze:2, fiber:8 }, does:'The biggest backpack: 36 slots. Metal buckles hold a heavy load closed.', after:'furnace' },
@@ -2789,7 +2792,7 @@ function agesHtml() {
 function drawStations() { kiln.visible = !!S.stations.kiln; furnace.visible = !!S.stations.furnace;
   nodes.forEach(n => n.visible = n.userData.kind === 'claypit' ? potteryOn() : bronzeOn()); }
 function useWorkbench() {
-  const shown = CRAFTS.filter(c => (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag1' || featureOn('bagup')) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
+  const shown = CRAFTS.filter(c => (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag1' || featureOn('bagup')) && (c.id !== 'net' || featureOn('butterflies')) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
   showCard(`<div class="kicker">TREE STUMP WORKBENCH</div><h2>Craft</h2><h4>Ages of invention</h4>${agesHtml()}
     <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln && potteryOn() ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>
     <div class="jlist">${shown.map(c => `<button data-cr="${c.id}" ${hasCraft(c.id) || !enough(c.needs) ? 'style="opacity:.6"' : ''}>${hasCraft(c.id) ? '✓ ' : ''}${c.name} <span class="sub">${hasCraft(c.id) ? 'You have this. ' : ''}${c.does} Needs ${needText(c.needs)}.</span></button>`).join('')}</div>`, 'Close');
@@ -3065,6 +3068,76 @@ function pickHeirloom(code) {
   gain(id, 1, new THREE.Vector3(1.6, .8, 5.2), true); sfx('heart');
   toast(`You picked a ${ITEMS[id].name}. This flower only grows on your island, so no one else has one unless you give it to them.`);
 }
+// --- insects you can catch with a bug net ---
+const bugGroup = new THREE.Group(); scene.add(bugGroup); lateClicks.push(bugGroup);
+function bugModel(id) {
+  const g = new THREE.Group(), s = sph, M = mat, wingM = new THREE.MeshStandardMaterial({ color:0xffffff, transparent:true, opacity:.6, side:THREE.DoubleSide });
+  const wings = (w, h, c, y = .05) => { const m = c ? new THREE.MeshStandardMaterial({ color:c, side:THREE.DoubleSide }) : wingM, geo = new THREE.PlaneGeometry(w, h); geo.rotateX(-Math.PI/2); geo.translate(w/2, 0, 0);
+    const l = new THREE.Mesh(geo, m), r = new THREE.Mesh(geo, m); r.scale.x = -1; l.position.y = r.position.y = y; g.add(l, r); g.userData.wings = [l, r]; };
+  if (id === 'honeybee') { const b = mesh(s(.07), M(0xffc857)); b.scale.set(1, .85, 1.4); g.add(b); [-.04,.04].forEach(z => { const st = mesh(new THREE.TorusGeometry(.062,.012,6,16), M(0x2b2233), 0, 0, z); g.add(st); }); wings(.09, .06); }
+  if (id === 'ladybird') { const b = mesh(new THREE.SphereGeometry(.07, 12, 8, 0, Math.PI*2, 0, Math.PI/2), M(0xd8323c)); g.add(b); g.add(mesh(s(.035), M(0x2b2233), 0, .01, .06)); [[.03,.03],[-.03,.03],[.035,-.02],[-.035,-.02],[0,.05]].forEach(([x,z]) => g.add(mesh(s(.014), M(0x2b2233), x, .05, z))); }
+  if (id === 'dragonfly') { const b = mesh(new THREE.CylinderGeometry(.015, .01, .3, 6), M(0x3fbf8f)); b.rotation.x = Math.PI/2; g.add(b); g.add(mesh(s(.03), M(0x5b8fd6), 0, 0, .15)); wings(.16, .04); const w2 = g.userData.wings; wings(.14, .035); g.userData.wings.forEach(w => w.position.z = -.05); g.userData.wings.push(...w2); }
+  if (id === 'hopper' || id === 'mantis') { const c = id === 'mantis' ? 0x8fdc8a : 0x7fb069, b = mesh(new THREE.CapsuleGeometry(.03, .14, 4, 8), M(c)); b.rotation.x = Math.PI/2 - (id === 'mantis' ? .9 : 0); g.add(b);
+    [-1,1].forEach(sd => { const leg = mesh(new THREE.CylinderGeometry(.008, .008, .14, 4), M(c), sd*.04, .01, -.04); leg.rotation.z = sd*.9; g.add(leg); }); g.add(mesh(s(.028), M(c), 0, id === 'mantis' ? .1 : .02, .09)); }
+  if (id === 'cicada') { const b = mesh(s(.06), M(0x5f6b3a)); b.scale.set(1, .8, 1.6); g.add(b); g.add(mesh(s(.02), M(0xd8323c), .04, .03, .08)); g.add(mesh(s(.02), M(0xd8323c), -.04, .03, .08)); wings(.08, .14); }
+  if (id === 'stagbeetle') { const b = mesh(s(.08), M(0x4a2e1f)); b.scale.set(.9, .5, 1.3); g.add(b); [-1,1].forEach(sd => { const m = mesh(new THREE.ConeGeometry(.015, .1, 5), M(0x6b3a22), sd*.03, .01, .14); m.rotation.x = Math.PI/2; m.rotation.z = sd*.4; g.add(m); }); }
+  if (id === 'firefly') { const b = mesh(s(.03), M(0x3b2f4a)); g.add(b); const t = mesh(s(.025), glow(0xfff38a), 0, 0, -.03); g.add(t); const h = halo(0xfff38a, .5, .9); g.add(h); g.userData.halo = h; wings(.04, .03); }
+  if (id === 'lunamoth') { g.add(mesh(new THREE.CapsuleGeometry(.018, .06, 4, 6), M(0xf2f0e0))); wings(.14, .12, 0xc8f0b0); }
+  if (id === 'springtail') { const b = mesh(s(.03), M(0x6a6f8a)); b.scale.set(1, .7, 1.4); g.add(b); }
+  const hb = hitBox(.8, .8, .8); g.add(hb); g.scale.setScalar(id === 'lunamoth' || id === 'dragonfly' ? 1.6 : 1.8);
+  return g;
+}
+const FLOWER_SPOTS = [[-5.1,-1.25],[-2.9,-1.25],[-5.55,-3],[-2.45,-3],[-.9,-.1],[6.3,.3]];
+function spawnBugs() {
+  bugGroup.children.slice().forEach(b => bugGroup.remove(b));
+  if (VISIT || !featureOn('butterflies')) return;
+  const s = season(), h = hour(), isNight = h >= 20 || h < 6, fit = INSECTS.filter(b => b.seasons.includes(s) && (b.time === 'any' || (b.time === 'night') === isNight));
+  if (!fit.length) return;
+  const trunks = woodTrees.filter(t => t.parent === scene && t.visible !== false);
+  for (let i = 0; i < 4; i++) {
+    const b = fit[Math.floor(Math.random() * fit.length)], g = bugModel(b.id); let x, y, z, tries = 0;
+    if (b.where === 'tree' && trunks.length) { const t = trunks[Math.floor(Math.random()*trunks.length)], a = Math.random()*6.28; x = t.position.x + Math.cos(a)*.24; z = t.position.z + Math.sin(a)*.24; y = .6 + Math.random()*.4; g.rotation.y = -a + Math.PI/2; g.rotation.x = -1.2; }
+    else if (b.where === 'flower') { const [fx, fz] = FLOWER_SPOTS[Math.floor(Math.random()*FLOWER_SPOTS.length)]; x = fx + (Math.random()-.5)*.6; z = fz + (Math.random()-.5)*.3; y = .3; }
+    else { do { x = (Math.random()-.5)*15; z = (Math.random()-.5)*15; tries++; } while (tries < 30 && blockedAt(x, z)); y = b.where === 'air' ? 1 + Math.random()*.8 : .04; }
+    g.position.set(x, y, z); g.userData = { ...g.userData, bug:b, ax:x, ay:y, az:z, ph:Math.random()*10, hop:0 };
+    g.userData.kind = 'deco'; g.userData.use = () => swingNet(g, b, () => { g.userData.flee = 1; });
+    bugGroup.add(g);
+  }
+}
+let lastBugHour = -1;
+function animateBugs(now, dt) {
+  const hh = Math.floor(hour()); if (hh !== lastBugHour && hh % 3 === 0) { lastBugHour = hh; spawnBugs(); }
+  bugGroup.visible = S.where !== 'hut';
+  bugGroup.children.forEach(g => { const u = g.userData, b = u.bug; if (!b) return;
+    if (u.flee > 0) { u.flee -= dt; g.position.y += dt * 3; if (b.where !== 'air') g.position.x += dt * 2; if (u.flee <= 0) g.visible = false; return; }
+    if (u.wings) { const f = Math.sin(now * (b.id === 'lunamoth' ? 8 : 40) + u.ph) * (b.where === 'air' ? .9 : .15); u.wings[0].rotation.z = f; u.wings[1].rotation.z = -f; }
+    if (b.where === 'air') { const t = now * .5 + u.ph; g.position.set(u.ax + Math.sin(t) * 1.4, u.ay + Math.sin(t * 2.3) * .25, u.az + Math.cos(t * .8) * 1.4); g.rotation.y = Math.atan2(Math.cos(t), -Math.sin(t * .8)); }
+    if (b.where === 'ground') { u.hop -= dt; if (u.hop <= 0) { u.hop = 1.5 + Math.random() * 2.5; u.hx = (Math.random()-.5) * .8; u.hz = (Math.random()-.5) * .8; u.ht = 0; }
+      if (u.ht != null && u.ht < .45) { u.ht += dt; const k = u.ht / .45; g.position.x += u.hx * dt / .45; g.position.z += u.hz * dt / .45; g.position.y = u.ay + Math.sin(k * Math.PI) * .35; } }
+    if (u.halo) u.halo.material.opacity = .5 + Math.sin(now * 3 + u.ph) * .4; });
+}
+// swing the net: most bugs are caught, but flying ones are quick
+let netMesh = null;
+function swingNet(g, b, onMiss) {
+  if (!S.tools.net) { toast('You need a bug net. Make one at the tree stump workbench with grass fiber and sticks.'); return; }
+  if (!netMesh) { netMesh = new THREE.Group(); netMesh.add(mesh(new THREE.CylinderGeometry(.02,.025,1.2,6), mat(0x9b6b4a), 0, .6, 0));
+    const hoop = mesh(new THREE.TorusGeometry(.22, .02, 6, 20), mat(0xfff1d6), 0, 1.35, 0); netMesh.add(hoop); const bag = mesh(new THREE.ConeGeometry(.2, .35, 12, 1, true), new THREE.MeshStandardMaterial({ color:0xffffff, transparent:true, opacity:.55, side:THREE.DoubleSide }), 0, 1.35, -.17); bag.rotation.x = -Math.PI/2; netMesh.add(bag); }
+  player.add(netMesh); netMesh.position.set(.35, .8, .2); netMesh.rotation.set(-1.4, 0, 0); swingT = .5; sfx('swish');
+  const wp = new THREE.Vector3(); g.getWorldPosition(wp); player.rotation.y = Math.atan2(wp.x - player.position.x, wp.z - player.position.z);
+  let k = 0; const sw = setInterval(() => { k += .1; netMesh.rotation.x = -1.4 + Math.sin(k * Math.PI) * 1.6; if (k >= 1) { clearInterval(sw); player.remove(netMesh); } }, 30);
+  const got = Math.random() < (b.where === 'air' ? .72 : .9);
+  setTimeout(() => {
+    if (!got) { onMiss && onMiss(); toast(`Missed! The ${b.name.toLowerCase()} got away.`); return; }
+    if (g.parent === bugGroup) bugGroup.remove(g); else g.userData.flee = 1.2;
+    const isNew = !(S.bugs || []).includes(b.id); if (isNew) S.bugs = [...(S.bugs || []), b.id]; lean('explorer'); save(); drawHud();
+    [784,988,1175].forEach((f,i) => setTimeout(() => chime(f), i*90)); burst(wp, 0xfff3a0, 12);
+    showCard(`<div class="kicker">${isNew ? `NEW BUG! ${(S.bugs || []).length} of ${BUTTERFLIES.length + INSECTS.length}` : 'BUG NET'}</div><h2>${icon(b.id)} You caught a ${b.name}!</h2>
+      ${isNew ? `<h4>In real life</h4><p>${b.fact}</p>` : `<p>It sells for ${ITEMS[b.id].sell} coins, or you can let it go.</p>`}
+      <button id="bKeep" ${canCarry(b.id) ? '' : 'style="display:none"'}>Keep it</button> <button id="bFree" class="ghost">Let it go</button>${canCarry(b.id) ? '' : '<p>Your bag is full.</p>'}`, null);
+    $('bKeep').onclick = () => { bagAdd(b.id); save(); drawHud(); hideCard(); sfx('pick'); };
+    $('bFree').onclick = () => { if (featureOn('journey')) karma('harmony', 1); save(); hideCard(); burst(wp.clone().setY(wp.y + .5), 0xc8f0b0, 10); toast(`The ${b.name.toLowerCase()} flies off, free.`); };
+  }, 380);
+}
 // --- tap actions for decorations and build pieces ---
 const PAINTS = [0xfff1d6, 0xff8fa3, 0x7ec8e3, 0xffc857, 0x8fdc8a, 0xc9b6ff, 0x9b6b4a];
 const daily = key => { if (S.chopped[key] === S.day) return false; S.chopped[key] = S.day; return true; };
@@ -3086,6 +3159,7 @@ function factCard(kicker, title, text, id) { S.tapped = S.tapped || []; if (!S.t
 function paintGardenFence() { S.fenceColor = PAINTS[(PAINTS.indexOf(S.fenceColor ?? PAINTS[0]) + 1) % PAINTS.length]; applyFenceColor(); sfx('click'); save(); toast('You painted the garden fence. Tap again for another color.'); }
 function spotButterfly(g) {
   if (!featureOn('butterflies')) { g.userData.flee = 1.2; toast('The butterfly flutters away.'); return; }
+  if (S.tools.net) return swingNet(g, { id:g.userData.sp.id, name:g.userData.sp.name, fact:g.userData.sp.fact, where:'air' }, () => { g.userData.flee = 1.2; });
   const sp = g.userData.sp; S.bugs = S.bugs || []; const first = !S.bugs.includes(sp.id);
   g.userData.flee = 1.2; tone(1760, { dur:.12, vol:.03 }); tone(2093, { t:.08, dur:.12, vol:.03 });
   if (first) { S.bugs.push(sp.id); save(); drawHud(); showCard(`<div class="kicker">NEW BUTTERFLY ${S.bugs.length} of ${BUTTERFLIES.length}</div><h2>${sp.name}</h2><h4>In real life</h4><p>${sp.fact}</p><p>Saved to Collections.</p>`); }
@@ -3442,7 +3516,7 @@ function tick() {
     b.rotation.y = Math.atan2(Math.cos(t), -Math.sin(t*.8)); const f = Math.sin(now*18 + i)*1.1; u.l.rotation.z = f; u.r.rotation.z = -f;
     if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
   lobes.forEach(L => { if (!L.rise) return; L.rise = Math.max(0, L.rise - dt / 2.5); const k = 1 - L.rise; L.g.position.y = -5 * (1 - k) * (1 - k); if (!L.rise) { L.g.position.y = 0; L.extra.forEach(o => o.visible = true); burst(new THREE.Vector3(L.e.x, .5, L.e.z), 0x8fdc8a, 30); } });
-  animatePools(now);
+  animatePools(now); animateBugs(now, dt);
   pulsers.forEach(h => { h.userData.pulse = Math.max(0, h.userData.pulse - dt); h.scale.setScalar(h.userData.base * (1 + h.userData.pulse)); if (!h.userData.pulse) pulsers.delete(h); });
   if (bell.userData.ring > 0) { bell.userData.ring = Math.max(0, bell.userData.ring - dt); bellBody.rotation.z = Math.sin(now*12) * .35 * bell.userData.ring; }
   balloons.children.forEach(b => { if (b.userData.fly) { b.position.y += dt * 1.6; b.position.x += Math.sin(now*2) * dt * .3; if (b.position.y > 25) b.visible = false; } });
@@ -3581,7 +3655,7 @@ $('start').onclick = () => { $('title').style.display = 'none'; document.body.cl
 // --- trading post and creator shops ---
 const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const ME = () => VISIT ? mine : S, saveMe = () => VISIT ? saveMine() : save();
-const TRADEABLE = ['crop','fruit','fish','dish','specialty','heirloom','material'];
+const TRADEABLE = ['crop','fruit','fish','dish','specialty','heirloom','material','bug'];
 const isKid = () => ageBand() === 'kid';
 async function api(path, body) {
   try { const r = await fetch(`${CLOUD}${path}`, body ? { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body) } : undefined);
@@ -3947,7 +4021,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }

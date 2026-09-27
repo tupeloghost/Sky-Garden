@@ -6,8 +6,9 @@ const ICONS = {
   jam:'🍯', crisp:'🥧', tea:'🍵', soup:'🥣', saltfish:'🐟', candy:'🍬',
   flour:'🌾', stick:'🥢', stone:'🪨', fiber:'🌱', log:'🪵', clay:'🟤', brick:'🧱', pot:'🏺', copper:'🟢', tin:'⚪', bronze:'🟠',
   cacao:'🍫', coffee:'☕', vanilla:'🌸', saffron:'🌷', tea:'🍃', olive:'🫒',
+  honeybee:'🐝', ladybird:'🐞', dragonfly:'🪽', hopper:'🦗', cicada:'🦗', stagbeetle:'🪲', mantis:'🦗', firefly:'✨', lunamoth:'🦋', springtail:'🐜', brimstone:'🦋', paintedlady:'🦋', purpleemperor:'🦋', morpho:'🦋',
   rug:'🟣', fern:'🪴', lamp:'🏮', table:'🪑', armchair:'🛋️', bookshelf:'📚', globe:'🌐', rocker:'🪑', sign:'🍀', mushroom:'🍄', cake:'🎂', painting:'🖼️',
 };
-const KIND_ICON = { crop:'🌱', fruit:'🍎', fish:'🐟', dish:'🍽️', material:'🪵', quest:'📦', specialty:'⭐', heirloom:'🌹' };
+const KIND_ICON = { crop:'🌱', fruit:'🍎', fish:'🐟', dish:'🍽️', material:'🪵', quest:'📦', specialty:'⭐', heirloom:'🌹', bug:'🐛' };
 const icon = (k, kind) => ICONS[k] || KIND_ICON[kind] || '✨';
 export { ICONS, icon };
