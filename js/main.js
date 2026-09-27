@@ -1167,7 +1167,7 @@ function drawHud() {
   const fz = festival(), mph = moon();
   $('day').textContent = fz ? fz.name : `${SEASONS[season()]}, ${dateLabel(today())}${raining ? (season() === 3 ? ', snow' : ', rain') : hour() >= 19 && (mph.idx === 4 || mph.idx === 0) ? `, ${mph.name.toLowerCase()}` : ''}`;
   const h = hour(), hr = Math.floor(h), mn = Math.floor((h-hr)*6)*10, h12 = ((hr+11)%12)+1;
-  $('clock').textContent = `${h12}:${String(mn).padStart(2,'0')} ${hr<12||hr>=24?'AM':'PM'}`;
+  { const up = hr >= 6 && hr < 19, k = Math.min(1, Math.max(0, S.t)); $('clock').innerHTML = `<span class="dial">${up ? (hr >= 17 ? '🌇' : '☀️') : '🌙'}</span>${h12}:${String(mn).padStart(2,'0')} ${hr<12||hr>=24?'AM':'PM'}`; }
   $('coins').innerHTML = `${ICON.coin}${S.coins}`; $('coins').setAttribute('aria-label', `${S.coins} coins`);
   $('bagBtn').innerHTML = `${ICON.bag}<span class="lbl">Bag</span>`;
   Object.keys(S.furn).forEach(k => S.furn[k] > 0 && noteFind(k));
@@ -1187,7 +1187,7 @@ function drawHud() {
 }
 function openDialog(name, text, btns=[], hearts, voice) {
   babble(voice || (name.startsWith('Nana') ? 'nana' : name.startsWith('Pip') ? 'pip' : name.startsWith('Captain') ? 'drizzle' : name.startsWith('Moss') ? 'twins' : name.startsWith('Lumen') ? 'lumen' : ({ Mabel:'mabel', Professor:'hoot', Allegra:'allegra', Sage:'sage' })[name.split(' ')[0]] || 'none'), text);
-  $('dName').textContent = name; $('dText').textContent = text;
+  $('dName').textContent = name; typeText(text);
   $('dHearts').textContent = hearts == null ? '' : '♥'.repeat(hearts) + '♡'.repeat(10-hearts);
   $('dBtns').innerHTML = '';
   [...btns, { label:'Bye', ghost:true, fn:closeDialog }].forEach(b => {
@@ -1196,7 +1196,11 @@ function openDialog(name, text, btns=[], hearts, voice) {
   });
   $('dialog').classList.add('show');
 }
-function closeDialog() { $('dialog').classList.remove('show'); }
+function closeDialog() { $('dialog').classList.remove('show'); clearInterval(typeText.iv); }
+// dialog text types out a few letters at a time; tapping the box shows it all
+function typeText(text) { const el = $('dText'); clearInterval(typeText.iv); let i = 0; el.textContent = ''; el.dataset.full = text;
+  typeText.iv = setInterval(() => { i = Math.min(text.length, i + 2); el.textContent = text.slice(0, i); if (i >= text.length) clearInterval(typeText.iv); }, 16); }
+$('dialog').addEventListener('pointerdown', e => { if (e.target.tagName !== 'BUTTON') { clearInterval(typeText.iv); $('dText').textContent = $('dText').dataset.full || $('dText').textContent; } });
 let cardClose = null, cardCleanup = null;
 function hideCard() { $('veil').classList.remove('show'); if (cardCleanup) { cardCleanup(); cardCleanup = null; } }
 function showCard(html, btn='Okay', onClose) {
