@@ -3554,8 +3554,10 @@ renderer.domElement.addEventListener('pointermove', e => {
   const bad = !removing && !(moving && !held) && (blockedAt(c.x, c.z) || S.builds.some(b => b.x === c.x && b.z === c.z));
   ghost.material.color.set(removing || (moving && !held) ? 0xffc857 : bad ? 0xff5a5a : 0x8fdc8a);
 });
+renderer.domElement.addEventListener('contextmenu', e => e.preventDefault()); // a long press is for flying, not a menu
 renderer.domElement.addEventListener('pointerdown', e => {
   if (fish3) { fish3.press(true); return; }
+  if (canFly()) { flight.down = true; flight.at = performance.now(); flight.x = e.clientX; flight.y = e.clientY; }
   if (cine) return;
   if ($('title').style.display !== 'none' || $('veil').classList.contains('show')) return;
   if (buildMode) return buildTap(e);
@@ -3647,6 +3649,11 @@ function arrive(o) {
   else if (k === 'spot') useSpot(o.userData.i);
 }
 const keys = {};
+// flying: in a legend's bird form, press and hold to take off and fly toward your finger; let go to glide down. Space works on a keyboard.
+var flight = { down:false, at:0, x:0, y:0, on:false, alt:0, told:false };
+const canFly = () => { try { return !!S.mythForm && mythOn() && S.where !== 'hut' && !cine && !buildMode && playing && !$('veil').classList.contains('show'); } catch { return false; } };
+addEventListener('pointermove', e => { if (flight.down) { flight.x = e.clientX; flight.y = e.clientY; } });
+['pointerup','pointercancel'].forEach(ev => addEventListener(ev, () => { flight.down = false; }));
 addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 let onPlank = false;
@@ -3673,7 +3680,7 @@ dome.renderOrder = -1; scene.add(dome);
 const sunGlow = halo(0xfff1c4, 40, 0); scene.add(sunGlow);
 const skyTop = new THREE.Color();
 const ahead = () => innerHeight > innerWidth * 1.2 ? 2.2 : 0; // on tall phone screens, look further ahead so the top bar hides less
-function camOffset() { return S.where === 'hut' ? new THREE.Vector3(0, 7.5, 7.8 - ahead()) : new THREE.Vector3(0, 10.5, 11 - ahead()); }
+function camOffset() { const f = (typeof flight !== 'undefined' && flight) ? flight.alt : 0; return S.where === 'hut' ? new THREE.Vector3(0, 7.5, 7.8 - ahead()) : new THREE.Vector3(0, 10.5 + f * 1.3, 11 - ahead() + f * 1.2); }
 function snapCam() { camera.position.copy(player.position).add(camOffset()); }
 const perfCheck = { n:0, sum:0 };
 const outline = LOOK === 'a' ? null : new OutlineEffect(renderer, { defaultThickness: LOOK === 'b' ? .0035 : .005, defaultColor: LOOK === 'b' ? [.23,.18,.29] : [.45,.33,.25], defaultAlpha: LOOK === 'b' ? .9 : .7 });
@@ -3731,6 +3738,23 @@ function tickFrame() {
     if (mv.length() < (pending ? 1.3 : .1)) { const p = pending; target = null; pending = null; mv.set(0,0,0); if (p) arrive(p); }
   }
   const inner = player.userData.inner;
+  const flyNow = canFly() && ((flight.down && performance.now() - flight.at > 280) || keys[' ']);
+  if (flyNow && !flight.on) { flight.on = true; target = null; pending = null; sfx('cast'); }
+  if (!flyNow && flight.on) { flight.on = false; }
+  if (flight.on) {
+    let dir = mv.clone();
+    if (flight.down) { ptr.set(flight.x/innerWidth*2-1, -(flight.y/innerHeight)*2+1); ray.setFromCamera(ptr, camera);
+      const hitP = new THREE.Vector3(); if (ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -player.position.y), hitP)) { dir.subVectors(hitP, player.position); dir.y = 0; if (dir.length() < .4) dir.set(0, 0, 0); } }
+    if (dir.lengthSq()) { dir.normalize().multiplyScalar(8.5 * dt);
+      // flying stays over land you can reach, so it never skips a bridge you haven't built
+      const nx = player.position.x + dir.x, nz = player.position.z + dir.z; let gy = groundAt(nx, player.position.y, nz);
+      if (gy === null) { gy = groundAt(nx, player.position.y, player.position.z); if (gy !== null) dir.z = 0; else { gy = groundAt(player.position.x, player.position.y, nz); if (gy !== null) dir.x = 0; } }
+      if (gy !== null) { player.position.x += dir.x; player.position.z += dir.z; player.position.y = gy; player.rotation.y = Math.atan2(dir.x, dir.z); S.pos = [player.position.x, player.position.y, player.position.z]; } }
+    mv.set(0, 0, 0);
+  }
+  flight.alt += ((flight.on ? 2.4 : 0) - flight.alt) * Math.min(1, dt * (flight.on ? 3 : 2.2));
+  if (flight.alt > .02 && inner) { inner.position.y = flight.alt + Math.sin(now * 3) * .12 * Math.min(1, flight.alt); inner.rotation.z = Math.sin(now * 1.6) * .08 * Math.min(1, flight.alt); }
+  if (flight.alt > .02 || flight.on) {} else
   if (mv.lengthSq() && !$('veil').classList.contains('show')) {
     mv.normalize().multiplyScalar((S.mode === 'explorer' ? 5.25 : 4.2) * (onPath() ? 1.35 : 1) * dt);
     const nx = player.position.x + mv.x, nz = player.position.z + mv.z;
@@ -4750,7 +4774,7 @@ function mythModel(kind) {
 function mythAnimate(dt, now) {
   const u = player.userData.inner && player.userData.inner.userData;
   if (u && u.myth) { u.shift.forEach((m, i) => m.material.color.setHSL(((now * .05) + i * .09) % 1, .75, .62));
-    u.arms.forEach((a, i) => a.rotation.z = Math.sin(now * 3 + i * Math.PI) * .12); if (u.aura) u.aura.material.opacity = .25 + .1 * Math.sin(now * 2) + Math.min(.3, mp().light * .01); }
+    const fl = flight && flight.alt > .1; u.arms.forEach((a, i) => a.rotation.z = Math.sin(now * (fl ? 10 : 3) + i * Math.PI) * (fl ? .75 : .12)); if (u.aura) u.aura.material.opacity = .25 + .1 * Math.sin(now * 2) + Math.min(.3, mp().light * .01); }
   if (mythSky && mythSky.visible) { const d = mythSky.userData; d.t += dt; const a = d.t * .35;
     mythSky.position.set(Math.cos(a) * 10, 7.5 + Math.sin(d.t * .8) * .6, Math.sin(a) * 10 - 3); mythSky.rotation.y = -a; const iu = mythSky.userData.inner.userData;
     iu.arms.forEach((w, i) => w.rotation.z = Math.sin(now * 5 + i * Math.PI) * .5); (iu.shift || []).forEach((m, i) => m.material.color.setHSL(((now * .05) + i * .09) % 1, .75, .62));
@@ -4781,12 +4805,13 @@ function mythMenu() { if (!mythOn()) return; const F = mythF(), P = mythDaily(),
     <p><b>${glowName(P.light || 0)}</b> <span class="sub">(goes up with every mission you finish)</span>${T.seen ? `<br>Players have tapped your ${short} ${T.seen} time${T.seen === 1 ? '' : 's'}. They don't know it was you.` : ''}</p>
     <div class="chips"><button id="myForm">${form ? 'Turn back into you' : `Turn into ${F.name.replace('The ', 'the ')}`}</button><button id="myPow" class="${P.power === S.day ? 'ghost' : ''}">${F.power.name}${P.power === S.day ? ' (tomorrow)' : ''}</button>
     <button id="myApp" class="${P.appear === S.day ? 'ghost' : ''}">Fly over another island${P.appear === S.day ? ' (tomorrow)' : ''}</button><button id="myLeg" class="ghost">The legend</button>${P.journal && P.journal.length ? '<button id="myJr" class="ghost">Journal</button>' : ''}</div>
+    ${form ? '<p class="sub"><b>To fly:</b> press and hold anywhere on the island. Your ' + short + ' follows your finger. Let go to land. On a keyboard, hold Space.</p>' : ''}
     <p class="sub">Once a day, your ${short} can fly over a random player's island. If they tap it, they get a gift. They never find out it was you.</p>
     <h4>Today's missions: finish any 3 of these 5</h4>${P.list.map(row).join('')}
     ${cm.length ? `<h4>From the Creator</h4>${cm.map(m => `<p>✧ <b>${esc(m.title)}</b>${m.how ? `<br><span class="sub">${esc(m.how)}</span>` : ''} <button class="ghost" data-cm="${m.id}" style="padding:2px 10px">I did it (+${m.reward})</button></p>`).join('')}` : ''}
     ${mythExtras.map(x => x.html()).join('')}
     <p class="sub">New missions every day.</p>`, 'Close');
-  $('myForm').onclick = () => { S.mythForm = !form; save(); dressPlayer(); hideCard(); burst(player.position.clone().setY(1), F.colors[0], 30); chime(form ? 660 : 988); toast(form ? 'You turned back into you.' : `You turned into ${F.name.replace('The ', 'the ')}. Only you can see this.`); };
+  $('myForm').onclick = () => { S.mythForm = !form; save(); dressPlayer(); hideCard(); burst(player.position.clone().setY(1), F.colors[0], 30); chime(form ? 660 : 988); toast(form ? 'You turned back into you.' : `You turned into ${F.name.replace('The ', 'the ')}. Press and hold anywhere to fly. Let go to land.`); };
   $('myPow').onclick = () => P.power === S.day ? toast('You already used your power today. Try again tomorrow.') : mythPower();
   $('myApp').onclick = () => P.appear === S.day ? toast('You already did this today. Try again tomorrow.') : mythAppear();
   $('myLeg').onclick = () => showCard(`<div class="kicker">IN LEGEND</div><h2>${F.name}</h2>${F.legend.map(l => `<p>${l}</p>`).join('')}<h4>In Sky Garden: ${F.power.name}</h4><p>${F.power.text}</p>`, 'Back', mythMenu);
@@ -4885,7 +4910,7 @@ function previewStart() { if (!PREVIEW) return; const d = PREVIEW.data || {};
   $('pvFly').onclick = () => { const others = Object.keys(MYTHS).filter(k => k !== d.myth); mythSighting({ id:0, form:others[Math.floor(Math.random() * others.length)] }); };
   if (!d.myth) toast(`${PREVIEW.label} has no legend yet. Pick one for them on the dashboard.`); else setTimeout(mythReveal, 1500); }
 addEventListener('sg-playing', () => setTimeout(() => { if (PREVIEW) return previewStart(); mythLookUp(); drawShrooms(); mythReveal(); setInterval(() => { if (playing) mythReveal(); }, 20000); }, PREVIEW ? 1500 : 5000));
-window.__sg = { devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }

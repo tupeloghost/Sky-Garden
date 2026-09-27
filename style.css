@@ -1,7 +1,7 @@
 :root { --ink:#3b2f4a; --card:#fff8ee; --accent:#ff8fa3; --gold:#ffc857; --gold-deep:#d99a2b; --surface:#f3e8d8; --surface-2:#eadfd0; --line:#e4d6c2; --good:#2fae60; --bad:#e0566f; --sky:#bfe3ff; }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html,body { margin:0; height:100%; overflow:hidden; background:#bfe3ff; font-family:'Baloo 2',system-ui,sans-serif; color:var(--ink); user-select:none; }
-canvas { display:block; touch-action:none; }
+canvas { display:block; touch-action:none; -webkit-touch-callout:none; -webkit-user-select:none; }
 .top { position:fixed; top:10px; left:10px; right:10px; display:flex; flex-direction:column; gap:6px; pointer-events:none; }
 .hud { display:flex; gap:6px; justify-content:space-between; flex-wrap:wrap; }
 .pill { background:var(--card); border-radius:999px; padding:5px 12px; font-weight:700; box-shadow:0 3px 0 #0002; pointer-events:auto; font-size:15px; white-space:nowrap; }
