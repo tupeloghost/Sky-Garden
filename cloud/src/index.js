@@ -73,7 +73,9 @@ async function whoAmI(env, key) { const id = await hashKey(key); const row = awa
   const d = row ? JSON.parse(row.data) : {}; return { id, kid:d.ageBand === 'kid' || !d.birthday || !d.birthday.y, name:d.ageBand === 'kid' ? 'A young gardener' : cleanName(d.name) }; }
 const TESTER_RE = /^SKY-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 async function memberOf(env, key) { if (!KEY_RE.test(key || '')) return null; const id = await hashKey(key);
-  const r = await env.DB.prepare('SELECT * FROM tester_codes WHERE used_by = ?').bind(id).first();
+  let r = await env.DB.prepare('SELECT * FROM tester_codes WHERE used_by = ?').bind(id).first();
+  // a code can also be linked to extra games of the same person (added from the dashboard's database, never by players)
+  if (!r) r = await env.DB.prepare('SELECT t.* FROM code_keys k JOIN tester_codes t ON t.code = k.code WHERE k.key = ?').bind(id).first();
   return r ? { id, code:r.code, level:r.level, paused:JSON.parse(r.paused || '[]'), revoked:!!r.revoked, myth:r.myth || null, row:r } : { id, code:null, level:0, paused:[], revoked:false, myth:null, row:null }; }
 async function logEvent(env, m, kind, detail) { try { await env.DB.prepare('INSERT INTO events (at, player, code, kind, detail) VALUES (?1, ?2, ?3, ?4, ?5)').bind(Date.now(), m ? m.id.slice(0, 12) : null, m ? m.code : null, kind, String(detail || '').slice(0, 1000)).run(); } catch {} }
 const audienceOk = (a, lvl) => a === 'all' || (a === 'keepers' && lvl >= 2) || (a === 'elders' && lvl >= 3);
@@ -266,7 +268,7 @@ export default {
       if (!KEY_RE.test(b.key || '') || !TESTER_RE.test(code)) return json({ error: 'bad code' }, 400, origin);
       const me = await hashKey(b.key), row = await env.DB.prepare('SELECT used_by FROM tester_codes WHERE code = ?').bind(code).first();
       if (!row) return json({ error: 'not found' }, 404, origin);
-      if (row.used_by && row.used_by !== me) return json({ error: 'used' }, 409, origin);
+      if (row.used_by && row.used_by !== me && !(await env.DB.prepare('SELECT 1 FROM code_keys WHERE key = ?1 AND code = ?2').bind(me, code).first())) return json({ error: 'used' }, 409, origin);
       { const mine = await env.DB.prepare('SELECT code FROM tester_codes WHERE used_by = ?').bind(me).first(); if (mine && mine.code !== code) return json({ error: 'has a code' }, 409, origin); } // one founder code per player
       if (!row.used_by) { await env.DB.prepare('UPDATE tester_codes SET used_by = ?1, used_at = ?2 WHERE code = ?3 AND used_by IS NULL').bind(me, Date.now(), code).run(); await logEvent(env, { id:me, code }, 'joined', 'Used their founder code'); }
       return json({ ok: true, founder: true }, 200, origin);
