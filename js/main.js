@@ -62,7 +62,8 @@ if (!S.specialty) S.specialty = SPECIALTIES[Math.floor(Math.random() * SPECIALTI
 [...Object.keys(S.bag || {}), ...Object.keys(S.chest || {})].forEach(registerHeirloom);
 let cloudDirty = true, lastPush = 0, cloudState = { when:0, ok:null };
 let setupCam = false; // camera close-up while making your character
-const save = () => { if (VISIT) return; S.savedAt = Date.now(); if (typeof ageBand === 'function') S.ageBand = ageBand(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
+// saving also records where you stand, so inside/outside always matches after a reload
+const save = () => { if (VISIT) return; S.savedAt = Date.now(); try { if (!lying && !fish3) S.pos = [player.position.x, player.position.y, player.position.z]; } catch {} if (typeof ageBand === 'function') S.ageBand = ageBand(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
 // is a feature switched on? live for everyone, or switched on in developer mode
 const devFeatures = () => { try { return JSON.parse(localStorage.getItem('sg.features') || '{}'); } catch { return {}; } };
 function featureOn(id) { const f = FEATURES.find(x => x.id === id), d = devOn() ? devFeatures() : {};
@@ -1182,8 +1183,15 @@ function drawHud() {
   if (!shown.some(([k]) => k === S.sel) && shown.length) S.sel = shown[0][0];
   $('bar').style.display = S.where === 'hut' || buildMode ? 'none' : 'flex';
   $('buildBtn').hidden = VISIT || (S.home || 0) < 3 || S.where !== 'home'; $('buildBtn').innerHTML = `${ICON.hammer}<span class="lbl">${buildMode ? 'Building' : 'Build'}</span>`;
-  $('bar').innerHTML = shown.map(([k,c]) => `<div class="slot ${S.sel===k?'on':''}" data-k="${k}"><span class="sic">${icon(k)}</span>${c.name}<small>${S.seeds[k] || 0} seed${(S.seeds[k] || 0) === 1 ? '' : 's'}${c.seasons.includes(s) ? '' : ', out of season'}</small></div>`).join('');
-  document.querySelectorAll('.slot').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); });
+  // the hotbar: your tools on the left (tap one to see what it does), then your seeds
+  const tools = [['axe','🪓','Stone Axe', 'Tap a tree to chop logs.'], ['pick','⛏️','Stone Pickaxe','Tap a rock to break it for stone.'], ['net','🦋','Bug Net','Tap an insect or butterfly to swing.'], ['rod','🎣','Fishing Rod','Tap a dock to fish.']]
+    .filter(([k]) => k === 'rod' ? S.bridge || S.mode === 'fisher' : S.tools[k]).map(([k, ic, name, how]) => { const bronze = (k === 'axe' && S.tools.bronzeAxe) || (k === 'pick' && S.tools.bronzePick);
+      return `<div class="hslot tool ${bronze ? 'bronze' : ''}" data-tool="${k}" data-how="${(bronze ? name.replace('Stone', 'Bronze') : name) + ': ' + how}"><span>${ic}</span></div>`; }).join('');
+  $('bar').innerHTML = (tools ? tools + '<i class="hdiv"></i>' : '') + shown.map(([k,c]) => { const n = S.seeds[k] || 0, now = c.seasons.includes(s);
+    return `<div class="hslot seed ${S.sel===k?'on':''} ${now ? '' : 'late'} ${n ? '' : 'none'}" data-k="${k}" title="${c.name}"><span>${icon(k)}</span><b>${n}</b><small>${now ? c.name : 'Not now'}</small></div>`; }).join('');
+  document.querySelectorAll('.hslot.seed').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); const c = CROPS[S.sel], n = S.seeds[S.sel] || 0;
+    toast(n ? `${c.name} seeds ready. Tap an empty plot to plant.` : `No ${c.name} seeds. Buy some from Pip.`); });
+  document.querySelectorAll('.hslot.tool').forEach(el => el.onclick = () => toast(el.dataset.how));
 }
 function openDialog(name, text, btns=[], hearts, voice) {
   babble(voice || (name.startsWith('Nana') ? 'nana' : name.startsWith('Pip') ? 'pip' : name.startsWith('Captain') ? 'drizzle' : name.startsWith('Moss') ? 'twins' : name.startsWith('Lumen') ? 'lumen' : ({ Mabel:'mabel', Professor:'hoot', Allegra:'allegra', Sage:'sage' })[name.split(' ')[0]] || 'none'), text);
@@ -1558,7 +1566,7 @@ function openGoals() {
 }
 $('goalsBtn').onclick = openGoals;
 function applyPaint() { roof.material.color.set(+S.roof); house.userData.awning.material.color.set(+S.roof); house.children[0].material.color.set(+S.wall); }
-document.addEventListener('click', e => { if (e.target.closest('button,.slot') && e.target.id !== 'mute') sfx('click'); });
+document.addEventListener('click', e => { if (e.target.closest('button,.slot,.hslot') && e.target.id !== 'mute') sfx('click'); });
 // S.tut: 1 Nana walks over, 2 dig the first spot, 3 plant, 4 water, 5 pick, 6 sell, 9 done
 const TUT = {
   2: { text:'Tap the sparkly spot 3 times to dig it up.', help:'Nana showed you a gold sparkle right next to your garden. Walk to it and tap it 3 times. Each tap digs a little deeper.' },
@@ -2939,7 +2947,9 @@ function useWorkbench() {
   const shown = CRAFTS.filter(c => (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag1' || featureOn('bagup')) && (c.id !== 'net' || featureOn('butterflies')) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
   showCard(`<div class="kicker">TREE STUMP WORKBENCH</div><h2>Craft</h2><h4>Ages of invention</h4>${agesHtml()}
     <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln && potteryOn() ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>
-    <div class="jlist">${shown.map(c => `<button data-cr="${c.id}" ${hasCraft(c.id) || !enough(c.needs) ? 'style="opacity:.6"' : ''}>${hasCraft(c.id) ? '✓ ' : ''}${c.name} <span class="sub">${hasCraft(c.id) ? 'You have this. ' : ''}${c.does} Needs ${needText(c.needs)}.</span></button>`).join('')}</div>`, 'Close');
+    <div class="jlist">${[...shown].sort((a, b) => (hasCraft(a.id) - hasCraft(b.id)) || (enough(b.needs) - enough(a.needs))).map(c => { const own = hasCraft(c.id), ok = enough(c.needs);
+      return `<button data-cr="${c.id}" class="craft ${own ? 'own' : ok ? 'ready' : ''}"><span class="ct">${own ? '✓ ' : ''}${c.name}${own ? ' <small>Made</small>' : ok ? ' <small class="go">Ready to make</small>' : ''}</span>
+        <span class="sub">${c.does}</span>${own ? '' : `<span class="needs">${Object.entries(c.needs).map(([k,n]) => `<em class="${have(k) >= n ? 'ok' : 'no'}">${icon(k)} ${Math.min(have(k), n)}/${n}</em>`).join('')}</span>`}</button>`; }).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => {
     const c = CRAFTS.find(x => x.id === b.dataset.cr);
     if (hasCraft(c.id)) { toast(`You already have a ${c.name.toLowerCase()}.`); return; }
