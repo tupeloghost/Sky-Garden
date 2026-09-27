@@ -168,3 +168,6 @@ body.in-cine .top { opacity:0 !important; pointer-events:none !important; transi
 .tagrec { background:#ffc857; border-radius:99px; padding:1px 8px; font-weight:800; margin-left:4px; }
 .fishhud button { border:0; font:inherit; font-weight:800; background:var(--gold); color:var(--ink); padding:8px 20px; border-radius:999px; cursor:pointer; touch-action:none; user-select:none; }
 .fishhud button.ghost { background:#eadfd0; }
+.friend { background:#f3e8d8; border-radius:14px; padding:8px 12px; margin-top:8px; }
+.friend .hearts { color:#ff8fa3; letter-spacing:1px; font-size:13px; }
+.friend .tr { margin-top:3px; font-size:18px; } .friend .tr small { font-size:12px; opacity:.7; display:inline-block; width:70px; }
