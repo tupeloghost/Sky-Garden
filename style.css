@@ -153,3 +153,18 @@ select { font:15px inherit; border-radius:10px; border:2px solid #eadfd0; paddin
 .mbtns .rep, .rep { font-size:12px !important; opacity:.75; }
 body.in-cine .hud, body.in-cine #quest, body.in-cine #bar, body.in-cine #devBtn, body.in-cine .quest, body.in-cine .bar { opacity:0 !important; pointer-events:none !important; transition:opacity .6s; }
 body.in-cine .top { opacity:0 !important; pointer-events:none !important; transition:opacity .6s; }
+.fishhud { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); width:min(520px, calc(100% - 32px)); background:rgba(255,248,238,.95); border-radius:22px; padding:12px 14px; z-index:9; box-shadow:0 8px 24px rgba(0,0,0,.2); text-align:center; }
+.fishhud p { margin:0 0 8px; font-weight:700; }
+.fhbtns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.fhbtns button { margin:0; min-width:120px; }
+.fhreel { margin:4px 0 10px; }
+.fhmeter { height:10px; border-radius:6px; background:#eadfd0; overflow:hidden; margin-bottom:6px; }
+.fhmeter b { display:block; height:100%; border-radius:6px; }
+.fhbar { position:relative; height:30px; border-radius:15px; background:#eadfd0; }
+.fhbar i { position:absolute; top:0; bottom:0; border-radius:15px; background:#c7e8c4; }
+.fhbar i.in { background:#8fdc8a; }
+.fhbar span { position:absolute; top:2px; transform:translateX(-50%); font-size:20px; }
+.tagnew { background:#6fd3b8; color:#fff; border-radius:99px; padding:1px 8px; font-weight:800; margin-left:4px; }
+.tagrec { background:#ffc857; border-radius:99px; padding:1px 8px; font-weight:800; margin-left:4px; }
+.fishhud button { border:0; font:inherit; font-weight:800; background:var(--gold); color:var(--ink); padding:8px 20px; border-radius:999px; cursor:pointer; touch-action:none; user-select:none; }
+.fishhud button.ghost { background:#eadfd0; }

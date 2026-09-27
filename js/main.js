@@ -2544,6 +2544,143 @@ function fishing(o = {}) {
   $('later').onclick = hideCard;
 }
 
+// ============ FISHING, OUT IN THE WORLD ============
+// A pool of cloud water past the end of each dock, with fish shadows you can see before you cast.
+function makePool(d) {
+  const pool = new THREE.Group(); pool.position.set(3.9, -.32, 0); d.add(pool);
+  const water = new THREE.Mesh(new THREE.CircleGeometry(2.7, 48), new THREE.MeshStandardMaterial({ color:0x7ec8e3, transparent:true, opacity:.78, roughness:.2, metalness:.1 }));
+  water.rotation.x = -Math.PI/2; pool.add(water);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(2.7, .12, 8, 48), new THREE.MeshStandardMaterial({ color:0xffffff, transparent:true, opacity:.7 })); rim.rotation.x = Math.PI/2; pool.add(rim);
+  const rings = [0,1,2].map(i => { const r = new THREE.Mesh(new THREE.RingGeometry(.9, 1, 40), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.25, side:THREE.DoubleSide })); r.rotation.x = -Math.PI/2; r.position.y = .01; r.userData.ph = i / 3; pool.add(r); return r; });
+  pool.userData = { rings, water };
+  return pool;
+}
+const pools = [makePool(dock), makePool(homeDock)];
+function animatePools(now) { pools.forEach(p => p.userData.rings.forEach(r => { const k = (now * .15 + r.userData.ph) % 1; r.scale.setScalar(.4 + k * 2.2); r.material.opacity = .28 * (1 - k); })); }
+// a little 3D fish, built from the same colors as the fish in the fish table
+function fishMesh(f, len) {
+  const g = new THREE.Group(), body = mat(f.body), fin = mat(f.fin), belly = mat(f.belly);
+  if (f.ray) { const d = mesh(sph(.5), body); d.scale.set(len*.5, len*.07, len*.6); g.add(d); const b = mesh(sph(.5), belly, 0, -.02, 0); b.scale.set(len*.3, len*.05, len*.35); g.add(b);
+    const tail = mesh(new THREE.CylinderGeometry(.02, .04, len*.8, 5), fin, -len*.5, 0, 0); tail.rotation.z = Math.PI/2; g.add(tail); }
+  else { const h = f.round ? .42 : .28, b = mesh(sph(.5), body); b.scale.set(len, len*h, len*h*.7); g.add(b);
+    const bl = mesh(sph(.5), belly, len*.05, -len*h*.18, 0); bl.scale.set(len*.8, len*h*.6, len*h*.66); g.add(bl);
+    const tail = mesh(new THREE.ConeGeometry(len*h*.5, len*.35, 4), fin, -len*.6, 0, 0); tail.rotation.z = Math.PI/2; tail.scale.z = .25; g.add(tail);
+    const top = mesh(new THREE.ConeGeometry(len*.12, len*h*.7, 4), fin, 0, len*h*.5, 0); top.scale.z = .2; g.add(top);
+    if (f.spots) [[-.15,.1],[.12,.14],[.02,-.02]].forEach(([x,y]) => [-1,1].forEach(sd => g.add(mesh(sph(len*.06), mat(f.spots), x*len, y*len, sd*len*h*.33))));
+    [-1,1].forEach(sd => { g.add(mesh(sph(len*.05), mat(0xffffff), len*.38, len*h*.12, sd*len*h*.3)); g.add(mesh(sph(len*.03), mat(0x2b2233), len*.41, len*h*.12, sd*len*h*.33)); }); }
+  if (f.glow) { const hl = halo(f.glow, len * 2, .6); g.add(hl); }
+  return g;
+}
+let fish3 = null;
+function fishing3D(d = dock, o = {}) {
+  if (fish3) return; const secret = !!o.secret, night = hour() >= 20 && S.aha.includes('stars');
+  const pool = pools[d === homeDock ? 1 : 0], W = v => d.localToWorld(v.clone()), V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const ctx = { season:season(), hour:hour(), raining:raining && S.t < .5, secret };
+  const table = FISH.filter(f => f.when(ctx)).map(f => ({ ...f, weight: f.id === 'moonray' && moon().idx === 4 ? f.weight * 2 : f.weight }));
+  const pickFish = () => { let r = Math.random() * table.reduce((a, f) => a + f.weight, 0); for (const f of table) { if ((r -= f.weight) <= 0) return f; } return table[0]; };
+  // stand at the end of the dock, facing the water
+  const stand = W(V(2.1, 0, 0)), aim = W(V(3.9, 0, 0)); player.position.copy(stand); player.rotation.y = Math.atan2(aim.x - stand.x, aim.z - stand.z);
+  target = null; pending = null; closeDialog();
+  cine = { t:0, dur:1.2, p0:camera.position.clone(), p1:W(V(-.4, 2.6, 2.3)), l0:player.position.clone(), l1:W(V(4.2, -.3, -.2)), res:null };
+  document.body.classList.add('in-cine');
+  // rod, line, bobber
+  const rod = new THREE.Group(); rod.position.set(.32, .95, .25); rod.rotation.x = .9; player.add(rod);
+  rod.add(mesh(new THREE.CylinderGeometry(.018, .035, 1.7, 6), mat(0x9b6b4a), 0, .85, 0)); const tip = new THREE.Object3D(); tip.position.y = 1.7; rod.add(tip);
+  const lineGeo = new THREE.BufferGeometry().setFromPoints([...Array(16)].map(() => V(0,0,0))), line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:.85 })); scene.add(line); line.visible = false;
+  const bob = new THREE.Group(); bob.add(mesh(new THREE.SphereGeometry(.09, 12, 8, 0, Math.PI*2, 0, Math.PI/2), mat(0xff5a5a))); const bw = mesh(new THREE.SphereGeometry(.09, 12, 8, 0, Math.PI*2, Math.PI/2, Math.PI/2), mat(0xffffff)); bob.add(bw); scene.add(bob); bob.visible = false;
+  const bang = new THREE.Sprite(new THREE.SpriteMaterial({ map:(() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); x.fillStyle = '#ffc857'; x.font = 'bold 56px sans-serif'; x.textAlign = 'center'; x.fillText('!', 32, 54); return new THREE.CanvasTexture(c); })(), transparent:true }));
+  bang.scale.setScalar(.6); scene.add(bang); bang.visible = false;
+  // fish shadows: you can see how big a fish is before it bites
+  const shadowMat = new THREE.MeshBasicMaterial({ color:0x1d2a4a, transparent:true, opacity:.35, depthWrite:false });
+  const newShadow = () => { const f = pickFish(), size = Math.round(f.cm[0] + (f.cm[1] - f.cm[0]) * Math.pow(Math.random(), 1.6)), k = Math.min(1, (size - f.cm[0]) / Math.max(1, f.cm[1] - f.cm[0]));
+    const sc = f.ray || f.id === 'sunfish' ? 1.3 + k*.5 : f.cm[1] < 20 ? .35 + k*.15 : .6 + k*.45;
+    const m = new THREE.Mesh(new THREE.CircleGeometry(.5, 20), shadowMat); m.rotation.x = -Math.PI/2; m.scale.set(sc, sc*.4, 1); m.position.set((Math.random()-.5)*3, .02, (Math.random()-.5)*3);
+    m.userData = { f, size, vx:(Math.random()-.5)*.6, vz:(Math.random()-.5)*.6 }; pool.add(m); return m; };
+  let shadows = table.length ? [newShadow(), newShadow(), newShadow()] : [];
+  // the on-screen controls
+  const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="fhMsg">${secret ? 'The secret spot. The big ones live here.' : 'Watch the shadows. Big shadow, big fish. Tap Cast.'}</p>
+    <div id="fhReel" class="fhreel" hidden><div class="fhmeter"><b id="fhM"></b></div><div class="fhbar"><i id="fhZ"></i><span id="fhF">🐟</span></div></div>
+    <div class="fhbtns"><button id="fhAct">Cast</button>${night && !secret ? '<button id="fhSecret" class="ghost">Find the secret spot</button>' : ''}<button id="fhDone" class="ghost">Done</button></div>`;
+  document.body.appendChild(hud);
+  const msg = t => { $('fhMsg').textContent = t; }, act = $('fhAct'), setAct = (l, dis) => { act.textContent = l; act.disabled = !!dis; act.style.opacity = dis ? .5 : 1; };
+  let state = 'ready', t0 = 0, now = 0, last = performance.now(), raf, cur = null, nextNibble = 0, biteAt = 0, holding = false, zone = .3, zoneV = 0, fishX = .5, fishT = .5, fishNext = 0, meter = .3, reelTick = 0, caught = null, arc = 0;
+  const bobHome = () => W(V(3.9 + Math.sin(arc) * .2, -.3, Math.cos(arc) * .3));
+  const splash = (p, big) => { burst(p.clone().setY(p.y + .05), 0xffffff, big ? 18 : 6); };
+  const drawLine = (end, sag) => { const a = new THREE.Vector3(); tip.getWorldPosition(a); const pts = lineGeo.attributes.position;
+    for (let i = 0; i < 16; i++) { const k = i / 15, p = a.clone().lerp(end, k); p.y -= Math.sin(k * Math.PI) * sag; pts.setXYZ(i, p.x, p.y, p.z); } pts.needsUpdate = true; };
+  const land = () => {
+    state = 'caught'; t0 = now; const f = cur.f, size = cur.size;
+    caught = fishMesh(f, f.ray ? .9 : Math.min(1.1, .25 + size / 160)); scene.add(caught); caught.position.copy(bob.position);
+    bob.visible = false; line.visible = false; splash(bob.position, true); sfx('splash'); [523,659,784,1047].forEach((fr,i) => setTimeout(() => chime(fr), i*110));
+    S.fishLog = S.fishLog || {}; const rec = S.fishLog[f.id] || { n:0, best:0 }, isNew = !S.found.includes(f.id), isRecord = rec.n > 0 && size > rec.best;
+    cur.shadow.parent && pool.remove(cur.shadow); shadows = shadows.filter(s => s !== cur.shadow); if (table.length) shadows.push(newShadow());
+    const fits = canCarry(f.id), keepable = fits;
+    setTimeout(() => { if (!fish3) return;
+      $('fhReel').hidden = true;
+      msg(''); $('fhMsg').innerHTML = `<b style="font-size:20px">You caught a ${ITEMS[f.id].name}!</b> ${size} cm ${isNew ? '<span class="tagnew">NEW!</span>' : ''}${isRecord ? '<span class="tagrec">New record!</span>' : ''}<br>${isNew ? `<i>In real life:</i> ${FINDS[f.id].fact}` : `Sells for ${Math.round(sellPrice(f.id))} coins. Your biggest: ${Math.max(rec.best, size)} cm.`}${fits ? '' : '<br><b>Your bag is full.</b>'}`;
+      act.style.display = 'none';
+      const btns = hud.querySelector('.fhbtns'), keepB = document.createElement('button'), relB = document.createElement('button');
+      keepB.textContent = 'Keep it'; relB.textContent = 'Let it go'; relB.className = 'ghost'; if (!keepable) keepB.style.display = 'none'; btns.prepend(relB); btns.prepend(keepB);
+      const after = () => { keepB.remove(); relB.remove(); act.style.display = ''; setAct('Cast again'); state = 'ready'; if (caught) { scene.remove(caught); caught = null; } msg('Watch the shadows. Tap Cast.'); };
+      rec.n++; rec.best = Math.max(rec.best, size); S.fishLog[f.id] = rec; if (isNew) S.found.push(f.id); goal('fish'); communityAdd('fishing'); lean('explorer');
+      keepB.onclick = () => { quietFind = true; bagAdd(f.id); quietFind = false; save(); drawHud(); sfx('pick'); after(); };
+      relB.onclick = () => { if (featureOn('journey')) karma('harmony', 1); save(); sfx('splash'); state = 'release'; t0 = now; setTimeout(after, 900); };
+    }, 900);
+  };
+  const lose = why => { state = 'ready'; msg(why); setAct('Cast again'); bob.visible = false; line.visible = false; bang.visible = false; $('fhReel').hidden = true; tone(300, { to:140, dur:.4, vol:.05 }); };
+  const press = on => {
+    if (!on) { holding = false; return; }
+    if (state === 'reel') { holding = true; return; }
+    if (state === 'ready') { if (!table.length) return msg('Nothing is biting here right now.'); state = 'casting'; t0 = now; sfx('cast'); arc = Math.random() * 6; S.t = Math.min(.99, S.t + 10/(60*18)); drawHud(); msg(''); setAct('Wait...', true); return; }
+    if (state === 'wait') return lose('Too soon! The fish swam off.');
+    if (state === 'bite') { state = 'reel'; meter = .45; zone = .35; zoneV = 0; fishX = .5; fishNext = 0; holding = true; bang.visible = false; $('fhReel').hidden = false; msg('Hold to reel! Keep the fish inside the green zone.'); setAct('Hold to reel'); }
+  };
+  const loop = () => {
+    const t = performance.now(), dt = Math.min(.05, (t - last) / 1000); last = t; now += dt;
+    // shadows wander, and one swims to the bobber while you wait
+    shadows.forEach(s => { const u = s.userData; if ((state === 'wait' || state === 'bite') && s === cur?.shadow) { const b = pool.worldToLocal(bob.position.clone()); s.position.x += (b.x - .25 - s.position.x) * dt * 1.2; s.position.z += (b.z - s.position.z) * dt * 1.2; }
+      else if (state !== 'reel') { s.position.x += u.vx * dt; s.position.z += u.vz * dt; if (Math.hypot(s.position.x, s.position.z) > 2.2) { u.vx = -u.vx; u.vz = -u.vz; } if (Math.random() < .01) { u.vx = (Math.random()-.5)*.7; u.vz = (Math.random()-.5)*.7; } }
+      s.rotation.z = Math.atan2(-u.vz, u.vx); });
+    rod.rotation.x = .9 + (state === "reel" ? Math.sin(now*18)*.05 - .25 : 0);
+    if (state === 'casting') { const k = Math.min(1, (now - t0) / .6), a = new THREE.Vector3(); tip.getWorldPosition(a); const e = bobHome();
+      bob.visible = line.visible = true; bob.position.copy(a.lerp(e, k)).setY(bob.position.y + Math.sin(k*Math.PI) * 1.2); drawLine(bob.position, .2);
+      if (k >= 1) { state = 'wait'; splash(bob.position, false); sfx('splash'); const near = shadows.reduce((b, s) => !b || s.userData.size > 0 && Math.random() < .5 ? s : b, null); cur = near ? { shadow:near, f:near.userData.f, size:near.userData.size } : null;
+        nextNibble = now + 1.2 + Math.random(); biteAt = now + 2.6 + Math.random()*3.2; msg('Wait for it... a shadow is coming.'); } }
+    if (state === 'wait' || state === 'bite') { const e = bobHome(); bob.position.copy(e); bob.position.y += Math.sin(now*3)*.02;
+      if (state === 'wait') { if (now > nextNibble) { tone(900, { dur:.05, vol:.025 }); splash(bob.position, false); nextNibble = now + .7 + Math.random()*1.2; } if (now < nextNibble - .55 && now > nextNibble - .75) bob.position.y -= .06;
+        if (now > biteAt && cur) { state = 'bite'; t0 = now; splash(bob.position, true); sfx('splash'); tone(220, { to:110, dur:.25, vol:.08 }); msg('It bit! Tap now!'); setAct('Hook it!'); bang.visible = true; } }
+      if (state === 'bite') { bob.position.y -= .12; bang.position.copy(bob.position).setY(bob.position.y + .9 + Math.sin(now*20)*.05); if (now - t0 > 1.1) lose('Too slow. It slipped off the hook.'); }
+      drawLine(bob.position, .15); }
+    if (state === 'reel') { const f = cur.f, e = bobHome();
+      bob.position.set(e.x + Math.sin(now*9)*.25, e.y - .1, e.z + Math.cos(now*7)*.25); if (Math.random() < .12) splash(bob.position, false); drawLine(bob.position, 0);
+      zoneV += (holding ? 2.4 : -1.8) * dt; zoneV *= .985; zoneV = Math.max(-1, Math.min(1, zoneV)); zone += zoneV * dt; if (zone < 0) { zone = 0; zoneV = 0; } if (zone > 1) { zone = 1; zoneV = 0; }
+      if (now > fishNext) { fishT = Math.random(); fishNext = now + (1.3 - f.fight) * (.5 + Math.random()); }
+      fishX += (fishT - fishX) * dt * (1 + f.fight * 4);
+      const zw = .42 - f.fight*.16, zx = zone * (1 - zw), inside = fishX >= zx && fishX <= zx + zw;
+      meter += (inside ? .3 : -.1 - f.fight*.1) * dt;
+      $('fhZ').style.left = `${zx*100}%`; $('fhZ').style.width = `${zw*100}%`; $('fhZ').className = inside ? 'in' : ''; $('fhF').style.left = `${fishX*100}%`;
+      $('fhM').style.width = `${Math.max(3, meter*100)}%`; $('fhM').style.background = meter > .7 ? '#2fae60' : meter > .35 ? '#ffc857' : '#ff8fa3';
+      if (holding && (reelTick += dt) > .09) { reelTick = 0; tone(1300, { dur:.03, vol:.012 }); }
+      if (meter >= 1) land(); else if (meter <= 0) lose(`It got away! ${f.fight > .5 ? 'That was a strong one.' : 'Try again.'}`); }
+    if ((state === 'caught' || state === 'release') && caught) { const k = Math.min(1, (now - t0) / .8), hand = player.position.clone().add(new THREE.Vector3(Math.sin(player.rotation.y) * .15, 2.05, Math.cos(player.rotation.y) * .15));
+      if (state === 'caught') { const from = bobHome(); caught.position.lerpVectors(from, hand, easeIO(k)); caught.position.y += Math.sin(k*Math.PI) * 1.3; caught.rotation.z = Math.sin(now*8) * .2 * (1 - k) + (k >= 1 ? Math.sin(now*3)*.08 : 0); caught.rotation.y = player.rotation.y + Math.PI/2; holdUp = k > .7; }
+      else { holdUp = false; const to = bobHome(); caught.position.lerpVectors(hand, to, easeIO(k)); caught.position.y += Math.sin(k*Math.PI) * .8; if (k >= 1 && caught.visible) { caught.visible = false; splash(to, true); } } }
+    raf = requestAnimationFrame(loop);
+  };
+  const end = () => { cancelAnimationFrame(raf); holdUp = false; player.remove(rod); scene.remove(line, bob, bang); if (caught) scene.remove(caught); shadows.forEach(s => pool.remove(s));
+    hud.remove(); removeEventListener('keydown', key); removeEventListener('keyup', key); fish3 = null; cine = null; document.body.classList.remove('in-cine'); };
+  const key = e => { if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) press(e.type === 'keydown'); } };
+  addEventListener('keydown', key); addEventListener('keyup', key);
+  act.addEventListener('pointerdown', e => { e.preventDefault(); press(true); }); ['pointerup','pointerleave','pointercancel'].forEach(ev => act.addEventListener(ev, () => press(false)));
+  $('fhDone').onclick = end;
+  if ($('fhSecret')) $('fhSecret').onclick = () => { end(); starPuzzle({ title:'Find the secret spot', text:'The big fish rest under the one star that never moves. Find it.',
+    done:() => { const first = !S.used.includes('stars'); const go = () => { hideCard(); fishing3D(d, { secret:true }); }; first ? showRecall('stars', go) : go(); } }); };
+  fish3 = { press, end };
+  window.__sgFish = () => ({ state, fishX, zone, zw: cur ? .42 - cur.f.fight*.16 : 0, meter, shadows:shadows.length }); // read-only, for testing
+  loop();
+}
+let holdUp = false;
+
 // --- the hut ---
 const HOME_STAGES = [
   { name:'the frame', needs:{ log:6, stone:10 } },
@@ -2837,6 +2974,7 @@ async function goSleep(where, passedOut) {
   cine = null; document.body.classList.remove('in-cine');
 }
 // ============ INPUT ============
+addEventListener('pointerup', () => { if (fish3) fish3.press(false); });
 const ray = new THREE.Raycaster(), down = new THREE.Raycaster(), ptr = new THREE.Vector2(), DOWN = new THREE.Vector3(0,-1,0);
 let target = null, pending = null;
 lobes.forEach(L => lateClicks.push(...L.extra));
@@ -3086,6 +3224,7 @@ renderer.domElement.addEventListener('pointermove', e => {
   ghost.material.color.set(removing || (moving && !held) ? 0xffc857 : bad ? 0xff5a5a : 0x8fdc8a);
 });
 renderer.domElement.addEventListener('pointerdown', e => {
+  if (fish3) { fish3.press(true); return; }
   if (cine) return;
   if ($('title').style.display !== 'none' || $('veil').classList.contains('show')) return;
   if (buildMode) return buildTap(e);
@@ -3167,7 +3306,7 @@ function arrive(o) {
   else if (k === 'sundial') useSundial();
   else if (k === 'ship') useShip();
   else if (k === 'pot') usePot();
-  else if (k === 'dock') fishing();
+  else if (k === 'dock') fishing3D(o);
   else if (k === 'fruitTree') useFruitTree(o);
   else if (k === 'bed') openDialog('Your Bed', 'Go to sleep and start a new day? Watered crops will grow.', [{ label:'Sleep', fn:() => { closeDialog(); goSleep('bed'); } }]);
   else if (k === 'door') exitHut();
@@ -3303,10 +3442,12 @@ function tick() {
     b.rotation.y = Math.atan2(Math.cos(t), -Math.sin(t*.8)); const f = Math.sin(now*18 + i)*1.1; u.l.rotation.z = f; u.r.rotation.z = -f;
     if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
   lobes.forEach(L => { if (!L.rise) return; L.rise = Math.max(0, L.rise - dt / 2.5); const k = 1 - L.rise; L.g.position.y = -5 * (1 - k) * (1 - k); if (!L.rise) { L.g.position.y = 0; L.extra.forEach(o => o.visible = true); burst(new THREE.Vector3(L.e.x, .5, L.e.z), 0x8fdc8a, 30); } });
+  animatePools(now);
   pulsers.forEach(h => { h.userData.pulse = Math.max(0, h.userData.pulse - dt); h.scale.setScalar(h.userData.base * (1 + h.userData.pulse)); if (!h.userData.pulse) pulsers.delete(h); });
   if (bell.userData.ring > 0) { bell.userData.ring = Math.max(0, bell.userData.ring - dt); bellBody.rotation.z = Math.sin(now*12) * .35 * bell.userData.ring; }
   balloons.children.forEach(b => { if (b.userData.fly) { b.position.y += dt * 1.6; b.position.x += Math.sin(now*2) * dt * .3; if (b.position.y > 25) b.visible = false; } });
   if (sitting) { inner.position.y = -.28; }
+  if (holdUp) inner.userData.arms.forEach(a => a.rotation.x = -2.9);
   if (lying) { inner.rotation.x = -Math.PI/2; inner.position.y = .22; inner.rotation.z = 0; } else if (inner.rotation.x) inner.rotation.x = 0;
   if (danceT > 0) { danceT = Math.max(0, danceT - dt); inner.rotation.y = danceT ? danceT * 6 : 0; inner.position.y = Math.abs(Math.sin(now*10)) * .18 * (danceT ? 1 : 0); }
   const ffOn = !inside && night > .3 && season() < 3;
@@ -3806,7 +3947,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
