@@ -3840,6 +3840,11 @@ function applyModeStart() {
   S.modeGifts = S.modeGifts || [];
   if (S.mode === 'scholar' && !S.modeGifts.includes('scholar')) { S.furn.bookshelf = (S.furn.bookshelf || 0) + 1; S.modeGifts.push('scholar'); }
   homeDock.visible = S.mode === 'fisher';
+  // starter seeds must be plantable in the real season the player starts in
+  if (!S.setupDone && !CROPS.cloudberry.seasons.includes(season()) && S.seeds.cloudberry === 4) {
+    const k = Object.keys(CROPS).filter(c => !CROPS[c].locked && CROPS[c].seasons.includes(season())).sort((a, b) => CROPS[a].days - CROPS[b].days)[0];
+    if (k) { S.seeds.cloudberry = 0; S.seeds[k] = 4; S.sel = k; drawHud(); }
+  }
   S.created = true; S.setupDone = true; save();
 }
 function openLookEditor(back) { lookPicker('YOUR LOOK', () => { endSetup(); if (back) back(); else toast('Looking good!'); }, true); }
@@ -4109,7 +4114,12 @@ async function redeemTester(code) {
   const res = await api('/redeem', { key:S.syncKey, code:String(code).toUpperCase().trim() });
   if (!res.ok) return res.error === 'used' ? 'That code was already used by someone else.' : res.error === 'not found' || res.error === 'bad code' ? 'That code does not look right. Check it and try again.' : 'Could not reach Sky Garden. Check your internet and try again.';
   const first = !S.founder; S.founder = { code:String(code).toUpperCase().trim(), at:Date.now() }; S.missions = S.missions || {}; save(); drawHud();
-  if (first) founderWelcome(); return null;
+  if (first) welcomeWhenFree(); return null;
+}
+// wait until character setup is finished and no chat or card is open, so the welcome never covers anything
+function welcomeWhenFree() {
+  const busy = !S.setupDone || !S.letter || S.tut === 1 || setupCam || $('dialog').classList.contains('show') || $('veil').classList.contains('show');
+  if (busy) setTimeout(welcomeWhenFree, 1000); else founderWelcome();
 }
 // --- opening presents: tap a wrapped box, it shakes, the lid pops, confetti flies, and the gift rises out ---
 function openPresents(gifts, done) {
@@ -4144,7 +4154,7 @@ function founderWelcome() {
   showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>Welcome, founder!</h2>
     <p>You are one of the very first people to play Sky Garden, and you are helping build it. That makes you a Founding Gardener.</p>
     <p style="margin-top:8px">We wrapped a few things for you.</p>`, 'Open my presents', () => openPresents([
-    { icon:'🏮', title:"The Founder's Lantern", text:'A glowing lantern for your island. At night, fireflies gather around it. Find it in Build mode.', wrap:['#c9b6ff','#ffe07a'] },
+    { icon:'🏮', title:"The Founder's Lantern", text:'A glowing lantern for your island. At night, fireflies gather around it. Once your hut is rebuilt, place it from Build mode.', wrap:['#c9b6ff','#ffe07a'] },
     { icon:'🧥', title:'The Sky Pioneer outfit', text:'A flight jacket, a long scarf that trails in the wind, and an aviator cap with goggles. Put it on in Bag, then Change my look.', wrap:['#7ec8e3','#fff1d6'] },
     { icon:'🎈', title:'Your own hot-air balloon', text:'It flies you to any island you have opened. Tap the balloon on your hotbar, anywhere, anytime.', wrap:['#ffc857','#ff8fa3'] },
     { icon:'🐾', title:'A companion!', text:'A little friend who follows you everywhere. Who will it be?', wrap:['#8fdc8a','#fff6e6'], last:'Choose my companion' },
