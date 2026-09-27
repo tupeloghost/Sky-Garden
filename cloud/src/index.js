@@ -15,6 +15,7 @@
 // GET  /shop?code=FRIEND           -> one player's shop: their brand and open listings
 // POST /buy { key, id }            -> buy a listing (the seller is paid through /inbox)
 // POST /unlist { key, id }         -> take your own listing down
+// POST /report { key, code, listing?, reason } -> report a shop; 3 different reporters hide it until reviewed
 
 const ALLOWED = ['https://tupeloghost.github.io', 'http://localhost:9011'];
 const MAX_SAVE = 200_000; // bytes; a full late-game save is about 10 KB
@@ -31,6 +32,23 @@ const KID_ADJ = ['Sunny','Cozy','Happy','Little','Starry','Breezy','Golden','Mos
 const KID_NOUN = ['Garden','Nook','Workshop','Corner','Market','Studio','Meadow','Cottage','Lantern','Harbor','Orchard','Den'];
 const SHAPES = ['circle','shield','star','heart','leaf','diamond'], PATTERNS = ['plain','stripes','dots','waves','checks','flowers'];
 const BASES = ['pot','basket','jam','tea','candy','soup','crisp','saltfish'];
+// --- word filter for shop and product names ---
+// Whole-word matches (short words that also appear inside innocent words, like "class" or "Scunthorpe").
+const BAD_WORDS = ['ass','arse','dick','cock','cum','fag','fags','homo','hoe','hoes','jap','kike','kys','nazi','nazis','piss','porn','pussy','rape','sex','sexy','slut','spic','tit','tits','twat','wank','whore','kill','nude','nudes','boob','boobs','penis','vagina','hitler','kkk','meth','weed','drugs'];
+// Anywhere inside a word (these never appear in innocent words, except the ones allowed below).
+const BAD_PARTS = ['fuck','fuk','shit','bitch','cunt','nigg','faggot','retard','bastard','asshole','dildo','blowjob','jizz','rapist','pedo','molest','suicide','killyourself','terrorist','whore','porn'];
+const ALLOW = ['scunthorpe','therapist','therapists','pedometer','pedometers','shiitake','shitake','cocktail','cocktails','cumin','cucumber','cucumbers','peacock','hancock','dickens','sussex','essex','bassoon','titmouse'];
+function badName(t) {
+  const low = String(t || '').toLowerCase(), norm = low.replace(/[0@4]/g, m => ({ '0':'o', '@':'a', '4':'a' }[m])).replace(/[1!|]/g, 'i').replace(/3/g, 'e').replace(/[5$]/g, 's').replace(/7/g, 't');
+  if (/https?|www|\.com|\.net|\.org|\.gg|\.io|discord|snapchat|insta|tiktok|telegram|whatsapp/.test(low)) return true; // no links or contact apps
+  if (/\d{5,}/.test(low.replace(/[\s.()-]/g, ''))) return true; // no phone numbers
+  const toks = norm.split(/[^a-z]+/).filter(Boolean), words = [];
+  for (let i = 0; i < toks.length; i++) { // spaced-out letters like "f u c k" count as one word
+    if (toks[i].length === 1) { let j = i, w = ''; while (j < toks.length && toks[j].length === 1) w += toks[j++]; if (w.length > 1) { words.push(w); i = j - 1; continue; } }
+    words.push(toks[i]); }
+  const dd = w => w.replace(/(.)\1+/g, '$1');
+  return words.some(w => !ALLOW.includes(w) && (BAD_WORDS.includes(w) || BAD_WORDS.includes(dd(w)) || BAD_PARTS.some(b => w.includes(b) || dd(w).includes(dd(b)))));
+}
 const cleanText = (t, n) => String(t || '').replace(/[^\p{L}\p{N} '&.!-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, n);
 const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi ? v : null;
 function cleanLogo(l) { l = l || {}; return { shape:SHAPES.includes(l.shape) ? l.shape : 'circle', bg:int(l.bg, 0, 0xffffff) ?? 0xffc857, fg:int(l.fg, 0, 0xffffff) ?? 0x3b2f4a,
@@ -144,6 +162,7 @@ export default {
       let shop = cleanText(b.shop, 24);
       if (me.kid) { const [a, n] = shop.split(' '); if (!KID_ADJ.includes(a) || !KID_NOUN.includes(n) || shop.split(' ').length !== 2) shop = 'Sunny Workshop'; }
       if (!shop) return json({ error: 'no name' }, 400, origin);
+      if (badName(shop)) return json({ error: 'not allowed' }, 400, origin);
       await env.DB.prepare('INSERT INTO brands (id, code, shop, logo, updated) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(id) DO UPDATE SET shop = excluded.shop, logo = excluded.logo, updated = excluded.updated')
         .bind(me.id, friendCode(me.id), shop, JSON.stringify(cleanLogo(b.logo)), Date.now()).run();
       return json({ ok: true, shop }, 200, origin);
@@ -152,7 +171,8 @@ export default {
     if (request.method === 'GET' && (url.pathname === '/brand' || url.pathname === '/shop')) {
       const code = (url.searchParams.get('code') || '').toUpperCase();
       if (!CODE_RE.test(code)) return json({ error: 'bad code' }, 400, origin);
-      const br = await env.DB.prepare('SELECT shop, logo FROM brands WHERE code = ?').bind(code).first();
+      const br = await env.DB.prepare('SELECT shop, logo, hidden FROM brands WHERE code = ?').bind(code).first();
+      if (br && br.hidden) return json(url.pathname === '/brand' ? { brand:null } : { brand:null, listings:[] }, 200, origin);
       const brand = br ? { code, shop:br.shop, logo:JSON.parse(br.logo) } : null;
       if (url.pathname === '/brand') return json({ brand }, 200, origin);
       const { results } = await env.DB.prepare("SELECT l.*, b.shop, b.logo FROM listings l LEFT JOIN brands b ON b.id = l.seller_id WHERE l.code = ? AND l.status = 'open' ORDER BY l.created DESC LIMIT 20").bind(code).all();
@@ -160,7 +180,7 @@ export default {
     }
 
     if (request.method === 'GET' && url.pathname === '/market') {
-      const { results } = await env.DB.prepare("SELECT l.*, b.shop, b.logo FROM listings l LEFT JOIN brands b ON b.id = l.seller_id WHERE l.status = 'open' ORDER BY l.created DESC LIMIT 40").all();
+      const { results } = await env.DB.prepare("SELECT l.*, b.shop, b.logo FROM listings l LEFT JOIN brands b ON b.id = l.seller_id WHERE l.status = 'open' AND COALESCE(b.hidden, 0) = 0 ORDER BY l.created DESC LIMIT 40").all();
       return json({ listings: results.map(listingOut) }, 200, origin);
     }
 
@@ -171,6 +191,8 @@ export default {
       const wantItem = b.wantItem && ITEM_RE.test(b.wantItem) ? b.wantItem : null, wantQty = wantItem ? int(b.wantQty, 1, 99) : null;
       if (!qty || (price == null) === (wantItem == null) || (wantItem && !wantQty)) return json({ error: 'bad offer' }, 400, origin);
       const product = b.product ? cleanProduct(b.product, me.kid) : null; if (b.product && !product) return json({ error: 'bad product' }, 400, origin);
+      if (product && badName(product.name)) return json({ error: 'not allowed' }, 400, origin);
+      const hid = await env.DB.prepare('SELECT hidden FROM brands WHERE id = ?').bind(me.id).first(); if (hid && hid.hidden) return json({ error: 'shop paused' }, 403, origin);
       const open = await env.DB.prepare("SELECT COUNT(*) AS n FROM listings WHERE seller_id = ? AND status = 'open'").bind(me.id).first();
       if (open.n >= 8) return json({ error: 'too many' }, 409, origin);
       const res = await env.DB.prepare('INSERT INTO listings (seller_id, code, item, qty, product, price, want_item, want_qty, created) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)')
@@ -208,6 +230,17 @@ export default {
       if (!GOAL_RE.test(goal)) return json({ error: 'bad goal' }, 400, origin);
       const row = await env.DB.prepare('SELECT count FROM community WHERE goal = ?').bind(goal).first();
       return json({ goal, count: row ? row.count : 0 }, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/report') {
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      const code = String(b.code || '').toUpperCase(), reason = ['rude','personal','other'].includes(b.reason) ? b.reason : 'other';
+      if (!KEY_RE.test(b.key || '') || !CODE_RE.test(code)) return json({ error: 'bad request' }, 400, origin);
+      const me = await hashKey(b.key); if (friendCode(me) === code) return json({ error: 'that is you' }, 400, origin);
+      await env.DB.prepare('INSERT OR IGNORE INTO reports (reporter, code, listing, reason, at) VALUES (?1, ?2, ?3, ?4, ?5)').bind(me, code, int(b.listing, 1, 1e12), reason, Date.now()).run();
+      const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM reports WHERE code = ? AND reviewed = 0').bind(code).first();
+      if (n.n >= 3) await env.DB.prepare('UPDATE brands SET hidden = 1 WHERE code = ?').bind(code).run(); // paused until a person reviews it
+      return json({ ok: true }, 200, origin);
     }
 
     return json({ error: 'not found' }, 404, origin);

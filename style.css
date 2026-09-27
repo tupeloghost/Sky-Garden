@@ -150,3 +150,4 @@ button.pill { border:0; font:inherit; color:inherit; cursor:pointer; }
 .sw.sm { width:22px; height:22px; }
 .numin { font:16px inherit; border-radius:10px; border:2px solid #eadfd0; padding:6px 8px; width:80px; }
 select { font:15px inherit; border-radius:10px; border:2px solid #eadfd0; padding:6px; background:#fff; }
+.mbtns .rep, .rep { font-size:12px !important; opacity:.75; }

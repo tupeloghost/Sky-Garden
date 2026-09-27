@@ -3415,7 +3415,7 @@ async function openMarket(tab = 'market') {
   if (!res.ok) { $('card').querySelector('p').textContent = 'Could not reach the market. Check your internet and try again.'; wireTabs(); return; }
   const rows = (res.listings || []).map(l => { const lab = listingLabel(l); if (!lab) return ''; const mineL = l.code === myCode;
     return `<div class="mrow">${l.logo ? logoSvg(l.logo, 40) : '<span class="nologo">🏪</span>'}<div class="minfo"><small>${esc(l.shop || 'A shop')} · island ${l.code}</small><div>${lab}</div><div class="mask">${askText(l)}</div></div>
-      <div class="mbtns">${mineL ? '<small>Yours</small>' : `<button data-buy="${l.id}">${l.price ? 'Buy' : 'Trade'}</button>`}${!VISIT && !mineL ? `<button class="ghost" data-shop="${l.code}">Shop</button>` : ''}</div></div>`; }).join('');
+      <div class="mbtns">${mineL ? '<small>Yours</small>' : `<button data-buy="${l.id}">${l.price ? 'Buy' : 'Trade'}</button>`}${!VISIT && !mineL ? `<button class="ghost" data-shop="${l.code}">Shop</button>` : ''}${!mineL ? `<button class="ghost rep" data-rep="${l.code}" data-rl="${l.id}">Report</button>` : ''}</div></div>`; }).join('');
   showCard(`<div class="kicker">TRADING POST</div><h2>${VISIT ? `${esc(res.brand?.shop || VISIT.name + "'s shop")}` : 'The market'}</h2>${marketTabs('market')}
     ${VISIT && res.brand ? `<div class="brandhead">${logoSvg(res.brand.logo, 56)}<p>Everything here was made or grown on this island.</p></div>` : ''}
     ${rows || `<p>${VISIT ? 'Nothing for sale here right now.' : 'Nothing for sale yet. Be the first! Tap Sell.'}</p>`}
@@ -3424,13 +3424,15 @@ async function openMarket(tab = 'market') {
   const byId = Object.fromEntries((res.listings || []).map(l => [l.id, l]));
   document.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyListing(byId[b.dataset.buy]));
   document.querySelectorAll('[data-shop]').forEach(b => b.onclick = () => openShop(b.dataset.shop));
+  document.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => reportShop(b.dataset.rep, +b.dataset.rl, () => openMarket()));
 }
 async function openShop(code) {
   const res = await api(`/shop?code=${code}`); if (!res.ok) { toast('Could not load that shop.'); return; }
   const rows = (res.listings || []).map(l => { const lab = listingLabel(l); return lab ? `<div class="mrow"><div class="minfo"><div>${lab}</div><div class="mask">${askText(l)}</div></div></div>` : ''; }).join('');
   showCard(`<div class="kicker">A SHOP ON ISLAND ${code}</div><div class="brandhead">${res.brand ? logoSvg(res.brand.logo, 64) : ''}<h2>${esc(res.brand?.shop || 'A shop')}</h2></div>
-    ${rows || '<p>Nothing for sale right now.</p>'}<button id="goVisit">Visit their island</button>`, 'Back', () => openMarket());
+    ${rows || '<p>Nothing for sale right now.</p>'}<button id="goVisit">Visit their island</button> ${code !== myCode ? '<button id="repShop" class="ghost rep">Report this shop</button>' : ''}`, 'Back', () => openMarket());
   $('goVisit').onclick = () => { location.href = `${location.pathname}?visit=${code}`; };
+  if ($('repShop')) $('repShop').onclick = () => reportShop(code, null, () => openShop(code));
 }
 async function buyListing(l) {
   const T = ME(); T.bag = T.bag || {};
@@ -3477,13 +3479,13 @@ function sellTab() {
     form(`${icon(k, ITEMS[k].kind)} ${esc(ITEMS[k].name)}`, Math.min(99, S.bag[k]), Math.max(1, Math.round(sellPrice(k))), async (qty, ask) => {
       if ((S.bag[k] || 0) < qty) return; bagAdd(k, -qty); save(); drawHud();
       const res = await api('/list', { key:S.syncKey, item:k, qty, ...ask });
-      if (!res.ok) { S.bag[k] = (S.bag[k] || 0) + qty; save(); drawHud(); toast(res.status === 409 ? 'You can have up to 8 things for sale at once.' : 'Could not reach the market. Your items are safe.'); return; }
+      if (!res.ok) { S.bag[k] = (S.bag[k] || 0) + qty; save(); drawHud(); toast(res.status === 409 ? 'You can have up to 8 things for sale at once.' : res.error === 'shop paused' ? 'Your shop is paused while we look at a report. Your items are safe.' : 'Could not reach the market. Your items are safe.'); return; }
       sfx('coin'); lean('trader'); toast('It is up for sale! When someone buys it, you get paid through your mailbox.'); myListings(); }); });
   document.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { const i = +b.dataset.sp, p = prods[i];
     form(`${productSwatch(p, 24)} ${productName(p)}`, 1, BASES[p.base]?.value || 60, async (qty, ask) => {
       const [taken] = S.products.splice(i, 1); save();
       const res = await api('/list', { key:S.syncKey, item:'product', qty:1, product:{ base:taken.base, name:taken.name, color:taken.color, color2:taken.color2, pattern:taken.pattern }, ...ask });
-      if (!res.ok) { S.products.push(taken); save(); toast(res.status === 409 ? 'You can have up to 8 things for sale at once.' : 'Could not reach the market. Your product is safe.'); return; }
+      if (!res.ok) { S.products.push(taken); save(); toast(res.status === 409 ? 'You can have up to 8 things for sale at once.' : res.error === 'not allowed' ? 'That product name is not allowed. Rename it in the Design Studio and try again.' : res.error === 'shop paused' ? 'Your shop is paused while we look at a report. Your product is safe.' : 'Could not reach the market. Your product is safe.'); return; }
       sfx('coin'); lean('trader'); toast('Your product is up for sale! Your logo goes with it.'); myListings(); }); });
 }
 async function myListings() {
@@ -3524,7 +3526,7 @@ function brandEditor(done) {
     $('bSave').onclick = async () => { keep(); const shop = kid ? `${$('kA').value} ${$('kN').value}` : b.shop.trim();
       if (!shop) { toast('Give your shop a name.'); return; }
       const res = await api('/brand', { key:S.syncKey, shop, logo:L });
-      if (!res.ok) { toast('Could not save your brand. Check your internet and try again.'); return; }
+      if (!res.ok) { toast(res.error === 'not allowed' ? 'That shop name is not allowed. Please pick a kind name without links or numbers.' : 'Could not save your brand. Check your internet and try again.'); return; }
       const first = !S.brand; S.brand = { shop:res.shop || shop, logo:L }; save(); sfx('heart');
       if (first) { S.coins += 100; save(); drawHud(); lean('maker', 2); return showCard(`<div class="kicker">MAKER'S MARK</div><h2>${esc(S.brand.shop)} is open!</h2><div class="brandhead">${logoSvg(L, 72)}</div><h4>In real life</h4><p>${MARK_LESSON}</p><p><b>Pip gave you 100 coins to get started.</b> Next, design your first product at the Trading Post.</p>`, 'Okay', () => done && done()); }
       toast('Brand saved.'); done && done(); };
@@ -3564,11 +3566,20 @@ function designStudio() {
   };
   draw();
 }
+// report a shop name, product name, or listing that is rude or shares personal info
+function reportShop(code, listing, back) {
+  showCard(`<div class="kicker">REPORT</div><h2>What is wrong?</h2><p>Thank you for helping keep Sky Garden kind. Your report is private. The shop will not know it was you.</p>
+    <div class="jlist"><button data-why="rude">A rude or mean name</button><button data-why="personal">It shares personal info or a link</button><button data-why="other">Something else feels wrong</button></div>`, 'Cancel', back);
+  document.querySelectorAll('[data-why]').forEach(b => b.onclick = async () => {
+    const res = await api('/report', { key:ME().syncKey, code, listing, reason:b.dataset.why });
+    showCard(`<div class="kicker">REPORT</div><h2>${res.ok ? 'Thank you' : 'Could not send'}</h2><p>${res.ok ? 'We got your report. If several people report the same shop, it is paused until a person looks at it.' : 'Check your internet and try again.'}</p>`, 'Okay', back); });
+}
 function openProduct(p, back) {
   const mineP = p.maker?.code === myCode;
   showCard(`<div class="kicker">PRODUCT</div><div class="brandhead">${productSwatch(p, 84)}<h2>${productName(p)}</h2></div>
     <div class="brandhead">${p.maker?.logo ? logoSvg(p.maker.logo, 40) : ''}<p>${mineP ? 'Made by you' : `Made by <b>${esc(p.maker?.shop || 'a maker')}</b> on island ${p.maker?.code || '?'}`}</p></div>
-    ${!mineP && p.maker?.code && !VISIT ? '<button id="pShop">See their shop</button> <button id="pVisit" class="ghost">Visit their island</button>' : ''}`, 'Back', back);
+    ${!mineP && p.maker?.code && !VISIT ? '<button id="pShop">See their shop</button> <button id="pVisit" class="ghost">Visit their island</button> <button id="pRep" class="ghost rep">Report</button>' : ''}`, 'Back', back);
+  if ($('pRep')) $('pRep').onclick = () => reportShop(p.maker.code, null, () => openProduct(p, back));
   if ($('pShop')) { $('pShop').onclick = () => openShop(p.maker.code); $('pVisit').onclick = () => { location.href = `${location.pathname}?visit=${p.maker.code}`; }; }
 }
 // --- growing the island ---
