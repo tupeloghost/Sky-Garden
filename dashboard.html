@@ -89,13 +89,23 @@ async function load() {
       ${decided.length ? `<details style="margin-top:10px"><summary>Past decisions</summary>${decided.map(p => `<p><span class="chip ${p.status === 'approved' ? 'love' : 'confused'}">${p.status}</span> ${p.kind === 'placename' ? esc(JSON.parse(p.payload).name) : 'Landmark: ' + esc(LMN[JSON.parse(p.payload).type] || JSON.parse(p.payload).type)} · ${esc(who(p.code))}</p>`).join('')}</details>` : ''}</div>
 
     <div class="card"><h2>Founders and Keepers</h2><p class="sub">Change anyone's level, pause a privilege, or switch someone off. Changes apply the next time they open the game.</p>
-      ${d.founders.length ? `<table><tr><th>For</th><th>Status</th><th>Level</th><th>Paused</th><th></th></tr>${d.founders.map(f => { const pz = JSON.parse(f.paused || '[]');
+      ${d.founders.length ? `<table><tr><th>For</th><th>Status</th><th>Level</th><th>Secret legend</th><th>Paused</th><th></th></tr>${d.founders.map(f => { const pz = JSON.parse(f.paused || '[]');
         return `<tr><td><b>${esc(f.label)}</b><br><span class="sub">${esc(f.code)}${f.name ? ' · ' + esc(f.name) : ''}</span></td><td>${f.revoked ? '<span class="chip confused">switched off</span>' : f.used_at ? 'Joined ' + ago(f.used_at) : 'Not used yet'}</td>
-        <td><select data-lvl="${f.code}">${[[1,'Founder'],[2,'Keeper'],[3,'Elder Keeper']].map(([v, n]) => `<option value="${v}" ${f.level === v ? 'selected' : ''}>${n}</option>`).join('')}</select></td>
-        <td>${[['propose','Suggestions'],['vote','Voting'],['missions','Missions'],['testisland','Test island']].map(([k, n]) => `<label class="pz"><input type="checkbox" data-pz="${f.code}" value="${k}" ${pz.includes(k) ? 'checked' : ''}> ${n}</label>`).join('')}</td>
+        <td><select data-lvl="${f.code}">${[[1,'Founder'],[2,'Keeper'],[3,'Elder Keeper'],[4,'Creator (you)']].map(([v, n]) => `<option value="${v}" ${f.level === v ? 'selected' : ''}>${n}</option>`).join('')}</select></td>
+        <td><select data-myth="${f.code}">${[['','None'],['simurgh','Simurgh'],['ziz','Ziz'],['ibis','Ibis of Thoth']].map(([v, n]) => `<option value="${v}" ${(f.myth || '') === v ? 'selected' : ''}>${n}</option>`).join('')}</select>${f.seen ? `<br><span class="sub">seen ${f.seen}×</span>` : ''}${(d.extra && d.extra.controls && d.extra.controls[f.code]) || ''}</td>
+        <td>${[['propose','Suggestions'],['vote','Voting'],['missions','Missions'],['testisland','Test island'],['myth','Legend']].map(([k, n]) => `<label class="pz"><input type="checkbox" data-pz="${f.code}" value="${k}" ${pz.includes(k) ? 'checked' : ''}> ${n}</label>`).join('')}</td>
         <td><button class="ghost" data-hist="${f.code}">History</button> <button class="ghost" data-rev="${f.code}:${f.revoked ? 0 : 1}">${f.revoked ? 'Switch back on' : 'Switch off'}</button></td></tr>`; }).join('')}</table>` : '<p class="empty">No tester codes yet.</p>'}</div>
 
     <div class="card" id="histCard"><h2>Activity history</h2><p class="sub" id="histFor">Everyone, newest first. Tap History next to a person to see just theirs.</p><div id="hist">${histHtml(d.events)}</div></div>
+
+    <div class="card"><h2>Missions from you</h2><p class="sub">Send a mission to every founder, a tier, or one person. It shows up on their path in the game. You can also do this in the game with the Quill.</p>
+      <input id="mt" maxlength="80" placeholder="Mission, like: Plant something for a neighbor">
+      <input id="mh" maxlength="240" placeholder="How or why (optional)" style="margin-top:10px">
+      <select id="ma" style="margin-top:10px"><option value="founders">Every founder</option><option value="keepers">Keepers and Elders</option><option value="elders">Elders only</option>${d.founders.filter(f => f.used_at && f.level < 4).map(f => `<option value="code:${f.code}">${esc(f.label)} only</option>`).join('')}</select>
+      <select id="mr" style="margin-top:10px">${[25, 50, 100, 200].map(n => `<option value="${n}" ${n === 50 ? 'selected' : ''}>${n} coins</option>`).join('')}</select>
+      <button id="mgo">Send the mission</button> <span id="mmsg" class="sub"></span>
+      ${(d.cmissions || []).length ? `<table style="margin-top:12px"><tr><th>Mission</th><th>For</th><th>Done by</th><th></th></tr>${d.cmissions.map(m => { const dn = JSON.parse(m.done || '[]');
+        return `<tr><td><b>${esc(m.title)}</b>${m.how ? `<br><span class="sub">${esc(m.how)}</span>` : ''}</td><td>${esc(m.audience.startsWith('code:') ? who(m.audience.slice(5)) : m.audience)}</td><td>${dn.map(x => `${esc(who(x.code))}${x.note ? `: <i>${esc(x.note)}</i>` : ''}`).join('<br>') || '<span class="sub">No one yet</span>'}</td><td>${m.active ? `<button class="ghost" data-moff="${m.id}">End</button>` : '<span class="sub">ended</span>'}</td></tr>`; }).join('')}</table>` : ''}</div>
 
     <div class="card"><h2>Start a council vote</h2><p class="sub">Starting a new vote closes the old one for the same group.</p>
       <input id="pq" placeholder="Question, like: Which traveler should move into the village next?">
@@ -117,6 +127,11 @@ async function load() {
       return `<p><b>${esc(p.question)}</b> ${p.open ? '<span class="chip love">open</span>' : '<span class="chip">closed</span>'}</p>${opts.map((o, i) => { const n = (counts.find(c => c.c === i) || {}).n || 0; return `<div style="margin-top:4px">${esc(o)}: ${n}<div class="bar"><i style="width:${Math.round(n / total * 100)}%"></i></div></div>`; }).join('')}`; }).join('<hr>') : '<p class="empty">No votes yet.</p>'}</div>`;
   const act = async body => { const r = await fetch(`${API}/admin/act`, { method:'POST', headers:{ Authorization:'Bearer ' + token, 'Content-Type':'application/json' }, body:JSON.stringify(body) }); return r.ok; };
   document.querySelectorAll('[data-dec]').forEach(b => b.onclick = async () => { const [id, v] = b.dataset.dec.split(':'); b.disabled = true; if (await act({ action:'decide', id:+id, value:v })) load(); });
+  document.querySelectorAll('[data-actjson]').forEach(s => s.onchange = async () => { await act({ ...JSON.parse(s.dataset.actjson), value:s.value }); load(); });
+  document.querySelectorAll('[data-myth]').forEach(s => s.onchange = async () => { await act({ action:'myth', code:s.dataset.myth, value:s.value }); load(); });
+  document.querySelectorAll('[data-moff]').forEach(b => b.onclick = async () => { if (await act({ action:'missionoff', id:+b.dataset.moff })) load(); });
+  { const mg = document.getElementById('mgo'); if (mg) mg.onclick = async () => { const title = document.getElementById('mt').value.trim(); if (!title) { document.getElementById('mmsg').textContent = 'Write the mission first.'; return; }
+    if (await act({ action:'mission', title, how:document.getElementById('mh').value.trim(), audience:document.getElementById('ma').value, reward:+document.getElementById('mr').value })) load(); else document.getElementById('mmsg').textContent = 'Could not send it.'; }; }
   document.querySelectorAll('[data-lvl]').forEach(s => s.onchange = async () => { await act({ action:'level', code:s.dataset.lvl, value:+s.value }); load(); });
   document.querySelectorAll('[data-pz]').forEach(c => c.onchange = async () => { const code = c.dataset.pz, vals = [...document.querySelectorAll(`[data-pz="${code}"]:checked`)].map(x => x.value); await act({ action:'paused', code, value:vals }); });
   document.querySelectorAll('[data-rev]').forEach(b => b.onclick = async () => { const [code, v] = b.dataset.rev.split(':'); if (v === '1' && !confirm('Switch off this person\'s founder extras? You can switch them back on anytime.')) return; await act({ action:'revoke', code, value:v === '1' }); load(); });

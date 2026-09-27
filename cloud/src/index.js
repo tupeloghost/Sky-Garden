@@ -26,6 +26,9 @@
 // GET  /world                       -> approved world changes everyone sees
 // POST /admin/act (Bearer)          -> set levels, pause privileges, revoke, approve proposals, start council polls
 // POST /report { key, code, listing?, reason } -> report a shop; 3 different reporters hide it until reviewed
+// Some founder-only features live in private/extras.js, which is kept out of the public repo.
+
+import * as EXTRA from '../private/extras.js';
 
 const ALLOWED = ['https://tupeloghost.github.io', 'http://localhost:9011'];
 const MAX_SAVE = 200_000; // bytes; a full late-game save is about 10 KB
@@ -70,10 +73,16 @@ async function whoAmI(env, key) { const id = await hashKey(key); const row = awa
   const d = row ? JSON.parse(row.data) : {}; return { id, kid:d.ageBand === 'kid' || !d.birthday || !d.birthday.y, name:d.ageBand === 'kid' ? 'A young gardener' : cleanName(d.name) }; }
 const TESTER_RE = /^SKY-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 async function memberOf(env, key) { if (!KEY_RE.test(key || '')) return null; const id = await hashKey(key);
-  const r = await env.DB.prepare('SELECT code, level, paused, revoked FROM tester_codes WHERE used_by = ?').bind(id).first();
-  return r ? { id, code:r.code, level:r.level, paused:JSON.parse(r.paused || '[]'), revoked:!!r.revoked } : { id, code:null, level:0, paused:[], revoked:false }; }
+  const r = await env.DB.prepare('SELECT * FROM tester_codes WHERE used_by = ?').bind(id).first();
+  return r ? { id, code:r.code, level:r.level, paused:JSON.parse(r.paused || '[]'), revoked:!!r.revoked, myth:r.myth || null, row:r } : { id, code:null, level:0, paused:[], revoked:false, myth:null, row:null }; }
 async function logEvent(env, m, kind, detail) { try { await env.DB.prepare('INSERT INTO events (at, player, code, kind, detail) VALUES (?1, ?2, ?3, ?4, ?5)').bind(Date.now(), m ? m.id.slice(0, 12) : null, m ? m.code : null, kind, String(detail || '').slice(0, 1000)).run(); } catch {} }
 const audienceOk = (a, lvl) => a === 'all' || (a === 'keepers' && lvl >= 2) || (a === 'elders' && lvl >= 3);
+const MYTHS = ['simurgh','ziz','ibis'];
+// who a creator mission is for: everyone, a tier, or one founder by code
+const missionFor = (aud, m) => aud === 'founders' || audienceOk(aud, m.level) || aud === 'code:' + m.code;
+async function addMission(env, b) { const aud = String(b.audience || 'founders'); if (!(['founders','keepers','elders'].includes(aud) || /^code:SKY-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(aud))) return 'bad audience';
+  const title = cleanText(b.title, 80), how = cleanText(b.how, 240); if (!title) return 'needs a title';
+  await env.DB.prepare('INSERT INTO cmissions (created, audience, title, how, reward) VALUES (?1, ?2, ?3, ?4, ?5)').bind(Date.now(), aud, title, how, int(b.reward, 0, 500) ?? 50).run(); return null; }
 const listingOut = r => ({ founder:!!r.founder, id:r.id, code:r.code, item:r.item, qty:r.qty, product:r.product ? JSON.parse(r.product) : null, price:r.price, wantItem:r.want_item, wantQty:r.want_qty,
   shop:r.shop || null, logo:r.logo ? JSON.parse(r.logo) : null, created:r.created });
 const cleanName = n => String(n || '').replace(/[^\p{L}\p{N} '._-]/gu, '').trim().slice(0, 16) || 'A friend';
@@ -94,6 +103,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url), origin = request.headers.get('Origin') || '';
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(origin) });
+    const H = { json, cors, origin, memberOf, logEvent, hashKey, int, cleanText, cleanName, badName, today, KEY_RE, TESTER_RE, addMission, audienceOk };
+    { const r = await EXTRA.handle(request, url, env, H); if (r) return r; }
 
     if (request.method === 'GET' && url.pathname === '/load') {
       const key = url.searchParams.get('key') || '';
@@ -307,23 +318,68 @@ export default {
       const all = async (q, ...a) => (await env.DB.prepare(q).bind(...a).all()).results;
       const players = await all(`SELECT id, created, updated, json_extract(data,'$.name') AS name, json_extract(data,'$.quest') AS q1, json_extract(data,'$.q2') AS q2, json_extract(data,'$.q3') AS q3, json_extract(data,'$.q4') AS q4, json_extract(data,'$.q5') AS q5,
         json_extract(data,'$.day') AS day, json_extract(data,'$.home') AS home, json_extract(data,'$.founder.code') AS founder, json_extract(data,'$.missions') AS missions, json_array_length(json_extract(data,'$.playDates')) AS playdays FROM saves ORDER BY updated DESC LIMIT 200`);
-      const founders = await all('SELECT t.code, t.label, t.used_at, t.level, t.paused, t.revoked, json_extract(s.data,\'$.name\') AS name FROM tester_codes t LEFT JOIN saves s ON s.id = t.used_by ORDER BY t.created');
+      const founders = await all('SELECT t.code, t.label, t.used_at, t.level, t.paused, t.revoked, t.myth, (SELECT COUNT(*) FROM blessings b JOIN sightings s ON s.id = b.sighting WHERE s.code = t.code) AS seen, json_extract(s.data,\'$.name\') AS name FROM tester_codes t LEFT JOIN saves s ON s.id = t.used_by ORDER BY t.created');
       const feedback = await all('SELECT at, player, mood, note, place, day FROM feedback ORDER BY at DESC LIMIT 60');
       const bugs = await all('SELECT msg, COUNT(*) AS n, MAX(at) AS last, MAX(place) AS place, MAX(stack) AS stack FROM bugs GROUP BY msg ORDER BY last DESC LIMIT 40');
       const polls = await all('SELECT p.id, p.question, p.options, p.open, p.audience, (SELECT json_group_array(json_object(\'c\', choice, \'n\', n)) FROM (SELECT choice, COUNT(*) AS n FROM votes v WHERE v.poll = p.id GROUP BY choice)) AS counts FROM polls p ORDER BY p.created DESC LIMIT 10');
       const events = await all('SELECT at, code, kind, detail FROM events ORDER BY at DESC LIMIT 300');
       const proposals = await all('SELECT id, code, kind, payload, status, created, decided FROM proposals ORDER BY created DESC LIMIT 80');
-      return json({ now:Date.now(), events, proposals, players:players.map(p => ({ ...p, id:p.id.slice(0, 12) })), founders, feedback, bugs, polls }, 200, origin);
+      const cmissions = await all('SELECT c.id, c.audience, c.title, c.how, c.reward, c.active, c.created, (SELECT json_group_array(json_object(\'code\', d.code, \'note\', d.note, \'at\', d.at)) FROM cmission_done d WHERE d.mission = c.id) AS done FROM cmissions c ORDER BY c.created DESC LIMIT 40');
+      const extra = await EXTRA.admin(env, H);
+      return json({ now:Date.now(), extra, cmissions, events, proposals, players:players.map(p => ({ ...p, id:p.id.slice(0, 12) })), founders, feedback, bugs, polls }, 200, origin);
     }
 
     if (request.method === 'GET' && url.pathname === '/me') {
       const m = await memberOf(env, url.searchParams.get('key') || ''); if (!m) return json({ error: 'bad key' }, 400, origin);
-      return json({ founder: !!m.code && !m.revoked, level: m.revoked ? 0 : m.level, paused: m.paused, revoked: m.revoked }, 200, origin);
+      const out = { founder: !!m.code && !m.revoked, level: m.revoked ? 0 : m.level, paused: m.paused, revoked: m.revoked };
+      if (m.code && !m.revoked) {
+        // a founder only ever learns about their own form, never anyone else's
+        out.myth = m.myth; if (m.myth) out.seen = (await env.DB.prepare('SELECT COUNT(*) AS n FROM blessings b JOIN sightings s ON s.id = b.sighting WHERE s.code = ?').bind(m.code).first()).n;
+        const { results } = await env.DB.prepare('SELECT id, audience, title, how, reward FROM cmissions WHERE active = 1 AND id NOT IN (SELECT mission FROM cmission_done WHERE code = ?) ORDER BY created DESC LIMIT 20').bind(m.code).all();
+        out.missions = results.filter(x => missionFor(x.audience, m)).map(({ audience, ...x }) => x);
+        Object.assign(out, await EXTRA.me(env, m, H));
+      }
+      return json(out, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/appear') {
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      const m = await memberOf(env, b.key); if (!m || !m.code || m.revoked || !m.myth || m.paused.includes('myth')) return json({ error: 'no' }, 403, origin);
+      const target = b.to ? await EXTRA.target(env, m, b.to) : null;
+      const n = (await env.DB.prepare('SELECT COUNT(*) AS n FROM sightings WHERE code = ?1 AND day = ?2 AND target IS ?3').bind(m.code, today(), target).first()).n;
+      if (n >= 1) return json({ error: 'already today' }, 409, origin);
+      await env.DB.prepare('INSERT INTO sightings (at, code, form, day, target) VALUES (?1, ?2, ?3, ?4, ?5)').bind(Date.now(), m.code, m.myth, today(), target).run();
+      await logEvent(env, m, 'appear', `Sent their ${m.myth} out into the sky`); return json({ ok: true }, 200, origin);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/sighting') {
+      // anyone can glimpse a legend, but the answer never says whose it was
+      const key = url.searchParams.get('key') || ''; if (!KEY_RE.test(key)) return json({ error: 'bad key' }, 400, origin);
+      const m = await memberOf(env, key);
+      const r = await env.DB.prepare('SELECT id, form FROM sightings WHERE at > ?1 AND code IS NOT ?2 AND target IS NULL AND id NOT IN (SELECT sighting FROM blessings WHERE player = ?3) ORDER BY RANDOM() LIMIT 1').bind(Date.now() - 3 * 864e5, m.code, m.id).first();
+      return json({ sighting: r ? { id:r.id, form:r.form } : null }, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/bless') {
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      if (!KEY_RE.test(b.key || '')) return json({ error: 'bad key' }, 400, origin);
+      const s = await env.DB.prepare('SELECT id, code, form FROM sightings WHERE id = ?').bind(int(b.id, 1, 1e9)).first(); if (!s) return json({ error: 'gone' }, 404, origin);
+      const me = await hashKey(b.key); const r = await env.DB.prepare('INSERT OR IGNORE INTO blessings (sighting, player, at) VALUES (?1, ?2, ?3)').bind(s.id, me, Date.now()).run();
+      if (r.meta.changes) await logEvent(env, { id:me, code:s.code }, 'blessed', `Their ${s.form} was seen and blessed a player`);
+      return json({ ok: true }, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/mission-done') {
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      const m = await memberOf(env, b.key); if (!m || !m.code || m.revoked) return json({ error: 'no' }, 403, origin);
+      const x = await env.DB.prepare('SELECT id, title, audience FROM cmissions WHERE id = ? AND active = 1').bind(int(b.id, 1, 1e9)).first(); if (!x || !missionFor(x.audience, m)) return json({ error: 'no' }, 404, origin);
+      const r = await env.DB.prepare('INSERT OR IGNORE INTO cmission_done (mission, code, at, note) VALUES (?1, ?2, ?3, ?4)').bind(x.id, m.code, Date.now(), String(b.note || '').slice(0, 500)).run();
+      if (r.meta.changes) await logEvent(env, m, 'cmission', `${x.title}${b.note ? ': ' + String(b.note).slice(0, 300) : ''}`); return json({ ok: true }, 200, origin);
     }
 
     if (request.method === 'POST' && url.pathname === '/event') {
       let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
-      const kinds = ['mission','trial','reflection','keeperstep','secretgift'];
+      const kinds = ['mission','trial','reflection','keeperstep','secretgift','mythpower','mythpath','mythfirst'];
       if (!kinds.includes(b.kind)) return json({ error: 'bad kind' }, 400, origin);
       const m = await memberOf(env, b.key); if (!m || !m.code) return json({ error: 'not a founder' }, 403, origin);
       await logEvent(env, m, b.kind, String(b.detail || '').slice(0, 1000)); return json({ ok: true }, 200, origin);
@@ -354,9 +410,13 @@ export default {
       if (!env.ADMIN_TOKEN || (request.headers.get('Authorization') || '') !== 'Bearer ' + env.ADMIN_TOKEN) return json({ error: 'no' }, 403, origin);
       let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
       const code = String(b.code || '');
-      if (b.action === 'level') await env.DB.prepare('UPDATE tester_codes SET level = ? WHERE code = ?').bind(int(b.value, 1, 3) || 1, code).run();
-      else if (b.action === 'paused') await env.DB.prepare('UPDATE tester_codes SET paused = ? WHERE code = ?').bind(JSON.stringify((b.value || []).filter(x => ['propose','vote','missions','testisland'].includes(x))), code).run();
+      if (b.action === 'level') await env.DB.prepare('UPDATE tester_codes SET level = ? WHERE code = ?').bind(int(b.value, 1, 4) || 1, code).run();
+      else if (b.action === 'paused') await env.DB.prepare('UPDATE tester_codes SET paused = ? WHERE code = ?').bind(JSON.stringify((b.value || []).filter(x => ['propose','vote','missions','testisland','myth'].includes(x))), code).run();
       else if (b.action === 'revoke') await env.DB.prepare('UPDATE tester_codes SET revoked = ? WHERE code = ?').bind(b.value ? 1 : 0, code).run();
+      else if (await EXTRA.adminAct(env, b, H)) { /* handled privately */ }
+      else if (b.action === 'myth') await env.DB.prepare('UPDATE tester_codes SET myth = ? WHERE code = ?').bind(MYTHS.includes(b.value) ? b.value : null, code).run();
+      else if (b.action === 'mission') { const err = await addMission(env, b); if (err) return json({ error: err }, 400, origin); }
+      else if (b.action === 'missionoff') await env.DB.prepare('UPDATE cmissions SET active = 0 WHERE id = ?').bind(int(b.id, 1, 1e9)).run();
       else if (b.action === 'decide') await env.DB.prepare('UPDATE proposals SET status = ?, decided = ? WHERE id = ?').bind(b.value === 'approved' ? 'approved' : 'rejected', Date.now(), int(b.id, 1, 1e9)).run();
       else if (b.action === 'poll') { const opts = (b.options || []).map(o => cleanText(o, 80)).filter(Boolean).slice(0, 6); const aud = ['all','keepers','elders'].includes(b.audience) ? b.audience : 'all';
         if (!b.question || opts.length < 2) return json({ error: 'need a question and 2 options' }, 400, origin);

@@ -260,3 +260,4 @@ body.in-cine .top { opacity:0 !important; pointer-events:none !important; transi
 .card .petpick button.on { border-color:var(--accent); background:#fff; }
 .testpill { background:#dff5dc !important; }
 body.testisland .title h1::after { content:'🧪 Test island'; display:block; font-size:18px; color:#2fae60; text-shadow:none; margin-top:4px; }
+

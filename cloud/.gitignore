@@ -3,3 +3,4 @@ node_modules/
 .dev.vars*
 tester-codes.txt
 admin-token.txt
+private/

@@ -19,6 +19,7 @@ import { INSECTS } from '../data/insects.js';
 import { TASTES, REACT, TIERS, TIER_HEARTS, tasteOf } from '../data/tastes.js';
 import { SPECIES, NAMES, OUTFITS, TOP_COLORS, PERSONALITIES, REQUEST_LINES } from '../data/visitors.js';
 import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
+import { MYTHS, FINDS as SHROOM_FINDS, DEV_CONTENT, glowName } from '../data/myths.js';
 import { EYE_COLORS, EYE_STYLES, BROWS, FACE_EXTRAS, TOPS, SHOES, SHOE_COLORS, FOUNDER_HATS, SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
@@ -872,7 +873,8 @@ function person(lk) {
 function dressPlayer() {
   const lk = { ...DEFAULT_LOOK, ...(S.look && S.look.human ? S.look : {}) };
   player.children.slice().forEach(c => player.remove(c));
-  const c = person(lk); player.add(c); player.userData.inner = c.userData.inner;
+  let legend = false; try { legend = S.mythForm && mythOn(); } catch {} // a founder in their secret legendary form
+  const c = legend ? mythModel(mythKind()) : person(lk); player.add(c); player.userData.inner = c.userData.inner;
 }
 dressPlayer();
 let ownerNpc = null;
@@ -1255,14 +1257,14 @@ function drawHud() {
   $('bar').style.display = S.where === 'hut' || buildMode ? 'none' : 'flex';
   $('buildBtn').hidden = VISIT || (S.home || 0) < 3 || S.where !== 'home'; $('buildBtn').innerHTML = `${ICON.hammer}<span class="lbl">${buildMode ? 'Building' : 'Build'}</span>`;
   // the hotbar: your tools on the left (tap one to see what it does), then your seeds
-  const tools = [['axe','🪓','Stone Axe', 'Tap a tree to chop logs.'], ['pick','⛏️','Stone Pickaxe','Tap a rock to break it for stone.'], ['net','🦋','Bug Net','Tap an insect or butterfly to swing.'], ['rod','🎣','Fishing Rod','Tap a dock to fish.'], ['balloon','🎈','Founder Balloon','Fly to any island.']]
-    .filter(([k]) => k === 'rod' ? S.bridge || S.mode === 'fisher' : k === 'balloon' ? S.founderBalloon && !VISIT : S.tools[k]).map(([k, ic, name, how]) => { const bronze = (k === 'axe' && S.tools.bronzeAxe) || (k === 'pick' && S.tools.bronzePick);
+  const tools = [['axe','🪓','Stone Axe', 'Tap a tree to chop logs.'], ['pick','⛏️','Stone Pickaxe','Tap a rock to break it for stone.'], ['net','🦋','Bug Net','Tap an insect or butterfly to swing.'], ['rod','🎣','Fishing Rod','Tap a dock to fish.'], ['balloon','🎈','Founder Balloon','Fly to any island.'], ['myth','🪽','Legend','']]
+    .filter(([k]) => k === 'rod' ? S.bridge || S.mode === 'fisher' : k === 'balloon' ? S.founderBalloon && !VISIT : k === 'myth' ? mythOn() : S.tools[k]).map(([k, ic, name, how]) => { const bronze = (k === 'axe' && S.tools.bronzeAxe) || (k === 'pick' && S.tools.bronzePick);
       return `<div class="hslot tool ${bronze ? 'bronze' : ''}" data-tool="${k}" data-how="${(bronze ? name.replace('Stone', 'Bronze') : name) + ': ' + how}"><span>${ic}</span></div>`; }).join('');
   $('bar').innerHTML = (tools ? tools + '<i class="hdiv"></i>' : '') + shown.map(([k,c]) => { const n = S.seeds[k] || 0, now = c.seasons.includes(s);
     return `<div class="hslot seed ${S.sel===k?'on':''} ${now ? '' : 'late'} ${n ? '' : 'none'}" data-k="${k}" title="${c.name}"><span>${icon(k)}</span><b>${n}</b><small>${now ? c.name : 'Not now'}</small></div>`; }).join('');
   document.querySelectorAll('.hslot.seed').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); const c = CROPS[S.sel], n = S.seeds[S.sel] || 0;
     toast(n ? `${c.name} seeds ready. Tap an empty plot to plant.` : `No ${c.name} seeds. Buy some from Pip.`); });
-  document.querySelectorAll('.hslot.tool').forEach(el => el.onclick = () => el.dataset.tool === 'balloon' ? balloonMenu() : toast(el.dataset.how));
+  document.querySelectorAll('.hslot.tool').forEach(el => el.onclick = () => el.dataset.tool === 'balloon' ? balloonMenu() : el.dataset.tool === 'myth' ? mythMenu() : toast(el.dataset.how));
 }
 function openDialog(name, text, btns=[], hearts, voice) {
   babble(voice || (name.startsWith('Nana') ? 'nana' : name.startsWith('Pip') ? 'pip' : name.startsWith('Captain') ? 'drizzle' : name.startsWith('Moss') ? 'twins' : name.startsWith('Lumen') ? 'lumen' : ({ Mabel:'mabel', Professor:'hoot', Allegra:'allegra', Sage:'sage' })[name.split(' ')[0]] || 'none'), text);
@@ -1553,6 +1555,7 @@ function ensureGoals() {
   S.goals = { day:S.day, list, bonus:false };
 }
 function goal(t, n=1) {
+  mythCount(t, n);
   lean({ water:'grower', pick:'grower', sell:'trader', talk:'friend', gift:'friend', fish:'explorer', fruit:'explorer' }[t], t === 'sell' ? 1 : n);
   if (!featureOn('goals')) return;
   ensureGoals();
@@ -3164,7 +3167,7 @@ function sleep(passedOut, where) {
   else if (S.sprinklers && !raining) msg += ' Your sprinkler watered the garden.';
   const fz = festival(); if (fz && !S.fests[fz.id + fz.year]) msg = `Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`;
   S.tiles.forEach((_, i) => drawTile(i));
-  spawnDigs(); applySeason(); S.goals = null; ensureGoals(); peopleNewDay();
+  spawnDigs(); applySeason(); S.goals = null; ensureGoals(); peopleNewDay(); drawShrooms(); mythLookUp();
   S.pickups = S.pickups || []; spawnPickups();
   if (where === 'outside') { if (S.where === 'hut') S.where = 'home'; } // you wake up right where you slept
   else if ((S.home || 0) < 3) { S.where = 'home'; player.position.set(campfire.position.x + .8, 0, campfire.position.z + .6); } else { S.where = 'hut'; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); }
@@ -3760,7 +3763,7 @@ function tick() {
     if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
   lobes.forEach(L => { if (!L.rise) return; L.rise = Math.max(0, L.rise - dt / 2.5); const k = 1 - L.rise; L.g.position.y = -5 * (1 - k) * (1 - k); if (!L.rise) { L.g.position.y = 0; L.extra.forEach(o => o.visible = true); burst(new THREE.Vector3(L.e.x, .5, L.e.z), 0x8fdc8a, 30); } });
   if (lighthouse && lighthouse.visible) { const nb = Math.min(1, Math.max(0, (hour() - 18.5) / 1.5)); lighthouse.userData.pivot.rotation.y = now * .8; lighthouse.userData.beam.material.opacity = .04 + nb * .14; }
-  animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt); updatePet(dt, now);
+  animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt); updatePet(dt, now); mythAnimate(dt, now);
   { const sp = player.position.distanceTo(lastPP) / Math.max(dt, .001); lastPP.copy(player.position); const sc = player.userData.inner?.userData.scarf;
     if (sc) { let seg = sc, i = 0; while (seg && seg.children.length) { const k = Math.min(1, sp / 4); seg.rotation.x = -.15 - k * (.35 + i * .12) + Math.sin(now * (6 + i) + i) * (.06 + k * .12); seg = seg.children.find(c => c.isGroup); i++; } } }
   if (lanternFF.length) { const nf = Math.min(1, Math.max(0, (hour() - 19) / 2)); lanternFF.forEach((f, i) => { f.visible = nf > .2; const a = now * .8 + i * .78; f.position.set(Math.cos(a) * (.55 + Math.sin(now + i) * .15), 1.4 + Math.sin(now * 1.3 + i) * .45, Math.sin(a) * (.55 + Math.cos(now + i) * .15)); f.material.opacity = nf * (.5 + Math.sin(now * 4 + i) * .5); }); }
@@ -4444,7 +4447,7 @@ function founderOn() { return !!S.founder && !(S.trust && S.trust.revoked); }
 function paused(p) { return !!(S.trust && (S.trust.paused || []).includes(p)); }
 function keeperLevel() { if (devOn()) return 3; return founderOn() && featureOn('keepers') ? (S.trust && S.trust.level) || 1 : 0; }
 async function syncTrust() { if (VISIT || TESTSLOT || !S.syncKey) return;
-  try { const r = await (await fetch(`${CLOUD}/me?key=${S.syncKey}`)).json(); if (r && 'level' in r) { S.trust = { level:r.level, paused:r.paused || [], revoked:!!r.revoked }; save(); drawHud(); drawKeepers(); } } catch {}
+  try { const r = await (await fetch(`${CLOUD}/me?key=${S.syncKey}`)).json(); if (r && 'level' in r) { S.trust = { level:r.level, paused:r.paused || [], revoked:!!r.revoked, myth:r.myth || null, seen:r.seen || 0, missions:r.missions || [], mythData:r.mythData || null, link:r.link || null }; save(); dressPlayer(); drawHud(); drawKeepers(); mythReveal(); loadMods(r.mods); } } catch {}
   try { const w = await (await fetch(`${CLOUD}/world`)).json(); if (w && w.world) { S.world = w.world; save(); drawWorld(); } } catch {} }
 addEventListener('sg-playing', () => setTimeout(syncTrust, 2500));
 function logKeeper(kind, detail) { if (!TESTSLOT && !VISIT) fetch(`${CLOUD}/event`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ key:S.syncKey, kind, detail }) }).catch(() => {}); }
@@ -4675,7 +4678,169 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+// ============ LEGENDS ============
+// Rare creatures. A few players are secretly given one by the Creator. Everything personal about it
+// (its story, missions, and questions) comes from the server, only to that player. Anyone might see one fly by.
+var mythShrooms = null, mythSky = null; // var: the game loop can start before this part loads
+var mythExtras = [], mythActions = {}, mythHooks = {}; // var: used by the game loop. Filled in by private modules the server sends to the right people
+function mythKind() { const k = (S.trust && S.trust.myth) || (devOn() && S.devMyth) || null; return k && MYTHS[k] ? k : null; }
+function mythOn() { return featureOn('myths') && (founderOn() || devOn()) && !!mythKind() && !paused('myth') && !VISIT && !TESTSLOT; }
+function mythF() { const k = mythKind(); return { ...MYTHS[k], ...((S.trust && S.trust.myth === k && S.trust.mythData) || DEV_CONTENT) }; }
+function mp() { S.myth = S.myth || { light:0, list:[], day:0, done:0, journal:[], shrooms:[] }; return S.myth; }
+// a legendary creature, built from simple shapes. Wings sit where arms would, so walking flaps them.
+function mythModel(kind) {
+  const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner); const eyes = [], arms = [], F = MYTHS[kind], M = mat, shift = [];
+  const eye = (x, y, z, r = .05) => { const e = new THREE.Group(); e.add(mesh(sph(r), M(0x2b2233, { roughness:.2 }))); e.add(mesh(sph(r * .38), glow(0xffffff), r*.3, r*.35, r*.75)); e.position.set(x, y, z); inner.add(e); eyes.push(e); };
+  const wing = (sd, color, len, tips) => { const arm = new THREE.Group(); arm.position.set(sd*.34, 1.1, -.05); inner.add(arm); arms.push(arm);
+    for (let i = 0; i < 4; i++) { const f = mesh(sph(.2), M(i === 3 && tips ? tips : color), sd*(.12 + i*.16*len), -.05 - i*.04, -i*.03); f.scale.set(.9, .22, .55 - i*.06); f.rotation.z = sd*.25; arm.add(f); } return arm; };
+  if (kind === 'simurgh') {
+    const body = mesh(sph(.42), M(F.colors[0]), 0, .95, 0); body.scale.set(1, 1.1, 1.2); inner.add(body); shift.push(body);
+    inner.add(mesh(sph(.28), M(0xfff1d6), 0, .88, .22));
+    const head = mesh(sph(.3), M(0xe0a066), 0, 1.55, .2); inner.add(head); const snout = mesh(sph(.14), M(0xf3d2a4), 0, 1.47, .44); snout.scale.set(1, .8, 1.1); inner.add(snout);
+    inner.add(mesh(sph(.05), M(0x2b2233), 0, 1.52, .57)); eye(-.11, 1.62, .42); eye(.11, 1.62, .42);
+    [-1,1].forEach(sd => { const ear = mesh(sph(.13), M(0x9b6b4a), sd*.27, 1.5, .12); ear.scale.set(.5, 1.3, .8); ear.rotation.z = sd*.3; inner.add(ear); });
+    for (let i = 0; i < 3; i++) { const c = mesh(new THREE.ConeGeometry(.04, .2, 6), glow(F.colors[i + 1]), (i - 1)*.09, 1.9, .1); c.rotation.z = (1 - i)*.3; inner.add(c); shift.push(c); }
+    const tail = new THREE.Group(); tail.position.set(0, 1.0, -.45); inner.add(tail);
+    for (let i = 0; i < 9; i++) { const a = (i/8 - .5) * 2.2, f = new THREE.Group(); f.rotation.z = a; f.rotation.x = -.5; tail.add(f);
+      const plume = mesh(sph(.16), M(F.colors[i % 5]), 0, .62, 0); plume.scale.set(.55, 1.5, .2); f.add(plume); shift.push(plume); f.add(mesh(sph(.06), glow(0x3f86c9), 0, .82, .03)); }
+    wing(-1, F.colors[3], 1, F.colors[4]); wing(1, F.colors[3], 1, F.colors[4]);
+  } else if (kind === 'ziz') {
+    const body = mesh(sph(.45), M(0x3f86c9), 0, 1.0, 0); body.scale.set(1, 1.05, 1.25); inner.add(body); inner.add(mesh(sph(.3), M(0x8fdc8a), 0, .92, .24));
+    inner.add(mesh(new THREE.CylinderGeometry(.11, .15, .45, 10), M(0x3f86c9), 0, 1.45, .12)); inner.add(mesh(sph(.24), M(0x7ec8e3), 0, 1.72, .18));
+    const beak = mesh(new THREE.ConeGeometry(.07, .26, 8), M(0xffc857), 0, 1.68, .45); beak.rotation.x = Math.PI/2; inner.add(beak); eye(-.1, 1.78, .36); eye(.1, 1.78, .36);
+    [-1,1].forEach(sd => { inner.add(mesh(new THREE.CylinderGeometry(.03, .03, .55, 6), M(0xffc857), sd*.15, .3, 0)); const ft = mesh(sph(.08), M(0xffc857), sd*.15, .04, .07); ft.scale.set(1, .4, 1.6); inner.add(ft); });
+    [-1,1].forEach(sd => { const w = wing(sd, 0x2d3a6b, 1.25, 0x7ec8e3); for (let i = 0; i < 6; i++) w.add(mesh(sph(.025), glow(0xfff3a0), sd*(.15 + i*.1), -.02, .05)); });
+    const tail = mesh(sph(.22), M(0x2d3a6b), 0, .95, -.5); tail.scale.set(1, .3, 1.2); inner.add(tail);
+  } else {
+    const body = mesh(sph(.38), M(0xfff6e6), 0, 1.0, 0); body.scale.set(.95, 1, 1.3); inner.add(body);
+    inner.add(mesh(new THREE.TorusGeometry(.16, .04, 8, 18), M(0xffc857, { metalness:.5, roughness:.35 }), 0, 1.3, .1).rotateX(Math.PI/2));
+    inner.add(mesh(new THREE.CylinderGeometry(.08, .1, .4, 10), M(0xfff6e6), 0, 1.45, .1)); inner.add(mesh(sph(.2), M(0x2b2233), 0, 1.72, .12));
+    const bk = mesh(new THREE.TorusGeometry(.3, .03, 6, 16, Math.PI/2), M(0x2b2233), 0, 1.42, .45); bk.rotation.set(0, Math.PI/2, Math.PI); inner.add(bk);
+    eye(-.1, 1.76, .28, .04); eye(.1, 1.76, .28, .04);
+    [-1,1].forEach(sd => inner.add(mesh(new THREE.CylinderGeometry(.025, .025, .6, 6), M(0x2b2233), sd*.12, .32, 0)));
+    wing(-1, 0xfff6e6, 1, 0x2b2233); wing(1, 0xfff6e6, 1, 0x2b2233);
+    inner.add(mesh(new THREE.OctahedronGeometry(.07), glow(0xffc857), 0, 2.05, .1));
+  }
+  const aura = halo(F.colors[0], 2.6, .35); aura.position.y = 1; inner.add(aura);
+  g.userData.inner = inner; inner.userData.eyes = eyes; inner.userData.arms = arms; inner.userData.blink = Math.random()*4; inner.userData.shift = shift; inner.userData.aura = aura; inner.userData.myth = kind;
+  return g;
+}
+function mythAnimate(dt, now) {
+  const u = player.userData.inner && player.userData.inner.userData;
+  if (u && u.myth) { u.shift.forEach((m, i) => m.material.color.setHSL(((now * .05) + i * .09) % 1, .75, .62));
+    u.arms.forEach((a, i) => a.rotation.z = Math.sin(now * 3 + i * Math.PI) * .12); if (u.aura) u.aura.material.opacity = .25 + .1 * Math.sin(now * 2) + Math.min(.3, mp().light * .01); }
+  if (mythSky && mythSky.visible) { const d = mythSky.userData; d.t += dt; const a = d.t * .35;
+    mythSky.position.set(Math.cos(a) * 10, 7.5 + Math.sin(d.t * .8) * .6, Math.sin(a) * 10 - 3); mythSky.rotation.y = -a; const iu = mythSky.userData.inner.userData;
+    iu.arms.forEach((w, i) => w.rotation.z = Math.sin(now * 5 + i * Math.PI) * .5); (iu.shift || []).forEach((m, i) => m.material.color.setHSL(((now * .05) + i * .09) % 1, .75, .62));
+    if (d.t > 70) { mythSky.visible = false; toast('It flew away.'); } }
+  if (mythShrooms) mythShrooms.children.forEach((m, i) => { const h = m.userData.halo; if (h) h.material.opacity = .45 + .25 * Math.sin(now * 2 + i); });
+  if (mythHooks && mythHooks.frame) mythHooks.frame(dt, now);
+}
+// 5 missions a day; finish any 3
+function mythDaily() { const P = mp(), F = mythF();
+  if (P.day !== S.day) { const pool = F.missions, used = new Set(), list = [];
+    for (let i = 0; list.length < 5 && i < pool.length * 2; i++) { const m = pool[(S.day * 5 + i * 7 + (P.done || 0)) % pool.length]; if (!used.has(m.t)) { used.add(m.t); list.push({ t:m.t, n:m.n, have:0, text:m.text, self:!!m.self }); } }
+    P.day = S.day; P.list = list; P.bonus = false; save(); }
+  return P; }
+function mythCount(t, n = 1) { if (!mythOn()) return; const P = mythDaily(); let changed = false;
+  P.list.forEach(m => { if (m.t === t && m.have < m.n) { m.have = Math.min(m.n, m.have + n); changed = true; if (m.have >= m.n) mythDone(m.text); } });
+  if (changed && !P.bonus && P.list.filter(m => m.have >= m.n).length >= 3) { P.bonus = true; P.light++; S.coins += 60; setTimeout(() => { toast(`3 missions done today! Bonus: +60 coins and ${MYTHS[mythKind()].name} went up a level.`); chime(1319); }, 1600); }
+  save(); }
+function mythDone(text) { const P = mp(); P.light++; P.done = (P.done || 0) + 1; S.coins += 40; drawHud();
+  setTimeout(() => { toast(`Mission done! +40 coins. ${MYTHS[mythKind()].name} went up a level.`); [784, 988, 1175].forEach((f, i) => setTimeout(() => chime(f), i * 110)); burst(player.position.clone().setY(1.2), MYTHS[mythKind()].colors[0], 18); }, 500);
+  logKeeper('mythpath', text); }
+function mythMenu() { if (!mythOn()) return; const F = mythF(), P = mythDaily(), T = S.trust || {}, form = !!S.mythForm, short = F.name.replace('The ', '');
+  const btn = m => m.t === 'reflect' ? 'Answer' : m.t === 'learn' ? 'Read' : mythActions[m.t] ? mythActions[m.t].label : m.self ? 'I did it' : '';
+  const row = m => `<p>${m.have >= m.n ? '✅' : '◻️'} ${m.text} ${m.n > 1 ? `<b>${m.have}/${m.n}</b>` : ''} ${m.have < m.n && btn(m) ? `<button class="ghost" data-mt="${m.t}" style="padding:2px 10px">${btn(m)}</button>` : ''}</p>`;
+  const cm = T.missions || [];
+  showCard(`<div class="kicker">✦ ${F.path.toUpperCase()} ✦</div><h2>${F.name}</h2>
+    <p><b>${glowName(P.light || 0)}</b> <span class="sub">(goes up with every mission you finish)</span>${T.seen ? `<br>Players have tapped your ${short} ${T.seen} time${T.seen === 1 ? '' : 's'}. They don't know it was you.` : ''}</p>
+    <div class="chips"><button id="myForm">${form ? 'Turn back into you' : `Turn into ${F.name.replace('The ', 'the ')}`}</button><button id="myPow" class="${P.power === S.day ? 'ghost' : ''}">${F.power.name}${P.power === S.day ? ' (tomorrow)' : ''}</button>
+    <button id="myApp" class="${P.appear === S.day ? 'ghost' : ''}">Fly over another island${P.appear === S.day ? ' (tomorrow)' : ''}</button><button id="myLeg" class="ghost">The legend</button>${P.journal && P.journal.length ? '<button id="myJr" class="ghost">Journal</button>' : ''}</div>
+    <p class="sub">Once a day, your ${short} can fly over a random player's island. If they tap it, they get a gift. They never find out it was you.</p>
+    <h4>Today's missions: finish any 3 of these 5</h4>${P.list.map(row).join('')}
+    ${cm.length ? `<h4>From the Creator</h4>${cm.map(m => `<p>✧ <b>${esc(m.title)}</b>${m.how ? `<br><span class="sub">${esc(m.how)}</span>` : ''} <button class="ghost" data-cm="${m.id}" style="padding:2px 10px">I did it (+${m.reward})</button></p>`).join('')}` : ''}
+    ${mythExtras.map(x => x.html()).join('')}
+    <p class="sub">New missions every day.</p>`, 'Close');
+  $('myForm').onclick = () => { S.mythForm = !form; save(); dressPlayer(); hideCard(); burst(player.position.clone().setY(1), F.colors[0], 30); chime(form ? 660 : 988); toast(form ? 'You turned back into you.' : `You turned into ${F.name.replace('The ', 'the ')}. Only you can see this.`); };
+  $('myPow').onclick = () => P.power === S.day ? toast('You already used your power today. Try again tomorrow.') : mythPower();
+  $('myApp').onclick = () => P.appear === S.day ? toast('You already did this today. Try again tomorrow.') : mythAppear();
+  $('myLeg').onclick = () => showCard(`<div class="kicker">IN LEGEND</div><h2>${F.name}</h2>${F.legend.map(l => `<p>${l}</p>`).join('')}<h4>In Sky Garden: ${F.power.name}</h4><p>${F.power.text}</p>`, 'Back', mythMenu);
+  if ($('myJr')) $('myJr').onclick = () => showCard(`<div class="kicker">JUST FOR YOU</div><h2>Your journal</h2>${P.journal.slice(-12).reverse().map(j => `<p><i>${esc(j.q)}</i><br>${esc(j.a)}</p>`).join('')}`, 'Back', mythMenu);
+  document.querySelectorAll('[data-mt]').forEach(b => b.onclick = () => { const t = b.dataset.mt;
+    if (t === 'reflect') return mythReflect(); if (t === 'learn') return mythLearn(); if (mythActions[t]) return mythActions[t].run();
+    mythCount(t); mythMenu(); });
+  document.querySelectorAll('[data-cm]').forEach(b => b.onclick = () => { const m = cm.find(x => x.id === +b.dataset.cm);
+    showCard(`<div class="kicker">FROM THE CREATOR</div><h2>${esc(m.title)}</h2><p>How did it go? (optional, only the Creator can read this)</p><textarea id="cmNote" maxlength="400" rows="3" style="width:100%;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:8px"></textarea><button id="cmGo">Done</button>`, 'Back', mythMenu);
+    $('cmGo').onclick = async () => { const r = await api('/mission-done', { key:S.syncKey, id:m.id, note:$('cmNote').value.trim() }); if (!r.ok && !devOn()) return toast('Could not connect. Check your internet and try again.');
+      T.missions = cm.filter(x => x !== m); S.coins += m.reward; mp().light++; save(); drawHud(); chime(1175); toast(`+${m.reward} coins. The Creator will see it.`); mythMenu(); }; });
+  mythExtras.forEach(x => x.bind && x.bind());
+}
+function mythReflect() { const F = mythF(), q = F.reflect[S.day % F.reflect.length];
+  showCard(`<div class="kicker">TODAY'S QUESTION</div><h2>${q}</h2><textarea id="rfA" maxlength="600" rows="4" style="width:100%;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:8px"></textarea>
+    <p><label><input type="checkbox" id="rfShare"> Share this with the Creator</label></p><p class="sub">Unless you tick the box, only you can read your answer. It's saved in your journal.</p><button id="rfGo">Save my answer</button>`, 'Back', mythMenu);
+  $('rfGo').onclick = () => { const a = $('rfA').value.trim(); if (!a) return toast('Write a few words first.'); mp().journal = [...(mp().journal || []), { q, a, day:S.day }].slice(-60);
+    if ($('rfShare').checked) logKeeper('reflection', `${q} | ${a}`); mythCount('reflect'); save(); mythMenu(); }; }
+function mythLearn() { const F = mythF(), f = F.learn[(S.day + (mp().done || 0)) % F.learn.length];
+  showCard(`<div class="kicker">TODAY'S STRANGE FACT</div><h2>Did you know?</h2><p>${f}</p>`, 'Cool', () => { mythCount('learn'); mythMenu(); }); }
+// powers: once a day
+function mythPower() { const k = mythKind(), F = mythF(), P = mp();
+  if (mythActions.power) return mythActions.power.run(); // a private module can supply the power
+  P.power = S.day; hideCard();
+  if (k === 'simurgh') { mythBloom(7, true); toast('7 glowing mushrooms popped up around your island. Tap them to collect.'); }
+  if (k === 'ziz') { S.tiles.forEach((t, i) => { if (t.s >= 1) { t.w = true; drawTile(i); } }); raining = true; sfx('water'); burst(player.position.clone().setY(2), 0x9fd3ff, 40);
+    if (ITEMS.candy) gain('candy', 1, player.position.clone().setY(1)); toast('It\'s raining! Every plant is watered, and you got a treat covered in sprinkles.'); }
+  mythCount('power'); logKeeper('mythpower', F.power.name); save(); }
+async function mythAppear(to) { const P = mp(), F = MYTHS[mythKind()]; hideCard();
+  const r = devOn() ? { ok:true } : await api('/appear', to ? { key:S.syncKey, to } : { key:S.syncKey }); if (!r.ok) { toast(r.error === 'already today' ? 'You already did this today. Try again tomorrow.' : 'Could not connect. Check your internet and try again.'); return false; }
+  burst(player.position.clone().setY(2), F.colors[0], 40); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 140));
+  if (!to) { P.appear = S.day; mythCount('appear'); save(); toast(`Your ${F.name.replace('The ', '')} is flying over another player's island today.`); }
+  return true; }
+// glowing mushrooms, each with a small gift and a silly surprise
+function mythBloom(n, mine) { const P = mp(); if (mine) P.shrooms = [];
+  for (let i = 0, tries = 0; i < n && tries < 80; tries++) { const a = Math.random() * Math.PI * 2, r = 2 + Math.random() * 6, x = Math.cos(a) * r, z = Math.sin(a) * r; if (!onLand(x, z)) continue; P.shrooms.push([x, z]); i++; }
+  P.shroomDay = S.day; save(); drawShrooms(); }
+function drawShrooms() { if (!mythShrooms) { mythShrooms = new THREE.Group(); scene.add(mythShrooms); lateClicks.push(mythShrooms); }
+  mythShrooms.children.slice().forEach(c => mythShrooms.remove(c)); const P = mp(); if (VISIT || P.shroomDay !== S.day) return;
+  P.shrooms.forEach(([x, z], i) => { const g = new THREE.Group(), c = new THREE.Color().setHSL((i * .17) % 1, .8, .62).getHex();
+    g.add(mesh(new THREE.CylinderGeometry(.05, .07, .3, 8), mat(0xfff6e6), 0, .15, 0)); const cap = mesh(new THREE.SphereGeometry(.2, 14, 8, 0, Math.PI*2, 0, Math.PI/2), glow(c), 0, .28, 0); cap.scale.y = .8; g.add(cap);
+    const h = halo(c, 1.2, .6); h.position.y = .3; g.add(h); g.userData.halo = h; g.position.set(x, 0, z);
+    const hb = deco(hitBox(.6, .7, .6), () => mythShroomTap(i)); hb.position.y = .3; g.add(hb); mythShrooms.add(g); }); }
+function mythShroomTap(i) { const P = mp(), [x, z] = P.shrooms[i] || []; if (x == null) return; P.shrooms.splice(i, 1); save(); drawShrooms();
+  const at = new THREE.Vector3(x, .6, z); burst(at, 0xc98bff, 16); chime(1047 + Math.random() * 300);
+  if (Math.random() < .5) { const c = 10 + Math.floor(Math.random() * 16); S.coins += c; floatText(`+${c} coins`, at); } else { const ks = Object.keys(CROPS).filter(k => !CROPS[k].locked && CROPS[k].seasons.includes(season())), k = ks[Math.floor(Math.random() * ks.length)]; S.seeds[k] = (S.seeds[k] || 0) + 1; floatText(`+1 ${CROPS[k].name} seed`, at); }
+  setTimeout(() => toast(SHROOM_FINDS[Math.floor(Math.random() * SHROOM_FINDS.length)]), 900); drawHud(); }
+// sightings: any gardener might glimpse a legend. The sky never says whose.
+function mythSighting(s) { if (!featureOn('myths') || VISIT || !s || !MYTHS[s.form]) return;
+  if (!mythSky) { mythSky = new THREE.Group(); scene.add(mythSky); lateClicks.push(mythSky); }
+  mythSky.children.slice().forEach(c => mythSky.remove(c)); const m = mythModel(s.form); m.scale.setScalar(1.3); mythSky.add(m); mythSky.userData.inner = m.userData.inner;
+  const hb = deco(hitBox(3, 3, 3), () => mythBless(s)); hb.position.y = 1.4; mythSky.add(hb); mythSky.userData.t = 0; mythSky.visible = true;
+  setTimeout(() => toast(s.toast || 'Something is flying over your island. Tap it!'), 1500); }
+function mythBless(s) { const F = MYTHS[s.form]; mythSky.visible = false; S.blessed = [...(S.blessed || []), s.id].slice(-50);
+  if (s.form === 'simurgh') mythBloom(3);
+  if (s.form === 'ziz') { S.tiles.forEach((t, i) => { if (t.s >= 1) { t.w = true; drawTile(i); } }); if (ITEMS.candy) gain('candy', 1, player.position.clone().setY(1)); }
+  if (s.form === 'ibis') S.coins += 50;
+  save(); drawHud(); [659, 784, 988, 1319].forEach((f, i) => setTimeout(() => chime(f), i * 120));
+  if (s.card) { showCard(s.card, s.cardBtn || 'Okay'); if (s.onBless) s.onBless(); }
+  else showCard(`<div class="kicker">✦ A RARE SIGHTING ✦</div><h2>${F.appear.head}</h2><p>${F.appear.gift}</p><p class="sub">No one knows where they come from.</p>`, 'Awesome');
+  if (s.id > 0 && !devOn()) api('/bless', { key:S.syncKey, id:s.id }); }
+async function mythLookUp() { if (!featureOn('myths') || VISIT || TESTSLOT || S.sightDay === S.day || !S.syncKey || devOn()) return;
+  try { const r = await (await fetch(`${CLOUD}/sighting?key=${S.syncKey}`)).json(); S.sightDay = S.day; save(); if (r.sighting && Math.random() < .7) setTimeout(() => mythSighting(r.sighting), 20000 + Math.random() * 60000); } catch {} }
+// the first time: the reveal
+function mythReveal() { if (!mythOn() || mp().revealed) return; const F = mythF();
+  const busy = !S.setupDone || S.tut === 1 || $('dialog').classList.contains('show') || $('veil').classList.contains('show') || document.querySelector('.presents'); if (busy) return setTimeout(mythReveal, 3000);
+  mp().revealed = S.day; save(); [392, 523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 220));
+  showCard(`<div class="kicker">✦ SOMETHING HAS CHOSEN YOU ✦</div><h2>${F.name}</h2>${F.legend.map(l => `<p>${l}</p>`).join('')}
+    <p><b>This legend is now yours.</b> You can turn into it, use its power once a day, and get new missions every day.</p><p>Tap the 🪽 button on your hotbar to see everything.</p><p><b>It's a secret. Only you know you have it.</b></p>`, 'Turn into it now', () => { S.mythForm = true; save(); dressPlayer(); burst(player.position.clone().setY(1), F.colors[0], 40); drawHud(); setTimeout(mythMenu, 900); });
+  logKeeper('mythfirst', F.name); }
+// private modules: extra parts of the game the server only sends to the people they are for
+const loadedMods = new Set();
+const MODCTX = { get S() { return S; }, THREE, api, showCard, hideCard, toast, chime, burst, player, esc, save, drawHud, dressPlayer, $, hour, devOn, CLOUD,
+  MYTHS, mythMenu, mythSighting, mythCount, mythKind, mythF, mythOn, mythAppear, mythBless, mp, mythExtras, mythActions, mythHooks, logKeeper };
+function loadMods(list) { (list || []).forEach(n => { if (loadedMods.has(n) || !/^[a-z]+$/.test(n)) return; loadedMods.add(n);
+  import(`${CLOUD}/mod?name=${n}&key=${S.syncKey}`).then(m => m.default(MODCTX)).catch(() => loadedMods.delete(n)); }); }
+addEventListener('sg-playing', () => setTimeout(() => { mythLookUp(); drawShrooms(); mythReveal(); }, 5000));
+window.__sg = { MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }

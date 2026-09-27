@@ -14,6 +14,7 @@ const FEATURES = [
   { id:'townhall', name:'Town Hall voting', live:false, what:'A town board where every player gets one vote on what gets built next.' },
   { id:'helpertree', name:'Helper Tree', live:false, what:'A tree that grows once a day when you send feedback, vote, or answer a tester question.' },
   { id:'keepers', name:"Keepers' Path", live:false, what:'Trust levels, Lighthouse Rock, Wren the mentor, and trials whose results can shape the world after you approve them.' },
+  { id:'myths', name:'Legends', live:false, what:'Rare creatures that can fly over any island. Tap one for a gift.' },
   { id:'switchIsle', name:'Switch island type', live:false, what:'Players can change their island type from the Bag.' },
 ];
 export { FEATURES };

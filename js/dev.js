@@ -65,6 +65,7 @@ function draw() {
     <p style="margin:2px 0 0;opacity:.7">Dev mode always sees everything. Play days decide what players see.</p>
     <h5>VILLAGERS</h5><div class="row"><button id="dvVisitor">Bring a visitor now</button></div>
     <h5>FEATURES (off = players don't see it yet)</h5><div class="row">${g.FEATURES.map(f => `<button data-ft="${f.id}" title="${f.what}" style="${g.featureOn(f.id) ? 'background:#8fdc8a;color:#1d2b1f' : ''}">${f.name}: ${f.live ? 'live for everyone' : g.featureOn(f.id) ? 'on in dev' : 'off'}</button>`).join('')}</div>
+    <h5>LEGENDS (test a secret form)</h5><div class="row">${['simurgh','ziz','ibis'].map(k => `<button data-dm="${k}" style="${S.devMyth === k ? 'background:#c9b6ff' : ''}">Be the ${k}</button>`).join('')}<button data-dm="">No form</button>${['simurgh','ziz','ibis'].map(k => `<button data-ds="${k}">See a ${k} fly by</button>`).join('')}</div>
     <h5>RESET</h5><div class="row"><button class="warn" id="dvReset">Start a brand new game</button><button id="dvOff">Turn off developer mode</button></div>
     <p id="dvMsg" style="margin:6px 0 0;min-height:18px;color:#9fe7e0"></p>`;
   const jump = panel.querySelector('#dvJump');
@@ -86,6 +87,8 @@ function draw() {
     S.found = [...new Set([...S.found, ...Object.keys(g.FINDS)])]; S.aha = [...g.AHA_ORDER]; S.cooked = g.RECIPES.map(r => r.id); S.charted = g.CONSTELLATIONS.map(c => c.id);
     S.read = g.BOOKS.map(b => b.id); S.songs = ['twinkle','ode']; S.penta = true; S.sayings = g.SAYINGS.map(x => x.id); g.save(); g.drawHud(); msg('Everything collected.'); };
   panel.querySelector('#dvNone').onclick = () => { Object.assign(S, { found:[], cooked:[], charted:[], read:[], songs:[], penta:false, sayings:[] }); g.save(); g.drawHud(); msg('Collections cleared. Story memories were kept.'); };
+  panel.querySelectorAll('[data-dm]').forEach(b => b.onclick = () => { S.devMyth = b.dataset.dm || null; if (S.myth) S.myth.revealed = 0; S.mythForm = false; g.save(); g.drawHud(); if (S.devMyth) { g.mythReveal(); msg('Legend set. Its button is on the hotbar.'); } else msg('No legend.'); draw(); });
+  panel.querySelectorAll('[data-ds]').forEach(b => b.onclick = () => { g.mythSighting({ id:0, form:b.dataset.ds }); msg('Look up. Tap it to be blessed.'); });
   panel.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { const f = g.FEATURES.find(x => x.id === b.dataset.ft); if (f.live) { msg(`${f.name} is live for everyone. Change it in data/features.js.`); return; }
     let d = {}; try { d = JSON.parse(localStorage.getItem('sg.features') || '{}'); } catch {} d[f.id] = !g.featureOn(f.id); try { localStorage.setItem('sg.features', JSON.stringify(d)); } catch {}
     reloadWith(`${f.name} is now ${d[f.id] ? 'on' : 'off'} in developer mode.`); });
