@@ -4182,7 +4182,7 @@ function marketDay() {
 // --- Founding Gardeners: tester codes, gifts, missions, quick reactions, and the thank-you wall ---
 async function redeemTester(code) {
   const res = await api('/redeem', { key:S.syncKey, code:String(code).toUpperCase().trim() });
-  if (!res.ok) return res.error === 'used' ? 'That code was already used by someone else.' : res.error === 'not found' || res.error === 'bad code' ? 'That code does not look right. Check it and try again.' : 'Could not reach Sky Garden. Check your internet and try again.';
+  if (!res.ok) return res.error === 'used' ? 'That code was already used by someone else.' : res.error === 'has a code' ? 'This game already has a founder code, so it can\'t use another one.' : res.error === 'not found' || res.error === 'bad code' ? 'That code does not look right. Check it and try again.' : 'Could not reach Sky Garden. Check your internet and try again.';
   const first = !S.founder; S.founder = { code:String(code).toUpperCase().trim(), at:Date.now() }; S.missions = S.missions || {}; save(); drawHud();
   if (first) { S.founder.day0 = playDays(); save(); setTimeout(founderDrip, 2000); } return null;
 }

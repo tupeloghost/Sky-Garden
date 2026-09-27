@@ -267,6 +267,7 @@ export default {
       const me = await hashKey(b.key), row = await env.DB.prepare('SELECT used_by FROM tester_codes WHERE code = ?').bind(code).first();
       if (!row) return json({ error: 'not found' }, 404, origin);
       if (row.used_by && row.used_by !== me) return json({ error: 'used' }, 409, origin);
+      { const mine = await env.DB.prepare('SELECT code FROM tester_codes WHERE used_by = ?').bind(me).first(); if (mine && mine.code !== code) return json({ error: 'has a code' }, 409, origin); } // one founder code per player
       if (!row.used_by) { await env.DB.prepare('UPDATE tester_codes SET used_by = ?1, used_at = ?2 WHERE code = ?3 AND used_by IS NULL').bind(me, Date.now(), code).run(); await logEvent(env, { id:me, code }, 'joined', 'Used their founder code'); }
       return json({ ok: true, founder: true }, 200, origin);
     }

@@ -65,7 +65,9 @@
   // this page is each tester's one personal link: it carries their code into the game
   const code = (new URLSearchParams(location.search).get('tester') || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
   const ok = /^SKY-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code), go = ok ? './?tester=' + code : './';
-  document.getElementById('startTop').innerHTML = `<a class="btn" href="${go}">${ok ? 'Start playing' : 'Open Sky Garden'}</a>`;
+  // ?look=1 is the creator's look-only view of someone's page: no way to start playing with their code
+  const look = new URLSearchParams(location.search).get('look') === '1';
+  document.getElementById('startTop').innerHTML = look ? `<p class="btn" style="background:rgba(255,255,255,.12);color:var(--soft);box-shadow:none;font-size:16px">👁 Look only. This button is off here.</p>` : `<a class="btn" href="${go}">${ok ? 'Start playing' : 'Open Sky Garden'}</a>`;
   document.getElementById('codeLine').innerHTML = ok ? `Your code is <code>${code}</code>. If the game ever asks for it: tap Bag, then "I have a tester code".` : 'Use the personal link you were sent, so your code comes with you.';
   // a quiet field of stars
   const sky = document.getElementById('sky');
