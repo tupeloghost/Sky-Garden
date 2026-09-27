@@ -171,3 +171,11 @@ body.in-cine .top { opacity:0 !important; pointer-events:none !important; transi
 .friend { background:#f3e8d8; border-radius:14px; padding:8px 12px; margin-top:8px; }
 .friend .hearts { color:#ff8fa3; letter-spacing:1px; font-size:13px; }
 .friend .tr { margin-top:3px; font-size:18px; } .friend .tr small { font-size:12px; opacity:.7; display:inline-block; width:70px; }
+.igrid .itile.off { opacity:.5; }
+.igrid .itile.sel { border-color:#8fdc8a; }
+.itile .chk { position:absolute; top:4px; left:7px; font-style:normal; color:#2fae60; font-weight:900; }
+.seedrow { display:flex; align-items:center; gap:10px; background:#f3e8d8; border-radius:14px; padding:8px 10px; margin-top:8px; }
+.seedrow .ic { font-size:26px; } .seedrow .si { flex:1; font-size:14px; } .seedrow .si small { display:block; opacity:.8; }
+.seedrow .sb { display:flex; gap:4px; } .seedrow .sb button { margin:0; padding:6px 10px; font-size:13px; }
+.jlist .seedrow .sb button { display:inline-block; width:auto; background:var(--gold); text-align:center; }
+.jlist .seedrow .sb button.ghost { background:#e4d6c2; opacity:.7; }
