@@ -19,7 +19,7 @@ import { INSECTS } from '../data/insects.js';
 import { TASTES, REACT, TIERS, TIER_HEARTS, tasteOf } from '../data/tastes.js';
 import { SPECIES, NAMES, OUTFITS, TOP_COLORS, PERSONALITIES, REQUEST_LINES } from '../data/visitors.js';
 import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
-import { FOUNDER_HATS, SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
+import { EYE_COLORS, EYE_STYLES, BROWS, FACE_EXTRAS, TOPS, SHOES, SHOE_COLORS, FOUNDER_HATS, SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
 import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NAMES, PENTA, SONGS, PENTA_AHA, SAYINGS } from '../data/village.js';
 Object.assign(NEIGHBORS, VILLAGERS); Object.assign(LOVES, VILLAGER_LOVES);
@@ -764,20 +764,35 @@ function critter({ body, belly, ear, earType, beak, hat, hatType, tail, frog, ca
 // the player's character is rebuilt from their chosen look
 const player = new THREE.Group(); scene.add(player);
 function person(lk) {
+  lk = { ...DEFAULT_LOOK, ...lk };
   const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner); const eyes = [], arms = [];
-  const skin = mat(lk.skin), shirt = mat(lk.shirt), bottom = mat(lk.bottomColor), hair = mat(lk.hairColor), shoe = mat(0x3b2f4a);
+  const skin = mat(lk.skin), shirt = mat(lk.shirt), bottom = mat(lk.bottomColor), hair = mat(lk.hairColor), shoe = mat(lk.shoeColor), dark = mat(0x2b2233);
+  const dress = lk.top === 'dress', longSleeve = ['hoodie','sweater','buttonup'].includes(lk.top);
   // legs and shoes
   [-1,1].forEach(sd => {
-    inner.add(mesh(new THREE.CylinderGeometry(.085,.075,.5,10), lk.bottom === 'pants' ? bottom : skin, sd*.12, .32, 0));
-    if (lk.bottom === 'shorts') inner.add(mesh(new THREE.CylinderGeometry(.1,.095,.2,10), bottom, sd*.12, .5, 0));
+    inner.add(mesh(new THREE.CylinderGeometry(.085,.075,.5,10), lk.bottom === 'pants' && !dress ? bottom : skin, sd*.12, .32, 0));
+    if (lk.bottom === 'shorts' && !dress) inner.add(mesh(new THREE.CylinderGeometry(.1,.095,.2,10), bottom, sd*.12, .5, 0));
+    if (lk.shoes === 'boots' || lk.shoes === 'rainboots') { inner.add(mesh(new THREE.CylinderGeometry(.095,.09,lk.shoes === 'rainboots' ? .3 : .22,10), shoe, sd*.12, lk.shoes === 'rainboots' ? .2 : .16, 0)); }
     const sh = mesh(sph(.1), shoe, sd*.12, .07, .04); sh.scale.set(1, .6, 1.4); inner.add(sh);
+    if (lk.shoes === 'sneakers') { const sole = mesh(sph(.1), mat(0xffffff), sd*.12, .045, .04); sole.scale.set(1.04, .25, 1.44); inner.add(sole); }
   });
-  // hips: skirt or waistband
-  if (lk.bottom === 'skirt') inner.add(mesh(new THREE.CylinderGeometry(.24,.4,.38,18), bottom, 0, .58, 0));
+  // hips: skirt, dress, or waistband
+  if (dress) inner.add(mesh(new THREE.CylinderGeometry(.24,.44,.55,18), shirt, 0, .52, 0));
+  else if (lk.bottom === 'skirt') inner.add(mesh(new THREE.CylinderGeometry(.24,.4,.38,18), bottom, 0, .58, 0));
+  else if (lk.bottom === 'longskirt') inner.add(mesh(new THREE.CylinderGeometry(.24,.42,.62,18), bottom, 0, .46, 0));
   else inner.add(mesh(new THREE.CylinderGeometry(.25,.24,.2,16), bottom, 0, .62, 0));
   // body
   inner.add(mesh(new THREE.CylinderGeometry(.22,.26,.52,16), shirt, 0, .95, 0));
   const shoulders = mesh(sph(.23), shirt, 0, 1.18, 0); shoulders.scale.set(1.1, .5, .85); inner.add(shoulders);
+  if (lk.top === 'sweater') [0,1,2].forEach(i => inner.add(mesh(new THREE.TorusGeometry(.235 + i*.008,.022,6,24), mat(0xfff1d6), 0, .8 + i*.14, 0).rotateX(Math.PI/2)));
+  if (lk.top === 'hoodie') { const hood = mesh(new THREE.TorusGeometry(.17,.07,8,20), shirt, 0, 1.25, -.08); hood.rotation.x = Math.PI/2.4; inner.add(hood);
+    const pk = mesh(new THREE.BoxGeometry(.24,.12,.04), mat(new THREE.Color(lk.shirt).multiplyScalar(.85).getHex()), 0, .82, .235); inner.add(pk);
+    [-1,1].forEach(sd => inner.add(mesh(new THREE.CylinderGeometry(.01,.01,.14,5), mat(0xffffff), sd*.05, 1.1, .25))); }
+  if (lk.top === 'buttonup') { [-1,1].forEach(sd => { const c = mesh(new THREE.BoxGeometry(.1,.04,.08), shirt, sd*.07, 1.24, .15); c.rotation.z = sd*.5; inner.add(c); });
+    [0,1,2].forEach(i => inner.add(mesh(sph(.018), mat(0xfff1d6), 0, 1.1 - i*.13, .25 - i*.005))); }
+  if (lk.top === 'overalls') { const bib = mesh(new THREE.BoxGeometry(.3,.28,.06), bottom, 0, .9, .21); inner.add(bib);
+    inner.add(mesh(new THREE.CylinderGeometry(.262,.262,.22,16), bottom, 0, .74, 0));
+    [-1,1].forEach(sd => { inner.add(mesh(new THREE.BoxGeometry(.05,.34,.04), bottom, sd*.12, 1.1, .16)); inner.add(mesh(sph(.022), mat(0xd9a441, { metalness:.6 }), sd*.12, 1.0, .25)); }); }
   const jacket = lk.jacket === 'pioneer' ? mat(0x8a5a3a) : null;
   if (jacket) { inner.add(mesh(new THREE.CylinderGeometry(.245,.285,.5,16), jacket, 0, .96, 0)); const sh2 = mesh(sph(.25), jacket, 0, 1.18, 0); sh2.scale.set(1.12, .5, .9); inner.add(sh2);
     inner.add(mesh(new THREE.TorusGeometry(.19,.06,8,20), mat(0xfff1d6), 0, 1.22, 0).rotateX(Math.PI/2)); [-1,1].forEach(sd => inner.add(mesh(sph(.025), mat(0xd9a441, { metalness:.6 }), sd*.06, 1.05 - .12, .27)));
@@ -788,7 +803,7 @@ function person(lk) {
   [-1,1].forEach(sd => {
     const arm = new THREE.Group(); arm.position.set(sd*.3, 1.15, 0); arm.rotation.z = sd*.08;
     arm.add(mesh(new THREE.CylinderGeometry(.07,.065,.28,10), jacket || shirt, 0, -.13, 0));
-    arm.add(mesh(new THREE.CylinderGeometry(.06,.055,.24,10), skin, 0, -.37, 0));
+    arm.add(mesh(new THREE.CylinderGeometry(.06,.055,.24,10), jacket || longSleeve ? (jacket || shirt) : skin, 0, -.37, 0));
     arm.add(mesh(sph(.065), skin, 0, -.5, 0));
     inner.add(arm); arms.push(arm);
   });
@@ -796,20 +811,43 @@ function person(lk) {
   inner.add(mesh(new THREE.CylinderGeometry(.08,.09,.1,10), skin, 0, 1.27, 0));
   inner.add(mesh(sph(.33), skin, 0, 1.52, 0));
   [-1,1].forEach(sd => {
-    const eye = new THREE.Group(); eye.add(mesh(sph(.05), mat(0x2b2233, { roughness:.25 }))); eye.add(mesh(sph(.018), glow(0xffffff), .016, .022, .04));
+    // each eye blinks by squashing its outer group, so the eye's own shape lives in a child group
+    const eye = new THREE.Group(), e2 = new THREE.Group(); eye.add(e2);
+    if (lk.eyes === 'happy') { const arc = mesh(new THREE.TorusGeometry(.04,.013,6,12,Math.PI), dark); arc.position.y = -.01; e2.add(arc); }
+    else {
+      e2.add(mesh(sph(.05), mat(lk.eyeColor, { roughness:.25 })));
+      if (lk.eyeColor !== 0x2b2233) e2.add(mesh(sph(.027), dark, 0, 0, .03));
+      e2.add(mesh(sph(.018), glow(0xffffff), .016, .022, .04));
+      if (lk.eyes === 'lashes') [0,1].forEach(i => { const l = mesh(new THREE.BoxGeometry(.035,.012,.01), dark, sd*(.045 + i*.012), .035 + i*.012, .02); l.rotation.z = sd*(.5 + i*.3); e2.add(l); });
+      if (lk.eyes === 'sleepy') { e2.scale.y = .55; e2.position.y = -.01; }
+    }
     eye.position.set(sd*.12, 1.56, .29); inner.add(eye); eyes.push(eye);
-    inner.add(mesh(sph(.055), mat(0xff9fb2), sd*.2, 1.47, .25));
+    if (lk.brows !== 'none') { const b = mesh(new THREE.BoxGeometry(.09, lk.brows === 'bold' ? .028 : .016, .02), hair, sd*.12, 1.65, .3); b.rotation.z = -sd*.12; inner.add(b); }
+    if (lk.blush) inner.add(mesh(sph(.055), mat(0xff9fb2), sd*.2, 1.47, .25));
+    if (lk.freckles) [[.17,1.5],[.21,1.48],[.19,1.45]].forEach(([x, y]) => inner.add(mesh(sph(.011), mat(new THREE.Color(lk.skin).multiplyScalar(.62).getHex()), sd*x, y, .28)));
+    if (lk.glasses) inner.add(mesh(new THREE.TorusGeometry(.075,.012,6,18), dark, sd*.12, 1.56, .31));
     inner.add(mesh(sph(.06), skin, sd*.33, 1.52, 0)); // ears
   });
+  if (lk.glasses) inner.add(mesh(new THREE.BoxGeometry(.08,.012,.012), dark, 0, 1.57, .32));
   inner.add(mesh(sph(.035), mat(new THREE.Color(lk.skin).multiplyScalar(.9).getHex()), 0, 1.5, .33)); // nose
-  const smile = mesh(new THREE.TorusGeometry(.05, .013, 6, 12, Math.PI), mat(0x2b2233), 0, 1.42, .31); smile.rotation.z = Math.PI; inner.add(smile);
+  const smile = mesh(new THREE.TorusGeometry(.05, .013, 6, 12, Math.PI), dark, 0, 1.42, .31); smile.rotation.z = Math.PI; inner.add(smile);
   // hair
-  const cap = mesh(new THREE.SphereGeometry(.35, 22, 12, 0, Math.PI*2, 0, Math.PI/2.1), hair, 0, 1.54, -.02); cap.rotation.x = -.25; inner.add(cap);
-  if (lk.hair === 'long') { const back = mesh(sph(.3), hair, 0, 1.3, -.2); back.scale.set(1.15, 1.5, .6); inner.add(back); }
-  if (lk.hair === 'bun') inner.add(mesh(sph(.14), hair, 0, 1.86, -.14));
-  if (lk.hair === 'curly') for (let i=0;i<12;i++){ const a = i/12*Math.PI*2; inner.add(mesh(sph(.1), hair, Math.cos(a)*.3, 1.68 + Math.sin(i*1.7)*.05, Math.sin(a)*.3 - .03)); }
-  if (lk.hair === 'pigtails') [-1,1].forEach(sd => { const pt = mesh(sph(.12), hair, sd*.36, 1.42, -.08); pt.scale.set(.8, 1.3, .8); inner.add(pt); });
-  if (lk.hair === 'bob') [-1,1].forEach(sd => { const sdh = mesh(sph(.18), hair, sd*.27, 1.46, -.03); sdh.scale.set(.6, 1.2, 1); inner.add(sdh); });
+  const h = lk.hair, cap = mesh(new THREE.SphereGeometry(.35, 22, 12, 0, Math.PI*2, 0, Math.PI/2.1), hair, 0, 1.54, -.02); cap.rotation.x = -.25;
+  if (h === 'buzz') { cap.scale.setScalar(.97); cap.position.y = 1.55; }
+  if (h !== 'afro') inner.add(cap);
+  if (h === 'long' || h === 'wavy') { const back = mesh(sph(.3), hair, 0, 1.3, -.2); back.scale.set(1.15, 1.5, .6); inner.add(back);
+    if (h === 'wavy') for (let i = 0; i < 6; i++) { const a = (i/5 - .5) * 2.4; inner.add(mesh(sph(.09), hair, Math.sin(a)*.32, 1.12 + Math.abs(Math.sin(i*1.3))*.05, -.18 + Math.cos(a)*.05)); } }
+  if (h === 'bun') inner.add(mesh(sph(.14), hair, 0, 1.86, -.14));
+  if (h === 'twinbuns') [-1,1].forEach(sd => inner.add(mesh(sph(.12), hair, sd*.22, 1.84, -.06)));
+  if (h === 'ponytail') { inner.add(mesh(sph(.08), hair, 0, 1.7, -.33)); const pt = mesh(sph(.12), hair, 0, 1.46, -.4); pt.scale.set(.8, 2, .8); inner.add(pt); }
+  if (h === 'braid') for (let i = 0; i < 6; i++) inner.add(mesh(sph(.075 - i*.004), hair, .2 + i*.01, 1.4 - i*.1, .12 + (i % 2 ? .02 : 0)));
+  if (h === 'curly') for (let i=0;i<12;i++){ const a = i/12*Math.PI*2; inner.add(mesh(sph(.1), hair, Math.cos(a)*.3, 1.68 + Math.sin(i*1.7)*.05, Math.sin(a)*.3 - .03)); }
+  if (h === 'afro') { const af = mesh(new THREE.IcosahedronGeometry(.47, 2), hair, 0, 1.72, -.2); af.scale.set(1.05, .9, .8); inner.add(af); }
+  if (h === 'locs') for (let i = 0; i < 11; i++) { const a = Math.PI*.15 + i/10*Math.PI*1.7; const l = mesh(new THREE.CylinderGeometry(.04,.035,.42,6), hair, Math.sin(a)*.32, 1.36, -Math.cos(a)*.3 - .02); inner.add(l); }
+  if (h === 'spiky') for (let i = 0; i < 7; i++) { const a = (i/6 - .5) * 2.2; const sp = mesh(new THREE.ConeGeometry(.07,.2,6), hair, Math.sin(a)*.22, 1.84 - Math.abs(a)*.06, .05 - Math.abs(a)*.03); sp.rotation.z = -a*.5; sp.rotation.x = -.3; inner.add(sp); }
+  if (h === 'sidepart') { const sw2 = mesh(sph(.2), hair, .1, 1.75, .12); sw2.scale.set(1.3, .5, .9); sw2.rotation.z = -.3; inner.add(sw2); }
+  if (h === 'pigtails') [-1,1].forEach(sd => { const pt = mesh(sph(.12), hair, sd*.36, 1.42, -.08); pt.scale.set(.8, 1.3, .8); inner.add(pt); });
+  if (h === 'bob') [-1,1].forEach(sd => { const sdh = mesh(sph(.18), hair, sd*.27, 1.46, -.03); sdh.scale.set(.6, 1.2, 1); inner.add(sdh); });
   // hats, sized for a person's head
   const hc = lk.hatColor, y = 1.8;
   if (lk.hat === 'tophat') { inner.add(mesh(new THREE.CylinderGeometry(.34,.38,.06,20), mat(hc), 0, y, 0)); inner.add(mesh(new THREE.CylinderGeometry(.22,.24,.28,20), mat(hc), 0, y + .16, 0)); }
@@ -822,6 +860,11 @@ function person(lk) {
     inner.add(mesh(new THREE.TorusGeometry(.36,.02,6,24), mat(0x5a3a28), 0, 1.66, 0).rotateX(Math.PI/2.4)); inner.add(mesh(new THREE.OctahedronGeometry(.05), glow(0xffe07a), .2, 1.9, .2)); }
   if (lk.hat === 'party') { const ph = mesh(new THREE.ConeGeometry(.2,.45,16), mat(hc), 0, y + .15, 0); inner.add(ph); inner.add(mesh(sph(.07), mat(0xffffff), 0, y + .4, 0)); for (let i=0;i<3;i++) inner.add(mesh(new THREE.TorusGeometry(.2 - i*.055,.018,6,16), mat(0xffffff), 0, y + i*.12, 0).rotateX(Math.PI/2)); }
   if (lk.hat === 'straw') { inner.add(mesh(new THREE.CylinderGeometry(.56,.58,.04,24), mat(0xf2d38a), 0, y - .04, 0)); inner.add(mesh(new THREE.CylinderGeometry(.24,.28,.22,20), mat(0xf2d38a), 0, y + .08, 0)); inner.add(mesh(new THREE.CylinderGeometry(.285,.285,.06,20), mat(hc), 0, y + .01, 0)); }
+  const hy = h === 'afro' ? .12 : 0;
+  if (lk.hat === 'cap') { inner.add(mesh(new THREE.SphereGeometry(.36,20,10,0,Math.PI*2,0,Math.PI/2.2), mat(hc), 0, 1.6 + hy, -.01)); const bill = mesh(new THREE.CylinderGeometry(.22,.22,.03,20,1,false,0,Math.PI), mat(hc), 0, 1.68 + hy, .2); bill.rotation.y = -Math.PI/2; bill.scale.set(1, 1, 1.2); inner.add(bill); inner.add(mesh(sph(.035), mat(hc), 0, 1.95 + hy, 0)); }
+  if (lk.hat === 'beret') { const br = mesh(sph(.33), mat(hc), .05, 1.83 + hy, -.02); br.scale.set(1.1, .32, 1.05); br.rotation.z = -.2; inner.add(br); inner.add(mesh(new THREE.CylinderGeometry(.015,.015,.06,5), mat(hc), .02, 1.94 + hy, 0)); }
+  if (lk.hat === 'bucket') { inner.add(mesh(new THREE.CylinderGeometry(.3,.35,.24,20), mat(hc), 0, 1.8 + hy, 0)); inner.add(mesh(new THREE.CylinderGeometry(.36,.48,.08,20), mat(hc), 0, 1.68 + hy, 0)); }
+  if (lk.hat === 'headband') inner.add(mesh(new THREE.TorusGeometry(.325,.03,6,24), mat(hc), 0, 1.72 + hy * .5, .02).rotateX(Math.PI/2 - .35));
   g.userData.inner = inner; inner.userData.eyes = eyes; inner.userData.arms = arms; inner.userData.blink = Math.random()*4;
   return g;
 }
@@ -3794,22 +3837,40 @@ function lookPicker(title, done, withName) {
   let name = S.name || '';
   setupCam = true; document.getElementById('veil').classList.add('setup'); document.body.classList.add('in-setup');
   const sw = (list, cur, attr) => list.map(c => `<button class="sw ${c === cur ? 'on' : ''}" data-${attr}="${c}" style="background:#${c.toString(16).padStart(6,'0')}" aria-label="color"></button>`).join('');
+  let tab = 'face';
+  const chips = (obj, key, attr) => `<div class="chips">${Object.entries(obj).map(([k,v]) => `<button data-${attr}="${k}" class="${lk[key] === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>`;
   const draw = () => {
+    const tabs = { face:'Face', hair:'Hair', clothes:'Clothes', hat:'Hat' };
+    const body = {
+      face:`<h4>Skin tone</h4><div class="chips">${sw(SKIN, lk.skin, 'skin')}</div>
+        <h4>Eye color</h4><div class="chips">${sw(EYE_COLORS, lk.eyeColor, 'ecol')}</div>
+        <h4>Eyes</h4>${chips(EYE_STYLES, 'eyes', 'es')}
+        <h4>Eyebrows</h4>${chips(BROWS, 'brows', 'bw')}
+        <h4>Extras</h4><div class="chips">${Object.entries(FACE_EXTRAS).map(([k,v]) => `<button data-fx="${k}" class="${lk[k] ? '' : 'ghost'}">${lk[k] ? '✓ ' : ''}${v}</button>`).join('')}</div>`,
+      hair:`<h4>Hairstyle</h4>${chips(HAIR_STYLES, 'hair', 'hs')}<h4>Hair color</h4><div class="chips">${sw(HAIR_COLORS, lk.hairColor, 'hcol')}</div>`,
+      clothes:`<h4>Top</h4>${chips(TOPS, 'top', 'tp')}<div class="chips">${sw(SHIRTS, lk.shirt, 'shirt')}</div>
+        ${lk.top === 'dress' ? '' : `<h4>${lk.top === 'overalls' ? 'Overalls and bottoms' : 'Bottoms'}</h4>${chips(BOTTOMS, 'bottom', 'bt')}`}
+        ${lk.top === 'dress' ? '' : `<div class="chips">${sw(BOTTOM_COLORS, lk.bottomColor, 'bcol')}</div>`}
+        <h4>Shoes</h4>${chips(SHOES, 'shoes', 'shs')}<div class="chips">${sw(SHOE_COLORS, lk.shoeColor, 'scol')}</div>
+        ${S.founder ? `<h4>Founder outfit</h4><div class="chips"><button data-jk="pioneer" class="${lk.jacket === 'pioneer' ? '' : 'ghost'}">Sky Pioneer jacket and scarf</button><button data-jk="" class="${lk.jacket ? 'ghost' : ''}">My own top</button></div>` : ''}`,
+      hat:`<h4>Hat</h4><div class="chips">${Object.entries({ ...HATS, ...(S.partyHat ? { party:'Party hat' } : {}), ...(S.founder ? FOUNDER_HATS : {}) }).map(([k,v]) => `<button data-hat="${k}" class="${lk.hat === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
+        ${lk.hat !== 'none' ? `<h4>Hat color</h4><div class="chips">${sw(HAT_COLORS, lk.hatColor, 'hc')}</div>` : ''}`,
+    };
     showCard(`<div class="kicker">${title}</div><h2>Make your character</h2>
       ${withName ? `<h4>Your name</h4><input id="nm" maxlength="16" value="${name.replace(/"/g,'')}" placeholder="Type a name" autocomplete="off" style="width:100%;font:18px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:8px">` : ''}
-      <h4>Skin tone</h4><div class="chips">${sw(SKIN, lk.skin, 'skin')}</div>
-      <h4>Hair</h4><div class="chips">${Object.entries(HAIR_STYLES).map(([k,v]) => `<button data-hs="${k}" class="${lk.hair === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
-      <div class="chips">${sw(HAIR_COLORS, lk.hairColor, 'hcol')}</div>
-      <h4>Shirt</h4><div class="chips">${sw(SHIRTS, lk.shirt, 'shirt')}</div>
-      <h4>Bottoms</h4><div class="chips">${Object.entries(BOTTOMS).map(([k,v]) => `<button data-bt="${k}" class="${lk.bottom === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
-      <div class="chips">${sw(BOTTOM_COLORS, lk.bottomColor, 'bcol')}</div>
-      ${S.founder ? `<h4>Founder outfit</h4><div class="chips"><button data-jk="pioneer" class="${lk.jacket === 'pioneer' ? '' : 'ghost'}">Sky Pioneer jacket and scarf</button><button data-jk="" class="${lk.jacket ? 'ghost' : ''}">My own shirt</button></div>` : ''}<h4>Hat</h4><div class="chips">${Object.entries({ ...HATS, ...(S.partyHat ? { party:'Party hat' } : {}), ...(S.founder ? FOUNDER_HATS : {}) }).map(([k,v]) => `<button data-hat="${k}" class="${lk.hat === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
-      ${lk.hat !== 'none' ? `<h4>Hat color</h4><div class="chips">${sw(HAT_COLORS, lk.hatColor, 'hc')}</div>` : ''}
+      <div class="chips lk-tabs">${Object.entries(tabs).map(([k,v]) => `<button data-lt="${k}" class="${tab === k ? '' : 'ghost'}">${v}</button>`).join('')}</div>
+      ${body[tab]}
       <p id="lkMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
-      <button id="lkDone">${withName ? 'Next' : 'Done'}</button>`, null);
+      <button id="lkDone">${withName ? 'Next' : 'Done'}</button> <button id="lkRand" class="ghost">Surprise me</button>`, null);
     const upd = () => { S.look = { ...lk }; dressPlayer(); };
     if ($('nm')) $('nm').oninput = e => name = e.target.value;
     const pick = (attr, key, num) => document.querySelectorAll(`[data-${attr}]`).forEach(b => b.onclick = () => { lk[key] = num ? +b.dataset[attr] : b.dataset[attr]; upd(); draw(); });
+    document.querySelectorAll('[data-lt]').forEach(b => b.onclick = () => { tab = b.dataset.lt; draw(); });
+    pick('ecol','eyeColor',1); pick('es','eyes'); pick('bw','brows'); pick('tp','top'); pick('shs','shoes'); pick('scol','shoeColor',1);
+    document.querySelectorAll('[data-fx]').forEach(b => b.onclick = () => { lk[b.dataset.fx] = !lk[b.dataset.fx]; upd(); draw(); });
+    const any = a => a[Math.floor(Math.random() * a.length)];
+    $('lkRand').onclick = () => { Object.assign(lk, { skin:any(SKIN), eyeColor:any(EYE_COLORS), eyes:any(Object.keys(EYE_STYLES)), brows:any(Object.keys(BROWS)), hair:any(Object.keys(HAIR_STYLES)), hairColor:any(HAIR_COLORS.slice(0, 11)),
+      top:any(Object.keys(TOPS)), shirt:any(SHIRTS), bottom:any(Object.keys(BOTTOMS)), bottomColor:any(BOTTOM_COLORS), shoes:any(Object.keys(SHOES)), shoeColor:any(SHOE_COLORS), freckles:Math.random() < .3, glasses:Math.random() < .25, blush:Math.random() < .7 }); upd(); draw(); };
     pick('skin','skin',1); pick('hs','hair'); pick('hcol','hairColor',1); pick('shirt','shirt',1); pick('bt','bottom'); pick('bcol','bottomColor',1);
     document.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { lk.hat = b.dataset.hat; upd(); draw(); });
     document.querySelectorAll('[data-jk]').forEach(b => b.onclick = () => { lk.jacket = b.dataset.jk || undefined; upd(); draw(); });
