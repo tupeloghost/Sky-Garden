@@ -1182,7 +1182,7 @@ function drawHud() {
   if (!shown.some(([k]) => k === S.sel) && shown.length) S.sel = shown[0][0];
   $('bar').style.display = S.where === 'hut' || buildMode ? 'none' : 'flex';
   $('buildBtn').hidden = VISIT || (S.home || 0) < 3 || S.where !== 'home'; $('buildBtn').innerHTML = `${ICON.hammer}<span class="lbl">${buildMode ? 'Building' : 'Build'}</span>`;
-  $('bar').innerHTML = shown.map(([k,c]) => `<div class="slot ${S.sel===k?'on':''}" data-k="${k}"><span class="sic">${icon(k)}</span>${c.name}<small>${S.seeds[k] || 0} seeds${c.seasons.includes(s) ? '' : ', out of season'}</small></div>`).join('');
+  $('bar').innerHTML = shown.map(([k,c]) => `<div class="slot ${S.sel===k?'on':''}" data-k="${k}"><span class="sic">${icon(k)}</span>${c.name}<small>${S.seeds[k] || 0} seed${(S.seeds[k] || 0) === 1 ? '' : 's'}${c.seasons.includes(s) ? '' : ', out of season'}</small></div>`).join('');
   document.querySelectorAll('.slot').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); });
 }
 function openDialog(name, text, btns=[], hearts, voice) {
@@ -1793,12 +1793,14 @@ function drawPeople() {
     const [x, z] = p.spot, home = p.status === 'resident' ? cottage(p.look.outfit.color) : tent(p.look.outfit.color);
     home.position.set(x, 0, z - .9); peopleGroup.add(home);
     const c = critter(p.look); c.scale.setScalar(.85); c.position.set(x + .9, 0, z + .1); c.rotation.y = -.4; c.userData.kind = 'visitor'; c.userData.vid = p.vid; peopleGroup.add(c);
+    if (p.talked == null) { const bb = new THREE.Sprite(new THREE.SpriteMaterial({ map:BUBBLE['!'], transparent:true, depthTest:false })); bb.scale.setScalar(.55); bb.position.set(0, 2.3, 0); c.add(bb); }
     home.userData = { kind:'visitor', vid:p.vid };
   });
 }
 function personLine(p) { const P = PERSONALITIES[p.pers]; return pick(P.hi); }
 function talkPerson(vid) {
   const p = S.people[vid]; if (!p) return;
+  if (p.talked == null) setTimeout(drawPeople, 50);
   if (p.talked !== S.day) { p.talked = S.day; p.hearts = Math.min(10, p.hearts + 1); chime(698); goal('talk'); save(); }
   const b = [];
   if (p.gifted !== S.day) b.push({ label:'Give a gift', fn:() => { closeDialog(); personGift(vid); } });
@@ -2704,7 +2706,7 @@ function fishing3D(d = dock, o = {}) {
   const msg = t => { $('fhMsg').textContent = t; }, act = $('fhAct'), setAct = (l, dis) => { act.textContent = l; act.disabled = !!dis; act.style.opacity = dis ? .5 : 1; };
   let state = 'ready', t0 = 0, now = 0, last = performance.now(), raf, cur = null, nextNibble = 0, biteAt = 0, holding = false, zone = .3, zoneV = 0, fishX = .5, fishT = .5, fishNext = 0, meter = .3, reelTick = 0, caught = null, arc = 0;
   const bobHome = () => W(V(3.9 + Math.sin(arc) * .2, -.3, Math.cos(arc) * .3));
-  const splash = (p, big) => { burst(p.clone().setY(p.y + .05), 0xffffff, big ? 18 : 6); };
+  const splash = (p, big) => { burst(p.clone().setY(p.y + .05), 0xdff3ff, big ? 10 : 3); };
   const drawLine = (end, sag) => { const a = new THREE.Vector3(); tip.getWorldPosition(a); const pts = lineGeo.attributes.position;
     for (let i = 0; i < 16; i++) { const k = i / 15, p = a.clone().lerp(end, k); p.y -= Math.sin(k * Math.PI) * sag; pts.setXYZ(i, p.x, p.y, p.z); } pts.needsUpdate = true; };
   const land = () => {
@@ -2751,7 +2753,7 @@ function fishing3D(d = dock, o = {}) {
       if (state === 'bite') { bob.position.y -= .12; bang.position.copy(bob.position).setY(bob.position.y + .9 + Math.sin(now*20)*.05); if (now - t0 > 1.1) lose('Too slow. It slipped off the hook.'); }
       drawLine(bob.position, .15); }
     if (state === 'reel') { const f = cur.f, e = bobHome();
-      bob.position.set(e.x + Math.sin(now*9)*.25, e.y - .1, e.z + Math.cos(now*7)*.25); if (Math.random() < .12) splash(bob.position, false); drawLine(bob.position, 0);
+      bob.position.set(e.x + Math.sin(now*9)*.25, e.y - .1, e.z + Math.cos(now*7)*.25); if (Math.random() < .025) splash(bob.position, false); drawLine(bob.position, 0);
       zoneV += (holding ? 2.4 : -1.8) * dt; zoneV *= .985; zoneV = Math.max(-1, Math.min(1, zoneV)); zone += zoneV * dt; if (zone < 0) { zone = 0; zoneV = 0; } if (zone > 1) { zone = 1; zoneV = 0; }
       if (now > fishNext) { fishT = Math.random(); fishNext = now + (1.3 - f.fight) * (.5 + Math.random()); }
       fishX += (fishT - fishX) * dt * (1 + f.fight * 4);
@@ -2811,7 +2813,7 @@ function spawnPickups() {
   if (VISIT) return;
   const kinds = ['stick','stick','stone','fiber'], rnd = () => Math.random();
   while (S.pickups.length < 10) { let x, z, tries = 0; do { const land = [{ x:0, z:0, r:8.2 }, ...ownedLobes().map(L => ({ x:L.e.x, z:L.e.z, r:L.r - .8 }))], L = land[Math.floor(rnd()*land.length)], a = rnd()*Math.PI*2, r = (L.r === 8.2 ? 2 : 0) + rnd()*(L.r - (L.r === 8.2 ? 2 : 0)); x = L.x + Math.cos(a)*r; z = L.z + Math.sin(a)*r; tries++; }
-    while (tries < 20 && ((x > .2 && x < 4.8 && z > -2 && z < 3.8) || Math.hypot(x+4, z+3) < 2)); S.pickups.push({ t:kinds[Math.floor(rnd()*4)], x, z }); }
+    while (tries < 20 && ((x > .2 && x < 4.8 && z > -2 && z < 3.8) || Math.hypot(x+4, z+3) < 2)); const needStone = !S.tools.pick && S.pickups.filter(p => p.t === 'stone').length < 5; S.pickups.push({ t:needStone ? 'stone' : kinds[Math.floor(rnd()*4)], x, z }); }
   drawPickups();
 }
 function drawPickups() {
@@ -2987,7 +2989,7 @@ function useBuildSite() {
 }
 function homeStep() { // what the home-building goal says right now
   if (!S.tools.axe) return enough(CRAFTS[0].needs) ? { text:'Tap the tree stump to craft a stone axe.', target:workbench } : { text:`Pick up sticks, stones, and grass around your island. For a stone axe: ${needText(CRAFTS[0].needs)}.`, target:pickupGroup.children[0] || null };
-  if (!S.tools.pick) return enough(CRAFTS[1].needs) ? { text:'Tap the tree stump to craft a stone pickaxe.', target:workbench } : { text:`Gather for a stone pickaxe: ${needText(CRAFTS[1].needs)}. Chop trees and pick things up.`, target:pickupGroup.children.find(g => S.pickups[g.userData.i]?.t === 'stone') || pickupGroup.children[0] || null };
+  if (!S.tools.pick) return enough(CRAFTS[1].needs) ? { text:'Tap the tree stump to craft a stone pickaxe.', target:workbench } : { text:`Gather for a stone pickaxe: ${needText(CRAFTS[1].needs)}. Look for grey stones on the ground. More appear each morning.`, target:pickupGroup.children.find(g => S.pickups[g.userData.i]?.t === 'stone') || pickupGroup.children[0] || null };
   const stage = HOME_STAGES[S.home || 0];
   if (enough(stage.needs)) return { text:`Tap your home site to build ${stage.name}.`, target:buildSite };
   const short = Object.entries(stage.needs).find(([k,n]) => have(k) < n)[0];
@@ -3878,8 +3880,8 @@ function brandEditor(done) {
     showCard(`<div class="kicker">MY BRAND</div><h2>Your maker's mark</h2>${S.brand ? marketTabs('brand') : ''}
       <div class="brandhead">${logoSvg(L, 84)}<h3>${esc(kid ? `${$('kA')?.value || ka} ${$('kN')?.value || kn}` : b.shop || 'Your shop name')}</h3></div>
       <h4>Shape</h4><div class="chips">${SHAPES.map(s => `<button data-sh="${s}" class="${L.shape === s ? '' : 'ghost'}">${logoSvg({ ...L, shape:s, sym:'', letters:'' }, 26)}</button>`).join('')}</div>
-      <h4>Colors</h4><div class="chips">${PALETTE.map(c => `<button class="sw ${L.bg === c ? 'on' : ''}" data-bg="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
-      <div class="chips" style="margin-top:6px">${PALETTE.map(c => `<button class="sw sm ${L.fg === c ? 'on' : ''}" data-fg="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
+      <h4>Fill color</h4><div class="chips">${PALETTE.map(c => `<button class="sw ${L.bg === c ? 'on' : ''}" data-bg="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
+      <h4>Outline and letter color</h4><div class="chips">${PALETTE.map(c => `<button class="sw sm ${L.fg === c ? 'on' : ''}" data-fg="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
       <h4>Symbol</h4><div class="chips">${['', ...SYMBOLS].map(s => `<button data-sy="${s}" class="${L.sym === s ? '' : 'ghost'}">${s || 'None'}</button>`).join('')}</div>
       <h4>Letters (up to 2)</h4><input id="bLet" maxlength="2" value="${esc(L.letters)}" class="numin" style="width:70px;text-transform:uppercase">
       <h4>Shop name</h4>${kid ? `<select id="kA">${KID_ADJ.map(w => `<option ${w === ka ? 'selected' : ''}>${w}</option>`).join('')}</select> <select id="kN">${KID_NOUN.map(w => `<option ${w === kn ? 'selected' : ''}>${w}</option>`).join('')}</select>`
@@ -4079,7 +4081,7 @@ function maybeNewToday() {
 function newTodayCard() {
   const d = playDays(), fresh = ROLLOUT.filter(r => r.day === d && featureOn(r.id)), next = ROLLOUT.find(r => r.day > d && FEATURES.find(f => f.id === r.id)?.live !== false);
   if (!fresh.length) return;
-  drawHud(); drawStations(); drawTradePlants(); chime(784); setTimeout(() => chime(1047), 140);
+  drawHud(); drawStations(); drawTradePlants(); drawStall(); spawnBugs(); drawPeople(); chime(784); setTimeout(() => chime(1047), 140);
   showCard(`<div class="kicker">NEW TODAY: DAY ${d}</div>${fresh.map(r => `<h2>${r.title}</h2><p>${r.text}</p>`).join('')}${next ? `<p style="opacity:.75;margin-top:10px">${next.day === d + 1 ? 'Something new unlocks tomorrow. See you then!' : 'More unlocks soon. Keep playing each day!'}</p>` : ''}`);
 }
 { const st = $('start').onclick; $('start').onclick = () => { st(); setTimeout(maybeNewToday, 1800); }; }
