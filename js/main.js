@@ -36,9 +36,13 @@ const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, sk
   tiles:Array.from({length:9},()=>({s:0})), sel:'cloudberry', hearts:{ nana:0, pip:0, drizzle:0, twins:0, lumen:0, mabel:0, hoot:0, allegra:0, sage:0 }, talked:{}, gifted:{}, scenes:[],
   bridge:false, pos:[0,0,2], where:'home', quest:0, aha:[], relics:0, digs:[], asked:-1, qi:0, letter:false,
   order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, home:0, builds:[], stations:{}, bronzeKnown:false, tools:{}, pickups:[], chopped:{}, created:false, birthday:null, startedAt:null, lastParty:null, partyHat:false, name:'', look:null, mode:null, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
+// testers can switch to a separate Test island; it has its own save and never touches the cloud
+const TESTSLOT = (() => { try { return localStorage.getItem('sg.profile') === 'test'; } catch { return false; } })();
+const SLOT = TESTSLOT ? 'sg.save.test' : SAVE_KEY;
+if (TESTSLOT) document.body.classList.add('testisland');
 let S;
 try {
-  const saved = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
+  const saved = JSON.parse(localStorage.getItem(SLOT)) || {};
   const f = fresh();
   S = { ...f, ...saved, seeds:{ ...f.seeds, ...(saved.seeds||{}) }, hearts:{ ...f.hearts, ...(saved.hearts||{}) } };
   if (saved.letter && saved.tut === undefined) S.tut = 9;
@@ -73,7 +77,7 @@ if (!S.specialty) S.specialty = SPECIALTIES[Math.floor(Math.random() * SPECIALTI
 let cloudDirty = true, lastPush = 0, cloudState = { when:0, ok:null };
 let setupCam = false; // camera close-up while making your character
 // saving also records where you stand, so inside/outside always matches after a reload
-const save = () => { if (VISIT) return; S.savedAt = Date.now(); try { if (!lying && !fish3) S.pos = [player.position.x, player.position.y, player.position.z]; } catch {} if (typeof ageBand === 'function') S.ageBand = ageBand(); cloudDirty = true; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} };
+const save = () => { if (VISIT) return; S.savedAt = Date.now(); try { if (!lying && !fish3) S.pos = [player.position.x, player.position.y, player.position.z]; } catch {} if (typeof ageBand === 'function') S.ageBand = ageBand(); cloudDirty = true; try { localStorage.setItem(SLOT, JSON.stringify(S)); } catch {} };
 // is a feature switched on? live for everyone, or switched on in developer mode
 const devFeatures = () => { try { return JSON.parse(localStorage.getItem('sg.features') || '{}'); } catch { return {}; } };
 function featureOn(id) { const f = FEATURES.find(x => x.id === id), d = devOn() ? devFeatures() : {};
@@ -84,7 +88,7 @@ function unlockedToday(id) { const r = ROLLOUT.find(x => x.id === id); return !r
 const playDays = () => (S.playDates || []).length + (S.bonusDays || 0);
 const devOn = () => { try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
 async function cloudPush(force) {
-  if (devOn() || VISIT) return; // developer mode and visits never touch the cloud
+  if (devOn() || VISIT || TESTSLOT) return; // developer mode, visits, and the test island never touch the cloud
   if (!cloudDirty || (!force && Date.now() - lastPush < 60000)) return;
   lastPush = Date.now(); cloudDirty = false;
   try {
@@ -111,7 +115,7 @@ if (/^[A-F0-9]{6}$/.test(VISIT_CODE)) {
       syncKey:mine.syncKey, look:mine.look, coins:mine.coins, bag:mine.bag, aha:VISIT.aha || [], used:[], found:[], goals:null };
   }
 }
-const saveMine = () => { mine.savedAt = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(mine)); } catch {} };
+const saveMine = () => { mine.savedAt = Date.now(); try { localStorage.setItem(SLOT, JSON.stringify(mine)); } catch {} };
 const friendCodeOf = async key => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key)))].map(b => b.toString(16).padStart(2,'0')).join('').slice(0,6).toUpperCase();
 let muted = false; try { muted = localStorage.getItem(MUTE_KEY) === 'true'; } catch {}
 // The world follows the real calendar: real seasons, tonight's real moon, festivals on their real dates.
@@ -1199,6 +1203,7 @@ function drawHud() {
       b.visible = !!kind; if (kind) b.material.map = BUBBLE[kind]; }); }
   $('goalsBtn').hidden = !featureOn('goals'); ensureGoals(); $('goalsBtn').innerHTML = `${ICON.goal}<span class="lbl">Goals</span> ${S.goals.list.filter(g => g.have >= g.need).length}/3`;
   drawQuest();
+  { let tb = $('testBtn'); if (TESTSLOT) { if (!tb) { tb = document.createElement('button'); tb.id = 'testBtn'; tb.className = 'pill testpill'; tb.onclick = testerTools; tb.innerHTML = '🧪<span class="lbl"> Test island</span>'; $('coins').before(tb); } } }
   { let mb = $('missionsBtn'); if (S.founder && !VISIT) { if (!mb) { mb = document.createElement('button'); mb.id = 'missionsBtn'; mb.className = 'pill founderpill'; mb.onclick = openMissions; $('goalsBtn').after(mb); } const L = missionList(); mb.innerHTML = `✦<span class="lbl"> Missions</span> ${L.filter(m => S.missions?.[m.id]).length}/${L.length}`; } else if (mb) mb.remove(); }
   try { missionCheck(); } catch {}
   const s = season(), shown = Object.entries(CROPS).filter(([k,c]) => (c.seasons.includes(s) && (!c.locked || S.q4 >= 5)) || S.seeds[k] > 0);
@@ -1475,10 +1480,11 @@ function openBag() {
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
     <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
-    <button id="lookBtn" class="ghost">Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" class="ghost">I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+    ${S.founder || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}<button id="lookBtn" class="ghost">Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" class="ghost">I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
   document.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { const k = b.dataset.it; $('itInfo').innerHTML = `<b>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}</b>. ${itemUse(k)}`; });
   document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => { const k = b.dataset.fu, p = S.placed.filter(x => x === k).length; $('itInfo').innerHTML = `<b>${icon(k)} ${FURN[k].name}</b>. ${p ? `${p} in your hut.` : 'Not placed yet. Place it inside your hut.'}`; });
   document.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => openProduct(S.products[+b.dataset.pr], openBag));
+  if ($('islandBtn')) $('islandBtn').onclick = switchIsland;
   $('lookBtn').onclick = () => openLookEditor(openBag);
   if ($('codeBtn')) $('codeBtn').onclick = testerCodeCard;
   if ($('modeBtn')) $('modeBtn').onclick = () => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); openBag(); }, { switching:true }); };
@@ -1566,7 +1572,7 @@ async function openMailbox() {
   $('cgBox').innerHTML = await communityHtml(); wireClaim();
 }
 async function checkInbox() {
-  if (devOn() || VISIT) return;
+  if (devOn() || VISIT || TESTSLOT) return;
   let items = []; try { items = (await (await fetch(`${CLOUD}/inbox?key=${S.syncKey}`)).json()).items || []; } catch { return; }
   if (!items.length) return;
   const lines = [];
@@ -3854,6 +3860,8 @@ const ME = () => VISIT ? mine : S, saveMe = () => VISIT ? saveMine() : save();
 const TRADEABLE = ['crop','fruit','fish','dish','specialty','heirloom','material','bug'];
 const isKid = () => ageBand() === 'kid';
 async function api(path, body) {
+  if (TESTSLOT && body && !['/feedback','/bug'].includes(path.split('?')[0])) { setTimeout(() => toast('That only works on your real island. Switch back in Bag.'), 60); return { ok:false, status:0, error:'test island' }; }
+  if (TESTSLOT && body && path === '/feedback') body = { ...body, where:'[test island] ' + (body.where || '') };
   try { const r = await fetch(`${CLOUD}${path}`, body ? { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body) } : undefined);
     const j = await r.json().catch(() => ({})); return { ok:r.ok, status:r.status, ...j }; } catch { return { ok:false, status:0, error:'offline' }; }
 }
@@ -4321,6 +4329,41 @@ async function balloonTo(where) {
   if (where === 'heart' && S.q5 === 1) { S.q5 = 2; save(); drawHud(); setTimeout(() => toast('The Old Heart. The great bell lies fallen in the middle.'), 700); }
   if (!S.balloonFact) { S.balloonFact = true; save(); setTimeout(() => showCard(`<div class="kicker">FIRST FLIGHT</div><h2>People first flew in a balloon</h2><h4>In real life</h4><p>${BALLOON_FACT}</p>`), 900); }
 }
+// --- the Test island: a sandbox for testers, with tester tools ---
+function switchIsland() {
+  if (TESTSLOT) { try { localStorage.setItem('sg.profile', 'main'); } catch {} location.reload(); return; }
+  let has = null; try { has = localStorage.getItem('sg.save.test'); } catch {}
+  const go = () => { try { localStorage.setItem('sg.profile', 'test'); } catch {} location.reload(); };
+  if (has) return go();
+  showCard(`<div class="kicker">🧪 TEST ISLAND</div><h2>Your test island</h2><p>A separate island just for trying things. Skip days, get coins and materials, and try new things right away. Nothing you do there changes your real island.</p>
+    <p style="margin-top:8px">How should it start?</p><button id="tFresh">Start fresh</button> <button id="tCopy" class="ghost">Copy my island</button>`, 'Not now');
+  const founderBits = () => ({ founder:S.founder, founderBalloon:S.founderBalloon, pet:S.pet, missions:S.missions, look:S.look, birthday:S.birthday, name:S.name });
+  $('tFresh').onclick = () => { try { localStorage.setItem('sg.save.test', JSON.stringify(founderBits())); } catch {} go(); };
+  $('tCopy').onclick = () => { const copy = JSON.parse(JSON.stringify(S)); copy.syncKey = undefined; try { localStorage.setItem('sg.save.test', JSON.stringify(copy)); } catch {} go(); };
+}
+function testerTools() {
+  showCard(`<div class="kicker">🧪 TEST ISLAND</div><h2>Tester tools</h2><p>Only on your test island. Your real island is safe.</p>
+    <div class="jlist">
+      <button data-tt="day">Skip to tomorrow <span class="sub">Crops grow, new day starts</span></button>
+      <button data-tt="night">Jump to night <span class="sub">See stars, fireflies, night fish</span></button>
+      <button data-tt="unlock">Next unlock day <span class="sub">Shows tomorrow's New today card</span></button>
+      <button data-tt="all">Unlock everything that's released <span class="sub">No waiting for play days</span></button>
+      <button data-tt="coins">Get 1,000 coins</button>
+      <button data-tt="mats">Get 20 of every material</button>
+      <button data-tt="seeds">Get 10 of every seed</button>
+      <button data-tt="reset" class="ghost">Start my test island over</button>
+    </div>`, 'Close');
+  document.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { const t = b.dataset.tt; hideCard();
+    if (t === 'day') return goSleep(S.where === 'hut' ? 'bed' : 'outside');
+    if (t === 'night') { S.t = Math.max(S.t, .86); drawHud(); toast('It is night now.'); }
+    if (t === 'unlock' || t === 'all') { S.bonusDays = t === 'all' ? 30 : (S.bonusDays || 0) + 1; S.newDay = t === 'unlock'; save(); if (t === 'unlock') maybeNewToday(); else { drawHud(); drawStations(); drawTradePlants(); drawStall(); spawnBugs(); drawPeople(); drawTownHall(); drawHelperTree(); toast('Everything released is unlocked on your test island.'); } }
+    if (t === 'coins') { S.coins += 1000; toast('+1,000 coins'); }
+    if (t === 'mats') { ['stick','stone','fiber','log','clay','brick','copper','tin','bronze'].forEach(k => S.bag[k] = (S.bag[k] || 0) + 20); toast('+20 of every material'); }
+    if (t === 'seeds') { Object.keys(CROPS).forEach(k => S.seeds[k] = (S.seeds[k] || 0) + 10); toast('+10 of every seed'); }
+    if (t === 'reset') { showCard(`<div class="kicker">🧪 TEST ISLAND</div><h2>Start over?</h2><p>Your test island goes back to the very beginning. Your real island is not touched.</p><button id="tReset">Yes, start over</button>`, 'Cancel');
+      $('tReset').onclick = () => { try { localStorage.setItem('sg.save.test', JSON.stringify({ founder:S.founder, founderBalloon:S.founderBalloon, pet:S.pet, look:S.look, birthday:S.birthday, name:S.name })); } catch {} location.reload(); }; return; }
+    save(); drawHud(); });
+}
 // --- growing the island ---
 function expandReady(e) { return e.needs === 'home' ? (S.home || 0) >= 3 : e.needs === 'kiln' ? !!S.stations.kiln && potteryOn() : !!S.stations.furnace && bronzeOn(); }
 function expandCard() {
@@ -4426,7 +4469,7 @@ function openFeedback() {
     if (!mood && !text) { $('fbMsg').textContent = 'Pick how it is going, or write a note first.'; return; }
     $('fbMsg').textContent = 'Sending...';
     try {
-      const r = await fetch(`${CLOUD}/feedback`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ mood, text, where: (devOn() ? '[dev] ' : '') + where, day:S.day, player:S.syncKey }) });
+      const r = await fetch(`${CLOUD}/feedback`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ mood, text, where: (devOn() ? '[dev] ' : '') + (TESTSLOT ? '[test island] ' : '') + where, day:S.day, player:S.syncKey }) });
       if (!r.ok) throw new Error();
       hideCard(); toast('Thank you! Your feedback was sent.'); sfx('heart'); helperGrow();
     } catch { $('fbMsg').textContent = 'Could not send. Check your internet and try again. Your note is still here.'; }
@@ -4445,7 +4488,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }

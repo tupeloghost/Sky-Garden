@@ -258,3 +258,5 @@ body.in-cine .top { opacity:0 !important; pointer-events:none !important; transi
 .petpick { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:8px; }
 .card .petpick button { margin:0; display:flex; flex-direction:column; align-items:center; gap:2px; background:var(--surface); border:3px solid transparent; border-radius:18px; padding:8px 4px; box-shadow:0 3px 0 #0001; font-size:13px; }
 .card .petpick button.on { border-color:var(--accent); background:#fff; }
+.testpill { background:#dff5dc !important; }
+body.testisland .title h1::after { content:'🧪 Test island'; display:block; font-size:18px; color:#2fae60; text-shadow:none; margin-top:4px; }
