@@ -256,7 +256,8 @@ function tree(parent, x, z, fruitKind) {
   g.userData = { canopy, cm, cm2, fruits, ph:Math.random()*6 };
   parent.add(g); trees.push(g); return g;
 }
-const woodTrees = [[-7,-1],[-6,4],[5,-6],[-2,7],[6.5,5]].map(([x,z]) => tree(scene, x, z));
+// home trees stand at the back and sides, so the front of the island (nearest the camera) stays an open meadow
+const woodTrees = [[.25,-7.25],[-2.75,-6.75],[7,-1.75],[5.5,-4.75]].map(([x,z]) => tree(scene, x, z));
 [[-5.5,-2],[-6,3.5],[5.5,3]].forEach(([x,z]) => woodTrees.push(tree(WIND.g, x, z)));
 woodTrees.forEach((t, i) => { t.userData.kind = 'tree'; t.userData.key = 'tree'+i; });
 const fruitTrees = [[-3,-3,'apple'],[2,-4,'peach'],[-4,3,'peach'],[5,.3,'apple']].map(([x,z,k], i) => {
@@ -334,7 +335,7 @@ const stoneMat = mat(0xd8cfc0);
   for (let i=0;i<=n;i++){ const k = i/n, x = x0 + (x1-x0)*k + Math.sin(i*2.1)*.12, z = z0 + (z1-z0)*k + Math.cos(i*1.7)*.12;
     if (x > .3 && x < 4.6 && z > -1.8 && z < 3.5) continue;
     const st = mesh(new THREE.CylinderGeometry(.26 + (i%3)*.04, .3, .06, 9), stoneMat, x, .02, z); st.rotation.y = i; stones.add(st); } });
-const rocks = [[-7.6,1.4,.42],[6.8,-3.6,.38],[-2.8,-6.9,.45],[3.2,6.9,.4],[-6.2,-4.8,.36],[7.4,1.6,.34]].map(([x,z,r],i) => { const rk = mesh(new THREE.DodecahedronGeometry(r), mat(0xb3aabb), x, r*.5, z); rk.rotation.set(i, i*2, 0); rk.userData = { kind:'rock', key:'rock'+i }; scene.add(rk); return rk; });
+const rocks = [[-7,2.5,.42],[6.9,-3.5,.38],[-7.5,-.5,.45],[-5,2.5,.36]].map(([x,z,r],i) => { const rk = mesh(new THREE.DodecahedronGeometry(r), mat(0xb3aabb), x, r*.5, z); rk.rotation.set(i, i*2, 0); rk.userData = { kind:'rock', key:'rock'+i }; scene.add(rk); return rk; });
 
 // --- sell crate ---
 const mailbox = new THREE.Group(); mailbox.position.set(-1.7, 0, -1.6); mailbox.rotation.y = .5;
@@ -548,7 +549,7 @@ const dressing = new THREE.Group(); scene.add(dressing); const grassPatches = []
       p.receiveShadow = true; dressing.add(p); grassPatches.push(p); } });
   // bushes in little groups
   const bush = (x, z, s=1, c=0x4fb46a, id) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.userData = { kind:'bush', key:'bush'+(id ?? bushes.length) }; bushes.push(g); [[0,0,0,.45],[.35,-.05,.1,.34],[-.32,-.07,.08,.32],[.05,.15,-.15,.3]].forEach(([bx,by,bz,br]) => g.add(mesh(sph(br*s), mat(c), bx*s, br*s*.8 + by, bz*s))); dressing.add(g); return g; };
-  [[-6.2,-2.6,1,0],[-2.2,-4.2,.9,2],[-6.9,2.6,.8,3],[5.9,-4.4,1,4],[-1.6,6.6,1,6],[7.2,3.6,.8,8]].forEach(([x,z,s,id]) => bush(x, z, s, undefined, id));
+  [[3.25,-5.5,1,0],[2.25,-6.5,.8,2],[-6.3,-5.6,1,3],[-7.5,1,.8,4]].forEach(([x,z,s,id]) => bush(x, z, s, undefined, id));
   // flower beds hugging the hut and along the path
   const bed = (x, z, n, rx, rz) => { for (let i=0;i<n;i++){ const fx = x + (rnd(i+x*13)-.5)*rx, fz = z + (rnd(i*3+z*7)-.5)*rz, c = [0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b][i%5];
     dressing.add(mesh(new THREE.CylinderGeometry(.015,.015,.22,4), mat(0x4fb46a), fx, .11, fz)); dressing.add(mesh(sph(.075), mat(c), fx, .24, fz)); } };
@@ -588,8 +589,8 @@ scene.add(bell);
 // --- festival lanterns ---
 const lanterns = new THREE.Group(); lanterns.visible = false; scene.add(lanterns);
 const lanternMat = glow(0xffb45c);
-// 6 spots checked to be clear of trees, rocks, the hut, and everything else you can tap
-[[7.9,-1.4],[5.4,3.8],[-4.1,6.9],[-8,0],[-.5,-8],[3.4,-5.6]].forEach(([lx, lz]) => { const one = new THREE.Group(); one.position.set(lx, 0, lz); lanterns.add(one);
+// 4 spots checked to be clear of trees, rocks, the hut, and everything else you can tap (festivals only)
+[[-4,6.75],[4,6.75],[6.75,4],[-4.25,4]].forEach(([lx, lz]) => { const one = new THREE.Group(); one.position.set(lx, 0, lz); lanterns.add(one);
   one.add(mesh(new THREE.CylinderGeometry(.05,.05,1.8,6), mat(0x9b6b4a), 0, .9, 0));
   const l = mesh(sph(.22), lanternMat, 0, 1.9, 0); l.scale.y = 1.25; one.add(l); const lh = halo(0xffb45c, 1.6, .7); lh.position.set(0, 1.9, 0); one.add(lh);
   const h = hitBox(.6, 2.2, .6); h.position.set(0, 1.1, 0); one.add(h); deco(h, () => { pulse(lh, 1.2); chime(880); toast('You made a wish on the lantern. People light lanterns at festivals all over the world.'); }); });
@@ -3001,7 +3002,7 @@ function chopTree(t) {
   if (!canCarry('log')) return bagFull();
   S.chopped[key] = S.day; t.userData.shake = 1; sfx('chop');
   if (S.chopDay !== S.day) { S.chopDay = S.day; S.chopN = 0; } if (++S.chopN === 7) karma('harmony', -1); const wp = new THREE.Vector3(); t.getWorldPosition(wp);
-  const nl = S.tools.bronzeAxe ? 3 : 2; gain('log', nl, wp.setY(wp.y + 1), true); hintToast();
+  const nl = S.tools.bronzeAxe ? 4 : 3; gain('log', nl, wp.setY(wp.y + 1), true); hintToast();
 }
 function mineRock(r) {
   if (!S.tools.pick) { toast('You need a stone pickaxe to break rocks. Craft one at the tree stump workbench.'); return; }
@@ -3299,13 +3300,13 @@ function drawTradePlants() {
   tradeGroup.clear(); const code = VISIT ? VISIT_CODE : myCode;
   const sp = SPECIALTIES.find(x => x.id === S.specialty);
   if (sp && featureOn('specialty') && !VISIT) {
-    const g = new THREE.Group(); g.position.set(4, 0, 5.1); tradeGroup.add(g);
+    const g = new THREE.Group(); g.position.set(5.5, 0, 2.5); tradeGroup.add(g);
     g.add(mesh(new THREE.CylinderGeometry(.09,.13,1,7), mat(0x7a5236), 0, .5, 0));
     [[0,1.15,0,.55],[.35,.95,.1,.38],[-.32,.98,-.05,.4]].forEach(([x,y,z,r]) => g.add(mesh(sph(r), mat(sp.leaf), x, y, z)));
     for (let i = 0; i < 7; i++) { const a = i*.9, pod = mesh(new THREE.SphereGeometry(.12,8,6), mat(sp.color), Math.cos(a)*.52, .75 + (i%3)*.18, Math.sin(a)*.45); pod.scale.y = 1.5; g.add(pod); }
     const h = hitBox(1.3, 1.8, 1.3); h.position.y = .9; g.add(h); deco(g, pickSpecialty); }
   if (code && featureOn('heirloom')) {
-    const f = heirloomOf(code), g = new THREE.Group(); g.position.set(1.6, 0, 5.2); tradeGroup.add(g);
+    const f = heirloomOf(code), g = new THREE.Group(); g.position.set(-2.75, 0, 3); tradeGroup.add(g);
     g.add(mesh(new THREE.CylinderGeometry(.55,.6,.2,16), mat(0x7a5236), 0, .1, 0));
     [[0,0],[.28,.18],[-.26,.2],[.2,-.26],[-.22,-.22]].forEach(([x,z], j) => { const fl = new THREE.Group(); fl.position.set(x, .2, z); g.add(fl);
       const hgt = .35 + (j%2)*.12; fl.add(mesh(new THREE.CylinderGeometry(.015,.02,hgt,4), mat(0x4fb46a), 0, hgt/2, 0));
@@ -4525,7 +4526,7 @@ const wren = critter({ body:0x9b7b5a, belly:0xf3e2c4, beak:0xd9a441, outfit:{ st
 wren.position.set(LH.x - 1, LH.y, LH.z + .7); wren.userData = { ...wren.userData, kind:'deco', use:() => openKeeper() }; wren.rotation.y = .6;
 const keeperGroup = new THREE.Group(); scene.add(keeperGroup); lateClicks.push(keeperGroup, wren, LHI.g);
 const SAPLING_SPOTS = [[1.9, 1.2], [-1.6, 1.9], [.2, -2.2]];
-const EDGE_STONES = [[5.4, 5.3], [-5.5, 5.2], [-5.4, -5.5], [5.4, -5.2]];
+const EDGE_STONES = [[8.2, -2.8], [-1.4, -8.2], [-8.2, 3.9], [-7.6, -5.2]]; // at the edges, clear of everything and out of the front meadow
 function kp() { S.kp = S.kp || { done:[], stones:[], planted:[], secret:0 }; return S.kp; }
 function currentTrial() { const lvl = keeperLevel(); return TRIALS.find(t => t.level <= lvl && !kp().done.includes(t.id)) || null; }
 function drawKeepers() {
@@ -4768,7 +4769,7 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
     [-.55, .55].forEach(sx => b.add(mesh(new THREE.BoxGeometry(.07, .42, .38), mat(0x5a3a28), sx, .21, 0)));
     const h = hitBox(1.4, .9, .8); h.position.y = .45; b.add(h); deco(h, () => sitBench(b)); });
   // lamp posts that glow at night
-  [20, 75, 170, 250, 320].forEach(deg => { const a = deg * Math.PI / 180, x = Math.cos(a) * 4.9, z = Math.sin(a) * 4.9, l = new THREE.Group(); l.position.set(x, 0, z); g.add(l);
+  [75, 170, 250].forEach(deg => { const a = deg * Math.PI / 180, x = Math.cos(a) * 4.9, z = Math.sin(a) * 4.9, l = new THREE.Group(); l.position.set(x, 0, z); g.add(l);
     l.add(mesh(new THREE.CylinderGeometry(.06, .08, 1.9, 8), mat(0x3b2f4a), 0, .95, 0)); l.add(mesh(new THREE.BoxGeometry(.3, .34, .3), glow(0xffe7a8), 0, 2.02, 0)); l.add(mesh(new THREE.ConeGeometry(.26, .2, 4), mat(0x3b2f4a), 0, 2.29, 0).rotateY(Math.PI/4));
     const lh = halo(0xffc46b, 2.4, 0); lh.position.y = 2.02; l.add(lh); lampLights.push(lh);
     const h = hitBox(.5, 2.4, .5); h.position.y = 1.2; l.add(h); deco(h, () => toast('Before electric streetlights, lamplighters walked the streets at dusk to light each lamp by hand. London still has about 1,500 gas street lamps.')); });
@@ -4805,7 +4806,8 @@ worldGroup.position.copy(SQ);
 function squareOpen() { return !!S.square || (S.tut === 9 && S.square === undefined); }
 function drawSquare() { if (S.tut === 9 && S.square === undefined) { S.square = true; S.squareNew = true; save(); } // older games get it right away
   layBridge(squareBridge, new THREE.Vector3(4.55, -.07, -7.18), new THREE.Vector3(6.6, -.07, -10.4), 8, squareOpen()); squareBridge.visible = squareOpen();
-  if (squareBits.sign) squareBits.sign.visible = !(S.world && S.world.placename); }
+  if (squareBits.sign) squareBits.sign.visible = !(S.world && S.world.placename);
+  if (squareOpen() && !VISIT) { npcs.pip.position.copy(SQL(4.7, -1.2)); npcs.pip.rotation.y = -2.2; } } // Pip minds his cart on the square
 // right after the first steps with Nana: the bridge appears
 function openSquare() { if (S.square) return; S.square = true; S.squareNew = true; save(); drawSquare(); burst(new THREE.Vector3(5.6, .5, -8.8), 0xffc857, 30); setTimeout(squareIntro, 2500); }
 function squareIntro() { if (!S.squareNew || VISIT) return;
