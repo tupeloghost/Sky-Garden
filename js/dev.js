@@ -64,6 +64,7 @@ function draw() {
     <h5>COLLECTIONS</h5><div class="row"><button id="dvAll">Collect everything</button><button id="dvNone">Clear collections</button></div>
     <h5>ROLLING UNLOCKS</h5><div class="row"><span style="margin-right:6px">Play day ${g.playDays()}</span><button id="dvDay">+1 play day (show New today)</button><button id="dvDayReset">Back to day 1</button></div>
     <p style="margin:2px 0 0;opacity:.7">Dev mode always sees everything. Play days decide what players see.</p>
+    <h5>VILLAGERS</h5><div class="row"><button id="dvVisitor">Bring a visitor now</button></div>
     <h5>FEATURES (off = players don't see it yet)</h5><div class="row">${g.FEATURES.map(f => `<button data-ft="${f.id}" title="${f.what}" style="${g.featureOn(f.id) ? 'background:#8fdc8a;color:#1d2b1f' : ''}">${f.name}: ${f.live ? 'live for everyone' : g.featureOn(f.id) ? 'on in dev' : 'off'}</button>`).join('')}</div>
     <h5>RESET</h5><div class="row"><button class="warn" id="dvReset">Start a brand new game</button><button id="dvOff">Turn off developer mode</button></div>
     <p id="dvMsg" style="margin:6px 0 0;min-height:18px;color:#9fe7e0"></p>`;
@@ -92,6 +93,7 @@ function draw() {
     reloadWith(`${f.name} is now ${d[f.id] ? 'on' : 'off'} in developer mode.`); });
   panel.querySelector('#dvDay').onclick = () => { S.bonusDays = (S.bonusDays || 0) + 1; S.newDay = true; g.save(); panel.classList.remove('show'); try { localStorage.removeItem('sg.dev'); } catch {} g.maybeNewToday(); try { localStorage.setItem('sg.dev', 'true'); } catch {} };
   panel.querySelector('#dvDayReset').onclick = () => { S.bonusDays = 0; S.playDates = (S.playDates || []).slice(-1); S.unlocked = []; g.save(); draw(); msg('Back to play day 1.'); };
+  panel.querySelector('#dvVisitor').onclick = () => { const p = g.bringVisitor(); msg(`${p.name} the ${p.species} is camping on your island.`); };
   panel.querySelector('#dvReset').onclick = () => {
     const b = panel.querySelector('#dvReset'); if (b.dataset.sure) { try { localStorage.removeItem('sg.save'); } catch {} location.reload(); return; }
     b.dataset.sure = 1; b.textContent = 'Tap again to erase this game'; };

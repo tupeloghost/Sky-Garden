@@ -14,6 +14,7 @@ import { KID_ADJ, KID_NOUN, SHAPES, PATTERNS, SYMBOLS, PALETTE, BASES, logoSvg, 
 import { BUTTERFLIES, TAP_FACTS } from '../data/nature.js';
 import { INSECTS } from '../data/insects.js';
 import { TASTES, REACT, TIERS, TIER_HEARTS, tasteOf } from '../data/tastes.js';
+import { SPECIES, NAMES, OUTFITS, TOP_COLORS, PERSONALITIES, REQUEST_LINES } from '../data/visitors.js';
 import { SPECIALTIES, HOME_PRICE, AWAY_MULT, TRADE_FACT, heirloomOf, heirloomId, codeOfHeirloom, isHeirloom } from '../data/trade.js';
 import { SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES } from '../data/player.js';
 import { realSeason, moonPhase, activeFestival, dateLabel, FESTIVAL_AHA, FESTIVALS, festivalWindow } from '../data/calendar.js';
@@ -1757,8 +1758,90 @@ function openFriends() {
   showCard(`<div class="kicker">FRIENDS</div><h2>Your neighbors</h2><p>Gifts you have tried, and how each friend felt about them.</p>
     ${ids.map(id => { const known = Object.entries(K[id] || {}); const row = t => known.filter(([,v]) => v === t).map(([k]) => icon(k, ITEMS[k]?.kind)).join(' ');
       return `<div class="friend"><b>${NEIGHBORS[id].name}</b> <span class="hearts">${'♥'.repeat(S.hearts[id] || 0)}${'♡'.repeat(10 - (S.hearts[id] || 0))}</span>
-        ${known.length ? ['Loves','Likes','Okay with','Dislikes','Hates'].map((l, t) => row(t) ? `<div class="tr"><small>${l}</small> ${row(t)}</div>` : '').join('') : '<div class="tr"><small>No gifts yet.</small></div>'}</div>`; }).join('')}`, 'Back', openJournal);
+        ${known.length ? ['Loves','Likes','Okay with','Dislikes','Hates'].map((l, t) => row(t) ? `<div class="tr"><small>${l}</small> ${row(t)}</div>` : '').join('') : '<div class="tr"><small>No gifts yet.</small></div>'}</div>`; }).join('')}
+    ${Object.values(S.people || {}).map(p => { const known = Object.entries(p.known || {}), row = t => known.filter(([,v]) => v === t).map(([k]) => icon(k, ITEMS[k]?.kind)).join(' ');
+      return `<div class="friend"><b>${esc(p.name)}</b> <small>${PERSONALITIES[p.pers].word} ${p.species}, ${p.status === 'resident' ? 'lives here' : p.status === 'visiting' ? 'visiting now' : 'moved on'}</small> <span class="hearts">${'♥'.repeat(p.hearts)}${'♡'.repeat(10 - p.hearts)}</span>
+        ${known.length ? ['Loves','Likes','Okay with','Dislikes','Hates'].map((l, t) => row(t) ? `<div class="tr"><small>${l}</small> ${row(t)}</div>` : '').join('') : ''}</div>`; }).join('')}`, 'Back', openJournal);
 }
+// --- visiting villagers and the neighbors who stay ---
+const peopleGroup = new THREE.Group(); scene.add(peopleGroup); lateClicks.push(peopleGroup);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const GIFTABLE = () => Object.keys(ITEMS).filter(k => ['crop','fruit','fish','dish','bug','specialty'].includes(ITEMS[k].kind));
+function newPerson() {
+  const sp = pick(SPECIES), [body, belly] = pick(sp.colors), pers = pick(Object.keys(PERSONALITIES)), P = PERSONALITIES[pers];
+  const used = Object.values(S.people || {}).map(p => p.name), name = pick(NAMES.filter(n => !used.includes(n))) || pick(NAMES);
+  const pool = GIFTABLE().sort(() => Math.random() - .5), taken = new Set([...P.loves, ...P.hates]);
+  const take = n => pool.filter(k => !taken.has(k)).slice(0, n).map(k => (taken.add(k), k));
+  const tastes = { loves:[...P.loves, ...take(1)], likes:take(4), dislikes:take(2), hates:[...P.hates] };
+  const outfit = { style:pick(OUTFITS), color:pick(TOP_COLORS), trim:0xffffff, acc:Math.random() < .3 ? pick(['glasses','bowtie','scarf']) : undefined };
+  return { vid:'v' + Date.now().toString(36), name, species:sp.id, pers, look:{ ...sp.look, body, belly, ear:body, outfit }, tastes, hearts:0, known:{}, status:'visiting', met:S.day, leaves:S.day + 2 + Math.floor(Math.random() * 2) };
+}
+const CAMP_SPOTS = [[6.2,-1.2],[-6.5,-1.8],[1.5,-6.5],[-4.5,6],[5.8,3.2],[-.5,6.4],[6.6,-5.4]];
+function freeSpot(list) { return list.find(([x,z]) => !blockedAt(x, z) && !(S.builds || []).some(b => Math.hypot(b.x - x, b.z - z) < 1.6) && !Object.values(S.people || {}).some(p => p.spot && Math.hypot(p.spot[0] - x, p.spot[1] - z) < 2)); }
+function homeSpots() { return [...ownedLobes().flatMap(L => [[L.e.x + 1.2, L.e.z - 1], [L.e.x - 1.4, L.e.z + 1.2]]), [-6.5,-1.8],[1.5,-6.5],[-4.5,6],[5.8,3.2]]; }
+function tent(color) { const g = new THREE.Group(); const t = mesh(new THREE.ConeGeometry(.9, 1.3, 4), mat(color), 0, .65, 0); t.rotation.y = Math.PI/4; g.add(t);
+  g.add(mesh(new THREE.BoxGeometry(.35, .6, .05), mat(0x3b2f4a), 0, .3, .5)); g.add(mesh(new THREE.CylinderGeometry(.03,.03,1.6,5), mat(0x9b6b4a), 0, .8, 0)); return g; }
+function cottage(color) { const g = new THREE.Group(); g.add(mesh(new THREE.BoxGeometry(1.5, 1, 1.3), mat(0xfff1d6), 0, .5, 0));
+  const roof = mesh(new THREE.ConeGeometry(1.25, .8, 4), mat(color), 0, 1.4, 0); roof.rotation.y = Math.PI/4; g.add(roof);
+  g.add(mesh(new THREE.BoxGeometry(.35, .55, .05), mat(0x9b6b4a), 0, .28, .66)); g.add(mesh(new THREE.BoxGeometry(.3, .3, .05), mat(0x9fd3ff), .45, .6, .66)); return g; }
+function drawPeople() {
+  peopleGroup.children.slice().forEach(c => peopleGroup.remove(c));
+  if (VISIT || !featureOn('villagers')) return;
+  Object.values(S.people || {}).filter(p => p.status === 'visiting' || p.status === 'resident').forEach(p => {
+    if (!p.spot) { const sp = freeSpot(p.status === 'resident' ? homeSpots() : CAMP_SPOTS); if (!sp) return; p.spot = sp; save(); }
+    const [x, z] = p.spot, home = p.status === 'resident' ? cottage(p.look.outfit.color) : tent(p.look.outfit.color);
+    home.position.set(x, 0, z - .9); peopleGroup.add(home);
+    const c = critter(p.look); c.scale.setScalar(.85); c.position.set(x + .9, 0, z + .1); c.rotation.y = -.4; c.userData.kind = 'visitor'; c.userData.vid = p.vid; peopleGroup.add(c);
+    home.userData = { kind:'visitor', vid:p.vid };
+  });
+}
+function personLine(p) { const P = PERSONALITIES[p.pers]; return pick(P.hi); }
+function talkPerson(vid) {
+  const p = S.people[vid]; if (!p) return;
+  if (p.talked !== S.day) { p.talked = S.day; p.hearts = Math.min(10, p.hearts + 1); chime(698); goal('talk'); save(); }
+  const b = [];
+  if (p.gifted !== S.day) b.push({ label:'Give a gift', fn:() => { closeDialog(); personGift(vid); } });
+  if (!p.request && p.status === 'visiting') { const s = season(), opts = [...Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(s) && !CROPS[k].locked), 'apple', 'peach', 'minnow', 'trout'];
+    const k = pick(opts), n = 1 + Math.floor(Math.random() * 3); p.request = { k, n, done:false }; save(); }
+  if (p.request && !p.request.done) { const r = p.request; b.push({ label:have(r.k) >= r.n ? `Give ${r.n} ${plural(r.k, r.n)}` : `Their favor: ${r.n} ${plural(r.k, r.n)}`, fn:() => {
+    if (have(r.k) < r.n) { toast(`Bring ${r.n} ${plural(r.k, r.n)}. You have ${have(r.k)}.`); return; }
+    bagAdd(r.k, -r.n); r.done = true; const pay = Math.round(ITEMS[r.k].sell * r.n * 1.6) + 20; S.coins += pay; p.hearts = Math.min(10, p.hearts + 1); if (featureOn('journey')) karma('kind', 1); lean('friend');
+    save(); drawHud(); sfx('coin'); closeDialog(); openDialog(p.name, `You found them! Thank you so much. Here, ${pay} coins.`, [], p.hearts); } }); }
+  if (p.status === 'visiting' && p.hearts >= 3 && Object.values(S.people).filter(x => x.status === 'resident').length < 3 && (S.home || 0) >= 3)
+    b.push({ label:'Invite them to stay', fn:() => { closeDialog(); invitePerson(vid); } });
+  const extra = p.request && !p.request.done ? ' ' + pick(REQUEST_LINES).replace('{item}', plural(p.request.k, p.request.n)).replace('{n}', p.request.n) : '';
+  const tail = p.status === 'visiting' && p.leaves - S.day <= 1 ? ' I head out tomorrow, by the way.' : '';
+  openDialog(p.name, personLine(p) + extra + tail, b, p.hearts);
+}
+function personGift(vid) {
+  const p = S.people[vid], opts = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && ITEMS[k].kind !== 'quest');
+  if (!opts.length) { toast('Nothing to give. Pick crops, fruit, or fish first.'); return; }
+  showCard(`<div class="kicker">GIVE A GIFT</div><h2>Gift for ${p.name}</h2><p>You don't know their tastes yet. Watch how they react.</p>
+    <div class="igrid">${opts.map(([k,n]) => `<button class="itile" data-pg="${k}"><span class="ic">${icon(k, ITEMS[k].kind)}</span><b>${n}</b><small>${esc(ITEMS[k].name)}</small></button>`).join('')}</div>`, 'Never mind');
+  document.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { const k = b.dataset.pg, tier = tasteOf(p.tastes, k, ITEMS[k].kind), dh = TIER_HEARTS[tier];
+    hideCard(); bagAdd(k, -1); p.gifted = S.day; p.hearts = Math.max(0, Math.min(10, p.hearts + dh)); p.known[k] = tier; goal('gift'); lean('friend');
+    const said = [`A ${ITEMS[k].name.toLowerCase()}?! How did you know? I love these!`, 'Oh, nice! Thank you!', 'Oh, thanks!', 'Hm. Not really my thing, but thanks.', "Ugh. Sorry. I really can't stand these."][tier];
+    const note = dh > 0 ? ` (+${dh} heart${dh > 1 ? 's' : ''})` : dh < 0 ? ` (${dh} heart${dh < -1 ? 's' : ''})` : '';
+    sfx(tier === 0 ? 'heart' : tier <= 2 ? 'pick' : 'click'); save(); openDialog(p.name, said + note, [], p.hearts); });
+}
+function invitePerson(vid) {
+  const p = S.people[vid], P = PERSONALITIES[p.pers]; p.status = 'resident'; p.spot = null; lean('friend', 2);
+  save(); drawPeople(); [523,659,784,1047].forEach((f,i) => setTimeout(() => chime(f), i*150));
+  const c = peopleGroup.children.find(x => x.userData.vid === vid); if (c) burst(c.position.clone().setY(1), 0xffc857, 26);
+  openDialog(p.name, P.invite, [], p.hearts);
+}
+// each morning: visitors pack up when their stay is over, and sometimes someone new arrives
+function peopleNewDay() {
+  if (VISIT || !featureOn('villagers')) return;
+  S.people = S.people || {}; const notes = [];
+  Object.values(S.people).forEach(p => { if (p.status === 'visiting' && S.day >= p.leaves) { p.status = 'left'; notes.push(`${p.name} packed up the tent and left a note: "Thanks for having me. I'll never forget your island."`); } });
+  const visiting = Object.values(S.people).some(p => p.status === 'visiting');
+  if (!visiting && Math.random() < .4) { const p = newPerson(); S.people[p.vid] = p; notes.push(`A traveler named ${p.name} is camping on your island! Go say hi.`); }
+  if (notes.length) { S.mailLog = [...(S.mailLog || []), ...notes].slice(-20); setTimeout(() => toast(notes.at(-1)), 1500); }
+  drawPeople();
+}
+function bringVisitor() { S.people = S.people || {}; Object.values(S.people).forEach(p => { if (p.status === 'visiting') p.status = 'left'; }); const p = newPerson(); S.people[p.vid] = p; save(); drawPeople(); return p; }
+drawPeople();
 // --- heart scenes: little stories at 3 and 6 hearts ---
 function heartScene(id) {
   const h = S.hearts[id], key3 = id + '3', key6 = id + '6';
@@ -2946,7 +3029,7 @@ function sleep(passedOut, where) {
   else if (S.sprinklers && !raining) msg += ' Your sprinkler watered the garden.';
   const fz = festival(); if (fz && !S.fests[fz.id + fz.year]) msg = `Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`;
   S.tiles.forEach((_, i) => drawTile(i));
-  spawnDigs(); applySeason(); S.goals = null; ensureGoals();
+  spawnDigs(); applySeason(); S.goals = null; ensureGoals(); peopleNewDay();
   S.pickups = S.pickups || []; spawnPickups();
   if (where === 'outside') { if (S.where === 'hut') S.where = 'home'; } // you wake up right where you slept
   else if ((S.home || 0) < 3) { S.where = 'home'; player.position.set(campfire.position.x + .8, 0, campfire.position.z + .6); } else { S.where = 'hut'; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); }
@@ -3366,6 +3449,7 @@ function arrive(o) {
   if (k === 'bush') return cutBush(o);
   if (k === 'workbench') return useWorkbench();
   if (k === 'chest') return openChest(o.userData.b);
+  if (k === 'visitor') return talkPerson(o.userData.vid);
   if (k === 'deco') return o.userData.use(o);
   if (k === 'piece') return usePiece(o);
   if ((k === 'claypit' || k === 'ore') && o.visible) return gatherNode(o);
@@ -4034,7 +4118,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
-window.__sg = { giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js'); toast('Developer mode on.'); } }); }
