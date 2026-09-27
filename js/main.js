@@ -1692,7 +1692,7 @@ function tutTile(i) {
 }
 function tutSold() {
   if (S.tut !== 6) return;
-  S.tut = 9; save(); drawHud(); setTimeout(founderDrip, 2500);
+  S.tut = 9; save(); drawHud(); openSquare(); setTimeout(founderDrip, 9000); // the Town Square first, then any founder surprise
   setTimeout(() => {
     openDialog('Nana Gale', (S.home || 0) < 3 ? "Your first coins! Now, the important part. You need a roof over your head, and no, the sky is not a roof, whatever Pip tells you. See the sticks and stones lying about? Gather some and make yourself a stone axe at that old tree stump." : "Your first coins! That is how it works up here: grow things, sell them, and use the coins to rebuild. Now, there are more memories buried out there. New sparkles appear every morning. Off you go, dear!", [], S.hearts.nana);
     spawnDigs(); nanaWalk = { to: NANA_HOME.clone(), back:true };
@@ -3181,6 +3181,7 @@ function sleep(passedOut, where) {
   let msg = passedOut ? 'You were so tired you fell asleep. New day!' : raining ? (season() === 3 ? 'Good morning! Snow watered your crops.' : 'Good morning! Rain watered your crops.') : 'Good morning!';
   const turned = seasonCheck(); if (turned) msg = turned;
   else if (S.sprinklers && !raining) msg += ' Your sprinkler watered the garden.';
+  { const wm = wishMorning(); if (wm) msg += ' ' + wm; } // yesterday's fountain wish
   const fz = festival(); if (fz && !S.fests[fz.id + fz.year]) msg = `Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`;
   S.tiles.forEach((_, i) => drawTile(i));
   spawnDigs(); applySeason(); S.goals = null; ensureGoals(); peopleNewDay(); drawShrooms(); mythLookUp(); setTimeout(founderDrip, 6000);
@@ -3805,7 +3806,7 @@ function tickFrame() {
     if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
   lobes.forEach(L => { if (!L.rise) return; L.rise = Math.max(0, L.rise - dt / 2.5); const k = 1 - L.rise; L.g.position.y = -5 * (1 - k) * (1 - k); if (!L.rise) { L.g.position.y = 0; L.extra.forEach(o => o.visible = true); burst(new THREE.Vector3(L.e.x, .5, L.e.z), 0x8fdc8a, 30); } });
   if (lighthouse && lighthouse.visible) { const nb = Math.min(1, Math.max(0, (hour() - 18.5) / 1.5)); lighthouse.userData.pivot.rotation.y = now * .8; lighthouse.userData.beam.material.opacity = .04 + nb * .14; }
-  animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt); updatePet(dt, now); mythAnimate(dt, now);
+  animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt); updatePet(dt, now); mythAnimate(dt, now); squareTick(dt, now);
   { const sp = player.position.distanceTo(lastPP) / Math.max(dt, .001); lastPP.copy(player.position); const sc = player.userData.inner?.userData.scarf;
     if (sc) { let seg = sc, i = 0; while (seg && seg.children.length) { const k = Math.min(1, sp / 4); seg.rotation.x = -.15 - k * (.35 + i * .12) + Math.sin(now * (6 + i) + i) * (.06 + k * .12); seg = seg.children.find(c => c.isGroup); i++; } } }
   if (lanternFF.length) { const nf = Math.min(1, Math.max(0, (hour() - 19) / 2)); lanternFF.forEach((f, i) => { f.visible = nf > .2; const a = now * .8 + i * .78; f.position.set(Math.cos(a) * (.55 + Math.sin(now + i) * .15), 1.4 + Math.sin(now * 1.3 + i) * .45, Math.sin(a) * (.55 + Math.cos(now + i) * .15)); f.material.opacity = nf * (.5 + Math.sin(now * 4 + i) * .5); }); }
@@ -4259,7 +4260,7 @@ const F_GIFTS = {
 function fGot(k) { if (S.founder && !S.fGot && S.founderBalloon) S.fGot = ['pet','outfit','balloon','lantern','missions','testisland']; return (S.fGot || []).includes(k); } // older founder saves already had everything
 function fDay() { return S.founder ? playDays() - (S.founder.day0 != null ? S.founder.day0 : playDays() - 1) + 1 : 0; }
 function founderDrip() { if (!founderOn() || VISIT || TESTSLOT || PREVIEW) return;
-  const busy = !S.setupDone || S.tut !== 9 || $('dialog').classList.contains('show') || $('veil').classList.contains('show') || document.querySelector('.presents'); if (busy) return;
+  const busy = !S.setupDone || S.tut !== 9 || $('dialog').classList.contains('show') || $('veil').classList.contains('show') || document.querySelector('.presents'); if (busy) { if (S.tut === 9) setTimeout(founderDrip, 4000); return; }
   const d = fDay(), give = (keys, head, body, then) => { S.fGot = [...(S.fGot || []), ...keys]; save(); showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>${head}</h2><p>${body}</p>`, 'Open it', () => openPresents(keys.filter(k => F_GIFTS[k]).map(k => F_GIFTS[k]), then)); };
   if (!fGot('pet')) return give(['pet'], 'Welcome, founder!', 'You were invited in before anyone else. Very few people have walked this island yet. We wrapped something for you, and more is on the way.', () => choosePet(() => {}));
   if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', 'A founder gift for your second day. There is also something new at the top of your screen: ✦ Missions. They are things we would love you to try, and each one pays 50 coins.', () => drawHud());
@@ -4425,9 +4426,9 @@ function drawBalloon() { balloon.visible = !!S.founderBalloon && !VISIT; }
 drawBalloon();
 function balloonMenu() {
   // the island you are standing on is left out: you are already there
-  const C = { home:new THREE.Vector3(0, 0, 0), orchard:ORCH_POS, windmill:WIND_POS, night:NIGHT_POS, heart:OH, lighthouse:LH }, p = player.position;
+  const C = { home:new THREE.Vector3(0, 0, 0), square:SQ, orchard:ORCH_POS, windmill:WIND_POS, night:NIGHT_POS, heart:OH, lighthouse:LH }, p = player.position;
   const here = S.where === 'hut' ? 'home' : Object.keys(C).sort((a, b) => Math.hypot(p.x - C[a].x, p.z - C[a].z) - Math.hypot(p.x - C[b].x, p.z - C[b].z))[0];
-  const D = [['home','Home island', true], ['orchard','Orchard Isle', S.bridge], ['windmill','Windmill Isle', S.bridge2], ['night','Night Isle', S.q4 >= 1], ['heart','The Old Heart', S.q5 >= 1], ['lighthouse','Lighthouse Rock', keeperLevel() >= 2]].filter(d => d[2] && d[0] !== here);
+  const D = [['home','Home island', true], ['square','Town Square', squareOpen()], ['orchard','Orchard Isle', S.bridge], ['windmill','Windmill Isle', S.bridge2], ['night','Night Isle', S.q4 >= 1], ['heart','The Old Heart', S.q5 >= 1], ['lighthouse','Lighthouse Rock', keeperLevel() >= 2]].filter(d => d[2] && d[0] !== here);
   if (!D.length) return showCard(`<div class="kicker">✦ FOUNDER BALLOON</div><h2>Nowhere to fly yet</h2><p>Your balloon can take you to any other island you open. Build a bridge to your first new island, and your balloon can fly you there anytime.</p>`, 'Okay');
   showCard(`<div class="kicker">✦ FOUNDER BALLOON</div><h2>Where to?</h2><p>Your balloon flies you to any island you have opened.</p>
     <div class="jlist">${D.map(([k, n]) => `<button data-fly="${k}">🎈 ${n}</button>`).join('')}</div>`, 'Not now');
@@ -4441,7 +4442,7 @@ async function balloonTo(where) {
   let t0 = performance.now(); const lift = () => { const k = (performance.now() - t0) / 3000; fly.position.y = start.y + Math.pow(Math.min(1, k), 1.6) * 9; fly.rotation.y += .004; ride(); if (k < 1.2 && fly.parent) requestAnimationFrame(lift); }; lift();
   await shot(3, camera.position.clone(), start.clone().add(V(6, 4, 8)), start.clone().setY(start.y + 1.5), start.clone().setY(start.y + 8));
   await fadeTo(true, false);
-  const dest = { home:V(2.2, 0, -5.6), orchard:V(ORCH_POS.x + 1, ORCH_POS.y, ORCH_POS.z + 1.5), windmill:V(WIND_POS.x, WIND_POS.y, WIND_POS.z + 2.5), night:V(NIGHT_POS.x, NIGHT_POS.y, NIGHT_POS.z + 2), heart:V(OH.x + 7.2, OH.y, OH.z + .8), lighthouse:V(LH.x - .2, LH.y, LH.z + 2) }[where];
+  const dest = { home:V(2.2, 0, -5.6), square:V(SQ.x - 1.2, SQ.y, SQ.z + 3.4), orchard:V(ORCH_POS.x + 1, ORCH_POS.y, ORCH_POS.z + 1.5), windmill:V(WIND_POS.x, WIND_POS.y, WIND_POS.z + 2.5), night:V(NIGHT_POS.x, NIGHT_POS.y, NIGHT_POS.z + 2), heart:V(OH.x + 7.2, OH.y, OH.z + .8), lighthouse:V(LH.x - .2, LH.y, LH.z + 2) }[where];
   S.where = 'home'; fly.position.copy(dest).setY(dest.y + 8); ride(); save();
   camera.position.copy(dest.clone().add(V(6, 5, 8))); cine = { t:0, dur:.01, p0:camera.position.clone(), p1:camera.position.clone(), l0:dest.clone().setY(dest.y + 5), l1:dest.clone().setY(dest.y + 5), res:() => {} };
   await wait(300); await fadeTo(false, false);
@@ -4598,9 +4599,9 @@ function landmarkModel(d) { const g = new THREE.Group(), a = mat(d.color), b = m
   if (d.type === 'stonecircle') for (let i = 0; i < 7; i++) { const an = i/7*Math.PI*2, st = mesh(new THREE.BoxGeometry(.35,1.1 + (i%3)*.2,.25), i % 2 ? a : b, Math.cos(an)*1.1, .55, Math.sin(an)*1.1); st.rotation.y = -an; g.add(st); }
   return g; }
 function drawWorld() { worldGroup.children.slice().forEach(c => worldGroup.remove(c)); const W = S.world || {};
-  if (W.landmark) { const lm = landmarkModel(W.landmark); lm.position.set(0, 0, -5.4); worldGroup.add(lm); }
+  if (W.landmark) { const lm = landmarkModel(W.landmark); lm.position.set(3.0, 0, 3.5); worldGroup.add(lm); }
   if (W.placename) { const c = document.createElement('canvas'); c.width = 512; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#fff1d6'; x.fillRect(0, 0, 512, 128); x.fillStyle = '#3b2f4a'; x.font = 'bold 54px "Baloo 2", sans-serif'; x.textAlign = 'center'; x.fillText(W.placename.name, 256, 82);
-    const sign = new THREE.Group(); sign.position.set(-2.4, 0, 5.3); sign.rotation.y = .3; sign.add(mesh(new THREE.CylinderGeometry(.06,.07,1.6,8), mat(0x9b6b4a), 0, .8, 0));
+    const sign = new THREE.Group(); sign.position.set(-1.6, 0, 4.9); sign.rotation.y = .15; sign.add(mesh(new THREE.CylinderGeometry(.06,.07,1.6,8), mat(0x9b6b4a), 0, .8, 0));
     sign.add(new THREE.Mesh(new THREE.PlaneGeometry(1.6, .4), new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(c), side:THREE.DoubleSide }))); sign.children[1].position.y = 1.5; worldGroup.add(sign); } }
 drawKeepers(); drawWorld();
 // --- growing the island ---
@@ -4727,6 +4728,110 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
     };
   } catch {}
 })();
+// ============ THE TOWN SQUARE ============
+// A small plaza island next to home, where the neighbors gather. It opens on day 1, right after the first steps with Nana.
+// Shared things live here (market stall, Town Hall board, Helper Tree, the Keepers' landmark), so home stays your own space.
+const SQ = new THREE.Vector3(9.5, 0, -15);
+const SQI = island(5.8, SQ.x, SQ.y, SQ.z, { mat:mat(0xf3e4c4) });
+var squareBits = null; // var: the game loop can start before this part loads
+const squareBridge = new THREE.Group(); scene.add(squareBridge);
+const SQL = (x, z) => new THREE.Vector3(SQ.x + x, SQ.y, SQ.z + z); // a spot on the square, from its center
+const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
+{ const g = new THREE.Group(); g.position.copy(SQ); scene.add(g); squareBits = { g, drops:[], water:null };
+  // paving: soft rings and a path from the bridge to the fountain
+  [[1.75, 2.15, 0xe2c99a], [3.7, 3.95, 0xe2c99a]].forEach(([a, b, c]) => { const r = new THREE.Mesh(new THREE.RingGeometry(a, b, 48), mat(c)); r.rotation.x = -Math.PI/2; r.position.y = .012; g.add(r); });
+  const path = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 3.2), mat(0xe2c99a)); path.rotation.x = -Math.PI/2; path.rotation.z = Math.atan2(-2.9, 4.6); path.position.set(-1.55, .011, 3.3); g.add(path);
+  // the fountain: tap to toss a coin and make a wish
+  const stone = mat(0xd8cfc0), fnt = new THREE.Group(); g.add(fnt);
+  fnt.add(mesh(new THREE.CylinderGeometry(1.35, 1.45, .45, 32), stone, 0, .22, 0));
+  const water = mesh(new THREE.CylinderGeometry(1.2, 1.2, .06, 32), new THREE.MeshStandardMaterial({ color:0x7ec8e3, transparent:true, opacity:.8, roughness:.15 }), 0, .4, 0); fnt.add(water); squareBits.water = water;
+  fnt.add(mesh(new THREE.CylinderGeometry(.22, .3, 1.05, 16), stone, 0, .9, 0));
+  fnt.add(mesh(new THREE.CylinderGeometry(.62, .42, .18, 24), stone, 0, 1.42, 0));
+  fnt.add(mesh(new THREE.CylinderGeometry(.55, .55, .04, 24), water.material, 0, 1.5, 0));
+  fnt.add(mesh(sph(.13), stone, 0, 1.68, 0));
+  for (let i = 0; i < 10; i++) { const d = mesh(sph(.05), new THREE.MeshBasicMaterial({ color:0xdff3ff, transparent:true, opacity:.85 }), 0, 1.5, 0); d.userData.ph = i / 10; fnt.add(d); squareBits.drops.push(d); }
+  const fh = hitBox(3, 1.6, 3); fh.position.y = .8; fnt.add(fh); deco(fh, wishFountain);
+  // benches around the fountain: sit and let time pass faster
+  [[1.9, 2.7], [-3.0, -1.1], [2.5, -2.3]].forEach(([x, z]) => { const b = new THREE.Group(); b.position.set(x, 0, z); faceCenter(b, x, z); g.add(b); const w = mat(0xc98f58);
+    b.add(mesh(new THREE.BoxGeometry(1.3, .08, .42), w, 0, .42, 0)); b.add(mesh(new THREE.BoxGeometry(1.3, .34, .07), w, 0, .66, -.2));
+    [-.55, .55].forEach(sx => b.add(mesh(new THREE.BoxGeometry(.07, .42, .38), mat(0x5a3a28), sx, .21, 0)));
+    const h = hitBox(1.4, .9, .8); h.position.y = .45; b.add(h); deco(h, () => sitBench(b)); });
+  // lamp posts that glow at night
+  [20, 75, 170, 250, 320].forEach(deg => { const a = deg * Math.PI / 180, x = Math.cos(a) * 4.9, z = Math.sin(a) * 4.9, l = new THREE.Group(); l.position.set(x, 0, z); g.add(l);
+    l.add(mesh(new THREE.CylinderGeometry(.06, .08, 1.9, 8), mat(0x3b2f4a), 0, .95, 0)); l.add(mesh(new THREE.BoxGeometry(.3, .34, .3), glow(0xffe7a8), 0, 2.02, 0)); l.add(mesh(new THREE.ConeGeometry(.26, .2, 4), mat(0x3b2f4a), 0, 2.29, 0).rotateY(Math.PI/4));
+    const lh = halo(0xffc46b, 2.4, 0); lh.position.y = 2.02; l.add(lh); lampLights.push(lh);
+    const h = hitBox(.5, 2.4, .5); h.position.y = 1.2; l.add(h); deco(h, () => toast('Before electric streetlights, lamplighters walked the streets at dusk to light each lamp by hand. London still has about 1,500 gas street lamps.')); });
+  // the notice board: goals, missions, votes, and what's happening
+  const nb = new THREE.Group(); nb.position.set(-4.3, 0, -1.7); faceCenter(nb, -4.3, -1.7); g.add(nb);
+  [-.6, .6].forEach(x => nb.add(mesh(new THREE.CylinderGeometry(.06, .07, 1.6, 8), mat(0x9b6b4a), x, .8, 0)));
+  nb.add(mesh(new THREE.BoxGeometry(1.5, .95, .08), mat(0xc98f58), 0, 1.35, 0)); nb.add(mesh(new THREE.BoxGeometry(1.64, .1, .2), mat(0x8a5a3a), 0, 1.88, 0));
+  [[-.42, 1.5, 0xfff1d6], [.05, 1.42, 0xffd1dc], [.45, 1.55, 0xfff3a0], [-.2, 1.12, 0xdff3ff], [.36, 1.1, 0xfff1d6]].forEach(([x, y, c]) => nb.add(mesh(new THREE.BoxGeometry(.32, .36, .01), mat(c), x, y, .05)));
+  const nh = hitBox(1.7, 2, .6); nh.position.y = 1; nb.add(nh); deco(nh, openNotice);
+  // Pip's cart: seeds and furniture, restocked every morning
+  const cart = new THREE.Group(); cart.position.set(3.7, 0, -3.1); faceCenter(cart, 3.7, -3.1); g.add(cart);
+  cart.add(mesh(new THREE.BoxGeometry(1.5, .55, .8), mat(0x86c7ff), 0, .75, 0)); [-.6, .6].forEach(x => { const wh = mesh(new THREE.TorusGeometry(.28, .06, 8, 16), mat(0x5a3a28), x, .3, .42); cart.add(wh); });
+  [-.62, .62].forEach(x => cart.add(mesh(new THREE.CylinderGeometry(.04, .04, 1.2, 6), mat(0xfff1d6), x, 1.55, -.3)));
+  const aw = mesh(new THREE.BoxGeometry(1.6, .08, .9), mat(0xff8fa3), 0, 2.15, -.05); aw.rotation.x = .18; cart.add(aw);
+  [[-.4, 0xffc857], [0, 0x8fdc8a], [.4, 0xc9b6ff]].forEach(([x, c]) => cart.add(mesh(new THREE.BoxGeometry(.28, .2, .22), mat(c), x, 1.13, .1)));
+  const ch = hitBox(1.7, 2.2, 1.1); ch.position.y = 1.1; cart.add(ch); deco(ch, pipCart);
+  // two planters by the entrance: Pip tucks a spare seed packet in one each day
+  [[-4.2, 3.2], [-.9, 5.1]].forEach(([x, z], i) => { const p = new THREE.Group(); p.position.set(x, 0, z); g.add(p);
+    p.add(mesh(new THREE.BoxGeometry(.8, .4, .5), mat(0xc98f58), 0, .2, 0));
+    for (let k = 0; k < 4; k++) { p.add(mesh(new THREE.CylinderGeometry(.015, .015, .25, 4), mat(0x4fb46a), -.27 + k * .18, .5, 0)); p.add(mesh(sph(.07), mat([0xff8fa3, 0xfff3a0, 0xc9b6ff, 0xffffff][k]), -.27 + k * .18, .64, 0)); }
+    const h = hitBox(.9, .8, .6); h.position.y = .4; p.add(h); deco(h, () => planterSeed(i)); });
+  // the sign at the entrance (a Keeper-approved name replaces it)
+  const sg = new THREE.Group(); sg.position.set(-1.6, 0, 4.9); sg.rotation.y = .15; g.add(sg); squareBits.sign = sg;
+  sg.add(mesh(new THREE.CylinderGeometry(.06, .07, 1.6, 8), mat(0x9b6b4a), 0, .8, 0));
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128; const x2 = cv.getContext('2d'); x2.fillStyle = '#fff1d6'; x2.fillRect(0, 0, 512, 128); x2.fillStyle = '#3b2f4a'; x2.font = 'bold 60px "Baloo 2", sans-serif'; x2.textAlign = 'center'; x2.textBaseline = 'middle'; x2.fillText('Town Square', 256, 66);
+  const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.6, .4), new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(cv), side:THREE.DoubleSide })); pl.position.y = 1.5; sg.add(pl);
+  const sh = hitBox(1.7, 1.9, .5); sh.position.y = 1; sg.add(sh); deco(sh, () => showCard(`<div class="kicker">THE TOWN SQUARE</div><h2>Where the neighbors gather</h2><p>Towns have gathered around open squares for thousands of years. In ancient Athens it was the agora: a marketplace where people traded, talked, and argued about big ideas. In Rome it was the Forum, the center of public life.</p><p>In Sky Garden, the square is where the village comes together: markets, votes, festivals, and news.</p>`, 'Okay'));
+}
+// shared things move here from the home island
+stall.position.copy(SQL(4.4, 1.5)); faceCenter(stall, 4.4, 1.5);
+townHall.position.copy(SQL(.5, -4.7)); faceCenter(townHall, .5, -4.7);
+helperTree.position.copy(SQL(-3.3, -3.8));
+worldGroup.position.copy(SQ);
+function squareOpen() { return !!S.square || (S.tut === 9 && S.square === undefined); }
+function drawSquare() { if (S.tut === 9 && S.square === undefined) { S.square = true; S.squareNew = true; save(); } // older games get it right away
+  layBridge(squareBridge, new THREE.Vector3(4.55, -.07, -7.18), new THREE.Vector3(6.6, -.07, -10.4), 8, squareOpen()); squareBridge.visible = squareOpen();
+  if (squareBits.sign) squareBits.sign.visible = !(S.world && S.world.placename); }
+// right after the first steps with Nana: the bridge appears
+function openSquare() { if (S.square) return; S.square = true; S.squareNew = true; save(); drawSquare(); burst(new THREE.Vector3(5.6, .5, -8.8), 0xffc857, 30); setTimeout(squareIntro, 2500); }
+function squareIntro() { if (!S.squareNew || VISIT) return;
+  const busy = !S.setupDone || $('dialog').classList.contains('show') || $('veil').classList.contains('show') || document.querySelector('.presents'); if (busy) return setTimeout(squareIntro, 3000);
+  S.squareNew = false; save(); [523, 659, 784].forEach((f, i) => setTimeout(() => chime(f), i * 150));
+  showCard(`<div class="kicker">NEW</div><h2>The Town Square is open</h2><p>The neighbors fixed the little bridge on the north side of your island. Across it is the Town Square, with a fountain, benches, and Pip's cart.</p>`, 'Take me there', () => { target = new THREE.Vector3(5.3, 0, -8.3); pending = null; }); }
+function wishFountain() {
+  if (S.coins < 1) return toast('You need 1 coin to toss in the fountain.');
+  if (S.wishDay === S.day) return toast('You already made a wish today. Come back tomorrow.');
+  S.coins -= 1; S.wishDay = S.day; save(); drawHud(); sfx('water'); burst(SQL(0, 0).setY(.6), 0x9fd3ff, 22); [880, 1175, 1568].forEach((f, i) => setTimeout(() => chime(f), i * 140));
+  const facts = ['About 3,000 euros are tossed into Rome\'s Trevi Fountain every day. The city collects it and gives it to Caritas, a charity that feeds people in need.',
+    'At the Trevi Fountain, the tradition is to toss a coin over your left shoulder with your right hand. The legend says it means you will return to Rome.',
+    'People have tossed coins into springs and wells for thousands of years. Ancient Romans and Celts left offerings in water for luck and health.',
+    'The Trevi Fountain took about 30 years to build and was finished in 1762.'];
+  showCard(`<div class="kicker">THE FOUNTAIN</div><h2>You made a wish</h2><p>${facts[S.day % facts.length]}</p><p class="sub">In Sky Garden, a wish brings a small surprise tomorrow morning.</p>`, 'Okay'); }
+function wishMorning() { if (S.wishDay !== S.day - 1 || S.wishPaid === S.wishDay) return; S.wishPaid = S.wishDay;
+  if (Math.random() < .5) { S.coins += 25; return 'Your wish came true: 25 coins turned up by the fountain.'; }
+  const ks = Object.keys(CROPS).filter(k => !CROPS[k].locked && CROPS[k].seasons.includes(season())), k = ks[Math.floor(Math.random() * ks.length)]; S.seeds[k] = (S.seeds[k] || 0) + 3;
+  return `Your wish came true: 3 ${CROPS[k].name} seeds turned up by the fountain.`; }
+function planterSeed(i) { S.planter = S.planter || {}; if (S.planter[i] === S.day) return toast('Just flowers today. Pip tucks a seed packet in here each morning.');
+  const ks = Object.keys(CROPS).filter(k => !CROPS[k].locked && CROPS[k].seasons.includes(season())), k = ks[Math.floor(Math.random() * ks.length)];
+  S.planter[i] = S.day; S.seeds[k] = (S.seeds[k] || 0) + 1; save(); drawHud(); sfx('plant'); toast(`You found a spare ${CROPS[k].name} seed packet in the planter.`); }
+function pipCart() { showCard(`<div class="kicker">PIP'S CART</div><h2>What do you need?</h2><p>Pip restocks the cart every morning.</p><div class="jlist"><button id="pcS">🌱 Seeds</button><button id="pcF">🪑 Furniture</button></div>`, 'Not now');
+  $('pcS').onclick = () => { hideCard(); seedShop(); }; $('pcF').onclick = () => { hideCard(); furnShop(); }; }
+function sitBench(b) { const wp = new THREE.Vector3(); b.getWorldPosition(wp); sitting = b; target = null; pending = null; player.position.set(wp.x, wp.y, wp.z); player.rotation.y = b.rotation.y + Math.PI;
+  toast('You sit and rest. Time passes 3 times faster. Tap anywhere to get up.'); }
+function openNotice() { const fz = festival(), rows = [];
+  rows.push(`<button id="nbG">✅ Today's goals</button>`);
+  if (founderOn() && fGot('missions') && !paused('missions')) rows.push(`<button id="nbM">✦ Tester missions</button>`);
+  if (featureOn('townhall')) rows.push(`<button id="nbT">🗳 Town Hall votes</button>`);
+  showCard(`<div class="kicker">NOTICE BOARD</div><h2>What's happening</h2><p><b>${dateLabel ? dateLabel(today()) : ''}</b>${fz ? `<br>🎉 Today is <b>${fz.name}</b>. Talk to ${NEIGHBORS[fz.host].name}.` : ''}</p><div class="jlist">${rows.join('')}</div>`, 'Close');
+  if ($('nbG')) $('nbG').onclick = () => { hideCard(); openGoals(); }; if ($('nbM')) $('nbM').onclick = () => { hideCard(); openMissions(); }; if ($('nbT')) $('nbT').onclick = () => { hideCard(); openTownHall(); }; }
+function squareTick(dt, now) { if (!squareBits) return;
+  squareBits.drops.forEach(d => { const k = (now * .6 + d.userData.ph) % 1, a = d.userData.ph * Math.PI * 2; d.position.set(Math.cos(a) * (.1 + k * .95), 1.55 + k * .5 - k * k * 1.4, Math.sin(a) * (.1 + k * .95)); });
+  if (squareBits.water) squareBits.water.material.opacity = .72 + Math.sin(now * 2) * .06; }
+drawSquare(); if (S.squareNew) addEventListener('sg-playing', () => setTimeout(squareIntro, 4000));
+
 // ============ LEGENDS ============
 // Rare creatures. A few players are secretly given one by the Creator. Everything personal about it
 // (its story, missions, and questions) comes from the server, only to that player. Anyone might see one fly by.
@@ -4913,7 +5018,7 @@ function previewStart() { if (!PREVIEW) return; const d = PREVIEW.data || {};
   $('pvFly').onclick = () => { const others = Object.keys(MYTHS).filter(k => k !== d.myth); mythSighting({ id:0, form:others[Math.floor(Math.random() * others.length)] }); };
   if (!d.myth) toast(`${PREVIEW.label} has no legend yet. Pick one for them on the dashboard.`); else setTimeout(mythReveal, 1500); }
 addEventListener('sg-playing', () => setTimeout(() => { if (PREVIEW) return previewStart(); mythLookUp(); drawShrooms(); mythReveal(); setInterval(() => { if (playing) mythReveal(); }, 20000); }, PREVIEW ? 1500 : 5000));
-window.__sg = { frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { SQ, openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }

@@ -24,7 +24,7 @@ function preset(name) {
 function reloadWith(msg) { g.save(); try { sessionStorage.setItem('sg.devmsg', msg); } catch {} location.reload(); }
 
 const TELEPORT = {
-  'Home isle': () => [0, 0, 2], 'Orchard Isle': () => [26.5, -1.5, 2.5], 'Windmill Isle': () => [g.WIND_POS.x - 1, g.WIND_POS.y, g.WIND_POS.z + 4],
+  'Home isle': () => [0, 0, 2], 'Town Square': () => [g.SQ.x - 1.2, g.SQ.y, g.SQ.z + 3.4], 'Orchard Isle': () => [26.5, -1.5, 2.5], 'Windmill Isle': () => [g.WIND_POS.x - 1, g.WIND_POS.y, g.WIND_POS.z + 4],
   'Night Isle': () => [g.NIGHT_POS.x, g.NIGHT_POS.y, g.NIGHT_POS.z + 3], 'Old Heart': () => [g.OH.x + 7.2, g.OH.y, g.OH.z + .8],
 };
 
