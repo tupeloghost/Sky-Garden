@@ -41,6 +41,8 @@ const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, sk
 // testers can switch to a separate Test island; it has its own save and never touches the cloud
 const TESTSLOT = (() => { try { return localStorage.getItem('sg.profile') === 'test'; } catch { return false; } })();
 const SLOT = TESTSLOT ? 'sg.save.test' : SAVE_KEY;
+// the Creator can preview what one founder sees, on the test island only
+const PREVIEW = (() => { if (!TESTSLOT) return null; try { return JSON.parse(localStorage.getItem('sg.preview') || 'null'); } catch { return null; } })();
 if (TESTSLOT) document.body.classList.add('testisland');
 let S;
 try {
@@ -4684,7 +4686,7 @@ $('fbBtn').hidden = false; $('fbBtn').onclick = openFeedback;
 var mythShrooms = null, mythSky = null; // var: the game loop can start before this part loads
 var mythExtras = [], mythActions = {}, mythHooks = {}; // var: used by the game loop. Filled in by private modules the server sends to the right people
 function mythKind() { const k = (S.trust && S.trust.myth) || (devOn() && S.devMyth) || null; return k && MYTHS[k] ? k : null; }
-function mythOn() { return featureOn('myths') && (founderOn() || devOn()) && !!mythKind() && !paused('myth') && !VISIT && !TESTSLOT; }
+function mythOn() { return (featureOn('myths') || !!PREVIEW || (S.trust && S.trust.level >= 4)) && (founderOn() || devOn()) && !!mythKind() && !paused('myth') && !VISIT && (!TESTSLOT || !!PREVIEW); }
 function mythF() { const k = mythKind(); return { ...MYTHS[k], ...((S.trust && S.trust.myth === k && S.trust.mythData) || DEV_CONTENT) }; }
 function mp() { S.myth = S.myth || { light:0, list:[], day:0, done:0, journal:[], shrooms:[] }; return S.myth; }
 // a legendary creature, built from simple shapes. Wings sit where arms would, so walking flaps them.
@@ -4772,7 +4774,7 @@ function mythMenu() { if (!mythOn()) return; const F = mythF(), P = mythDaily(),
     mythCount(t); mythMenu(); });
   document.querySelectorAll('[data-cm]').forEach(b => b.onclick = () => { const m = cm.find(x => x.id === +b.dataset.cm);
     showCard(`<div class="kicker">FROM THE CREATOR</div><h2>${esc(m.title)}</h2><p>How did it go? (optional, only the Creator can read this)</p><textarea id="cmNote" maxlength="400" rows="3" style="width:100%;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:8px"></textarea><button id="cmGo">Done</button>`, 'Back', mythMenu);
-    $('cmGo').onclick = async () => { const r = await api('/mission-done', { key:S.syncKey, id:m.id, note:$('cmNote').value.trim() }); if (!r.ok && !devOn()) return toast('Could not connect. Check your internet and try again.');
+    $('cmGo').onclick = async () => { const r = PREVIEW ? { ok:true } : await api('/mission-done', { key:S.syncKey, id:m.id, note:$('cmNote').value.trim() }); if (!r.ok && !devOn()) return toast('Could not connect. Check your internet and try again.');
       T.missions = cm.filter(x => x !== m); S.coins += m.reward; mp().light++; save(); drawHud(); chime(1175); toast(`+${m.reward} coins. The Creator will see it.`); mythMenu(); }; });
   mythExtras.forEach(x => x.bind && x.bind());
 }
@@ -4792,7 +4794,7 @@ function mythPower() { const k = mythKind(), F = mythF(), P = mp();
     if (ITEMS.candy) gain('candy', 1, player.position.clone().setY(1)); toast('It\'s raining! Every plant is watered, and you got a treat covered in sprinkles.'); }
   mythCount('power'); logKeeper('mythpower', F.power.name); save(); }
 async function mythAppear(to) { const P = mp(), F = MYTHS[mythKind()]; hideCard();
-  const r = devOn() ? { ok:true } : await api('/appear', to ? { key:S.syncKey, to } : { key:S.syncKey }); if (!r.ok) { toast(r.error === 'already today' ? 'You already did this today. Try again tomorrow.' : 'Could not connect. Check your internet and try again.'); return false; }
+  const r = devOn() || PREVIEW ? { ok:true } : await api('/appear', to ? { key:S.syncKey, to } : { key:S.syncKey }); if (!r.ok) { toast(r.error === 'already today' ? 'You already did this today. Try again tomorrow.' : 'Could not connect. Check your internet and try again.'); return false; }
   burst(player.position.clone().setY(2), F.colors[0], 40); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 140));
   if (!to) { P.appear = S.day; mythCount('appear'); save(); toast(`Your ${F.name.replace('The ', '')} is flying over another player's island today.`); }
   return true; }
@@ -4835,11 +4837,22 @@ function mythReveal() { if (!mythOn() || mp().revealed) return; const F = mythF(
   logKeeper('mythfirst', F.name); }
 // private modules: extra parts of the game the server only sends to the people they are for
 const loadedMods = new Set();
-const MODCTX = { get S() { return S; }, THREE, api, showCard, hideCard, toast, chime, burst, player, esc, save, drawHud, dressPlayer, $, hour, devOn, CLOUD,
-  MYTHS, mythMenu, mythSighting, mythCount, mythKind, mythF, mythOn, mythAppear, mythBless, mp, mythExtras, mythActions, mythHooks, logKeeper };
+const MODCTX = { get S() { return S; }, THREE, api, showCard, hideCard, toast, chime, burst, player, esc, save, drawHud, dressPlayer, $, hour, devOn:() => devOn() || !!PREVIEW, CLOUD, switchIsland,
+  PREVIEW, MYTHS, mythMenu, mythSighting, mythCount, mythKind, mythF, mythOn, mythAppear, mythBless, mp, mythExtras, mythActions, mythHooks, logKeeper };
 function loadMods(list) { (list || []).forEach(n => { if (loadedMods.has(n) || !/^[a-z]+$/.test(n)) return; loadedMods.add(n);
-  import(`${CLOUD}/mod?name=${n}&key=${S.syncKey}`).then(m => m.default(MODCTX)).catch(() => loadedMods.delete(n)); }); }
-addEventListener('sg-playing', () => setTimeout(() => { mythLookUp(); drawShrooms(); mythReveal(); }, 5000));
+  const who = PREVIEW ? `key=${PREVIEW.key}&as=${PREVIEW.code}` : `key=${S.syncKey}`;
+  import(`${CLOUD}/mod?name=${n}&${who}`).then(m => m.default(MODCTX)).catch(() => loadedMods.delete(n)); }); }
+// preview: show exactly what one founder sees. Runs on the test island, where nothing reaches the server.
+function previewStart() { if (!PREVIEW) return; const d = PREVIEW.data || {};
+  if (S.previewOf !== PREVIEW.code) { S.myth = null; S.mythForm = false; S.loveNotes = []; S.loveRead = []; S.previewOf = PREVIEW.code; }
+  S.founder = S.founder || { code:PREVIEW.code, at:Date.now() }; S.trust = { level:d.level || 1, paused:[], revoked:false, myth:d.myth || null, mythData:d.mythData || null, link:d.link || null, seen:0, missions:d.missions || [] };
+  save(); dressPlayer(); drawHud(); loadMods(d.mods || []);
+  const bar = document.createElement('div'); bar.className = 'previewbar';
+  bar.innerHTML = `<b>👁 Previewing as ${esc(PREVIEW.label)}</b> <button id="pvFly" class="ghost">Show me a fly-over</button> <button id="pvStop">Stop preview</button>`; document.body.appendChild(bar);
+  $('pvStop').onclick = () => { try { localStorage.removeItem('sg.preview'); localStorage.setItem('sg.profile', 'main'); } catch {} location.reload(); };
+  $('pvFly').onclick = () => { const others = Object.keys(MYTHS).filter(k => k !== d.myth); mythSighting({ id:0, form:others[Math.floor(Math.random() * others.length)] }); };
+  if (!d.myth) toast(`${PREVIEW.label} has no legend yet. Pick one for them on the dashboard.`); else setTimeout(mythReveal, 1500); }
+addEventListener('sg-playing', () => setTimeout(() => { if (PREVIEW) return previewStart(); mythLookUp(); drawShrooms(); mythReveal(); }, PREVIEW ? 1500 : 5000));
 window.__sg = { MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, founderWelcome, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
