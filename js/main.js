@@ -352,10 +352,19 @@ crate.add(mesh(new THREE.BoxGeometry(1,.8,1), mat(0xd9a066), 0, .4, 0));
 crate.add(mesh(new THREE.BoxGeometry(1.05,.12,1.05), mat(0xb87d45), 0, .82, 0));
 crate.userData.kind = 'crate'; scene.add(crate);
 
+// --- signs: a framed wooden board on two posts, readable from both sides ---
+function signText(text, w) { const c = document.createElement('canvas'); c.width = 512; c.height = Math.round(512 * .28); const x = c.getContext('2d');
+  x.fillStyle = '#fff1d6'; x.fillRect(0, 0, c.width, c.height); x.fillStyle = '#3b2f4a'; let fs = 64; x.font = `bold ${fs}px "Baloo 2", sans-serif`;
+  while (x.measureText(text).width > c.width - 50 && fs > 24) { fs -= 2; x.font = `bold ${fs}px "Baloo 2", sans-serif`; }
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, c.width / 2, c.height / 2 + 3); const tex = new THREE.CanvasTexture(c); tex.anisotropy = 4; return tex; }
+function signBoard(text, w = 1.5, h = .42, top = 1.55) { const g = new THREE.Group(), wood = mat(0x9b6b4a), frame = mat(0x8a5a3a);
+  [-1, 1].forEach(sd => g.add(mesh(new THREE.CylinderGeometry(.05, .06, top, 8), wood, sd * (w / 2 - .06), top / 2, 0)));
+  const board = new THREE.Group(); board.position.y = top - h / 2 - .02; g.add(board);
+  board.add(mesh(new THREE.BoxGeometry(w + .08, h + .08, .07), frame, 0, 0, 0));
+  const face = new THREE.MeshBasicMaterial({ map:signText(text, w) }); [1, -1].forEach(sd => { const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), face); pl.position.z = sd * .037; if (sd < 0) pl.rotation.y = Math.PI; board.add(pl); });
+  g.userData.setText = s => { face.map = signText(s, w); face.needsUpdate = true; }; return g; }
 // --- bridge + sign ---
-const sign = new THREE.Group(); sign.position.set(8.2,0,1.6);
-sign.add(mesh(new THREE.CylinderGeometry(.08,.08,1.2,8), mat(0x9b6b4a), 0, .6, 0));
-sign.add(mesh(new THREE.BoxGeometry(1,.55,.1), mat(0xfff1d6), 0, 1.2, 0));
+const sign = new THREE.Group(); sign.position.set(8.2,0,1.6); sign.rotation.y = -.35; sign.add(signBoard('Orchard Isle', 1.25, .38, 1.35)); // faces you, angled a little toward the bridge
 sign.userData.kind = 'sign'; scene.add(sign);
 const bridge = new THREE.Group(); scene.add(bridge);
 let bridgePlanks = [];
@@ -383,8 +392,7 @@ function buildBridge() {
 }
 buildBridge();
 const sign2 = new THREE.Group(); sign2.position.set(ORCH_POS.x + 1.4, ORCH_POS.y, ORCH_POS.z - 7.1);
-sign2.add(mesh(new THREE.CylinderGeometry(.08,.08,1.2,8), mat(0x9b6b4a), 0, .6, 0));
-sign2.add(mesh(new THREE.BoxGeometry(1,.55,.1), mat(0xfff1d6), 0, 1.2, 0));
+sign2.add(signBoard('Windmill Isle', 1.25, .38, 1.35));
 sign2.userData.kind = 'sign2'; scene.add(sign2);
 
 // --- windmill isle ---
@@ -4649,9 +4657,7 @@ function landmarkModel(d) { const g = new THREE.Group(), a = mat(d.color), b = m
   return g; }
 function drawWorld() { worldGroup.children.slice().forEach(c => worldGroup.remove(c)); const W = S.world || {};
   if (W.landmark) { const lm = landmarkModel(W.landmark); lm.position.set(3.0, 0, 3.5); worldGroup.add(lm); }
-  if (W.placename) { const c = document.createElement('canvas'); c.width = 512; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#fff1d6'; x.fillRect(0, 0, 512, 128); x.fillStyle = '#3b2f4a'; x.font = 'bold 54px "Baloo 2", sans-serif'; x.textAlign = 'center'; x.fillText(W.placename.name, 256, 82);
-    const sign = new THREE.Group(); sign.position.set(-1.6, 0, 4.9); sign.rotation.y = .15; sign.add(mesh(new THREE.CylinderGeometry(.06,.07,1.6,8), mat(0x9b6b4a), 0, .8, 0));
-    sign.add(new THREE.Mesh(new THREE.PlaneGeometry(1.6, .4), new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(c), side:THREE.DoubleSide }))); sign.children[1].position.y = 1.5; worldGroup.add(sign); } }
+  if (W.placename) { const sign = signBoard(W.placename.name, 1.6, .44, 1.6); sign.position.set(-1.6, 0, 4.9); sign.rotation.y = .15; worldGroup.add(sign); } }
 drawKeepers(); drawWorld();
 // --- growing the island ---
 function expandReady(e) { return e.needs === 'home' ? (S.home || 0) >= 3 : e.needs === 'kiln' ? !!S.stations.kiln && potteryOn() : !!S.stations.furnace && bronzeOn(); }
@@ -4829,10 +4835,7 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
     for (let k = 0; k < 4; k++) { p.add(mesh(new THREE.CylinderGeometry(.015, .015, .25, 4), mat(0x4fb46a), -.27 + k * .18, .5, 0)); p.add(mesh(sph(.07), mat([0xff8fa3, 0xfff3a0, 0xc9b6ff, 0xffffff][k]), -.27 + k * .18, .64, 0)); }
     const h = hitBox(.9, .8, .6); h.position.y = .4; p.add(h); deco(h, () => planterSeed(i)); });
   // the sign at the entrance (a Keeper-approved name replaces it)
-  const sg = new THREE.Group(); sg.position.set(-1.6, 0, 4.9); sg.rotation.y = .15; g.add(sg); squareBits.sign = sg;
-  sg.add(mesh(new THREE.CylinderGeometry(.06, .07, 1.6, 8), mat(0x9b6b4a), 0, .8, 0));
-  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128; const x2 = cv.getContext('2d'); x2.fillStyle = '#fff1d6'; x2.fillRect(0, 0, 512, 128); x2.fillStyle = '#3b2f4a'; x2.font = 'bold 60px "Baloo 2", sans-serif'; x2.textAlign = 'center'; x2.textBaseline = 'middle'; x2.fillText('Town Square', 256, 66);
-  const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.6, .4), new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(cv), side:THREE.DoubleSide })); pl.position.y = 1.5; sg.add(pl);
+  const sg = signBoard('Town Square', 1.6, .44, 1.6); sg.position.set(-1.6, 0, 4.9); sg.rotation.y = .15; g.add(sg); squareBits.sign = sg;
   const sh = hitBox(1.7, 1.9, .5); sh.position.y = 1; sg.add(sh); deco(sh, () => showCard(`<div class="kicker">THE TOWN SQUARE</div><h2>Where the neighbors gather</h2><p>Towns have gathered around open squares for thousands of years. In ancient Athens it was the agora: a marketplace where people traded, talked, and argued about big ideas. In Rome it was the Forum, the center of public life.</p><p>In Sky Garden, the square is where the village comes together: markets, votes, festivals, and news.</p>`, 'Okay'));
 }
 // shared things move here from the home island
