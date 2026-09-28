@@ -3724,6 +3724,19 @@ function tameOutlines() { scene.traverse(o => { const ms = Array.isArray(o.mater
 if (LOOK === 'b') renderer.domElement.style.filter = 'saturate(1.12) contrast(1.04)';
 if (LOOK === 'c') { renderer.domElement.style.filter = 'saturate(.88) brightness(1.04) sepia(.08)'; document.body.classList.add('paper'); }
 const clock = new THREE.Clock(); let playing = false, hudTick = 0, stepDist = 0;
+// flying: which islands are open to a bird, and where the nearest land is
+function flyIslands() { return [
+  { c:new THREE.Vector3(0, 0, 0), r:9, open:true }, { c:SQ, r:5.8, open:squareOpen() },
+  { c:ORCH_POS, r:8, open:!!S.bridge }, { c:WIND_POS, r:8, open:!!S.bridge2 }, { c:NIGHT_POS, r:7, open:S.q4 >= 1 },
+  { c:OH, r:10.5, open:S.q5 >= 1 }, { c:LH, r:3.4, open:keeperLevel() >= 2 },
+  ...lobes.map((L, i) => ({ c:new THREE.Vector3(L.e.x, 0, L.e.z), r:L.r, open:i < (S.expand || 0) })) ]; }
+function flyBlocked(x, z) { if (Math.hypot(x, z) > 90) return true; // don't fly off into nowhere
+  return flyIslands().some(I => !I.open && Math.hypot(x - I.c.x, z - I.c.z) < I.r + .6) && !flyIslands().some(I => I.open && Math.hypot(x - I.c.x, z - I.c.z) < I.r - .4); }
+function flyLevel(x, z) { let best = null; flyIslands().filter(I => I.open).forEach(I => { const d = Math.hypot(x - I.c.x, z - I.c.z) - I.r; if (!best || d < best.d) best = { d, y:I.c.y }; }); return best ? best.y : 0; }
+function nearestLand() { const p = player.position; let best = null;
+  flyIslands().filter(I => I.open).forEach(I => { const d = Math.hypot(p.x - I.c.x, p.z - I.c.z); const k = Math.max(0, (d - (I.r - 1.2)) / (d || 1));
+    const x = p.x + (I.c.x - p.x) * k, z = p.z + (I.c.z - p.z) * k, dd = Math.hypot(x - p.x, z - p.z); if (!best || dd < best.dd) best = { x, z, dd }; });
+  return best || { x:0, z:0 }; }
 // the game loop keeps running even if one frame hits an error, so the game never freezes. The first error is reported once.
 function tick() { requestAnimationFrame(tick); try { tickFrame(); } catch (e) { if (!tick.err) { tick.err = e; window.__tickErr = String(e && e.stack || e); setTimeout(() => { throw e; }); } } }
 function tickFrame() {
@@ -3774,16 +3787,21 @@ function tickFrame() {
   const inner = player.userData.inner;
   const flyNow = canFly() && ((flight.down && performance.now() - flight.at > 280) || keys[' ']);
   if (flyNow && !flight.on) { flight.on = true; target = null; pending = null; sfx('cast'); }
-  if (!flyNow && flight.on) { flight.on = false; }
+  // let go over open sky and the bird keeps gliding to the nearest island before it lands
+  if (!flyNow && flight.on && groundAt(player.position.x, player.position.y, player.position.z) !== null) flight.on = false;
   if (flight.on) {
     let dir = mv.clone();
-    if (flight.down) { ptr.set(flight.x/innerWidth*2-1, -(flight.y/innerHeight)*2+1); ray.setFromCamera(ptr, camera);
+    if (!flyNow) { const L = nearestLand(); dir.set(L.x - player.position.x, 0, L.z - player.position.z); } // gliding in to land
+    else if (flight.down) { ptr.set(flight.x/innerWidth*2-1, -(flight.y/innerHeight)*2+1); ray.setFromCamera(ptr, camera);
       const hitP = new THREE.Vector3(); if (ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -player.position.y), hitP)) { dir.subVectors(hitP, player.position); dir.y = 0; if (dir.length() < .4) dir.set(0, 0, 0); } }
     if (dir.lengthSq()) { dir.normalize().multiplyScalar(8.5 * dt);
-      // flying stays over land you can reach, so it never skips a bridge you haven't built
-      const nx = player.position.x + dir.x, nz = player.position.z + dir.z; let gy = groundAt(nx, player.position.y, nz);
-      if (gy === null) { gy = groundAt(nx, player.position.y, player.position.z); if (gy !== null) dir.z = 0; else { gy = groundAt(player.position.x, player.position.y, nz); if (gy !== null) dir.x = 0; } }
-      if (gy !== null) { player.position.x += dir.x; player.position.z += dir.z; player.position.y = gy; player.rotation.y = Math.atan2(dir.x, dir.z); S.pos = [player.position.x, player.position.y, player.position.z]; } }
+      // the bird flies freely over open sky, but islands you haven't opened yet stay closed (it slides along their edge)
+      let nx = player.position.x + dir.x, nz = player.position.z + dir.z;
+      if (flyBlocked(nx, nz)) { if (!flyBlocked(nx, player.position.z)) nz = player.position.z; else if (!flyBlocked(player.position.x, nz)) nx = player.position.x; else { nx = player.position.x; nz = player.position.z; } }
+      player.rotation.y = Math.atan2(nx - player.position.x, nz - player.position.z); player.position.x = nx; player.position.z = nz;
+      const gy = groundAt(nx, player.position.y + 2, nz); const want = gy !== null ? gy : flyLevel(nx, nz);
+      player.position.y += (want - player.position.y) * Math.min(1, dt * 4);
+      if (gy !== null) S.pos = [player.position.x, player.position.y, player.position.z]; } // only remember spots on land
     mv.set(0, 0, 0);
   }
   flight.alt += ((flight.on ? 2.4 : 0) - flight.alt) * Math.min(1, dt * (flight.on ? 3 : 2.2));
