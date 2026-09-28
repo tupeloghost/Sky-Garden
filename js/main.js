@@ -221,10 +221,10 @@ const tuftData = [], dummy = new THREE.Object3D();
 for (let i=0; i<680; i++) {
   // the home island keeps only a light scatter of grass, mostly near the edges, so the middle stays open
   const onHome = i < 330, R = onHome ? 8.6 : 7.6, c = onHome ? new THREE.Vector3() : i < 520 ? ORCH_POS : WIND_POS;
-  if (onHome && i >= 110) { tuftData.push({ x:0, y:-50, z:0, s:.01, ph:0 }); continue; }
-  let x, z; do { const a = Math.random()*Math.PI*2, r = onHome ? 5.2 + Math.random()*3.4 : Math.sqrt(Math.random())*R; x = c.x + Math.cos(a)*r; z = c.z + Math.sin(a)*r; }
+  if ((onHome && i >= 110) || (!onHome && i % 3)) { tuftData.push({ x:0, y:-50, z:0, s:.01, ph:0 }); continue; } // a light scatter everywhere, not a carpet of spikes
+  let x, z; do { const a = Math.random()*Math.PI*2, r = onHome ? 5.2 + Math.random()*3.4 : 4.4 + Math.random()*3.1; x = c.x + Math.cos(a)*r; z = c.z + Math.sin(a)*r; }
   while (onHome && x > .3 && x < 4.6 && z > -1.8 && z < 3.5);
-  tuftData.push({ x, y:c.y, z, s:onHome ? .5 + Math.random()*.45 : .6 + Math.random()*.8, ph:Math.random()*6 });
+  tuftData.push({ x, y:c.y, z, s:.5 + Math.random()*.45, ph:Math.random()*6 });
 }
 tufts.receiveShadow = true; scene.add(tufts);
 function swayTufts(now) {
@@ -292,6 +292,7 @@ house.add(mesh(new THREE.BoxGeometry(.32,.8,.32), mat(0xb0a898), .75, 2.95, -.35
 house.userData.kind = 'house'; scene.add(house);
 const buildSite = new THREE.Group(); buildSite.position.copy(house.position); buildSite.userData.kind = 'buildsite'; scene.add(buildSite);
 const siteStones = new THREE.Group(), siteFrame = new THREE.Group(), siteWalls = new THREE.Group(); buildSite.add(siteStones, siteFrame, siteWalls);
+{ const h = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, .5, 16), new THREE.MeshBasicMaterial({ visible:false })); h.position.y = .25; buildSite.add(h); } // the whole foundation answers a tap, not just the stones around it
 for (let i=0;i<14;i++){ const a = i/14*Math.PI*2, x = Math.cos(a)*1.45, z = Math.sin(a)*1.25; const st = mesh(new THREE.DodecahedronGeometry(.2), mat(0xb3aabb), x, .1, z); st.rotation.set(i, i*2, 0); siteStones.add(st); }
 siteStones.add(mesh(new THREE.CylinderGeometry(.05,.05,.9,6), mat(0x9b6b4a), 1.7, .45, 1.3)); siteStones.add(mesh(new THREE.BoxGeometry(.7,.4,.06), mat(0xfff1d6), 1.7, .95, 1.33));
 siteFrame.add(mesh(new THREE.BoxGeometry(2.7,.14,2.3), mat(0xc98f58), 0, .07, 0));
@@ -431,9 +432,14 @@ easel.add(mesh(new THREE.BoxGeometry(1,.8,.06), mat(0xfff6e6), 0, 1.25, .08));
 easel.add(mesh(new THREE.CircleGeometry(.22, 24), glow(0xfff3a0), .1, 1.3, .12));
 easel.userData.kind = 'easel'; scene.add(easel);
 const darkroom = new THREE.Group(); darkroom.position.set(NIGHT_POS.x + 3, NIGHT_POS.y, NIGHT_POS.z + .8);
-darkroom.add(mesh(new THREE.BoxGeometry(1.8,1.6,1.8), mat(0x2a2338), 0, .8, 0));
-darkroom.add(mesh(new THREE.ConeGeometry(1.45,.7,4), mat(0x3b2f4a), 0, 1.95, 0).rotateY(Math.PI/4));
-darkroom.add(mesh(sph(.06), glow(0xffffff), 0, 1.1, .92));
+// the camera obscura: a little dark house with one tiny window (still dark, but with some charm)
+darkroom.add(mesh(new THREE.BoxGeometry(1.8,1.6,1.8), mat(0x3b2f4a), 0, .8, 0));
+[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx, sz]) => darkroom.add(mesh(new THREE.BoxGeometry(.14,1.66,.14), mat(0xc98f58), sx*.9, .83, sz*.9)));
+darkroom.add(mesh(new THREE.BoxGeometry(1.96,.1,1.96), mat(0xc98f58), 0, 1.62, 0));
+darkroom.add(mesh(new THREE.ConeGeometry(1.5,.75,4), mat(0x2d3a6b), 0, 2.02, 0).rotateY(Math.PI/4));
+darkroom.add(mesh(new THREE.OctahedronGeometry(.12), glow(0xffe07a), 0, 2.5, 0));
+darkroom.add(mesh(new THREE.BoxGeometry(.6,1,.05), mat(0x5a3a28), -.45, .5, .91)); darkroom.add(mesh(sph(.04), mat(0xd9a441, { metalness:.6 }), -.25, .5, .95));
+darkroom.add(mesh(new THREE.TorusGeometry(.1,.03,8,18), mat(0xd9a441, { metalness:.6, roughness:.3 }), .45, 1.1, .92)); darkroom.add(mesh(sph(.05), glow(0xffffff), .45, 1.1, .92));
 darkroom.userData.kind = 'darkroom'; scene.add(darkroom);
 const crystals = new THREE.Group(); crystals.position.set(NIGHT_POS.x - 3, NIGHT_POS.y, NIGHT_POS.z - .5);
 [[0,1.4],[.45,1],[-.4,.8],[.2,.6],[-.2,.5]].forEach(([x,h],i) => crystals.add(mesh(new THREE.ConeGeometry(.14,h,6), new THREE.MeshStandardMaterial({ color:0xc9b6ff, emissive:0x8f7bff, emissiveIntensity:.6, roughness:.2 }), x, h/2, (i%2)*.25)));
@@ -596,7 +602,8 @@ const lanternMat = glow(0xffb45c);
   const h = hitBox(.6, 2.2, .6); h.position.set(0, 1.1, 0); one.add(h); deco(h, () => { pulse(lh, 1.2); chime(880); toast('You made a wish on the lantern. People light lanterns at festivals all over the world.'); }); });
 
 // --- dig spots ---
-const DIG_SPOTS = [[-6.5,2],[2.5,6],[-2.5,-7.2],[7,-1.5],[.5,-3.8],[-3.5,5.8],[4.2,3.8],[-7.5,-3.5]];
+// dig spots sit in the open meadow at the front, clear of trees and rocks (checked with a spacing test)
+const DIG_SPOTS = [[1.5,7.25],[-2.25,7.25],[4.5,6],[.25,4.5],[-4.75,5.75],[2.75,4.5],[-1.75,5.25],[-6,4.25]];
 let digGroups = [];
 function drawDigs() {
   digGroups.forEach(g => scene.remove(g)); digGroups = [];
@@ -1059,9 +1066,11 @@ function furnModel(id) {
   return g;
 }
 function drawRoom() {
+  // an empty spot only shows its outline and label when you own furniture that could go there, so the room isn't covered in labels
+  const waiting = new Set(Object.entries(S.furn || {}).filter(([k, n]) => n > S.placed.filter(p => p === k).length).map(([k]) => FURN_CAT[k]));
   spotGroups.forEach((g, i) => {
     while (g.children.length > 3) g.remove(g.children[3]);
-    const k = S.placed[i]; g.children[0].visible = g.children[2].visible = !k;
+    const k = S.placed[i]; g.children[0].visible = g.children[2].visible = !k && waiting.has(SPOTS[i].cat);
     if (k) g.add(furnModel(k));
   });
   Object.entries(shelfItems).forEach(([id, m]) => m.visible = S.aha.includes(id));
@@ -1244,7 +1253,7 @@ const ICON = {
   coin:'<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#ffc857" stroke="#d99a2b" stroke-width="2"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="#d99a2b" stroke-width="1.6"/></svg>',
   hammer:'<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="10" height="5" rx="1.5" fill="#8a8290"/><rect x="8" y="8" width="3" height="10" rx="1.2" fill="#c98f58"/></svg>',
   goal:'<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#8fdc8a"/><path d="M6 10.5l2.7 2.7L14 7.8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  bag:'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7h12l-1 10H5z" fill="#d9a066"/><path d="M7 7V5.5a3 3 0 016 0V7" fill="none" stroke="#9b6b4a" stroke-width="1.8"/></svg>',
+  bag:'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5V4a2.5 2.5 0 015 0v1" fill="none" stroke="#9b6b4a" stroke-width="1.6"/><rect x="4" y="5" width="12" height="13" rx="4" fill="#d9a066"/><path d="M4.5 9.5h11" stroke="#9b6b4a" stroke-width="1.4"/><rect x="6.5" y="11.5" width="7" height="4.5" rx="1.5" fill="#c98f58"/></svg>',
   book:'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4.5c2.5-1 5-1 7 .5v11c-2-1.5-4.5-1.5-7-.5z" fill="#ff8fa3"/><path d="M17 4.5c-2.5-1-5-1-7 .5v11c2-1.5 4.5-1.5 7-.5z" fill="#7ec8e3"/></svg>',
   on:'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h3l4-3.5v11L6 12H3z" fill="#3b2f4a"/><path d="M13 7a4 4 0 010 6M15.5 5a7 7 0 010 10" fill="none" stroke="#3b2f4a" stroke-width="1.7" stroke-linecap="round"/></svg>',
   off:'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h3l4-3.5v11L6 12H3z" fill="#3b2f4a"/><path d="M13 8l4 4M17 8l-4 4" stroke="#3b2f4a" stroke-width="1.7" stroke-linecap="round"/></svg>',
@@ -1403,8 +1412,8 @@ function birthdayPicker(done, fromNana) {
   draw();
 }
 const balloons = new THREE.Group(); balloons.visible = false; scene.add(balloons);
-balloons.add(mesh(new THREE.CylinderGeometry(.05,.06,1.1,6), mat(0x9b6b4a), -.25, .55, -3.1)); // the post the bunch is tied to, in a clear spot by the hut
-[[-.75,-3.1],[.25,-3.1],[-.25,-2.6],[-.25,-3.6],[-.65,-2.65],[.15,-3.55]].forEach(([x,z], i) => {
+balloons.add(mesh(new THREE.CylinderGeometry(.05,.06,1.1,6), mat(0x9b6b4a), -1.7, .55, -3.8)); // the post the bunch is tied to, in a clear spot by the hut
+[[-2.2,-3.8],[-1.2,-3.8],[-1.7,-3.3],[-1.7,-4.3],[-2.1,-3.35],[-1.3,-4.25]].forEach(([x,z], i) => {
   const c = [0xff8fa3,0x7ec8e3,0xffc857,0x8fdc8a,0xc9b6ff,0xff9a3c][i];
   const b = mesh(sph(.26), new THREE.MeshStandardMaterial({ color:c, roughness:.3 }), x, 2.6 + (i%2)*.3, z); b.scale.y = 1.2; balloons.add(b);
   deco(b, () => { if (b.userData.fly) return; b.userData.fly = 1; tone(700, { to:1400, dur:.4, vol:.05 }); toast('Whoosh! The balloon floats up into the sky.'); });
@@ -1672,7 +1681,7 @@ const TUT = {
 function tutActive() { return S.tut >= 2 && S.tut <= 6; }
 function startTutorial() { S.tut = 1; save(); nanaWalk = { to: player.position.clone().add(new THREE.Vector3(-1.3, 0, -1.1)), back:false }; }
 let nanaWalk = null;
-const NANA_HOME = new THREE.Vector3(-1, 0, -5.2), FIRST_DIG = [.3, -2.9];
+const NANA_HOME = new THREE.Vector3(-1, 0, -5.2), FIRST_DIG = [-.2, 2.3]; // right by the garden
 function tutAfterGreeting() {
   S.tut = 2; S.digs = [{ p:[...FIRST_DIG], n:0 }]; drawDigs(); save(); drawHud();
 }
@@ -1880,7 +1889,7 @@ function furnShop() {
   document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => {
     const k = b.dataset.f, f = FURN[k];
     if (S.coins < f.price) { toast('Not enough coins.'); return; }
-    S.coins -= f.price; S.furn[k] = (S.furn[k]||0) + 1; sfx('coin'); save(); drawHud(); toast(`Bought a ${f.name}! Place it in your hut.`); furnShop();
+    S.coins -= f.price; S.furn[k] = (S.furn[k]||0) + 1; sfx('coin'); save(); drawHud(); drawRoom(); toast(`Bought a ${f.name}! Place it in your hut. Outlines show where it can go.`); furnShop();
   });
 }
 function giftPicker(id) {
@@ -1925,9 +1934,12 @@ function newPerson() {
   const outfit = { style:pick(OUTFITS), color:pick(TOP_COLORS), trim:0xffffff, acc:Math.random() < .3 ? pick(['glasses','bowtie','scarf']) : undefined };
   return { vid:'v' + Date.now().toString(36), name, species:sp.id, pers, look:{ ...sp.look, body, belly, ear:body, outfit }, tastes, hearts:0, known:{}, status:'visiting', met:S.day, leaves:S.day + 2 + Math.floor(Math.random() * 2) };
 }
-const CAMP_SPOTS = [[6.2,-1.2],[-6.5,-1.8],[1.5,-6.5],[-4.5,6],[5.8,3.2],[-.5,6.4],[6.6,-5.4]];
-function freeSpot(list) { return list.find(([x,z]) => !blockedAt(x, z) && !(S.builds || []).some(b => Math.hypot(b.x - x, b.z - z) < 1.6) && !Object.values(S.people || {}).some(p => p.spot && Math.hypot(p.spot[0] - x, p.spot[1] - z) < 2)); }
-function homeSpots() { return [...ownedLobes().flatMap(L => [[L.e.x + 1.2, L.e.z - 1], [L.e.x - 1.4, L.e.z + 1.2]]), [-6.5,-1.8],[1.5,-6.5],[-4.5,6],[5.8,3.2]]; }
+// travelers camp on Orchard Isle once its bridge is built (lots of open space); before that, two quiet spots at the back of home
+const campSpots = () => S.bridge ? [[0,-6.4],[6.2,-2.6],[-4.8,-5.6]].map(([x, z]) => [ORCH_POS.x + x, ORCH_POS.z + z]) : [[-6.5,-1.5],[-4.5,-5.75]];
+const CAMP_SPOTS = [[-6.5,-1.5],[-4.5,-5.75]];
+const spotY = (x, z) => Math.hypot(x - ORCH_POS.x, z - ORCH_POS.z) < 9 ? ORCH_POS.y : 0;
+function freeSpot(list) { return list.find(([x,z]) => (spotY(x, z) !== 0 || !blockedAt(x, z)) && !(S.builds || []).some(b => Math.hypot(b.x - x, b.z - z) < 1.6) && !Object.values(S.people || {}).some(p => p.spot && Math.hypot(p.spot[0] - x, p.spot[1] - z) < 2)); }
+function homeSpots() { return [...ownedLobes().flatMap(L => [[L.e.x + 1.2, L.e.z - 1], [L.e.x - 1.4, L.e.z + 1.2]]), [-6.5,-1.5],[-4.5,-5.75],[3,-2.75]]; }
 function tent(color) { const g = new THREE.Group(); const t = mesh(new THREE.ConeGeometry(.9, 1.3, 4), mat(color), 0, .65, 0); t.rotation.y = Math.PI/4; g.add(t);
   g.add(mesh(new THREE.BoxGeometry(.35, .6, .05), mat(0x3b2f4a), 0, .3, .5)); g.add(mesh(new THREE.CylinderGeometry(.03,.03,1.6,5), mat(0x9b6b4a), 0, .8, 0)); return g; }
 function cottage(color) { const g = new THREE.Group(); g.add(mesh(new THREE.BoxGeometry(1.5, 1, 1.3), mat(0xfff1d6), 0, .5, 0));
@@ -1937,10 +1949,11 @@ function drawPeople() {
   peopleGroup.children.slice().forEach(c => peopleGroup.remove(c));
   if (VISIT || !featureOn('villagers')) return;
   Object.values(S.people || {}).filter(p => p.status === 'visiting' || p.status === 'resident').forEach(p => {
-    if (!p.spot) { const sp = freeSpot(p.status === 'resident' ? homeSpots() : CAMP_SPOTS); if (!sp) return; p.spot = sp; save(); }
-    const [x, z] = p.spot, home = p.status === 'resident' ? cottage(p.look.outfit.color) : tent(p.look.outfit.color);
-    home.position.set(x, 0, z - .9); peopleGroup.add(home);
-    const c = critter(p.look); c.scale.setScalar(.85); c.position.set(x + .9, 0, z + .1); c.rotation.y = -.4; c.userData.kind = 'visitor'; c.userData.vid = p.vid; peopleGroup.add(c);
+    const spots = p.status === 'resident' ? homeSpots() : campSpots(); // older saves may hold a spot that's no longer used
+    if (!p.spot || !spots.some(s => s[0] === p.spot[0] && s[1] === p.spot[1])) { p.spot = null; const sp = freeSpot(spots); if (!sp) return; p.spot = sp; save(); }
+    const [x, z] = p.spot, y = spotY(x, z), home = p.status === 'resident' ? cottage(p.look.outfit.color) : tent(p.look.outfit.color);
+    home.position.set(x, y, z - .9); peopleGroup.add(home);
+    const c = critter(p.look); c.scale.setScalar(.85); c.position.set(x + .9, y, z + .1); c.rotation.y = -.4; c.userData.kind = 'visitor'; c.userData.vid = p.vid; peopleGroup.add(c);
     if (p.talked == null) { const bb = new THREE.Sprite(new THREE.SpriteMaterial({ map:BUBBLE['!'], transparent:true, depthTest:false })); bb.scale.setScalar(.55); bb.position.set(0, 2.3, 0); c.add(bb); }
     home.userData = { kind:'visitor', vid:p.vid };
   });
@@ -1987,7 +2000,7 @@ function peopleNewDay() {
   S.people = S.people || {}; const notes = [];
   Object.values(S.people).forEach(p => { if (p.status === 'visiting' && S.day >= p.leaves) { p.status = 'left'; notes.push(`${p.name} packed up the tent and left a note: "Thanks for having me. I'll never forget your island."`); } });
   const visiting = Object.values(S.people).some(p => p.status === 'visiting');
-  if (!visiting && Math.random() < .4) { const p = newPerson(); S.people[p.vid] = p; notes.push(`A traveler named ${p.name} is camping on your island! Go say hi.`); }
+  if (!visiting && Math.random() < .4) { const p = newPerson(); S.people[p.vid] = p; notes.push(`A traveler named ${p.name} is camping on ${S.bridge ? 'Orchard Isle' : 'your island'}! Go say hi.`); }
   if (notes.length) { S.mailLog = [...(S.mailLog || []), ...notes].slice(-20); setTimeout(() => toast(notes.at(-1)), 1500); }
   drawPeople();
 }
@@ -3485,7 +3498,10 @@ function drawBuilds() {
 // places you can't build over, so the important things stay reachable
 function blockedAt(x, z) {
   if (!onLand(x, z)) return 'That is too close to the edge.';
-  const circles = [[-4.6,-6.2,1.1],[2.6,-3.9,1],[-2.8,4.6,1.2],[4,5.1,1],[1.6,5.2,.9],[-5.2,2.1,1],[-7.2,-2.7,1],[-7.9,-2.2,.8],[3.5,-7.4,.8],[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[.3,-5.6,1.3],[-1,-5.2,.9],[-4.2,3,.9],[7.4,-4.4,1.2],[8.4,1.2,1.2]];
+  // where things stand on the home island now (kept in step with the layout)
+  const circles = [[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[-1,-5.2,.9],[1.2,-4.6,1.2],[-1.7,-3.8,.7],
+    [-7.9,-2.2,.8],[3.5,-7.4,.8],[8.4,1.2,1.2],[4.9,-7.4,1.5],[-7.2,-3.8,1],[5.5,2.5,1],[-2.75,3,.9],[-5.1,-1.25,.7],[-2.9,-1.25,.7],[-.9,-.1,.6],[6.3,.3,.7],
+    ...woodTrees.filter(t => t.parent === scene).map(t => [t.position.x, t.position.z, 1]), ...rocks.map(r => [r.position.x, r.position.z, .7]), ...bushes.filter(b => b.parent && b.parent.parent === scene).map(b => [b.position.x, b.position.z, .7])];
   if (circles.some(([cx,cz,r]) => Math.hypot(x-cx, z-cz) < r)) return 'That spot is taken by something important.';
   if (x > .2 && x < 4.8 && z > -2 && z < (S.bigGarden ? 3.9 : 2.6)) return 'That is your garden.';
   return null;
@@ -4326,7 +4342,7 @@ const townHall = new THREE.Group(); townHall.position.set(-4.6, 0, -6.2); townHa
   townHall.add(mesh(new THREE.BoxGeometry(1.9,1.1,.12), mat(0xc98f58), 0, 1.3, 0)); const roof = mesh(new THREE.ConeGeometry(1.35,.5,4), mat(0xff8fa3), 0, 2.1, 0); roof.rotation.y = Math.PI/4; roof.scale.z = .35; townHall.add(roof);
   [[-.5,1.45,0xfff1d6],[.1,1.2,0xfff3a0],[.55,1.5,0xdff3ff],[-.3,1.05,0xffd1dc]].forEach(([x,y,c]) => { const pp = mesh(new THREE.BoxGeometry(.42,.34,.02), mat(c), x, y, .08); pp.rotation.z = (x * 7 % 1) * .3 - .15; townHall.add(pp); });
   const hb = hitBox(2, 2.3, .8); hb.position.y = 1.1; townHall.add(hb); townHall.userData.kind = 'deco'; townHall.userData.use = () => openTownHall(); }
-function drawTownHall() { townHall.visible = featureOn('townhall') && !VISIT; }
+function drawTownHall() { townHall.visible = false; } // Town Hall votes live on the Town Square's notice board now, so there's one board
 drawTownHall();
 async function openTownHall() {
   showCard(`<div class="kicker">TOWN HALL</div><h2>What should we build next?</h2><p>Loading the vote...</p>`, 'Close');
