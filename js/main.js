@@ -312,11 +312,11 @@ siteFrame.add(mesh(new THREE.BoxGeometry(2.7,.14,2.3), mat(0xc98f58), 0, .07, 0)
 [[-1.3,1.1],[1.3,1.1],[-1.3,-1.1],[1.3,-1.1]].forEach(([x,z]) => siteFrame.add(mesh(new THREE.BoxGeometry(.16,1.9,.16), mat(0x9b6b4a), x, .95, z)));
 [[0,1.1,2.7,0],[0,-1.1,2.7,0],[1.3,0,2.3,1],[-1.3,0,2.3,1]].forEach(([x,z,l,r]) => { const bm = mesh(new THREE.BoxGeometry(l,.14,.14), mat(0x9b6b4a), x, 1.85, z); bm.rotation.y = r*Math.PI/2; siteFrame.add(bm); });
 [[0,-1.1,2.6,0],[1.3,0,2.2,1],[-1.3,0,2.2,1],[-.85,1.1,.9,0],[.85,1.1,.9,0]].forEach(([x,z,l,r]) => { for (let k=0;k<4;k++){ const pl = mesh(new THREE.BoxGeometry(l,.38,.08), mat(k%2 ? 0xd9a066 : 0xc98f58), x, .3 + k*.42, z); pl.rotation.y = r*Math.PI/2; siteWalls.add(pl); } });
-const campfire = new THREE.Group(); campfire.position.set(-3.3, 0, .9); campfire.userData.kind = 'campfire'; scene.add(campfire);
+const campfire = new THREE.Group(); campfire.position.set(-3.3, 0, 1.15); campfire.userData.kind = 'campfire'; scene.add(campfire);
 for (let i=0;i<7;i++){ const a = i/7*Math.PI*2; campfire.add(mesh(new THREE.DodecahedronGeometry(.13), mat(0x8a8290), Math.cos(a)*.38, .08, Math.sin(a)*.38)); }
 [0,1,2].forEach(i => { const lg = mesh(new THREE.CylinderGeometry(.06,.06,.6,6), mat(0x7a5236), 0, .12, 0); lg.rotation.set(Math.PI/2, i*Math.PI/3, 0); campfire.add(lg); });
 const flame = mesh(new THREE.ConeGeometry(.18,.5,8), glow(0xffa94d), 0, .35, 0); campfire.add(flame); const flameHalo = halo(0xffa94d, 2.2, .6); flameHalo.position.y = .4; campfire.add(flameHalo);
-const workbench = new THREE.Group(); workbench.position.set(-6.1, 0, .5); workbench.userData.kind = 'workbench'; scene.add(workbench);
+const workbench = new THREE.Group(); workbench.position.set(-6.3, 0, .2); workbench.userData.kind = 'workbench'; scene.add(workbench);
 workbench.add(mesh(new THREE.CylinderGeometry(.42,.5,.55,14), mat(0x9b6b4a), 0, .27, 0)); workbench.add(mesh(new THREE.CylinderGeometry(.43,.43,.03,14), mat(0xd9a066), 0, .56, 0));
 workbench.add(mesh(new THREE.BoxGeometry(.08,.35,.08), mat(0x9b6b4a), .15, .72, .05).rotateZ(.6)); workbench.add(mesh(new THREE.DodecahedronGeometry(.08), mat(0x8a8290), .28, .82, .05));
 const pickupGroup = new THREE.Group(); scene.add(pickupGroup);
@@ -326,15 +326,15 @@ const addNode = (kind, ore, x, y, z, i) => { const g = new THREE.Group(); g.posi
   else { const r = mesh(new THREE.DodecahedronGeometry(.45), mat(ore === 'copper' ? 0x8f8a92 : 0x5f5a68), 0, .3, 0); r.rotation.set(i, i*2, 0); g.add(r);
     for (let k=0;k<5;k++){ const a = k*1.3; g.add(mesh(sph(.08), mat(ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, ore === 'tin' ? { metalness:.6, roughness:.3 } : {}), Math.cos(a)*.38, .3 + Math.sin(k)*.2, Math.sin(a)*.38)); } }
   scene.add(g); nodes.push(g); };
-[[-7.9,-2.2],[3.5,-7.4]].forEach(([x,z],i) => addNode('claypit', 'clay', x, 0, z, i));
+[[-7.5,1.1],[3.0,-7.45]].forEach(([x,z],i) => addNode('claypit', 'clay', x, 0, z, i));
 [[5.5,-4.8],[6,1.8]].forEach(([x,z],i) => addNode('claypit', 'clay', ORCH_POS.x + x, ORCH_POS.y, ORCH_POS.z + z, i + 2));
 [[-5.5,-3],[-2,-6.2],[4.2,-5.4]].forEach(([x,z],i) => addNode('ore', 'copper', ORCH_POS.x + x, ORCH_POS.y, ORCH_POS.z + z, i));
 addNode('ore', 'tin', WIND_POS.x + 5, WIND_POS.y, WIND_POS.z - 4.5, 0);
-const kiln = new THREE.Group(); kiln.position.set(-5.2, 0, 2.1); kiln.userData.kind = 'kiln'; scene.add(kiln);
+const kiln = new THREE.Group(); kiln.position.set(-5.9, 0, 2.1); kiln.userData.kind = 'kiln'; scene.add(kiln);
 const kilnDome = mesh(new THREE.SphereGeometry(.75, 18, 10, 0, Math.PI*2, 0, Math.PI/2), mat(0xc0703f), 0, 0, 0); kiln.add(kilnDome);
 kiln.add(mesh(new THREE.CylinderGeometry(.16,.2,.5,10), mat(0x9c4f30), .2, .85, -.2));
 const kilnMouth = mesh(new THREE.CircleGeometry(.22, 14, 0, Math.PI), glow(0xff8a3c), 0, .02, .74); kiln.add(kilnMouth);
-const furnace = new THREE.Group(); furnace.position.set(-7.2, 0, -2.7); furnace.userData.kind = 'furnace'; scene.add(furnace);
+const furnace = new THREE.Group(); furnace.position.set(-7.3, 0, -1.6); furnace.userData.kind = 'furnace'; scene.add(furnace);
 furnace.add(mesh(new THREE.CylinderGeometry(.5,.7,1.3,12), mat(0xa8603a), 0, .65, 0)); furnace.add(mesh(new THREE.CylinderGeometry(.3,.45,.3,12), mat(0x8a4a2e), 0, 1.45, 0));
 const furnaceGlow = mesh(new THREE.CircleGeometry(.18, 12), glow(0xffc857), 0, .45, .6); furnace.add(furnaceGlow); const furnaceHalo = halo(0xff9a3c, 1.8, .5); furnaceHalo.position.set(0, .45, .7); furnace.add(furnaceHalo);
 [-.85,.85].forEach(x => { house.add(mesh(new THREE.BoxGeometry(.62,.14,.22), mat(0x9b6b4a), x, .77, 1.2));
@@ -342,40 +342,102 @@ const furnaceGlow = mesh(new THREE.CircleGeometry(.18, 12), glow(0xffc857), 0, .
 house.add(mesh(sph(.05), mat(0xffc857, { metalness:.5 }), .22, .55, 1.18));
 const winHalos = [-.85,.85].map(x => { const hl = halo(0xffc46b, 1.3, 0); hl.position.set(x, 1.05, 1.3); house.add(hl); return hl; });
 const smoke = []; for (let i=0;i<5;i++){ const sm = halo(0xffffff, .5, 0, false); scene.add(sm); smoke.push(sm); }
+// --- paths: one connected network of stepping stones on a soft packed-earth track ---
+// hut door to the garden gate; from the gate, around the back of the garden past the sell crate to the Orchard bridge; and a branch to the Town Square bridge
 const stones = new THREE.Group(); scene.add(stones);
-const stoneMat = mat(0xd8cfc0);
-[[[-4,-1.7],[.6,-.9]], [[.6,-.9],[7.7,1.2]], [[-4,-1.7],[-1.8,.4]]].forEach(([[x0,z0],[x1,z1]]) => {
-  const n = Math.round(Math.hypot(x1-x0, z1-z0) / .85);
-  for (let i=0;i<=n;i++){ const k = i/n, x = x0 + (x1-x0)*k + Math.sin(i*2.1)*.12, z = z0 + (z1-z0)*k + Math.cos(i*1.7)*.12;
-    if (x > .3 && x < 4.6 && z > -1.8 && z < 3.5) continue;
-    const st = mesh(new THREE.CylinderGeometry(.26 + (i%3)*.04, .3, .06, 9), stoneMat, x, .02, z); st.rotation.y = i; stones.add(st); } });
-const rocks = [[-7,2.5,.42],[6.9,-3.5,.38],[-7.5,-.5,.45],[-5,2.5,.36]].map(([x,z,r],i) => { const rk = mesh(new THREE.DodecahedronGeometry(r), mat(0xb3aabb), x, r*.5, z); rk.rotation.set(i, i*2, 0); rk.userData = { kind:'rock', key:'rock'+i }; scene.add(rk); return rk; });
+const stoneMat = mat(0xe4dccd), stoneMat2 = mat(0xd6ccbb);
+const WALKWAYS = [
+  [[-4,-.95],[-3.65,-.35],[-2.85,-.1],[-1.9,-.15],[-.95,.15],[-.1,.55],[.55,.7]],
+  [[-.35,.4],[-.5,-.7],[-.5,-1.9],[.1,-2.6],[1.7,-2.72],[3.1,-2.72],[4.3,-2.62],[5.35,-2.3],[6.15,-1.2],[6.75,.1],[7.5,.95],[8.2,1.2]],
+  [[4.3,-2.62],[4.5,-3.6],[4.42,-4.9],[4.4,-6.1],[4.5,-6.75]],
+];
+const pathPts = []; // every stone, so grass and other things can stay off the path
+const trackTex = (() => { const c = document.createElement('canvas'); c.width = 8; c.height = 64; const x = c.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 64);
+  gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.28, 'rgba(255,255,255,.85)'); gr.addColorStop(.72, 'rgba(255,255,255,.85)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = gr; x.fillRect(0, 0, 8, 64); const t = new THREE.CanvasTexture(c); return t; })();
+const trackMat = new THREE.MeshStandardMaterial({ color:0xc8a878, map:trackTex, transparent:true, opacity:.55, depthWrite:false, roughness:1, polygonOffset:true, polygonOffsetFactor:-1 });
+WALKWAYS.forEach((pts, pi) => {
+  const curve = new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(x, 0, z)), false, 'centripetal'), len = curve.getLength();
+  // the soft track: a ribbon along the curve that fades out at its edges
+  const n = Math.ceil(len / .25), pos = [], uv = [], idx = [];
+  for (let i = 0; i <= n; i++) { const k = i / n, p = curve.getPointAt(k), t = curve.getTangentAt(k), sx = -t.z, sz = t.x, w = .62;
+    pos.push(p.x + sx * w, .018, p.z + sz * w, p.x - sx * w, .018, p.z - sz * w); uv.push(k * len, 0, k * len, 1);
+    if (i < n) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } }
+  const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); tg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); tg.setIndex(idx); tg.computeVertexNormals();
+  const track = new THREE.Mesh(tg, trackMat); track.receiveShadow = true; track.renderOrder = -1; stones.add(track);
+  // stepping stones every .62, alternating a little left and right like real steps
+  const m = Math.max(2, Math.round(len / .62));
+  for (let i = pi ? 1 : 0; i <= m; i++) { const k = i / m, p = curve.getPointAt(k), t = curve.getTangentAt(k), side = (i % 2 ? 1 : -1) * .09, r = .25 + ((i * 7) % 3) * .025;
+    const st = mesh(new THREE.CylinderGeometry(r, r + .03, .06, 9), i % 3 ? stoneMat : stoneMat2, p.x - t.z * side, .025, p.z + t.x * side);
+    st.rotation.y = i * 1.3; st.scale.set(1, 1, .82); st.castShadow = false; stones.add(st); pathPts.push([st.position.x, st.position.z]); } });
+// keep the grass off the paths
+tuftData.forEach(d => { if (Math.abs(d.y) < 1 && pathPts.some(([x, z]) => Math.hypot(d.x - x, d.z - z) < .55)) d.y = -50; });
+const rocks = [[-7.1,3,.42],[5.8,-6,.38],[6.55,-5.3,.45],[-6.5,3.7,.36]].map(([x,z,r],i) => { const rk = mesh(new THREE.DodecahedronGeometry(r), mat(0xb3aabb), x, r*.5, z); rk.rotation.set(i, i*2, 0); rk.userData = { kind:'rock', key:'rock'+i }; scene.add(rk); return rk; });
 
 // --- sell crate ---
-const mailbox = new THREE.Group(); mailbox.position.set(-1.7, 0, -1.6); mailbox.rotation.y = .5;
+const mailbox = new THREE.Group(); mailbox.position.set(-1.75, 0, -1.35); // beside the path, facing you
 mailbox.add(mesh(new THREE.CylinderGeometry(.05,.06,.9,8), mat(0x9b6b4a), 0, .45, 0));
 const mbox = mesh(new THREE.CapsuleGeometry(.18,.35,4,10), mat(0x7ec8e3), 0, 1, 0); mbox.rotation.z = Math.PI/2; mailbox.add(mbox);
 const mflag = new THREE.Group(); mflag.position.set(.2, 1, .1); mailbox.add(mflag);
 mflag.add(mesh(new THREE.BoxGeometry(.03,.3,.03), mat(0x3b2f4a), 0, .15, 0)); mflag.add(mesh(new THREE.BoxGeometry(.14,.1,.02), mat(0xff5a5a), .07, .26, 0));
 mailbox.userData.kind = 'mailbox';
-const crate = new THREE.Group(); crate.position.set(5,0,-2.6);
-crate.add(mesh(new THREE.BoxGeometry(1,.8,1), mat(0xd9a066), 0, .4, 0));
-crate.add(mesh(new THREE.BoxGeometry(1.05,.12,1.05), mat(0xb87d45), 0, .82, 0));
+const crate = new THREE.Group(); crate.position.set(5.2,0,-.3); // by the garden, on the path to the Orchard bridge
+{ const slat = mat(0xd9a066), dark = mat(0xa8703f); // an open wooden crate with a gold coin on the front and produce peeking out
+  crate.add(mesh(new THREE.BoxGeometry(.94,.72,.94), slat, 0, .38, 0));
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx, sz]) => crate.add(mesh(new THREE.BoxGeometry(.11,.8,.11), dark, sx*.46, .4, sz*.46)));
+  [.2, .52].forEach(y => crate.add(mesh(new THREE.BoxGeometry(.98,.06,.98), dark, 0, y, 0)));
+  crate.add(mesh(new THREE.BoxGeometry(1.02,.07,1.02), dark, 0, .78, 0));
+  [[-.2,-.12,0xff6b6b],[.14,.1,0xffa94d],[.18,-.2,0x8fdc8a],[-.12,.2,0xffd36b]].forEach(([x, z, c]) => crate.add(mesh(sph(.14), mat(c), x, .74, z)));
+  const coin = mesh(new THREE.CylinderGeometry(.14,.14,.03,24), mat(0xffc857, { metalness:.45, roughness:.35 }), 0, .44, .5); coin.rotation.x = Math.PI/2; crate.add(coin); }
 crate.userData.kind = 'crate'; scene.add(crate);
 
-// --- signs: a framed wooden board on two posts, readable from both sides ---
-function signText(text, w) { const c = document.createElement('canvas'); c.width = 512; c.height = Math.round(512 * .28); const x = c.getContext('2d');
-  x.fillStyle = '#fff1d6'; x.fillRect(0, 0, c.width, c.height); x.fillStyle = '#3b2f4a'; let fs = 64; x.font = `bold ${fs}px "Baloo 2", sans-serif`;
-  while (x.measureText(text).width > c.width - 50 && fs > 24) { fs -= 2; x.font = `bold ${fs}px "Baloo 2", sans-serif`; }
-  x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, c.width / 2, c.height / 2 + 3); const tex = new THREE.CanvasTexture(c); tex.anisotropy = 4; return tex; }
-function signBoard(text, w = 1.5, h = .42, top = 1.55) { const g = new THREE.Group(), wood = mat(0x9b6b4a), frame = mat(0x8a5a3a);
-  [-1, 1].forEach(sd => g.add(mesh(new THREE.CylinderGeometry(.05, .06, top, 8), wood, sd * (w / 2 - .06), top / 2, 0)));
-  const board = new THREE.Group(); board.position.y = top - h / 2 - .02; g.add(board);
-  board.add(mesh(new THREE.BoxGeometry(w + .08, h + .08, .07), frame, 0, 0, 0));
-  const face = new THREE.MeshBasicMaterial({ map:signText(text, w) }); [1, -1].forEach(sd => { const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), face); pl.position.z = sd * .037; if (sd < 0) pl.rotation.y = Math.PI; board.add(pl); });
-  g.userData.setText = s => { face.map = signText(s, w); face.needsUpdate = true; }; return g; }
+// --- signs: one design everywhere. Two planks of warm wood in a darker frame, on two capped posts, lettered on both sides.
+// Every sign is the same size and height, stands level, and faces you. The lettering is drawn at the board's exact shape, so it never stretches.
+const SIGN_W = 1.3, SIGN_H = .42, SIGN_TOP = 1.4, signFaces = [];
+const SQ_SIGN = [-3.2, 0, 3.0]; // the Town Square sign: at the entrance, on the left as you arrive (the planters line the right)
+function signText(text, w = SIGN_W, h = SIGN_H) { const c = document.createElement('canvas'); c.width = 640; c.height = Math.round(640 * h / w); const x = c.getContext('2d'), W = c.width, H = c.height;
+  ['#c98f58', '#be844f'].forEach((col, i) => { x.fillStyle = col; x.fillRect(0, i * H / 2, W, H / 2); }); // two planks
+  x.strokeStyle = 'rgba(90,58,40,.16)'; x.lineWidth = 2; // a soft wood grain
+  for (let i = 0; i < 8; i++) { const y0 = (i + .5) * H / 8; x.beginPath(); x.moveTo(0, y0); for (let px = 0; px <= W; px += 32) x.lineTo(px, y0 + Math.sin(px / 70 + i * 1.7) * 2.2); x.stroke(); }
+  x.fillStyle = 'rgba(80,50,34,.4)'; x.fillRect(0, H / 2 - 2, W, 4); // the seam between the planks
+  let fs = Math.round(H * .4); const font = () => `800 ${fs}px "Baloo 2", system-ui, sans-serif`; x.font = font();
+  while (x.measureText(text).width > W * .84 && fs > 18) { fs -= 2; x.font = font(); } // only a long custom name gets smaller
+  x.textAlign = 'center'; x.textBaseline = 'middle'; const ty = H / 2 + fs * .07;
+  x.fillStyle = 'rgba(60,34,20,.6)'; x.fillText(text, W / 2 + 2, ty + 3); // carved into the wood
+  x.lineJoin = 'round'; x.lineWidth = Math.max(3, fs * .07); x.strokeStyle = 'rgba(70,40,24,.55)'; x.strokeText(text, W / 2, ty);
+  x.fillStyle = '#fffaf0'; x.fillText(text, W / 2, ty);
+  const tex = new THREE.CanvasTexture(c); tex.anisotropy = 8; tex.colorSpace = THREE.SRGBColorSpace; return tex; }
+function signBoard(text, w = SIGN_W, h = SIGN_H, top = SIGN_TOP) { const g = new THREE.Group(), post = mat(0x8a5a3a), frame = mat(0x6e4630);
+  [-1, 1].forEach(sd => { const px = sd * (w / 2 + .03);
+    g.add(mesh(new THREE.BoxGeometry(.11, top + .06, .11), post, px, (top + .06) / 2, 0));
+    const cap = mesh(new THREE.ConeGeometry(.095, .1, 4), post, px, top + .11, 0); cap.rotation.y = Math.PI / 4; g.add(cap); });
+  const board = new THREE.Group(); board.position.y = top - h / 2 - .05; g.add(board);
+  board.add(mesh(new THREE.BoxGeometry(w + .1, h + .1, .08), frame, 0, 0, 0));
+  const e = { text, w, h, face:new THREE.MeshStandardMaterial({ map:signText(text, w, h), roughness:.85 }) }; signFaces.push(e);
+  [1, -1].forEach(sd => { const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), e.face); pl.position.z = sd * .042; if (sd < 0) pl.rotation.y = Math.PI; pl.receiveShadow = true; board.add(pl); });
+  const hb = hitBox(w + .3, top + .25, .5); hb.position.y = (top + .25) / 2; g.add(hb); // tap anywhere on the sign, posts included
+  g.userData.setText = t => { e.text = t; e.face.map.dispose(); e.face.map = signText(t, w, h); e.face.needsUpdate = true; }; return g; }
+// notice boards get a printed face the same way: a title and neat, evenly spaced cards
+function boardText(title, w, h, kind) { const c = document.createElement('canvas'); c.width = 640; c.height = Math.round(640 * h / w); const x = c.getContext('2d'), W = c.width, H = c.height;
+  const rr = (X, Y, w2, h2, r) => { x.beginPath(); x.roundRect(X, Y, w2, h2, r); x.fill(); };
+  x.fillStyle = kind === 'founders' ? '#fff1d6' : '#d6b485'; x.fillRect(0, 0, W, H);
+  if (kind !== 'founders') { x.fillStyle = 'rgba(120,80,40,.18)'; for (let i = 0; i < 260; i++) x.fillRect((i * 97) % W, (i * 61) % H, 3, 3); } // cork
+  else { x.strokeStyle = '#d9a441'; x.lineWidth = 6; x.strokeRect(12, 12, W - 24, H - 24); }
+  const tH = H * .24; x.fillStyle = kind === 'founders' ? 'rgba(0,0,0,0)' : '#fff4dc'; rr(W * .22, H * .07, W * .56, tH, 14);
+  x.fillStyle = '#6e4630'; x.font = `800 ${Math.round(tH * .62)}px "Baloo 2", system-ui, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(title, W / 2, H * .07 + tH / 2 + 2);
+  const cols = 3, rows = kind === 'founders' ? 2 : 2, gx = W * .1, gy = H * .38, cw = (W - gx * 2 - (cols - 1) * 22) / cols, ch = (H - gy - H * .08 - (rows - 1) * 18) / rows;
+  const tints = kind === 'founders' ? ['#f6dfa4'] : ['#fff8ee', '#ffd9e1', '#fff3b8', '#dff1ff', '#e6f6de', '#fff8ee'];
+  for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) { const X = gx + k * (cw + 22), Y = gy + r * (ch + 18);
+    x.fillStyle = 'rgba(60,40,30,.18)'; rr(X + 3, Y + 4, cw, ch, 8); x.fillStyle = tints[(r * cols + k) % tints.length]; rr(X, Y, cw, ch, 8);
+    x.fillStyle = 'rgba(110,70,48,.35)'; for (let l = 0; l < 3; l++) x.fillRect(X + cw * .16, Y + ch * (.34 + l * .2), cw * (l === 2 ? .45 : .68), 4); // tidy lines of writing
+    if (kind !== 'founders') { x.fillStyle = ['#e0566f', '#2c9c7d', '#5a4b99'][(r + k) % 3]; x.beginPath(); x.arc(X + cw / 2, Y + 10, 7, 0, 7); x.fill(); } } // a pin
+  const tex = new THREE.CanvasTexture(c); tex.anisotropy = 8; tex.colorSpace = THREE.SRGBColorSpace; return tex; }
+function boardFace(title, w, h, kind) { const e = { board:true, title, w, h, kind, face:new THREE.MeshStandardMaterial({ map:boardText(title, w, h, kind), roughness:.9 }) }; signFaces.push(e);
+  const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), e.face); pl.receiveShadow = true; return pl; }
+// the lettering is drawn before the font arrives, so draw every sign again once it has
+try { document.fonts.load('800 60px "Baloo 2"').then(() => signFaces.forEach(e => { e.face.map.dispose(); e.face.map = e.board ? boardText(e.title, e.w, e.h, e.kind) : signText(e.text, e.w, e.h); e.face.needsUpdate = true; })); } catch {}
 // --- bridge + sign ---
-const sign = new THREE.Group(); sign.position.set(8.2,0,1.6); sign.rotation.y = -.35; sign.add(signBoard('Orchard Isle', 1.25, .38, 1.35)); // faces you, angled a little toward the bridge
+const sign = new THREE.Group(); sign.position.set(7.25,0,2.4); sign.add(signBoard('Orchard Isle')); // beside the bridge, facing you
 sign.userData.kind = 'sign'; scene.add(sign);
 const bridge = new THREE.Group(); scene.add(bridge);
 let bridgePlanks = [];
@@ -403,7 +465,7 @@ function buildBridge() {
 }
 buildBridge();
 const sign2 = new THREE.Group(); sign2.position.set(ORCH_POS.x + 1.4, ORCH_POS.y, ORCH_POS.z - 7.1);
-sign2.add(signBoard('Windmill Isle', 1.25, .38, 1.35));
+sign2.add(signBoard('Windmill Isle'));
 sign2.userData.kind = 'sign2'; scene.add(sign2);
 
 // --- windmill isle ---
@@ -582,13 +644,13 @@ const dressing = new THREE.Group(); scene.add(dressing); const grassPatches = []
       p.receiveShadow = true; dressing.add(p); grassPatches.push(p); } });
   // bushes in little groups
   const bush = (x, z, s=1, c=0x4fb46a, id) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.userData = { kind:'bush', key:'bush'+(id ?? bushes.length) }; bushes.push(g); [[0,0,0,.45],[.35,-.05,.1,.34],[-.32,-.07,.08,.32],[.05,.15,-.15,.3]].forEach(([bx,by,bz,br]) => g.add(mesh(sph(br*s), mat(c), bx*s, br*s*.8 + by, bz*s))); dressing.add(g); return g; };
-  [[3.25,-5.5,1,0],[2.25,-6.5,.8,2],[-6.3,-5.6,1,3],[-7.5,1,.8,4]].forEach(([x,z,s,id]) => bush(x, z, s, undefined, id));
+  [[3,-5.95,1,0],[2,-6.5,.8,2],[-6.3,-5.6,1,3],[-7.9,-.3,.8,4]].forEach(([x,z,s,id]) => bush(x, z, s, undefined, id));
   // flower beds hugging the hut and along the path
   const bed = (x, z, n, rx, rz) => { for (let i=0;i<n;i++){ const fx = x + (rnd(i+x*13)-.5)*rx, fz = z + (rnd(i*3+z*7)-.5)*rz, c = [0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b][i%5];
     dressing.add(mesh(new THREE.CylinderGeometry(.015,.015,.22,4), mat(0x4fb46a), fx, .11, fz)); dressing.add(mesh(sph(.075), mat(c), fx, .24, fz)); } };
   const bedAt = (x, z, rx, rz, i) => { const h = hitBox(rx + .3, .5, rz + .3); h.position.set(x, .25, z); dressing.add(h); deco(h, () => pickSeeds('bed' + i)); };
-  [[-5.1,-1.25,.8,.35,0],[-2.9,-1.25,.8,.35,1],[-.9,-.1,.7,.5,4],[6.3,.3,.8,.6,5]].forEach(([x,z,rx,rz,i]) => bedAt(x, z, rx, rz, i));
-  bed(-5.1, -1.25, 5, .8, .35); bed(-2.9, -1.25, 5, .8, .35); bed(-.9, -.1, 4, .7, .5); bed(6.3, .3, 5, .8, .6);
+  [[-5.1,-1.25,.8,.35,0],[-2.9,-1.25,.8,.35,1],[-2,-2.55,.35,.8,4],[5.3,1.25,.4,.8,5]].forEach(([x,z,rx,rz,i]) => bedAt(x, z, rx, rz, i));
+  bed(-5.1, -1.25, 5, .8, .35); bed(-2.9, -1.25, 5, .8, .35); bed(-2, -2.55, 4, .35, .8); bed(5.3, 1.25, 4, .4, .8); // by the porch, along the hut, along the garden
   // a low picket fence around the garden, open on the side facing the hut
   const fenceMat = gardenFenceMat = mat(0xfff1d6);
   const fence = (x0, z0, x1, z1) => { const n = Math.round(Math.hypot(x1-x0, z1-z0) / .4);
@@ -604,18 +666,19 @@ sprHead.add(mesh(new THREE.BoxGeometry(.5,.06,.06), mat(0x7ec8e3), 0, 0, 0)); sp
 scene.add(sprinkler); deco(sprinkler, () => toast('Your sprinkler waters every plant in your garden each morning. No watering can needed.'));
 
 // --- sundial: its shadow is really cast by the sun, shortest at noon ---
-const sundial = new THREE.Group(); sundial.position.set(-1.6,0,1.2);
+const sundial = new THREE.Group(); sundial.position.set(-1.5,0,1.5);
 sundial.add(mesh(new THREE.CylinderGeometry(.75,.8,.18,32), mat(0xe8e0d0), 0, .09, 0));
 const gnomon = mesh(new THREE.BoxGeometry(.06,.9,.5), mat(0x8a7a6a), 0, .5, 0); gnomon.rotation.x = .5; sundial.add(gnomon);
 for (let i=0;i<12;i++){ const a=i/12*Math.PI*2; sundial.add(mesh(new THREE.BoxGeometry(.04,.02,.14), mat(0x8a7a6a), Math.cos(a)*.6, .19, Math.sin(a)*.6)); }
 sundial.userData.kind = 'sundial'; scene.add(sundial);
 
 // --- wind bell, appears when tuned ---
-const bell = new THREE.Group(); bell.position.set(.3,0,-5.6); bell.visible = false;
+const bell = new THREE.Group(); bell.position.set(.55,0,-5.8); bell.visible = false;
 bell.add(mesh(new THREE.CylinderGeometry(.06,.06,2.4,8), mat(0x9b6b4a), -.7, 1.2, 0));
 bell.add(mesh(new THREE.CylinderGeometry(.06,.06,2.4,8), mat(0x9b6b4a), .7, 1.2, 0));
 bell.add(mesh(new THREE.BoxGeometry(1.6,.12,.12), mat(0x9b6b4a), 0, 2.4, 0));
 const bellBody = mesh(new THREE.CylinderGeometry(.22,.42,.6,24), mat(0xffc857, { metalness:.5, roughness:.35 }), 0, 1.95, 0); bell.add(bellBody);
+{ const hb = hitBox(1.7, 2.6, .8); hb.position.y = 1.3; bell.add(hb); } // tap anywhere on the bell frame
 deco(bell, () => { [523,659,784,1047].forEach((f,i) => setTimeout(() => chime(f), i*180)); bell.userData.ring = 1.5; toast('Ding! Your Wind Bell rings out across the sky.'); });
 scene.add(bell);
 
@@ -630,7 +693,7 @@ const lanternMat = glow(0xffb45c);
 
 // --- dig spots ---
 // dig spots sit in the open meadow at the front, clear of trees and rocks (checked with a spacing test)
-const DIG_SPOTS = [[1.5,7.25],[-2.25,7.25],[4.5,6],[.25,4.5],[-4.75,5.75],[2.75,4.5],[-1.75,5.25],[-6,4.25]];
+const DIG_SPOTS = [[1.5,7.25],[-2.25,7.25],[4.5,6],[.25,4.5],[-4.75,5.75],[2.75,4.5],[-1.75,5.25],[-5.6,4.8]];
 let digGroups = [];
 function drawDigs() {
   digGroups.forEach(g => scene.remove(g)); digGroups = [];
@@ -984,7 +1047,7 @@ function drawShip() { shipExplore.visible = S.shipPath === 'explore'; shipMarket
 drawShip();
 const saggy = mesh(new THREE.PlaneGeometry(1.2,.8), new THREE.MeshStandardMaterial({ color:0xe8dcc8, side:THREE.DoubleSide }), .6, 1.6, 0); saggy.rotation.z = .5; ship.add(saggy);
 ship.userData = { kind:'ship', lift:0 }; scene.add(ship);
-const pot = new THREE.Group(); pot.position.set(ORCH_POS.x - 3.2, ORCH_POS.y, ORCH_POS.z + 3.3);
+const pot = new THREE.Group(); pot.position.set(ORCH_POS.x - 1.35, ORCH_POS.y, ORCH_POS.z + 3.5); // right by the ship, clear of the peach tree
 pot.add(mesh(new THREE.CylinderGeometry(.42,.34,.45,20), mat(0x6b6f7a, { metalness:.3 }), 0, .23, 0));
 const lid = mesh(new THREE.ConeGeometry(.46,.18,20), new THREE.MeshStandardMaterial({ color:0xdff3ff, transparent:true, opacity:.55, roughness:.1 }), 0, .55, 0); lid.visible = false; pot.add(lid);
 pot.userData.kind = 'pot'; scene.add(pot);
@@ -1983,7 +2046,7 @@ const campSpots = () => S.bridge ? [[0,-6.4],[6.2,-2.6],[-4.8,-5.6]].map(([x, z]
 const CAMP_SPOTS = [[-6.5,-1.5],[-4.5,-5.75]];
 const spotY = (x, z) => Math.hypot(x - ORCH_POS.x, z - ORCH_POS.z) < 9 ? ORCH_POS.y : 0;
 function freeSpot(list) { return list.find(([x,z]) => (spotY(x, z) !== 0 || !blockedAt(x, z)) && !(S.builds || []).some(b => Math.hypot(b.x - x, b.z - z) < 1.6) && !Object.values(S.people || {}).some(p => p.spot && Math.hypot(p.spot[0] - x, p.spot[1] - z) < 2)); }
-function homeSpots() { return [...ownedLobes().flatMap(L => [[L.e.x + 1.2, L.e.z - 1], [L.e.x - 1.4, L.e.z + 1.2]]), [-6.5,-1.5],[-4.5,-5.75],[3,-2.75]]; }
+function homeSpots() { return [...ownedLobes().flatMap(L => [[L.e.x + 1.2, L.e.z - 1], [L.e.x - 1.4, L.e.z + 1.2]]), [-6.5,-1.5],[-4.5,-5.75],[-3.2,-5.3]]; }
 function tent(color) { const g = new THREE.Group(); const t = mesh(new THREE.ConeGeometry(.9, 1.3, 4), mat(color), 0, .65, 0); t.rotation.y = Math.PI/4; g.add(t);
   g.add(mesh(new THREE.BoxGeometry(.35, .6, .05), mat(0x3b2f4a), 0, .3, .5)); g.add(mesh(new THREE.CylinderGeometry(.03,.03,1.6,5), mat(0x9b6b4a), 0, .8, 0)); return g; }
 function cottage(color) { const g = new THREE.Group(); g.add(mesh(new THREE.BoxGeometry(1.5, 1, 1.3), mat(0xfff1d6), 0, .5, 0));
@@ -3357,7 +3420,7 @@ function drawTradePlants() {
   tradeGroup.clear(); const code = VISIT ? VISIT_CODE : myCode;
   const sp = SPECIALTIES.find(x => x.id === S.specialty);
   if (sp && featureOn('specialty') && !VISIT) {
-    const g = new THREE.Group(); g.position.set(5.5, 0, 2.5); tradeGroup.add(g);
+    const g = new THREE.Group(); g.position.set(5.3, 0, 2.6); tradeGroup.add(g);
     g.add(mesh(new THREE.CylinderGeometry(.09,.13,1,7), mat(0x7a5236), 0, .5, 0));
     [[0,1.15,0,.55],[.35,.95,.1,.38],[-.32,.98,-.05,.4]].forEach(([x,y,z,r]) => g.add(mesh(sph(r), mat(sp.leaf), x, y, z)));
     for (let i = 0; i < 7; i++) { const a = i*.9, pod = mesh(new THREE.SphereGeometry(.12,8,6), mat(sp.color), Math.cos(a)*.52, .75 + (i%3)*.18, Math.sin(a)*.45); pod.scale.y = 1.5; g.add(pod); }
@@ -3543,8 +3606,9 @@ function drawBuilds() {
 function blockedAt(x, z) {
   if (!onLand(x, z)) return 'That is too close to the edge.';
   // where things stand on the home island now (kept in step with the layout)
-  const circles = [[-4,-3,2],[5,-2.6,.9],[8.2,1.6,1],[-1.7,-1.6,.7],[-6.1,.5,.8],[-3.3,.9,.9],[-1.6,1.2,1],[-1,-5.2,.9],[1.2,-4.6,1.2],[-1.7,-3.8,.7],
-    [-7.9,-2.2,.8],[3.5,-7.4,.8],[8.4,1.2,1.2],[4.9,-7.4,1.5],[-7.2,-3.8,1],[5.5,2.5,1],[-2.75,3,.9],[-5.1,-1.25,.7],[-2.9,-1.25,.7],[-.9,-.1,.6],[6.3,.3,.7],
+  const at = (o, r) => [o.position.x, o.position.z, r];
+  const circles = [[-4,-3,2], at(crate, .9), at(sign, 1), at(mailbox, .7), at(workbench, .8), at(campfire, .9), at(sundial, 1), at(kiln, 1), at(furnace, .9), [-1,-5.2,.9],[2.4,-4.35,1.2],[-1.7,-3.8,.7],
+    ...nodes.filter(n => n.parent === scene && Math.hypot(n.position.x, n.position.z) < 9).map(n => at(n, .8)), [8.4,1.2,1.2],[4.9,-7.4,1.5],[-7.2,-3.8,1],[5.3,2.6,1],[-2.75,3,.9],[-5.1,-1.25,.7],[-2.9,-1.25,.7],[-2,-2.55,.7],[5.3,1.25,.7],
     ...woodTrees.filter(t => t.parent === scene).map(t => [t.position.x, t.position.z, 1]), ...rocks.map(r => [r.position.x, r.position.z, .7]), ...bushes.filter(b => b.parent && b.parent.parent === scene).map(b => [b.position.x, b.position.z, .7])];
   if (circles.some(([cx,cz,r]) => Math.hypot(x-cx, z-cz) < r)) return 'That spot is taken by something important.';
   if (x > .2 && x < 4.8 && z > -2 && z < (S.bigGarden ? 3.9 : 2.6)) return 'That is your garden.';
@@ -4395,7 +4459,7 @@ const foundersWall = new THREE.Group(); foundersWall.position.set(-7.2, 0, -3.8)
 { const w = mat(0xc98f58), gold = mat(0xd9a441, { metalness:.5, roughness:.4 });
   [-.7,.7].forEach(x => foundersWall.add(mesh(new THREE.CylinderGeometry(.06,.07,1.6,8), w, x, .8, 0)));
   foundersWall.add(mesh(new THREE.BoxGeometry(1.7,.9,.1), mat(0xfff1d6), 0, 1.15, .02)); foundersWall.add(mesh(new THREE.BoxGeometry(1.8,.1,.14), gold, 0, 1.65, .02));
-  for (let i = 0; i < 4; i++) foundersWall.add(mesh(new THREE.BoxGeometry(1.2 - i*.15, .05, .02), mat(0x9b6b4a), 0, 1.4 - i*.17, .08));
+  { const f = boardFace('Founding Gardeners', 1.6, .8, 'founders'); f.position.set(0, 1.15, .075); foundersWall.add(f); }
   foundersWall.add(mesh(new THREE.OctahedronGeometry(.1), glow(0xc9b6ff), 0, 1.85, .02));
   const hb = hitBox(1.9, 1.9, .6); hb.position.y = 1; foundersWall.add(hb); foundersWall.userData.kind = 'deco'; foundersWall.userData.use = openWall; }
 function drawWall() { foundersWall.visible = featureOn('founders') && !VISIT; }
@@ -4517,7 +4581,7 @@ function makeBalloon() { const g = new THREE.Group(); const cols = [0xc9b6ff, 0x
   g.add(mesh(new THREE.CylinderGeometry(.35, .6, .5, 16, 1, true), mat(0xc9b6ff), 0, 1.75, 0)); g.add(mesh(new THREE.CylinderGeometry(.45, .38, .45, 12), mat(0xa9744a), 0, .45, 0));
   [[.3,.3],[-.3,.3],[.3,-.3],[-.3,-.3]].forEach(([x,z]) => { const r = mesh(new THREE.CylinderGeometry(.012,.012,1.2,4), mat(0x6b4f3a), x*.9, 1.15, z*.9); g.add(r); });
   g.add(mesh(new THREE.OctahedronGeometry(.12), glow(0xffe07a), 0, 4.45, 0)); return g; }
-const balloon = makeBalloon(); balloon.position.set(1.2, 0, -4.6); scene.add(balloon); lateClicks.push(balloon);
+const balloon = makeBalloon(); balloon.position.set(2.4, 0, -4.35); scene.add(balloon); lateClicks.push(balloon); // in the open behind the garden, clear of the wind bell
 { const hb = hitBox(1.6, 4.6, 1.6); hb.position.y = 2.2; balloon.add(hb); balloon.userData.kind = 'deco'; balloon.userData.use = () => balloonMenu(); }
 function drawBalloon() { balloon.visible = !!S.founderBalloon && !VISIT; }
 drawBalloon();
@@ -4697,7 +4761,7 @@ function landmarkModel(d) { const g = new THREE.Group(), a = mat(d.color), b = m
   return g; }
 function drawWorld() { worldGroup.children.slice().forEach(c => worldGroup.remove(c)); const W = S.world || {};
   if (W.landmark) { const lm = landmarkModel(W.landmark); lm.position.set(3.0, 0, 3.5); worldGroup.add(lm); }
-  if (W.placename) { const sign = signBoard(W.placename.name, 1.6, .44, 1.6); sign.position.set(-1.6, 0, 4.9); sign.rotation.y = .15; worldGroup.add(sign); } }
+  if (W.placename) { const sign = signBoard(W.placename.name); sign.position.set(...SQ_SIGN); worldGroup.add(sign); } }
 drawKeepers(); drawWorld();
 // --- growing the island ---
 function expandReady(e) { return e.needs === 'home' ? (S.home || 0) >= 3 : e.needs === 'kiln' ? !!S.stations.kiln && potteryOn() : !!S.stations.furnace && bronzeOn(); }
@@ -4847,7 +4911,7 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   for (let i = 0; i < 10; i++) { const d = mesh(sph(.05), new THREE.MeshBasicMaterial({ color:0xdff3ff, transparent:true, opacity:.85 }), 0, 1.5, 0); d.userData.ph = i / 10; fnt.add(d); squareBits.drops.push(d); }
   const fh = hitBox(3, 1.6, 3); fh.position.y = .8; fnt.add(fh); deco(fh, wishFountain);
   // benches around the fountain: sit and let time pass faster
-  [[1.9, 2.7], [-3.0, -1.1], [2.5, -2.3]].forEach(([x, z]) => { const b = new THREE.Group(); b.position.set(x, 0, z); faceCenter(b, x, z); g.add(b); const w = mat(0xc98f58);
+  [55, 235, 305].map(d => [Math.cos(d * Math.PI / 180) * 3, Math.sin(d * Math.PI / 180) * 3]).forEach(([x, z]) => { const b = new THREE.Group(); b.position.set(x, 0, z); faceCenter(b, x, z); g.add(b); const w = mat(0xc98f58);
     b.add(mesh(new THREE.BoxGeometry(1.3, .08, .42), w, 0, .42, 0)); b.add(mesh(new THREE.BoxGeometry(1.3, .34, .07), w, 0, .66, -.2));
     [-.55, .55].forEach(sx => b.add(mesh(new THREE.BoxGeometry(.07, .42, .38), mat(0x5a3a28), sx, .21, 0)));
     const h = hitBox(1.4, .9, .8); h.position.y = .45; b.add(h); deco(h, () => sitBench(b)); });
@@ -4860,7 +4924,7 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   const nb = new THREE.Group(); nb.position.set(-4.3, 0, -1.7); faceCenter(nb, -4.3, -1.7); g.add(nb);
   [-.6, .6].forEach(x => nb.add(mesh(new THREE.CylinderGeometry(.06, .07, 1.6, 8), mat(0x9b6b4a), x, .8, 0)));
   nb.add(mesh(new THREE.BoxGeometry(1.5, .95, .08), mat(0xc98f58), 0, 1.35, 0)); nb.add(mesh(new THREE.BoxGeometry(1.64, .1, .2), mat(0x8a5a3a), 0, 1.88, 0));
-  [[-.42, 1.5, 0xfff1d6], [.05, 1.42, 0xffd1dc], [.45, 1.55, 0xfff3a0], [-.2, 1.12, 0xdff3ff], [.36, 1.1, 0xfff1d6]].forEach(([x, y, c]) => nb.add(mesh(new THREE.BoxGeometry(.32, .36, .01), mat(c), x, y, .05)));
+  { const f = boardFace('Notices', 1.4, .85, 'notice'); f.position.set(0, 1.35, .045); nb.add(f); }
   const nh = hitBox(1.7, 2, .6); nh.position.y = 1; nb.add(nh); deco(nh, openNotice);
   // Pip's cart: seeds and furniture, restocked every morning
   const cart = new THREE.Group(); cart.position.set(3.7, 0, -3.1); faceCenter(cart, 3.7, -3.1); g.add(cart);
@@ -4870,12 +4934,12 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   [[-.4, 0xffc857], [0, 0x8fdc8a], [.4, 0xc9b6ff]].forEach(([x, c]) => cart.add(mesh(new THREE.BoxGeometry(.28, .2, .22), mat(c), x, 1.13, .1)));
   const ch = hitBox(1.7, 2.2, 1.1); ch.position.y = 1.1; cart.add(ch); deco(ch, pipCart);
   // two planters by the entrance: Pip tucks a spare seed packet in one each day
-  [[-4.2, 3.2], [-.9, 5.1]].forEach(([x, z], i) => { const p = new THREE.Group(); p.position.set(x, 0, z); g.add(p);
+  [[-1.37, 4.14], [-.78, 3.21]].forEach(([x, z], i) => { const p = new THREE.Group(); p.position.set(x, 0, z); p.rotation.y = 1.01; g.add(p); // lining the right side of the entrance
     p.add(mesh(new THREE.BoxGeometry(.8, .4, .5), mat(0xc98f58), 0, .2, 0));
     for (let k = 0; k < 4; k++) { p.add(mesh(new THREE.CylinderGeometry(.015, .015, .25, 4), mat(0x4fb46a), -.27 + k * .18, .5, 0)); p.add(mesh(sph(.07), mat([0xff8fa3, 0xfff3a0, 0xc9b6ff, 0xffffff][k]), -.27 + k * .18, .64, 0)); }
     const h = hitBox(.9, .8, .6); h.position.y = .4; p.add(h); deco(h, () => planterSeed(i)); });
   // the sign at the entrance (a Keeper-approved name replaces it)
-  const sg = signBoard('Town Square', 1.6, .44, 1.6); sg.position.set(-1.6, 0, 4.9); sg.rotation.y = .15; g.add(sg); squareBits.sign = sg;
+  const sg = signBoard('Town Square'); sg.position.set(...SQ_SIGN); g.add(sg); squareBits.sign = sg;
   const sh = hitBox(1.7, 1.9, .5); sh.position.y = 1; sg.add(sh); deco(sh, () => showCard(`<div class="kicker">THE TOWN SQUARE</div><h2>Where the neighbors gather</h2><p>Towns have gathered around open squares for thousands of years. In ancient Athens it was the agora: a marketplace where people traded, talked, and argued about big ideas. In Rome it was the Forum, the center of public life.</p><p>In Sky Garden, the square is where the village comes together: markets, votes, festivals, and news.</p>`, 'Okay'));
 }
 // shared things move here from the home island
