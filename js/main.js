@@ -194,7 +194,7 @@ function halo(color, size, opacity = .8, additive = true) {
 }
 
 // --- islands ---
-const GRASS = [0x8fdc8a, 0x7fd07a, 0xcfbd6c, 0xeef3ff]; // fall is a golden meadow, not sand
+const GRASS = [0x8fdc8a, 0x7fd07a, 0xdcbb62, 0xeef3ff]; // fall is a golden meadow, not sand
 function island(r, x, y, z, o = {}) {
   const g = new THREE.Group(); g.position.set(x,y,z);
   const topGeo = new THREE.CylinderGeometry(r, r*.97, 1, 48, 1, false); { const P = topGeo.attributes.position, col = [];
@@ -218,11 +218,17 @@ const ORCH = island(8, ORCH_POS.x, ORCH_POS.y, ORCH_POS.z);
 const WIND_POS = new THREE.Vector3(30, -3, -20);
 const WIND = island(8, WIND_POS.x, WIND_POS.y, WIND_POS.z);
 const NIGHT_POS = new THREE.Vector3(53, -2.5, -15);
-const NIGHT = island(7, NIGHT_POS.x, NIGHT_POS.y, NIGHT_POS.z); NIGHT.top.material.color.set(0x6a5aa8); NIGHT.top.material.emissive = new THREE.Color(0x2a2150);
+const NIGHT = island(7, NIGHT_POS.x, NIGHT_POS.y, NIGHT_POS.z); NIGHT.top.material.color.set(0x6a5aa8); NIGHT.top.material.emissive = new THREE.Color(0x2a2150); NIGHT.lip.material.color.set(0x5d4f98); NIGHT.lip.material.emissive = new THREE.Color(0x221a44); // the rim matches its purple ground
 
 // --- grass tufts that sway ---
-const tuftGeo = new THREE.ConeGeometry(.05, .28, 4); tuftGeo.translate(0, .14, 0);
-const tuftMat = mat(0x6cc26a);
+const tuftGeo = (() => { const pos = [], nor = []; // three flat blades fanned out, merged into one shape
+  [[-.35, -.05, .24], [0, 0, .32], [.4, .06, .22]].forEach(([lean, x, h], i) => { const b = new THREE.ConeGeometry(.05, h, 3).toNonIndexed();
+    b.scale(1.5, 1, .45); b.translate(0, h/2, 0); b.rotateZ(lean); b.rotateY(i * 1.1); b.translate(x, 0, (i - 1) * .03);
+    pos.push(...b.attributes.position.array); nor.push(...b.attributes.normal.array); });
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); return g; })();
+var SEASON_ISLES = [HOME, ORCH, WIND]; // islands whose grass changes with the season
+const TUFT = [0x74cf6c, 0x62bf5c, 0xdcb556, 0xe6eef8]; // a shade brighter than the ground, so the grass reads as grass, not specks
+const tuftMat = mat(0x74cf6c);
 const tufts = new THREE.InstancedMesh(tuftGeo, tuftMat, 680);
 const tuftData = [], dummy = new THREE.Object3D();
 for (let i=0; i<680; i++) {
@@ -462,7 +468,7 @@ const crystalHalo = halo(0x8f7bff, 3.2, .45); crystalHalo.position.y = .7; cryst
 crystals.userData.kind = 'crystals'; scene.add(crystals);
 // --- the Old Heart: the center of the old village ---
 const OH = new THREE.Vector3(-2, -1, -48);
-const OLD = island(11, OH.x, OH.y, OH.z);
+const OLD = island(11, OH.x, OH.y, OH.z); SEASON_ISLES.push(OLD);
 const heart = new THREE.Group(); heart.position.copy(OH); scene.add(heart);
 for (let i=0;i<9;i++){ const a = i/9*Math.PI*2 + .2, r = 9, broken = i%3 === 1;
   deco(heart.add(mesh(new THREE.CylinderGeometry(.35,.4, broken ? 1.1 : 2.6, 12), mat(0xe8e0d0), Math.cos(a)*r, broken ? .55 : 1.3, Math.sin(a)*r)).children.at(-1), () => factCard('THE OLD HEART', 'Old columns', TAP_FACTS.column, 'col')); }
@@ -998,10 +1004,20 @@ room.add(mesh(new THREE.BoxGeometry(.2,3.2,6.6), mat(0xffe6cc), -3.8, 1.6, 0));
 room.add(mesh(new THREE.BoxGeometry(.2,3.2,6.6), mat(0xffe6cc), 3.8, 1.6, 0));
 const roomWin = new THREE.MeshBasicMaterial({ color:0xbfe3ff }); room.add(mesh(new THREE.BoxGeometry(1.4,1,.05), roomWin, 0, 1.8, -3.19));
 room.add(mesh(new THREE.BoxGeometry(1.55,.1,.1), mat(0x9b6b4a), 0, 1.25, -3.15));
+{ // cozy trim: wainscoting on the lower walls, a chair rail, baseboards, wooden caps on the wall tops, and a framed window with curtains
+  const wain = mat(0xf2d7b8), trim = mat(0xb98a63), cap = mat(0x9b6b4a);
+  room.add(mesh(new THREE.BoxGeometry(7.4,1.1,.04), wain, 0, .55, -3.19)); [-3.69, 3.69].forEach(x => room.add(mesh(new THREE.BoxGeometry(.04,1.1,6.4), wain, x, .55, 0)));
+  [[1.12,.06],[.08,.12]].forEach(([y, h]) => { room.add(mesh(new THREE.BoxGeometry(7.4,h,.08), trim, 0, y, -3.17)); [-3.67, 3.67].forEach(x => room.add(mesh(new THREE.BoxGeometry(.08,h,6.4), trim, x, y, 0))); });
+  room.add(mesh(new THREE.BoxGeometry(7.8,.1,.34), cap, 0, 3.24, -3.3)); [-3.8, 3.8].forEach(x => room.add(mesh(new THREE.BoxGeometry(.34,.1,6.6), cap, x, 3.24, 0)));
+  const wf = mat(0xffffff); [[0, 2.33, 1.56, .09], [0, 1.8, .05, 1], [0, 1.8, 1.4, .05]].forEach(([x, y, w, h]) => room.add(mesh(new THREE.BoxGeometry(w, h, .07), wf, x, y, -3.15)));
+  [-.68, .68].forEach(x => room.add(mesh(new THREE.BoxGeometry(.07,1.1,.07), wf, x, 1.8, -3.15)));
+  [-1, 1].forEach(sd => { const c = mesh(new THREE.BoxGeometry(.34,1.25,.06), mat(0xffb3c1), sd*.92, 1.78, -3.1); c.rotation.z = sd*.04; room.add(c); });
+  room.add(mesh(new THREE.CylinderGeometry(.025,.025,2.3,8), cap, 0, 2.45, -3.08).rotateZ(Math.PI/2)); }
 const bed = new THREE.Group(); bed.position.set(-2.6,0,-2.1);
 bed.add(mesh(new THREE.BoxGeometry(1.5,.45,2.1), mat(0x9b6b4a), 0, .22, 0));
 bed.add(mesh(new THREE.BoxGeometry(1.4,.2,1.5), mat(0x86c7ff), 0, .52, .25));
 bed.add(mesh(new THREE.BoxGeometry(1,.2,.45), mat(0xffffff), 0, .55, -.7));
+bed.add(mesh(new THREE.BoxGeometry(1.5,.95,.12), mat(0x8a5a3b), 0, .48, -1.02)); bed.add(mesh(new THREE.BoxGeometry(1.42,.06,.5), mat(0xffffff), 0, .63, -.25)); // headboard and a folded sheet
 bed.userData.kind = 'bed'; room.add(bed);
 const doormat = mesh(new THREE.BoxGeometry(1.4,.04,.7), mat(0xff8fa3), 0, .02, 2.8); doormat.userData.kind = 'door'; room.add(doormat);
 const shelf = new THREE.Group(); shelf.position.set(2.4,0,-2.95);
@@ -1150,8 +1166,8 @@ function burst(pos, color=0xffe27a, n=14) {
 // --- seasons ---
 function applySeason() {
   const s = season();
-  [HOME, ORCH, WIND].forEach(I => { I.top.material.color.set(GRASS[s]); I.lip.material.color.set(GRASS[s]).multiplyScalar(.9); });
-  tuftMat.color.set([0x6cc26a, 0x5fb85c, 0xc9a24f, 0xdfe8f5][s]);
+  SEASON_ISLES.forEach(I => { I.top.material.color.set(GRASS[s]); I.lip.material.color.set(GRASS[s]).multiplyScalar(.9); });
+  tuftMat.color.set(TUFT[s]); tuftMat.emissive.set(TUFT[s]).multiplyScalar(.22);
   trees.forEach(t => { t.userData.cm.color.set(CANOPY[s]); t.userData.cm2.color.set(CANOPY[s]).multiplyScalar(.86); });
   grassPatches.forEach(p => p.material.color.set(GRASS[s]).multiplyScalar(p.material.userData.f));
   flowers.visible = s < 2; tufts.visible = s !== 3 && !lowGfx;
@@ -1334,6 +1350,7 @@ function hideCard() { $('veil').classList.remove('show'); if (cardCleanup) { car
 function showCard(html, btn='Okay', onClose) {
   const kick = (html.match(/class="kicker">([^<]*)</) || [])[1] || '';
   $('card').className = 'card ' + (/ALREADY KNEW/.test(kick) ? 'k-recall' : /FESTIVAL/.test(kick) ? 'k-fest' : /STAR|OBSERVATORY|NIGHT SKY/.test(kick) ? 'k-star' : /MEMORY|STORY|TALE|SECRET|QUESTION/.test(kick) ? 'k-mem' : /LETTER|CHAPTER/.test(kick) ? 'k-letter' : 'k-plain');
+  if (!$('veil').classList.contains('show')) { const c = $('card'); c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); } // pops in when a menu opens
   if (cardCleanup) { cardCleanup(); cardCleanup = null; }
   $('card').innerHTML = html + (btn ? `<button id="cardBtn">${btn}</button>` : '');
   $('veil').classList.add('show'); cardClose = onClose;
@@ -1691,7 +1708,8 @@ function openGoals() {
   ensureGoals();
   setTimeout(async () => { const box = $('goalCg'); if (box) { box.innerHTML = await communityHtml(); wireClaim(); } }, 0);
   showCard(`<div class="kicker">TODAY</div><h2>Little goals</h2><p>Each one pays 20 coins. Finish all 3 for 30 more. New goals every morning.</p>
-    <div class="jlist">${S.goals.list.map(g => `<button>${g.have >= g.need ? '✓ ' : ''}${GOAL_TYPES[g.t](g.need)} <span class="sub">${g.t === 'sell' ? `${g.have} of ${g.need} coins` : `${g.have} of ${g.need}`}</span></button>`).join('')}</div><div id="goalCg"><p style="margin-top:12px">Loading the community goal...</p></div>`, 'Close');
+    <div class="jlist">${S.goals.list.map(g => { const done = g.have >= g.need, k = Math.min(1, g.have / g.need);
+      return `<button class="goal ${done ? 'done' : ''}"><span class="gck">${done ? '✓' : ''}</span><span class="gtx">${GOAL_TYPES[g.t](g.need)}<small>${done ? 'Done' : g.t === 'sell' ? `${Math.min(g.have, g.need)} of ${g.need} coins` : `${Math.min(g.have, g.need)} of ${g.need}`}</small><i class="gbar"><b style="width:${Math.round(k * 100)}%"></b></i></span></button>`; }).join('')}</div><div id="goalCg"><p style="margin-top:12px">Loading the community goal...</p></div>`, 'Close');
 }
 $('goalsBtn').onclick = openGoals;
 function applyPaint() { roof.material.color.set(+S.roof); house.userData.awning.material.color.set(+S.roof); house.children[0].material.color.set(+S.wall); }
@@ -3790,9 +3808,9 @@ function tickFrame() {
     dome.material.uniforms.top.value.copy(skyTop.copy(scene.background).offsetHSL(.02, .08, -.2));
     sunGlow.visible = el > .02 && night === 0; sunGlow.material.opacity = .55 * Math.min(1, el * 3);
     sunGlow.position.set(camera.position.x + lean*90, camera.position.y + 10 + el*60, camera.position.z - 110);
-    const gold = goldHour();
-    sun.intensity = .45 + el*1.25 + gold*.45; hemi.intensity = .6 + el*.4 - night*.15 + gold*.45; roomLight.intensity = 0;
-    hemi.color.setRGB(1, 1 - gold*.14, 1 - gold*.36);
+    const gold = goldHour(), dawn = Math.max(0, 1 - (h - 6) / 3.5); // a fresh, bright early morning
+    sun.intensity = .45 + el*1.25 + gold*.45 + dawn*.6; hemi.intensity = .6 + el*.4 - night*.15 + gold*.45 + dawn*1.05; roomLight.intensity = 0;
+    hemi.color.setRGB(1, 1 - gold*.14 - dawn*.03, 1 - gold*.36 - dawn*.06);
   }
   { const gold = inside ? 0 : goldHour(); sun.color.setHSL(.08 - gold*.03, .6 + gold*.35, .72 + el*.23 - gold*.05); }
   sun.position.set(lean*14 + player.position.x, player.position.y + 1.5 + el*16, lean*5 + 1.2 + player.position.z);
@@ -3908,10 +3926,10 @@ function tickFrame() {
     else { greatBell.position.set(OH.x, OH.y + 3.3, OH.z); const r = gbSwing.userData.ring || 0; gbSwing.rotation.set(0, 0, Math.sin(now*3) * .25 * Math.min(1, r)); if (r > 0) gbSwing.userData.ring = r - dt * .5; }
     if (q >= 5) frameGear.rotation.x += dt * (gbSwing.userData.ring > 0 ? 3 : .2); }
   { let tg = questTarget(); if (tg && S.where === 'hut') tg = doormat;
-    marker.visible = markerRing.visible = !!tg && !$('veil').classList.contains('show');
+    marker.visible = markerRing.visible = !!tg && !$('veil').classList.contains('show') && !document.body.classList.contains('on-title');
     if (tg) { const wp = new THREE.Vector3(); tg.getWorldPosition(wp); const k = tg.userData.kind;
       marker.position.set(wp.x, wp.y + (MARK_H[k] || 1.9) + Math.sin(now*3)*.15 + (k === 'greatbell' && S.q5 >= 5 ? 1.5 : 0), wp.z);
-      marker.rotation.y = Math.atan2(camera.position.x - marker.position.x, camera.position.z - marker.position.z); // always faces you
+      marker.quaternion.copy(camera.quaternion); // always faces you, from any angle
       const ph = (now * .8) % 1; markerRing.position.set(wp.x, wp.y + .04, wp.z); markerRing.scale.setScalar(.8 + ph * .7); markerRing.material.opacity = .65 * (1 - ph); } }
   const wantLit = S.q3 >= 7 && h >= 20; if (wantLit !== lightLit) drawLightBridge(wantLit);
   if (lightLit) lightMat.opacity = .65 + Math.sin(now*2)*.2;
@@ -4582,7 +4600,7 @@ addEventListener('sg-playing', () => setTimeout(syncTrust, 2500));
 function logKeeper(kind, detail) { if (!TESTSLOT && !VISIT) fetch(`${CLOUD}/event`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ key:S.syncKey, kind, detail }) }).catch(() => {}); }
 // Lighthouse Rock: a little island only keepers can see. Reach it by balloon.
 const LH = new THREE.Vector3(-15, -1.2, -11);
-const LHI = island(3.4, LH.x, LH.y, LH.z, { hidden:true }); LHI.g.visible = false;
+const LHI = island(3.4, LH.x, LH.y, LH.z, { hidden:true }); LHI.g.visible = false; SEASON_ISLES.push(LHI); applySeason();
 var lighthouse = new THREE.Group(); lighthouse.position.set(LH.x + .9, LH.y, LH.z - .7); scene.add(lighthouse);
 { for (let i = 0; i < 5; i++) lighthouse.add(mesh(new THREE.CylinderGeometry(.62 - i*.07, .66 - i*.07, .62, 20), mat(i % 2 ? 0xd2334c : 0xfff6e6), 0, .31 + i*.62, 0));
   lighthouse.add(mesh(new THREE.CylinderGeometry(.55,.55,.08,20), mat(0x3b2f4a), 0, 3.14, 0)); lighthouse.add(mesh(new THREE.CylinderGeometry(.3,.3,.5,12), glow(0xfff3a0), 0, 3.42, 0));
