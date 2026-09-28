@@ -194,13 +194,18 @@ function halo(color, size, opacity = .8, additive = true) {
 }
 
 // --- islands ---
-const GRASS = [0x8fdc8a, 0x7fd07a, 0xd9b86a, 0xeef3ff];
+const GRASS = [0x8fdc8a, 0x7fd07a, 0xcfbd6c, 0xeef3ff]; // fall is a golden meadow, not sand
 function island(r, x, y, z, o = {}) {
   const g = new THREE.Group(); g.position.set(x,y,z);
-  const top = mesh(new THREE.CylinderGeometry(r, r*.97, 1, 48), o.mat || mat(0x8fdc8a), 0, -.5, 0); g.add(top);
+  const topGeo = new THREE.CylinderGeometry(r, r*.97, 1, 48, 1, false); { const P = topGeo.attributes.position, col = [];
+    for (let i = 0; i < P.count; i++) { const d = Math.hypot(P.getX(i), P.getZ(i)) / r, f = P.getY(i) > .49 ? 1.07 - .16 * d * d : .86; col.push(f, f, f); }
+    topGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); }
+  const topMat = o.mat || mat(0x8fdc8a); topMat.vertexColors = true;
+  const top = mesh(topGeo, topMat, 0, -.5, 0); g.add(top);
   g.add(mesh(new THREE.CylinderGeometry(r*.97, r*.9, .6, 48), mat(0xb98a63), 0, -1.3, 0));
   const rock = mesh(new THREE.ConeGeometry(r*.9, r*.8, 48), mat(0x9c7fa8), 0, -1.6 - r*.4, 0); rock.rotation.x = Math.PI; g.add(rock);
-  const lip = mesh(new THREE.TorusGeometry(r - .05, .3, 10, 72), top.material, 0, -.14, 0); lip.rotation.x = Math.PI/2; g.add(lip);
+  const lipMat = topMat.clone(); lipMat.vertexColors = false; lipMat.color.multiplyScalar(.9); // the rim matches the deeper edge color
+  const lip = mesh(new THREE.TorusGeometry(r - .05, .3, 10, 72), lipMat, 0, -.14, 0); lip.rotation.x = Math.PI/2; g.add(lip);
   for (let i=0;i<Math.round(r*1.4);i++){ const a = i*2.39, rr = r*(.45 + (i%4)*.1), len = 1 + (i%5)*.45, vine = i%3 === 0;
     const root = mesh(new THREE.CylinderGeometry(.035, .012, len, 5), mat(vine ? 0x5fb85c : 0x7a5236), Math.cos(a)*rr, -1.7 - len/2 - (1 - rr/r)*r*.5, Math.sin(a)*rr);
     root.rotation.z = Math.sin(i)*.15; g.add(root);
@@ -551,8 +556,14 @@ function drawSites() {
 }
 const marker = new THREE.Group(); scene.add(marker);
 const markerMat = new THREE.MeshBasicMaterial({ color:0xffc857, fog:false });
-const mCone = new THREE.Mesh(new THREE.ConeGeometry(.28,.55,16), markerMat); mCone.rotation.x = Math.PI; marker.add(mCone);
-const mRing = new THREE.Mesh(new THREE.TorusGeometry(.2,.06,8,20), markerMat); mRing.position.y = .45; mRing.rotation.x = Math.PI/2; marker.add(mRing);
+// the quest marker: a gold chevron that always faces you, and a soft ring on the ground under the thing it points to
+{ const chev = new THREE.Shape(); chev.moveTo(-.32, .26); chev.lineTo(0, -.12); chev.lineTo(.32, .26); chev.lineTo(.16, .26); chev.lineTo(0, .07); chev.lineTo(-.16, .26); chev.closePath();
+  const geo = new THREE.ExtrudeGeometry(chev, { depth:.06, bevelEnabled:true, bevelThickness:.02, bevelSize:.025, bevelSegments:2 }); geo.center();
+  marker.add(new THREE.Mesh(geo, markerMat));
+  const back = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color:0xc9962f, fog:false })); back.scale.setScalar(1.16); back.position.z = -.03; marker.add(back);
+  const up = new THREE.Mesh(geo, markerMat); up.scale.setScalar(.62); up.position.y = .3; marker.add(up); }
+const markerRing = new THREE.Mesh(new THREE.RingGeometry(.5, .6, 40), new THREE.MeshBasicMaterial({ color:0xffe07a, transparent:true, opacity:.6, depthWrite:false, side:THREE.DoubleSide, fog:false }));
+markerRing.rotation.x = -Math.PI/2; scene.add(markerRing);
 const bushes = [];
 const dressing = new THREE.Group(); scene.add(dressing); const grassPatches = [];
 { // grouped decorations: grass patches, bushes, flower beds, garden fence
@@ -1139,7 +1150,7 @@ function burst(pos, color=0xffe27a, n=14) {
 // --- seasons ---
 function applySeason() {
   const s = season();
-  HOME.top.material.color.set(GRASS[s]); ORCH.top.material.color.set(GRASS[s]); WIND.top.material.color.set(GRASS[s]);
+  [HOME, ORCH, WIND].forEach(I => { I.top.material.color.set(GRASS[s]); I.lip.material.color.set(GRASS[s]).multiplyScalar(.9); });
   tuftMat.color.set([0x6cc26a, 0x5fb85c, 0xc9a24f, 0xdfe8f5][s]);
   trees.forEach(t => { t.userData.cm.color.set(CANOPY[s]); t.userData.cm2.color.set(CANOPY[s]).multiplyScalar(.86); });
   grassPatches.forEach(p => p.material.color.set(GRASS[s]).multiplyScalar(p.material.userData.f));
@@ -1417,7 +1428,7 @@ function birthdayPicker(done, fromNana) {
       if (!y) return draw('Pick the year too.');
       if (d > new Date(2024, m, 0).getDate()) return draw(`${MONTH_LONG[m-1]} only has ${new Date(2024, m, 0).getDate()} days.`);
       S.birthday = { m, d, y }; S.ageBand = ageBand(); S.birthdayAsked = true; save(); hideCard(); toast(`Birthday saved: ${MONTH_LONG[m-1]} ${d}.`); done && done(); };
-    $('bdSkip').onclick = () => { S.birthdayAsked = true; save(); hideCard(); S.ageBand = 'kid'; save(); toast('No problem. Your island will celebrate the day you started instead. You can add it later from your Bag.'); done && done(); };
+    $('bdSkip').onclick = () => { S.birthdayAsked = true; save(); hideCard(); S.ageBand = 'kid'; save(); toast('No problem. Your island will celebrate the day you started instead. You can add it later: tap Bag, then Settings.'); done && done(); };
   };
   draw();
 }
@@ -1441,7 +1452,7 @@ function birthdayParty() {
     <p>${S.birthday ? 'The whole sky came to celebrate you.' : 'One more year on your island. The whole sky came to celebrate.'} Year ${yr} begins today!</p>
     <h4>Presents</h4><div class="jlist">
       ${giftsFrom.length ? `<button>${coins} coins from ${giftsFrom.join(', ')}</button>` : `<button>${coins} coins from the sky</button>`}
-      <button>A Birthday Cake for your hut</button><button>A party hat (Bag, then Change my look)</button></div>
+      <button>A Birthday Cake for your hut</button><button>A party hat (Bag, then Settings, then Change my look)</button></div>
     <h4>Your year ${yr - 1} in review</h4><div class="jlist"><button>${review.aha} memories brought back</button><button>${review.found} new things found</button><button>${review.built} buildings rebuilt</button></div>`, 'Thank you!');
 }
 function openJournal() {
@@ -1562,17 +1573,22 @@ function openBag() {
     ${(S.products || []).length ? `<h4>Products</h4><div class="igrid">${S.products.map((p, i) => `<button class="itile" data-pr="${i}">${productSwatch(p, 34)}<small>${productName(p)}</small></button>`).join('')}</div>` : ''}
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
-    <h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>
-    ${(founderOn() && (fGot('testisland') || DEV_OK || (S.trust && S.trust.level >= 4)) && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}<button id="lookBtn" class="ghost">Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" class="ghost">I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" class="ghost">Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" class="ghost">${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" class="ghost">Sync my game to another device</button>`, 'Close');
+    ${slotsIn(S.bag) ? '' : '<h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>'}
+    ${(founderOn() && (fGot('testisland') || DEV_OK || (S.trust && S.trust.level >= 4)) && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}<button id="setBtn" class="ghost">⚙ Settings</button>`, 'Close');
   document.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { const k = b.dataset.it; $('itInfo').innerHTML = `<b>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}</b>. ${itemUse(k)}`; });
   document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => { const k = b.dataset.fu, p = S.placed.filter(x => x === k).length; $('itInfo').innerHTML = `<b>${icon(k)} ${FURN[k].name}</b>. ${p ? `${p} in your hut.` : 'Not placed yet. Place it inside your hut.'}`; });
   document.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => openProduct(S.products[+b.dataset.pr], openBag));
   if ($('islandBtn')) $('islandBtn').onclick = switchIsland;
-  $('lookBtn').onclick = () => openLookEditor(openBag);
+  $('setBtn').onclick = openSettings;
+}
+// settings: how you look, your birthday, your island, tester code, and moving your game to another device
+function openSettings() {
+  showCard(`<div class="kicker">SETTINGS</div><h2>You and your game</h2><div class="jlist"><button id="lookBtn" >Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" >I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" >Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" >${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" >Sync my game to another device</button></div>`, 'Back', openBag);
+  $('lookBtn').onclick = () => openLookEditor(openSettings);
   if ($('codeBtn')) $('codeBtn').onclick = testerCodeCard;
-  if ($('modeBtn')) $('modeBtn').onclick = () => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); openBag(); }, { switching:true }); };
-  $('bdBtn').onclick = () => birthdayPicker(openBag);
-  $('moveBtn').onclick = () => openMoveGame(openBag);
+  if ($('modeBtn')) $('modeBtn').onclick = () => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); openSettings(); }, { switching:true }); };
+  $('bdBtn').onclick = () => birthdayPicker(openSettings);
+  $('moveBtn').onclick = () => openMoveGame(openSettings);
 }
 $('journalBtn').onclick = openJournal;
 $('bagBtn').onclick = openBag;
@@ -3709,7 +3725,7 @@ function groundAt(x, y, z) {
 // ============ LOOP ============
 function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth/innerHeight; camera.fov = innerWidth < innerHeight ? 55 : 40; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
-const sky = new THREE.Color(), SKY = [[0,0xffd6c9],[.3,0xbfe3ff],[.65,0xbfe3ff],[.75,0xffb38a],[.82,0xe38aa8],[.9,0x5a4b99],[1,0x1f2552]].map(([t,c])=>[t,new THREE.Color(c)]);
+const sky = new THREE.Color(), SKY = [[0,0xffd6c9],[.3,0xbfe3ff],[.62,0xbfe3ff],[.69,0xffd2a6],[.76,0xffab86],[.83,0xe38aa8],[.9,0x5a4b99],[1,0x1f2552]].map(([t,c])=>[t,new THREE.Color(c)]);
 function skyAt(t) { for (let i=1;i<SKY.length;i++) if (t <= SKY[i][0]) { const [a,ca]=SKY[i-1],[b,cb]=SKY[i]; return sky.copy(ca).lerp(cb,(t-a)/(b-a)); } return sky.copy(SKY.at(-1)[1]); }
 const HUT_BG = new THREE.Color(0x2e2438);
 const dome = new THREE.Mesh(new THREE.SphereGeometry(160, 32, 16), new THREE.ShaderMaterial({
@@ -3747,6 +3763,8 @@ function nearestLand() { const p = player.position; let best = null;
   return best || { x:0, z:0 }; }
 // the game loop keeps running even if one frame hits an error, so the game never freezes. The first error is reported once.
 function tick() { requestAnimationFrame(tick); try { tickFrame(); } catch (e) { if (!tick.err) { tick.err = e; window.__tickErr = String(e && e.stack || e); setTimeout(() => { throw e; }); } } }
+// golden hour: 1 at sunset (about 6:25 PM), fading to 0 an hour and a half either side
+function goldHour() { return Math.max(0, 1 - Math.abs(hour() - 18.4) / 1.8); }
 function tickFrame() {
   const dt = Math.min(.05, clock.getDelta()), now = clock.elapsedTime;
   const menuOpen = $('veil').classList.contains('show') || $('dialog').classList.contains('show');
@@ -3763,7 +3781,7 @@ function tickFrame() {
   const lean = Math.cos(arc) - Math.cos((12-6)/13*Math.PI);
   if (inside) {
     scene.background = HUT_BG; scene.fog.color.copy(HUT_BG); dome.visible = false; sunGlow.visible = false;
-    sun.intensity = .5; hemi.intensity = 1.25; roomLight.intensity = 6;
+    sun.intensity = .5; hemi.intensity = 1.25; hemi.color.setRGB(1, 1, 1); roomLight.intensity = 6;
     roomWin.color.copy(skyAt(S.t));
   } else {
     scene.background = skyAt(S.t); scene.fog.color.copy(scene.background);
@@ -3772,9 +3790,11 @@ function tickFrame() {
     dome.material.uniforms.top.value.copy(skyTop.copy(scene.background).offsetHSL(.02, .08, -.2));
     sunGlow.visible = el > .02 && night === 0; sunGlow.material.opacity = .55 * Math.min(1, el * 3);
     sunGlow.position.set(camera.position.x + lean*90, camera.position.y + 10 + el*60, camera.position.z - 110);
-    sun.intensity = .45 + el*1.25; hemi.intensity = .6 + el*.4 - night*.15; roomLight.intensity = 0;
+    const gold = goldHour();
+    sun.intensity = .45 + el*1.25 + gold*.45; hemi.intensity = .6 + el*.4 - night*.15 + gold*.45; roomLight.intensity = 0;
+    hemi.color.setRGB(1, 1 - gold*.14, 1 - gold*.36);
   }
-  sun.color.setHSL(.08, .6, .72 + el*.23);
+  { const gold = inside ? 0 : goldHour(); sun.color.setHSL(.08 - gold*.03, .6 + gold*.35, .72 + el*.23 - gold*.05); }
   sun.position.set(lean*14 + player.position.x, player.position.y + 1.5 + el*16, lean*5 + 1.2 + player.position.z);
   sun.target.position.copy(player.position);
   starMat.opacity = inside ? 0 : night * .9;
@@ -3888,9 +3908,11 @@ function tickFrame() {
     else { greatBell.position.set(OH.x, OH.y + 3.3, OH.z); const r = gbSwing.userData.ring || 0; gbSwing.rotation.set(0, 0, Math.sin(now*3) * .25 * Math.min(1, r)); if (r > 0) gbSwing.userData.ring = r - dt * .5; }
     if (q >= 5) frameGear.rotation.x += dt * (gbSwing.userData.ring > 0 ? 3 : .2); }
   { let tg = questTarget(); if (tg && S.where === 'hut') tg = doormat;
-    marker.visible = !!tg && !$('veil').classList.contains('show');
+    marker.visible = markerRing.visible = !!tg && !$('veil').classList.contains('show');
     if (tg) { const wp = new THREE.Vector3(); tg.getWorldPosition(wp); const k = tg.userData.kind;
-      marker.position.set(wp.x, wp.y + (MARK_H[k] || 1.9) + Math.sin(now*3)*.15 + (k === 'greatbell' && S.q5 >= 5 ? 1.5 : 0), wp.z); marker.rotation.y = now*1.5; } }
+      marker.position.set(wp.x, wp.y + (MARK_H[k] || 1.9) + Math.sin(now*3)*.15 + (k === 'greatbell' && S.q5 >= 5 ? 1.5 : 0), wp.z);
+      marker.rotation.y = Math.atan2(camera.position.x - marker.position.x, camera.position.z - marker.position.z); // always faces you
+      const ph = (now * .8) % 1; markerRing.position.set(wp.x, wp.y + .04, wp.z); markerRing.scale.setScalar(.8 + ph * .7); markerRing.material.opacity = .65 * (1 - ph); } }
   const wantLit = S.q3 >= 7 && h >= 20; if (wantLit !== lightLit) drawLightBridge(wantLit);
   if (lightLit) lightMat.opacity = .65 + Math.sin(now*2)*.2;
   crystals.children.forEach((c, i) => c.material.emissiveIntensity = .5 + Math.sin(now*1.5 + i)*.3);
@@ -4310,7 +4332,7 @@ function openPresents(gifts, done) {
 // Founder gifts arrive one at a time over the first days, so each one is a surprise and nothing piles up.
 const F_GIFTS = {
   pet:{ icon:'🐾', title:'A companion!', text:'A little friend who follows you everywhere. Who will it be?', wrap:['#8fdc8a','#fff6e6'], last:'Choose my companion' },
-  outfit:{ icon:'🧥', title:'The Sky Pioneer outfit', text:'A flight jacket, a long scarf that trails in the wind, and an aviator cap with goggles. To wear it, tap Bag, then Change my look, then Clothes.', wrap:['#7ec8e3','#fff1d6'] },
+  outfit:{ icon:'🧥', title:'The Sky Pioneer outfit', text:'A flight jacket, a long scarf that trails in the wind, and an aviator cap with goggles. To wear it, tap Bag, then Settings, then Change my look, then Clothes.', wrap:['#7ec8e3','#fff1d6'] },
   balloon:{ icon:'🎈', title:'Your own hot-air balloon', text:'It flies you to any island you have opened. Tap the 🎈 on your hotbar.', wrap:['#ffc857','#ff8fa3'] },
   lantern:{ icon:'🏮', title:"The Founder's Lantern", text:'A glowing lantern for your island. At night, fireflies gather around it. Tap Build to place it.', wrap:['#c9b6ff','#ffe07a'] },
 };

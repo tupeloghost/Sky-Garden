@@ -68,7 +68,7 @@
   // ?look=1 is the creator's look-only view of someone's page: no way to start playing with their code
   const look = new URLSearchParams(location.search).get('look') === '1';
   document.getElementById('startTop').innerHTML = look ? `<p class="btn" style="background:rgba(255,255,255,.12);color:var(--soft);box-shadow:none;font-size:16px">👁 Look only. This button is off here.</p>` : `<a class="btn" href="${go}">${ok ? 'Start playing' : 'Open Sky Garden'}</a>`;
-  document.getElementById('codeLine').innerHTML = ok ? `Your code is <code>${code}</code>. If the game ever asks for it: tap Bag, then "I have a tester code".` : 'Use the personal link you were sent, so your code comes with you.';
+  document.getElementById('codeLine').innerHTML = ok ? `Your code is <code>${code}</code>. If the game ever asks for it: tap Bag, then Settings, then "I have a tester code".` : 'Use the personal link you were sent, so your code comes with you.';
   // a quiet field of stars
   const sky = document.getElementById('sky');
   for (let i = 0; i < 70; i++) { const s = document.createElement('i'); s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
