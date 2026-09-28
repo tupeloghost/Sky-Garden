@@ -3861,7 +3861,8 @@ function tickFrame() {
   pulsers.forEach(h => { h.userData.pulse = Math.max(0, h.userData.pulse - dt); h.scale.setScalar(h.userData.base * (1 + h.userData.pulse)); if (!h.userData.pulse) pulsers.delete(h); });
   if (bell.userData.ring > 0) { bell.userData.ring = Math.max(0, bell.userData.ring - dt); bellBody.rotation.z = Math.sin(now*12) * .35 * bell.userData.ring; }
   balloons.children.forEach(b => { if (b.userData.fly) { b.position.y += dt * 1.6; b.position.x += Math.sin(now*2) * dt * .3; if (b.position.y > 25) b.visible = false; } });
-  if (sitting) { inner.position.y = -.28; }
+  // sitting: hips on the seat, legs hanging, leaning back a little, hands in the lap
+  if (sitting) { inner.position.y = -.16; inner.rotation.x = -.07; inner.userData.arms.forEach(a => a.rotation.x = -.45); } else if (inner.rotation.x) inner.rotation.x *= .8;
   if (holdUp) inner.userData.arms.forEach(a => a.rotation.x = -2.9);
   if (lying) { inner.rotation.x = -Math.PI/2; inner.position.y = .22; inner.rotation.z = 0; } else if (inner.rotation.x) inner.rotation.x = 0;
   if (danceT > 0) { danceT = Math.max(0, danceT - dt); inner.rotation.y = danceT ? danceT * 6 : 0; inner.position.y = Math.abs(Math.sin(now*10)) * .18 * (danceT ? 1 : 0); }
@@ -4868,7 +4869,7 @@ function planterSeed(i) { S.planter = S.planter || {}; if (S.planter[i] === S.da
   S.planter[i] = S.day; S.seeds[k] = (S.seeds[k] || 0) + 1; save(); drawHud(); sfx('plant'); toast(`You found a spare ${CROPS[k].name} seed packet in the planter.`); }
 function pipCart() { showCard(`<div class="kicker">PIP'S CART</div><h2>What do you need?</h2><p>Pip restocks the cart every morning.</p><div class="jlist"><button id="pcS">🌱 Seeds</button><button id="pcF">🪑 Furniture</button></div>`, 'Not now');
   $('pcS').onclick = () => { hideCard(); seedShop(); }; $('pcF').onclick = () => { hideCard(); furnShop(); }; }
-function sitBench(b) { const wp = new THREE.Vector3(); b.getWorldPosition(wp); sitting = b; target = null; pending = null; player.position.set(wp.x, wp.y, wp.z); player.rotation.y = b.rotation.y + Math.PI;
+function sitBench(b) { const wp = new THREE.Vector3(); b.getWorldPosition(wp); sitting = b; target = null; pending = null; player.position.set(wp.x, wp.y, wp.z); player.rotation.y = b.rotation.y; // face out from the bench, the way the seat faces
   toast('You sit and rest. Time passes 3 times faster. Tap anywhere to get up.'); }
 function openNotice() { const fz = festival(), rows = [];
   rows.push(`<button id="nbG">✅ Today's goals</button>`);
