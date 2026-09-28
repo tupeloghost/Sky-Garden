@@ -43,14 +43,20 @@ document.head.appendChild(css);
 const btn = document.createElement('button'); btn.id = 'devBtn'; btn.textContent = 'DEV';
 const panel = document.createElement('div'); panel.id = 'devPanel';
 document.body.append(btn, panel);
-btn.onclick = () => { draw(); panel.classList.toggle('show'); };
+btn.onclick = () => { draw(); panel.classList.toggle('show'); checkLive(); };
 // the Creator's tools come from the server a moment after the game starts; fill them in if the panel is already open
 setInterval(() => { if (panel.classList.contains('show') && S.trust && S.trust.level >= 4 && !panel.querySelector('[data-ct]') && (g.MODCTX.extraTools || []).length) draw(); }, 1000);
 
+// is a newer version live than the one this browser loaded? (old saved copies are a common reason things look out of date)
+async function checkLive() { const el = panel.querySelector('#dvLive'); if (!el) return;
+  try { const txt = await (await fetch('./js/version.js?t=' + Date.now(), { cache:'no-store' })).text(); const m = txt.match(/n:(\d+)/); const live = m ? +m[1] : 0;
+    if (live > g.VERSION.n) { el.innerHTML = `· <b style="color:#ff8fa3">Version ${live} is live.</b> <button id="dvReload" style="padding:2px 10px">Reload</button>`; el.querySelector('#dvReload').onclick = () => location.reload(); }
+    else el.textContent = '· up to date'; } catch { el.textContent = ''; } }
 function draw() {
   const d = g.dateOverride ? new Date(g.dateOverride) : new Date();
   panel.innerHTML = `
     <b>Developer mode</b> <span style="opacity:.7">Cloud sync is paused.</span>
+    <div style="margin-top:4px"><b style="color:#ffc857">Version ${g.VERSION.n}</b> <span style="opacity:.7">${g.VERSION.date ? '· ' + new Date(g.VERSION.date.replace(' ', 'T')).toLocaleString([], { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : ''}</span> <span id="dvLive" style="opacity:.8"></span></div>
     <h5>JUMP TO</h5><div class="row" id="dvJump"></div>
     <h5>TIME</h5><div class="row">
       ${[['6 AM',0],['Noon',6/18],['5 PM',11/18],['9 PM',15/18]].map(([l,t]) => `<button data-t="${t}">${l}</button>`).join('')}
