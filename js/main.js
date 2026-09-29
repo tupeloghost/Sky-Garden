@@ -1493,7 +1493,8 @@ function islandYear() { // Year 1 from the start; each birthday (or start annive
   return n;
 }
 function ageBand() {
-  if (!S.birthday || !S.birthday.y) return S.founder && !(S.trust && S.trust.revoked) ? 'adult' : 'kid'; // no birthday given: kid-safe settings, except for founders the Creator invited
+  if (S.founder && !(S.trust && S.trust.revoked)) return 'adult'; // testers the Creator invites are all adults, whatever birthday they entered
+  if (!S.birthday || !S.birthday.y) return 'kid'; // no birthday given: kid-safe settings
   const d = today(), b = S.birthday; let age = d.getFullYear() - b.y; if (d.getMonth()+1 < b.m || (d.getMonth()+1 === b.m && d.getDate() < b.d)) age--;
   return age < 13 ? 'kid' : age < 18 ? 'teen' : 'adult';
 }
