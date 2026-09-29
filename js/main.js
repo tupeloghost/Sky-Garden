@@ -1659,12 +1659,12 @@ function openBag() {
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
     ${slotsIn(S.bag) ? '' : '<h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>'}
-    ${(founderOn() && (fGot('testisland') || DEV_OK || (S.trust && S.trust.level >= 4)) && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}<button id="setBtn" class="ghost">⚙ Settings</button>`, 'Close');
+    ${(founderOn() && (fGot('testisland') || DEV_OK || (S.trust && S.trust.level >= 4)) && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}${founderOn() && !VISIT ? '<button id="giftBtn" class="ghost">🎁 Founder gifts</button> ' : ''}<button id="setBtn" class="ghost">⚙ Settings</button>`, 'Close');
   document.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { const k = b.dataset.it; $('itInfo').innerHTML = `<b>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}</b>. ${itemUse(k)}`; });
   document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => { const k = b.dataset.fu, p = S.placed.filter(x => x === k).length; $('itInfo').innerHTML = `<b>${icon(k)} ${FURN[k].name}</b>. ${p ? `${p} in your hut.` : 'Not placed yet. Place it inside your hut.'}`; });
   document.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => openProduct(S.products[+b.dataset.pr], openBag));
   if ($('islandBtn')) $('islandBtn').onclick = switchIsland;
-  $('setBtn').onclick = openSettings;
+  $('setBtn').onclick = openSettings; if ($('giftBtn')) $('giftBtn').onclick = () => openFounderGifts(openBag);
 }
 // settings: how you look, your birthday, your island, tester code, and moving your game to another device
 function openSettings() {
@@ -3743,7 +3743,7 @@ function visitGift() {
     else toast(res === 'already' ? `You already left ${VISIT.name} a gift today.` : 'Could not reach the cloud. Try again.'); });
 }
 function arrive(o) {
-  const k = o.userData.kind;
+  const k = o.userData.kind; noteTapped(o);
   if (VISIT) {
     if (k === 'deco' && o.userData.market && featureOn('market')) return openMarket();
     if (k === 'owner') return openDialog(VISIT.name, `Welcome to my island! Thanks for visiting.`, [{ label:'Leave a gift', fn:() => { closeDialog(); visitGift(); } }, { label:'Water my garden', fn:() => { closeDialog(); visitWater(); } }, { label:'Go home', fn:goHome }], null, 'none');
@@ -3976,7 +3976,7 @@ function tickFrame() {
     if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
   lobes.forEach(L => { if (!L.rise) return; L.rise = Math.max(0, L.rise - dt / 2.5); const k = 1 - L.rise; L.g.position.y = -5 * (1 - k) * (1 - k); if (!L.rise) { L.g.position.y = 0; L.extra.forEach(o => o.visible = true); burst(new THREE.Vector3(L.e.x, .5, L.e.z), 0x8fdc8a, 30); } });
   if (lighthouse && lighthouse.visible) { const nb = Math.min(1, Math.max(0, (hour() - 18.5) / 1.5)); lighthouse.userData.pivot.rotation.y = now * .8; lighthouse.userData.beam.material.opacity = .04 + nb * .14; }
-  animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt); updatePet(dt, now); mythAnimate(dt, now); squareTick(dt, now);
+  animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt); updatePet(dt, now); mythAnimate(dt, now); squareTick(dt, now); hintTick(dt, now);
   { const sp = player.position.distanceTo(lastPP) / Math.max(dt, .001); lastPP.copy(player.position); const sc = player.userData.inner?.userData.scarf;
     if (sc) { let seg = sc, i = 0; while (seg && seg.children.length) { const k = Math.min(1, sp / 4); seg.rotation.x = -.15 - k * (.35 + i * .12) + Math.sin(now * (6 + i) + i) * (.06 + k * .12); seg = seg.children.find(c => c.isGroup); i++; } } }
   if (lanternFF.length) { const nf = Math.min(1, Math.max(0, (hour() - 19) / 2)); lanternFF.forEach((f, i) => { f.visible = nf > .2; const a = now * .8 + i * .78; f.position.set(Math.cos(a) * (.55 + Math.sin(now + i) * .15), 1.4 + Math.sin(now * 1.3 + i) * .45, Math.sin(a) * (.55 + Math.cos(now + i) * .15)); f.material.opacity = nf * (.5 + Math.sin(now * 4 + i) * .5); }); }
@@ -4434,11 +4434,12 @@ function fGot(k) { if (S.founder && !S.fGot && S.founderBalloon) S.fGot = ['pet'
 function fDay() { return S.founder ? playDays() - (S.founder.day0 != null ? S.founder.day0 : playDays() - 1) + 1 : 0; }
 function founderDrip() { if (!founderOn() || VISIT || TESTSLOT || PREVIEW) return;
   const busy = !S.setupDone || S.tut !== 9 || $('dialog').classList.contains('show') || $('veil').classList.contains('show') || document.querySelector('.presents'); if (busy) { if (S.tut === 9) setTimeout(founderDrip, 4000); return; }
-  const d = fDay(), give = (keys, head, body, then) => { S.fGot = [...(S.fGot || []), ...keys]; save(); showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>${head}</h2><p>${body}</p>`, 'Open it', () => openPresents(keys.filter(k => F_GIFTS[k]).map(k => F_GIFTS[k]), then)); };
+  const d = fDay(), give = (keys, head, body, then) => { S.fGot = [...(S.fGot || []), ...keys]; save(); showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>${head}</h2><p>${body}</p>`, 'Open it', () => openPresents(keys.filter(k => F_GIFTS[k]).map(k => F_GIFTS[k]), () => { then && then(); setTimeout(() => toast('See all your founder gifts anytime: tap Bag, then Founder gifts.'), 2500); })); };
   if (!fGot('pet')) return give(['pet'], 'Welcome, founder!', 'You were invited in before anyone else. Very few people have walked this island yet. We wrapped something for you, and more is on the way.', () => choosePet(() => {}));
   if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', 'A founder gift for your second day. There is also something new at the top of your screen: ✦ Missions. They are things we would love you to try, and each one pays 50 coins.', () => drawHud());
   if (d >= 3 && !fGot('balloon')) return give(['balloon', 'testisland'], 'A present for day 3!', 'This one is big. You also have a test island now: a separate island for trying things. Tap Bag, then Go to my test island.', () => { S.founderBalloon = true; save(); drawBalloon(); drawHud(); });
   if (d >= 4 && (S.home || 0) >= 3 && !fGot('lantern')) return give(['lantern'], 'A present for your new home', 'Your hut is rebuilt. Here is something to light it up.', () => drawHud());
+  if (!S.giftsSeen && (S.fGot || []).length > 1) { S.giftsSeen = true; save(); openFounderGifts(); } // once: founders who already opened gifts see what they have and how to use each
 }
 addEventListener('sg-playing', () => setTimeout(founderDrip, 4000));
 function testerCodeCard() {
@@ -4464,8 +4465,23 @@ function askReaction(m) {
 function openMissions() {
   const list = missionList(), done = list.filter(m => S.missions?.[m.id]).length;
   showCard(`<div class="kicker">✦ TESTER MISSIONS</div><h2>${done} of ${list.length} done</h2><p>Things we would love you to try. Each pays 50 coins. Play however you like. These are just ideas.</p>
+    <button id="myGifts">🎁 My founder gifts</button>
     <div class="jlist">${list.map(m => `<button class="${S.missions?.[m.id] ? 'mdone' : ''}">${S.missions?.[m.id] ? '✓ ' : ''}${m.title}<span class="sub"> ${m.how}</span></button>`).join('')}</div>`, 'Close');
+  $('myGifts').onclick = () => openFounderGifts(openMissions);
 }
+// every founder gift you have, and exactly how to use it (gifts still on the way are not named: they stay a surprise)
+const GIFT_HOW = [
+  ['pet', '🐾', 'Your companion', 'It follows you everywhere. Tap it to give it a pat.'],
+  ['missions', '✦', 'Tester missions', 'Tap ✦ Missions at the top of your screen. Each one pays 50 coins.'],
+  ['outfit', '🧥', 'The Sky Pioneer outfit', 'Tap Bag, then Settings, then Change my look, then Clothes.'],
+  ['balloon', '🎈', 'Your hot-air balloon', 'Tap the 🎈 on your hotbar at the bottom. It flies you to any island you have opened.'],
+  ['testisland', '🧪', 'Your test island', 'A separate island for trying things. Tap Bag, then Go to my test island.'],
+  ['lantern', '🏮', "The Founder's Lantern", 'Tap Build, pick Founder\'s Lantern, and tap a square. Fireflies gather around it at night.'],
+];
+function openFounderGifts(back) { const have = GIFT_HOW.filter(g => fGot(g[0]));
+  showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>Your founder gifts</h2>
+    <div class="jlist">${have.map(([, ic, name, how]) => `<button><span style="font-size:20px">${ic}</span> ${name}<span class="sub"><br>${how}</span></button>`).join('')}</div>
+    ${have.length < GIFT_HOW.length ? '<p style="margin-top:10px">More gifts are on the way over your first days.</p>' : ''}`, back ? 'Back' : 'Close', back); }
 // the Founding Gardeners wall on every island
 const foundersWall = new THREE.Group(); foundersWall.position.set(-7.2, 0, -3.8); foundersWall.rotation.y = .9; scene.add(foundersWall); lateClicks.push(foundersWall);
 { const w = mat(0xc98f58), gold = mat(0xd9a441, { metalness:.5, roughness:.4 });
@@ -5189,6 +5205,21 @@ function previewStart() { if (!PREVIEW) return; const d = PREVIEW.data || {};
 addEventListener('sg-playing', () => setTimeout(() => { if (PREVIEW) return previewStart(); mythLookUp(); drawShrooms(); mythReveal(); setInterval(() => { if (playing) mythReveal(); }, 20000); }, PREVIEW ? 1500 : 5000));
 // test helpers: what a tap at a screen point would hit, and every tappable thing in the world
 function pickAt(sx, sy) { return tapTarget(sx, sy); }
+// hints: things you walk past 3 times without ever tapping sparkle once, with a nudge
+var HINT_SKIP = new Set(['pickup', 'dig', 'tile', 'pet', 'door', 'bed']);
+var hintKey = o => { const p = new THREE.Vector3(); o.getWorldPosition(p); return `${o.userData.kind}:${o.userData.key || o.userData.id || Math.round(p.x) + ',' + Math.round(p.z)}`; };
+function noteTapped(o) { try { const k = hintKey(o); if (!(S.tapped || []).includes(k)) { S.tapped = [...(S.tapped || []), k].slice(-500); } } catch {} }
+var hintT = 0, hintNear = new Set(), hintLast = -1e9; // var: the game loop can start before this part loads
+function hintTick(dt, now) { if (!HINT_SKIP || (hintT += dt) < 1) return; hintT = 0;
+  if (!playing || S.tut !== 9 || cine || fish3 || flight.on || buildMode || VISIT || $('veil').classList.contains('show') || $('dialog').classList.contains('show')) return;
+  const p = new THREE.Vector3(), near = new Set(), tg = typeof questTarget === 'function' ? questTarget() : null; S.hintPass = S.hintPass || {};
+  tappables().forEach(o => { if (HINT_SKIP.has(o.userData.kind) || o === tg) return; o.getWorldPosition(p); if (Math.abs(p.y - player.position.y) > 1.5 || Math.hypot(p.x - player.position.x, p.z - player.position.z) > 2.6) return;
+    const k = hintKey(o); if ((S.tapped || []).includes(k) || (S.hinted || []).includes(k)) return; near.add(k);
+    if (!hintNear.has(k)) S.hintPass[k] = (S.hintPass[k] || 0) + 1;
+    if (S.hintPass[k] >= 3 && now - hintLast > 90) { hintLast = now; S.hinted = [...(S.hinted || []), k].slice(-500); save();
+      const b = new THREE.Box3().setFromObject(o), c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + .3; burst(c, 0xffe07a, 18); chime(1175);
+      toast(o.userData.kind === 'npc' ? 'Someone here might have something to say. Tap them to chat.' : 'That sparkle: you have walked past this a few times. Tap it to see what it does.'); } });
+  hintNear = near; }
 function tappables() { const out = new Set(); const walk = o => { if (!o.visible) return; if (o.userData && o.userData.kind) { out.add(o); } o.children.forEach(walk); };
   [...clickables, ...lateClicks, ...digGroups].forEach(walk); decos.forEach(d => { let v = true; for (let o = d; o; o = o.parent) if (!o.visible) v = false; if (v) out.add(d); }); return [...out]; }
 window.__sg = { VERSION, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
