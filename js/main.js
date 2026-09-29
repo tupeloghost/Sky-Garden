@@ -3705,7 +3705,10 @@ function tapTarget(sx, sy) { ptr.set(sx/innerWidth*2-1, -(sy/innerHeight)*2+1); 
     const px = Math.hypot((tapC.x - ptr.x) * innerWidth / 2, (tapC.y - ptr.y) * innerHeight / 2);
     cands.push({ o, score:px + h.distance * 2 + (o.userData.kind === 'pet' ? 60 : 0) }); if (cands.length >= 6) break; }
   cands.sort((a, b) => a.score - b.score); return cands.length ? cands[0].o : null; }
-renderer.domElement.addEventListener('contextmenu', e => e.preventDefault()); // a long press is for flying, not a menu
+renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+// phones: holding on the game must never bring up the text magnifier, selection, or zoom (the game reads pointer events, so taps still work)
+renderer.domElement.addEventListener('touchstart', e => e.preventDefault(), { passive:false });
+['gesturestart', 'dblclick', 'selectstart'].forEach(ev => document.addEventListener(ev, e => { if (!e.target.closest || !e.target.closest('input,textarea,select')) e.preventDefault(); }, { passive:false })); // a long press is for flying, not a menu
 renderer.domElement.addEventListener('pointerdown', e => {
   if (fish3) { fish3.press(true); return; }
   if (canFly()) { flight.down = true; flight.at = performance.now(); flight.x = e.clientX; flight.y = e.clientY; }
