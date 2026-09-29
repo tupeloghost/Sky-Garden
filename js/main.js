@@ -1056,6 +1056,11 @@ for (let i=0;i<5;i++) dock.add(mesh(new THREE.BoxGeometry(.5,.1,1.2), mat(i%2?0x
 const ripple = mesh(new THREE.TorusGeometry(.5,.04,8,30), glow(0xffffff), 3.2, -.2, 0); ripple.rotation.x = Math.PI/2; dock.add(ripple);
 dock.userData.kind = 'dock'; scene.add(dock);
 const homeDock = dock.clone(); homeDock.position.set(7.4, 0, -4.4); homeDock.rotation.y = .6; homeDock.userData = { kind:'dock' }; homeDock.visible = false; scene.add(homeDock);
+// docks are ground you can walk on, so after fishing you can walk back to land (the home dock only while it is there)
+const dockPlanks = d => d.children.filter(c => c.geometry && c.geometry.type === 'BoxGeometry');
+dockPlanks(dock).forEach(p => walkables.push(p));
+function syncHomeDock() { homeDock.visible = S.mode === 'fisher';
+  dockPlanks(homeDock).forEach(p => { const i = walkables.indexOf(p); if (homeDock.visible && i < 0) walkables.push(p); if (!homeDock.visible && i >= 0) walkables.splice(i, 1); }); }
 
 // --- the hut interior (a room far from the islands) ---
 const ROOM = new THREE.Vector3(80, 0, -80);
@@ -3037,7 +3042,8 @@ function fishing3D(d = dock, o = {}) {
     raf = requestAnimationFrame(loop);
   };
   const end = () => { cancelAnimationFrame(raf); holdUp = false; player.remove(rod); scene.remove(line, bob, bang); if (caught) scene.remove(caught); shadows.forEach(s => pool.remove(s));
-    hud.remove(); removeEventListener('keydown', key); removeEventListener('keyup', key); fish3 = null; cine = null; document.body.classList.remove('in-cine'); };
+    hud.remove(); removeEventListener('keydown', key); removeEventListener('keyup', key); fish3 = null; cine = null; document.body.classList.remove('in-cine');
+    if (groundAt(player.position.x, player.position.y, player.position.z) === null) { const b = W(V(-.4, 0, 0)); player.position.set(b.x, groundAt(b.x, b.y, b.z) ?? b.y, b.z); } }; // never left standing on nothing
   const key = e => { if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) press(e.type === 'keydown'); } };
   addEventListener('keydown', key); addEventListener('keyup', key);
   act.addEventListener('pointerdown', e => { e.preventDefault(); press(true); }); ['pointerup','pointerleave','pointercancel'].forEach(ev => act.addEventListener(ev, () => press(false)));
@@ -3922,6 +3928,7 @@ function tickFrame() {
     const nx = player.position.x + mv.x, nz = player.position.z + mv.z;
     let gy = groundAt(nx, player.position.y, nz);
     if (gy === null) { gy = groundAt(nx, player.position.y, player.position.z); if (gy !== null) mv.z = 0; else { gy = groundAt(player.position.x, player.position.y, nz); if (gy !== null) mv.x = 0; } }
+    if (gy === null) for (const a of [.6, -.6, 1.1, -1.1]) { const r = mv.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), a), y = groundAt(player.position.x + r.x, player.position.y, player.position.z + r.z); if (y !== null) { mv.copy(r); gy = y; break; } } // slide along an edge (a dock, a bridge, the rim)
     if (gy !== null) {
       player.position.x += mv.x; player.position.z += mv.z; player.position.y = gy;
       if ((stepDist += mv.length()) > .6) { stepDist = 0; sfx(onPlank ? 'wood' : 'step'); }
@@ -3929,7 +3936,9 @@ function tickFrame() {
       inner.position.y = Math.abs(Math.sin(now*14))*.12; inner.rotation.z = Math.sin(now*14)*.06;
     inner.userData.arms.forEach((a, i) => a.rotation.x = Math.sin(now*14 + i*Math.PI) * .7);
       S.pos = [player.position.x, player.position.y, player.position.z];
-    } else { target = null; pending = null; }
+    } else { target = null; pending = null;
+      if (groundAt(player.position.x, player.position.y, player.position.z) === null) { const L = nearestLand(); let y = null; for (const h of [player.position.y, 0, -1.5, -3, 1.5, -4.5]) { y = groundAt(L.x, h, L.z); if (y !== null) break; }
+        if (y !== null) { player.position.set(L.x, y, L.z); S.pos = [L.x, y, L.z]; } } } // stuck with no ground underfoot: step back onto land
   } else { inner.position.y *= .8; inner.rotation.z *= .8; inner.scale.y = 1 + Math.sin(now*2.5)*.02; }
   if (swingT > 0) { swingT = Math.max(0, swingT - dt); const a = inner.userData.arms[1] || inner.userData.arms[0], p = 1 - swingT/.5;
     a.rotation.x = p < .35 ? -2.6 * (p/.35) : -2.6 + 2.6 * ((p-.35)/.65); }
@@ -4023,7 +4032,7 @@ function tickFrame() {
   if (outline) outline.render(scene, camera); else renderer.render(scene, camera);
 }
 snapCam(); tameOutlines();
-bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); drawHome(); drawBuilds(); drawStations(); if (!(S.pickups || []).length) spawnPickups(); else drawPickups(); homeDock.visible = S.mode === 'fisher'; if (lowGfx) setLowGfx(true);
+bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); drawHome(); drawBuilds(); drawStations(); if (!(S.pickups || []).length) spawnPickups(); else drawPickups(); syncHomeDock(); if (lowGfx) setLowGfx(true);
 drawHud(); tick();
 $('moveTitle').onclick = () => openMoveGame();
 const localAt = S.savedAt || 0; save();
@@ -4106,7 +4115,7 @@ function applyModeStart() {
   if (S.mode === 'garden' && !S.bigGarden) { S.bigGarden = true; for (let i=0;i<3;i++){ S.tiles.push({ s:0 }); addTileGroup(S.tiles.length-1); } stakes.visible = false; }
   S.modeGifts = S.modeGifts || [];
   if (S.mode === 'scholar' && !S.modeGifts.includes('scholar')) { S.furn.bookshelf = (S.furn.bookshelf || 0) + 1; S.modeGifts.push('scholar'); }
-  homeDock.visible = S.mode === 'fisher';
+  syncHomeDock();
   // starter seeds must be plantable in the real season the player starts in
   if (!S.setupDone && !CROPS.cloudberry.seasons.includes(season()) && S.seeds.cloudberry === 4) {
     const k = Object.keys(CROPS).filter(c => !CROPS[c].locked && CROPS[c].seasons.includes(season())).sort((a, b) => CROPS[a].days - CROPS[b].days)[0];
