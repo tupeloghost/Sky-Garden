@@ -1488,7 +1488,7 @@ function islandYear() { // Year 1 from the start; each birthday (or start annive
   return n;
 }
 function ageBand() {
-  if (!S.birthday || !S.birthday.y) return 'kid'; // no birthday given: use kid-safe settings
+  if (!S.birthday || !S.birthday.y) return S.founder && !(S.trust && S.trust.revoked) ? 'adult' : 'kid'; // no birthday given: kid-safe settings, except for founders the Creator invited
   const d = today(), b = S.birthday; let age = d.getFullYear() - b.y; if (d.getMonth()+1 < b.m || (d.getMonth()+1 === b.m && d.getDate() < b.d)) age--;
   return age < 13 ? 'kid' : age < 18 ? 'teen' : 'adult';
 }
@@ -4857,7 +4857,7 @@ function openFeedback() {
   const where = `${$('quest').querySelector('b')?.textContent || ''}: ${$('quest').querySelector('.qt')?.textContent || ''}`;
   showCard(`<div class="kicker">FEEDBACK</div><h2>How is it going?</h2><p>Your notes go straight to the people making Sky Garden. Thank you!</p>
     <div class="steppers" style="justify-content:flex-start">${[['love','Loving it'],['okay',"It's okay"],['confused','Confused'],['bored','Bored']].map(([k,l]) => `<button data-mood="${k}" class="ghost">${l}</button>`).join('')}</div>
-    ${kidSafe() ? '' : `<textarea id="fbText" rows="4" maxlength="2000" placeholder="What happened? What did you like? Where did you get stuck? (optional)" style="width:100%;margin-top:10px;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:10px"></textarea>`}
+    ${kidSafe() ? (S.birthday && S.birthday.y ? '' : '<p class="sub" style="margin-top:10px">To write a note too, add your birthday first: tap Bag, then Settings, then Add my birthday.</p>') : `<textarea id="fbText" rows="4" maxlength="2000" placeholder="What happened? What did you like? Where did you get stuck? (optional)" style="width:100%;margin-top:10px;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:10px"></textarea>`}
     <p style="font-size:13px;opacity:.7;margin-top:6px">We also send where you are in the game (${where}) so we know what your note is about. Nothing else about you is sent.</p>
     <button id="fbSend">Send</button> <button id="fbLater" class="ghost">Not now</button>
     <p id="fbMsg" style="margin-top:8px;font-weight:700;min-height:22px"></p>`, null);
