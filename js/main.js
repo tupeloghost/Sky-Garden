@@ -1659,7 +1659,7 @@ function openBag() {
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
     ${slotsIn(S.bag) ? '' : '<h4>Tip</h4><p>Sell crops, fruit, and fish in the crate by your garden. Place furniture inside your hut.</p>'}
-    ${(founderOn() && (fGot('testisland') || DEV_OK || (S.trust && S.trust.level >= 4)) && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}${founderOn() && !VISIT ? '<button id="giftBtn" class="ghost">🎁 Founder gifts</button> ' : ''}<button id="setBtn" class="ghost">⚙ Settings</button>`, 'Close');
+    ${(founderOn() && (DEV_OK || (S.trust && S.trust.level >= 4)) && !paused('testisland')) || TESTSLOT ? `<button id="islandBtn" class="ghost">${TESTSLOT ? '🧪 Back to my island' : '🧪 Go to my test island'}</button> ` : ''}${founderOn() && !VISIT ? '<button id="giftBtn" class="ghost">🎁 Founder gifts</button> ' : ''}<button id="setBtn" class="ghost">⚙ Settings</button>`, 'Close');
   document.querySelectorAll('[data-it]').forEach(b => b.onclick = () => { const k = b.dataset.it; $('itInfo').innerHTML = `<b>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}</b>. ${itemUse(k)}`; });
   document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => { const k = b.dataset.fu, p = S.placed.filter(x => x === k).length; $('itInfo').innerHTML = `<b>${icon(k)} ${FURN[k].name}</b>. ${p ? `${p} in your hut.` : 'Not placed yet. Place it inside your hut.'}`; });
   document.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => openProduct(S.products[+b.dataset.pr], openBag));
@@ -4437,7 +4437,7 @@ function founderDrip() { if (!founderOn() || VISIT || TESTSLOT || PREVIEW) retur
   const d = fDay(), give = (keys, head, body, then) => { S.fGot = [...(S.fGot || []), ...keys]; save(); showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>${head}</h2><p>${body}</p>`, 'Open it', () => openPresents(keys.filter(k => F_GIFTS[k]).map(k => F_GIFTS[k]), () => { then && then(); setTimeout(() => toast('See all your founder gifts anytime: tap Bag, then Founder gifts.'), 2500); })); };
   if (!fGot('pet')) return give(['pet'], 'Welcome, founder!', 'You were invited in before anyone else. Very few people have walked this island yet. We wrapped something for you, and more is on the way.', () => choosePet(() => {}));
   if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', 'A founder gift for your second day. There is also something new at the top of your screen: ✦ Missions. They are things we would love you to try, and each one pays 50 coins.', () => drawHud());
-  if (d >= 3 && !fGot('balloon')) return give(['balloon', 'testisland'], 'A present for day 3!', 'This one is big. You also have a test island now: a separate island for trying things. Tap Bag, then Go to my test island.', () => { S.founderBalloon = true; save(); drawBalloon(); drawHud(); });
+  if (d >= 3 && !fGot('balloon')) return give(['balloon'], 'A present for day 3!', 'This one is big.', () => { S.founderBalloon = true; save(); drawBalloon(); drawHud(); });
   if (d >= 4 && (S.home || 0) >= 3 && !fGot('lantern')) return give(['lantern'], 'A present for your new home', 'Your hut is rebuilt. Here is something to light it up.', () => drawHud());
   if (!S.giftsSeen && (S.fGot || []).length > 1) { S.giftsSeen = true; save(); openFounderGifts(); } // once: founders who already opened gifts see what they have and how to use each
 }
@@ -4475,7 +4475,6 @@ const GIFT_HOW = [
   ['missions', '✦', 'Tester missions', 'Tap ✦ Missions at the top of your screen. Each one pays 50 coins.'],
   ['outfit', '🧥', 'The Sky Pioneer outfit', 'Tap Bag, then Settings, then Change my look, then Clothes.'],
   ['balloon', '🎈', 'Your hot-air balloon', 'Tap the 🎈 on your hotbar at the bottom. It flies you to any island you have opened.'],
-  ['testisland', '🧪', 'Your test island', 'A separate island for trying things. Tap Bag, then Go to my test island.'],
   ['lantern', '🏮', "The Founder's Lantern", 'Tap Build, pick Founder\'s Lantern, and tap a square. Fireflies gather around it at night.'],
 ];
 function openFounderGifts(back) { const have = GIFT_HOW.filter(g => fGot(g[0]));
