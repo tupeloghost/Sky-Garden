@@ -1387,7 +1387,7 @@ function drawHud() {
   $('buildBtn').hidden = VISIT || (S.home || 0) < 3 || S.where !== 'home'; $('buildBtn').innerHTML = `${ICON.hammer}<span class="lbl">${buildMode ? 'Building' : 'Build'}</span>`;
   // the hotbar: your tools on the left (tap one to see what it does), then your seeds
   const tools = [['axe','🪓','Stone Axe', 'Tap a tree to chop logs.'], ['pick','⛏️','Stone Pickaxe','Tap a rock to break it for stone.'], ['net','🦋','Bug Net','Tap an insect or butterfly to swing.'], ['rod','🎣','Fishing Rod','Tap a dock to fish.'], ['balloon','🎈','Founder Balloon','Fly to any island.'], ['myth','🪽','Legend','']]
-    .filter(([k]) => k === 'rod' ? S.bridge || S.mode === 'fisher' : k === 'balloon' ? S.founderBalloon && !VISIT : k === 'myth' ? mythOn() && !!mp().revealed : S.tools[k]).map(([k, ic, name, how]) => { const bronze = (k === 'axe' && S.tools.bronzeAxe) || (k === 'pick' && S.tools.bronzePick);
+    .filter(([k]) => k === 'rod' ? S.bridge || S.mode === 'fisher' : k === 'balloon' ? BALLOON_ON && S.founderBalloon && !VISIT : k === 'myth' ? mythOn() && !!mp().revealed : S.tools[k]).map(([k, ic, name, how]) => { const bronze = (k === 'axe' && S.tools.bronzeAxe) || (k === 'pick' && S.tools.bronzePick);
       return `<div class="hslot tool ${bronze ? 'bronze' : ''}" data-tool="${k}" data-how="${(bronze ? name.replace('Stone', 'Bronze') : name) + ': ' + how}"><span>${ic}</span></div>`; }).join('');
   const xt = ''; // extra tools (like the Creator's) live in the developer panel, not the hotbar
   $('bar').innerHTML = (tools || xt ? xt + tools + '<i class="hdiv"></i>' : '') + shown.map(([k,c]) => { const n = S.seeds[k] || 0, now = c.seasons.includes(s);
@@ -1653,7 +1653,7 @@ function openBag() {
   const goods = GROUPS.map(([kind, label]) => { const list = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && ITEMS[k].kind === kind);
     return list.length ? `<h4>${label}</h4><div class="igrid">${list.map(([k,n]) => tile(k, n, ITEMS[k].name)).join('')}</div>` : ''; }).join('');
   const furn = Object.entries(S.furn).filter(([,n]) => n > 0).map(([k,n]) => `<button class="itile" data-fu="${k}"><span class="ic">${icon(k)}</span><b>${n}</b><small>${FURN[k].name}</small></button>`).join('');
-  showCard(`<div class="kicker">YOUR BAG</div>${founderOn() ? `<div class="founder">✦ ${keeperLevel() >= 3 ? 'Elder Keeper' : keeperLevel() >= 2 ? 'Keeper' : 'Founding Gardener'}</div>` : ''}<h2>Your stuff</h2>${spaceMeter(slotsIn(S.bag), packCap(), "Backpack")}
+  showCard(`<div class="kicker">YOUR BAG</div>${founderOn() ? `<div class="founder">✦ ${keeperLevel() >= 3 ? 'Elder Keeper' : keeperLevel() >= 2 ? 'Keeper' : 'Founding Gardener'}</div>` : ''}<h2>Your stuff</h2>${LIMITS_ON ? spaceMeter(slotsIn(S.bag), packCap(), "Backpack") : ""}
     ${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}
     ${(S.products || []).length ? `<h4>Products</h4><div class="igrid">${S.products.map((p, i) => `<button class="itile" data-pr="${i}">${productSwatch(p, 34)}<small>${productName(p)}</small></button>`).join('')}</div>` : ''}
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
@@ -3068,14 +3068,16 @@ const CRAFTS_OLD = [
 ];
 // --- backpack and storage space: each kind of item takes a slot, and a slot holds up to 30 ---
 const STACK = 30;
+var LIMITS_ON = false; // bag limits and chests are off for now (they may come back later); while off, you can carry everything
 function slotsIn(box) { return Object.entries(box || {}).reduce((a, [k,n]) => a + (n > 0 && ITEMS[k] && ITEMS[k].kind !== 'quest' ? Math.ceil(n / STACK) : 0), 0); }
 function packCap() { return 12 + (S.tools.bag1 ? 6 : 0) + (S.tools.bag2 ? 6 : 0) + (S.tools.bag3 ? 12 : 0); }
 function storeCap() { return (S.builds || []).filter(b => b.p === 'chest').reduce((a, b) => a + (b.band ? 48 : 24), 0); }
 // how many of item k fit (never forces anyone to drop what they already carry)
-function roomFor(box, cap, k, n) { if (ITEMS[k]?.kind === 'quest') return n; const used = slotsIn(box), cur = box[k] || 0;
+function roomFor(box, cap, k, n) { if (!LIMITS_ON || ITEMS[k]?.kind === 'quest') return n; const used = slotsIn(box), cur = box[k] || 0;
   let fit = 0; while (fit < n) { const next = used - Math.ceil(cur / STACK) + Math.ceil((cur + fit + 1) / STACK); if (next > cap && next > used) break; fit++; } return fit; }
 const canCarry = (k, n = 1) => roomFor(S.bag, packCap(), k, n) >= n;
 function bagFull() { toast(`Your backpack is full (${packCap()} slots). Put things in a chest, or craft a bigger bag at the workbench.`); sfx('click'); }
+if (!LIMITS_ON && S.chest && Object.keys(S.chest).length) { Object.entries(S.chest).forEach(([k, n]) => { if (n > 0) S.bag[k] = (S.bag[k] || 0) + n; }); S.chest = {}; } // chests are off: their things go back in your bag
 const have = k => S.bag[k] || 0, enough = needs => Object.entries(needs).every(([k,n]) => have(k) >= n);
 const needText = needs => Object.entries(needs).map(([k,n]) => `${icon(k)} ${n} ${ITEMS[k].name.toLowerCase()}${n > 1 && !ITEMS[k].name.endsWith('s') && k !== 'fiber' ? 's' : ''} (you have ${have(k)})`).join(', ');
 function drawHome() {
@@ -3168,7 +3170,7 @@ function agesHtml() {
 function drawStations() { kiln.visible = !!S.stations.kiln; furnace.visible = !!S.stations.furnace;
   nodes.forEach(n => n.visible = n.userData.kind === 'claypit' ? potteryOn() : bronzeOn()); }
 function useWorkbench() {
-  const shown = CRAFTS.filter(c => (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag1' || featureOn('bagup')) && (c.id !== 'net' || featureOn('butterflies')) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
+  const shown = CRAFTS.filter(c => (LIMITS_ON || !/^bag\d$/.test(c.id)) && (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag1' || featureOn('bagup')) && (c.id !== 'net' || featureOn('butterflies')) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
   showCard(`<div class="kicker">TREE STUMP WORKBENCH</div><h2>Craft</h2><h4>Ages of invention</h4>${agesHtml()}
     <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln && potteryOn() ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>
     <div class="jlist">${[...shown].sort((a, b) => (hasCraft(a.id) - hasCraft(b.id)) || (enough(b.needs) - enough(a.needs))).map(c => { const own = hasCraft(c.id), ok = enough(c.needs);
@@ -3601,7 +3603,7 @@ function openChest(chest) {
 }
 function drawBuilds() {
   buildGroup.clear(); lampLights.length = 0; lanternFF.length = 0;
-  (S.builds || []).forEach(b => { const m = pieceModel(b.p); m.position.set(b.x, 0, b.z); m.rotation.y = (b.r || 0) * Math.PI/2; buildGroup.add(m);
+  (S.builds || []).filter(b => LIMITS_ON || b.p !== 'chest').forEach(b => { const m = pieceModel(b.p); m.position.set(b.x, 0, b.z); m.rotation.y = (b.r || 0) * Math.PI/2; buildGroup.add(m);
     if (!m.userData.kind) m.userData = { kind:'piece', b }; else m.userData.b = b;
     if (b.p === 'chest' && b.band) [-.2,.2].forEach(z => m.add(mesh(new THREE.BoxGeometry(.84,.06,.05), mat(0xd9a441, { metalness:.55, roughness:.4 }), 0, .3, z*1.35)));
     if (b.c) m.traverse(o => { if (o.isMesh && o.material?.color && !o.material.isMeshBasicMaterial) { o.material = o.material.clone(); o.material.color.lerp(new THREE.Color(b.c), .7); } });
@@ -3629,7 +3631,7 @@ function drawGrid() { const pts = [], seg = (x0, z0, x1, z1) => { if (onLand(x0,
 function drawBuildBar() {
   const bar = $('buildbar');
   bar.innerHTML = `<p class="bhelp">${held ? `Holding your ${PIECES.find(x => x.id === held.p).name.toLowerCase()}. Tap an empty square to set it down. Rotate turns it.` : moving ? 'Tap a piece you built to pick it up and move it.' : removing ? 'Tap a piece to pick it up. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
-    <div class="bpieces">${PIECES.filter(p => (!p.founder || (S.founder && fGot('lantern') && !(S.builds || []).some(b => b.p === p.id))) && (!p.age || S.stations[p.age]) && (p.id !== 'chest' || featureOn('chest'))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
+    <div class="bpieces">${PIECES.filter(p => (!p.founder || (S.founder && fGot('lantern') && !(S.builds || []).some(b => b.p === p.id))) && (!p.age || S.stations[p.age]) && (p.id !== 'chest' || (LIMITS_ON && featureOn('chest')))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
     <div class="bctl"><button id="bRot">Rotate</button><button id="bMove" class="${moving ? 'on' : ''}">Move</button><button id="bRem" class="${removing ? 'on' : ''}">Remove</button><button id="bTidy">Tidy up</button><button id="bDone" class="done">Done</button></div>`;
   bar.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { dropHeld(); buildSel = b.dataset.pc; removing = moving = false; drawBuildBar(); });
   ghostPiece();
@@ -4437,9 +4439,9 @@ function founderDrip() { if (!founderOn() || VISIT || TESTSLOT || PREVIEW) retur
   const d = fDay(), give = (keys, head, body, then) => { S.fGot = [...(S.fGot || []), ...keys]; save(); showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>${head}</h2><p>${body}</p>`, 'Open it', () => openPresents(keys.filter(k => F_GIFTS[k]).map(k => F_GIFTS[k]), () => { then && then(); setTimeout(() => toast('See all your founder gifts anytime: tap Bag, then Founder gifts.'), 2500); })); };
   if (!fGot('pet')) return give(['pet'], 'Welcome, founder!', 'You were invited in before anyone else. Very few people have walked this island yet. We wrapped something for you, and more is on the way.', () => choosePet(() => {}));
   if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', 'A founder gift for your second day. There is also something new at the top of your screen: ✦ Missions. They are things we would love you to try, and each one pays 50 coins.', () => drawHud());
-  if (d >= 3 && !fGot('balloon')) return give(['balloon'], 'A present for day 3!', 'This one is big.', () => { S.founderBalloon = true; save(); drawBalloon(); drawHud(); });
+  if (BALLOON_ON && d >= 3 && !fGot('balloon')) return give(['balloon'], 'A present for day 3!', 'This one is big.', () => { S.founderBalloon = true; save(); drawBalloon(); drawHud(); });
   if (d >= 4 && (S.home || 0) >= 3 && !fGot('lantern')) return give(['lantern'], 'A present for your new home', 'Your hut is rebuilt. Here is something to light it up.', () => drawHud());
-  if (!S.giftsSeen && (S.fGot || []).length > 1) { S.giftsSeen = true; save(); openFounderGifts(); } // once: founders who already opened gifts see what they have and how to use each
+  if (!S.giftsSeen && (S.fGot || []).length > 1 && !(mythOn() && !mp().revealed)) { S.giftsSeen = true; save(); openFounderGifts(); } // once: founders who already opened gifts see what they have and how to use each
 }
 addEventListener('sg-playing', () => setTimeout(founderDrip, 4000));
 function testerCodeCard() {
@@ -4474,7 +4476,6 @@ const GIFT_HOW = [
   ['pet', '🐾', 'Your companion', 'It follows you everywhere. Tap it to give it a pat.'],
   ['missions', '✦', 'Tester missions', 'Tap ✦ Missions at the top of your screen. Each one pays 50 coins.'],
   ['outfit', '🧥', 'The Sky Pioneer outfit', 'Tap Bag, then Settings, then Change my look, then Clothes.'],
-  ['balloon', '🎈', 'Your hot-air balloon', 'Tap the 🎈 on your hotbar at the bottom. It flies you to any island you have opened.'],
   ['lantern', '🏮', "The Founder's Lantern", 'Tap Build, pick Founder\'s Lantern, and tap a square. Fireflies gather around it at night.'],
 ];
 function openFounderGifts(back) { const have = GIFT_HOW.filter(g => fGot(g[0]));
@@ -4610,7 +4611,8 @@ function makeBalloon() { const g = new THREE.Group(); const cols = [0xc9b6ff, 0x
   g.add(mesh(new THREE.OctahedronGeometry(.12), glow(0xffe07a), 0, 4.45, 0)); return g; }
 const balloon = makeBalloon(); balloon.position.set(2.4, 0, -4.35); scene.add(balloon); lateClicks.push(balloon); // in the open behind the garden, clear of the wind bell
 { const hb = hitBox(1.6, 4.6, 1.6); hb.position.y = 2.2; balloon.add(hb); balloon.userData.kind = 'deco'; balloon.userData.use = () => balloonMenu(); }
-function drawBalloon() { balloon.visible = !!S.founderBalloon && !VISIT; }
+var BALLOON_ON = false; // the hot-air balloon is retired for now: legends are how founders fly. It may come back later as an unlock for everyone.
+function drawBalloon() { balloon.visible = BALLOON_ON && !!S.founderBalloon && !VISIT; }
 drawBalloon();
 function balloonMenu() {
   // the island you are standing on is left out: you are already there
@@ -5089,21 +5091,21 @@ function mythCount(t, n = 1) { if (!mythOn()) return; const P = mythDaily(); let
 function mythDone(text) { const P = mp(); P.light++; P.done = (P.done || 0) + 1; S.coins += 40; drawHud();
   setTimeout(() => { toast(`Mission done! +40 coins. ${MYTHS[mythKind()].name} went up a level.`); [784, 988, 1175].forEach((f, i) => setTimeout(() => chime(f), i * 110)); burst(player.position.clone().setY(1.2), MYTHS[mythKind()].colors[0], 18); }, 500);
   logKeeper('mythpath', text); }
-function mythMenu() { if (!mythOn()) return; const F = mythF(), P = mythDaily(), T = S.trust || {}, form = !!S.mythForm, short = F.name.replace('The ', '');
+function mythMenu() { if (!mythOn()) return; const F = mythF(), P = mythDaily(), T = S.trust || {}, form = !!S.mythForm, short = F.name.replace('The ', ''), a = /^[aeiou]/i.test(short) ? 'an' : 'a';
   const btn = m => m.t === 'reflect' ? 'Answer' : m.t === 'learn' ? 'Read' : mythAct(m.t) ? mythAct(m.t).label : m.self ? 'I did it' : '';
   const row = m => `<p>${m.have >= m.n ? '✅' : '◻️'} ${m.text} ${m.n > 1 ? `<b>${m.have}/${m.n}</b>` : ''} ${m.have < m.n && btn(m) ? `<button class="ghost" data-mt="${m.t}" style="padding:2px 10px">${btn(m)}</button>` : ''}</p>`;
   const cm = T.missions || [];
   showCard(`<div class="kicker">✦ ${F.path.toUpperCase()} ✦</div><h2>${F.name}</h2>
-    <p><b>${glowName(P.light || 0)}</b> <span class="sub">(goes up with every mission you finish)</span>${T.seen ? `<br>Players have tapped your ${short} ${T.seen} time${T.seen === 1 ? '' : 's'}. They don't know it was you.` : ''}</p>
-    <div class="chips"><button id="myForm">${form ? 'Turn back into you' : `Turn into ${F.name.replace('The ', 'the ')}`}</button><button id="myPow" class="${P.power === S.day ? 'ghost' : ''}">${F.power.name}${P.power === S.day ? ' (tomorrow)' : ''}</button>
+    <p><b>${glowName(P.light || 0)}</b> <span class="sub">(goes up with every mission you finish)</span>${T.seen ? `<br>Players have tapped you ${T.seen} time${T.seen === 1 ? '' : 's'} as ${a} ${short}. They don't know it was you.` : ''}</p>
+    <div class="chips"><button id="myForm">${form ? 'Back to your everyday self' : `Become ${F.name.replace('The ', 'the ')}`}</button><button id="myPow" class="${P.power === S.day ? 'ghost' : ''}">${F.power.name}${P.power === S.day ? ' (tomorrow)' : ''}</button>
     <button id="myApp" class="${P.appear === S.day ? 'ghost' : ''}">Fly over another island${P.appear === S.day ? ' (tomorrow)' : ''}</button><button id="myLeg" class="ghost">The legend</button>${P.journal && P.journal.length ? '<button id="myJr" class="ghost">Journal</button>' : ''}</div>
-    ${form ? '<p class="sub"><b>To fly:</b> press and hold anywhere on the island. Your ' + short + ' follows your finger. Let go to land. On a keyboard, hold Space.</p>' : ''}
-    <p class="sub">Once a day, your ${short} can fly over a random player's island. If they tap it, they get a gift. They never find out it was you.</p>
+    ${form ? '<p class="sub"><b>To fly:</b> press and hold anywhere on the island. You follow your finger. Let go to land. On a keyboard, hold Space.</p>' : ''}
+    <p class="sub">Once a day, you can fly over a random player's island as ${a} ${short}. If they tap it, they get a gift. They never find out it was you.</p>
     <h4>Today's missions: finish any 3 of these 5</h4>${P.list.map(row).join('')}
     ${cm.length ? `<h4>From the Creator</h4>${cm.map(m => `<p>✧ <b>${esc(m.title)}</b>${m.how ? `<br><span class="sub">${esc(m.how)}</span>` : ''} <button class="ghost" data-cm="${m.id}" style="padding:2px 10px">I did it (+${m.reward})</button></p>`).join('')}` : ''}
     ${mythExtras.map(x => x.html()).join('')}
     <p class="sub">New missions every day.</p>`, 'Close');
-  $('myForm').onclick = () => { S.mythForm = !form; save(); dressPlayer(); hideCard(); burst(player.position.clone().setY(1), F.colors[0], 30); chime(form ? 660 : 988); toast(form ? 'You turned back into you.' : `You turned into ${F.name.replace('The ', 'the ')}. Press and hold anywhere to fly. Let go to land.`); };
+  $('myForm').onclick = () => { S.mythForm = !form; save(); dressPlayer(); hideCard(); burst(player.position.clone().setY(1), F.colors[0], 30); chime(form ? 660 : 988); toast(form ? 'You are back to your everyday self.' : `You became ${F.name.replace('The ', 'the ')}. Press and hold anywhere to fly. Let go to land.`); };
   $('myPow').onclick = () => P.power === S.day ? toast('You already used your power today. Try again tomorrow.') : mythPower();
   $('myApp').onclick = () => P.appear === S.day ? toast('You already did this today. Try again tomorrow.') : mythAppear();
   $('myLeg').onclick = () => showCard(`<div class="kicker">IN LEGEND</div><h2>${F.name}</h2>${F.legend.map(l => `<p>${l}</p>`).join('')}<h4>In Sky Garden: ${F.power.name}</h4><p>${F.power.text}</p>`, 'Back', mythMenu);
@@ -5135,7 +5137,7 @@ function mythPower() { const k = mythKind(), F = mythF(), P = mp();
 async function mythAppear(to) { const P = mp(), F = MYTHS[mythKind()]; hideCard();
   const r = devOn() || PREVIEW ? { ok:true } : await api('/appear', to ? { key:S.syncKey, to } : { key:S.syncKey }); if (!r.ok) { toast(r.error === 'already today' ? 'You already did this today. Try again tomorrow.' : 'Could not connect. Check your internet and try again.'); return false; }
   burst(player.position.clone().setY(2), F.colors[0], 40); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 140));
-  if (!to) { P.appear = S.day; mythCount('appear'); save(); toast(`Your ${F.name.replace('The ', '')} is flying over another player's island today.`); }
+  if (!to) { P.appear = S.day; mythCount('appear'); save(); toast(`Today you're flying over another player's island as ${/^[aeiou]/i.test(F.name.replace('The ', '')) ? 'an' : 'a'} ${F.name.replace('The ', '')}.`); }
   return true; }
 // glowing mushrooms, each with a small gift and a silly surprise
 function mythBloom(n, mine) { const P = mp(); if (mine) P.shrooms = [];
@@ -5168,12 +5170,33 @@ function mythBless(s) { const F = MYTHS[s.form]; mythSky.visible = false; S.bles
 async function mythLookUp() { if (!featureOn('myths') || VISIT || TESTSLOT || S.sightDay === S.day || !S.syncKey || devOn()) return;
   try { const r = await (await fetch(`${CLOUD}/sighting?key=${S.syncKey}`)).json(); S.sightDay = S.day; save(); if (r.sighting && Math.random() < .7) setTimeout(() => mythSighting(r.sighting), 20000 + Math.random() * 60000); } catch {} }
 // the first time: the reveal
-function mythReveal() { if (!mythOn() || mp().revealed) return; const F = mythF();
-  if (!PREVIEW && !devOn() && (fDay() < 5 || hour() < 19 || S.where === 'hut')) return; // a surprise for a later night, never on the first days
-  const busy = !S.setupDone || S.tut === 1 || $('dialog').classList.contains('show') || $('veil').classList.contains('show') || document.querySelector('.presents'); if (busy) return setTimeout(mythReveal, 3000);
+// a picture of the player's own legend (the same 3D creature that flies over islands), for the present they open
+function mythPortrait(k) { try {
+  const r = new THREE.WebGLRenderer({ alpha:true, antialias:true, preserveDrawingBuffer:true }); r.setSize(320, 320); r.setClearColor(0, 0);
+  const sc = new THREE.Scene(), m = mythModel(k); sc.add(m); sc.add(new THREE.HemisphereLight(0xffffff, 0xb9a7d9, 1.6)); const dl = new THREE.DirectionalLight(0xffffff, 2); dl.position.set(2, 4, 5); sc.add(dl);
+  const box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3()).length();
+  const cam = new THREE.PerspectiveCamera(35, 1, .01, 100); cam.position.set(c.x + size * .35, c.y + size * .22, c.z + size * .95); cam.lookAt(c);
+  r.render(sc, cam); const url = r.domElement.toDataURL('image/png'); r.dispose(); r.forceContextLoss();
+  return `<img src="${url}" alt="" style="width:230px;height:230px;display:block;margin-top:-40px">`; } catch { return '🪽'; } }
+function mythReveal() { if (!mythOn() || mp().revealed) return; const F = mythF(), short = F.name.replace('The ', ''), a = /^[aeiou]/i.test(short) ? 'an' : 'a';
+  if (!PREVIEW && !devOn() && (S.tut !== 9 || S.where === 'hut')) return setTimeout(mythReveal, 5000); // after the first steps, out under the sky
+  const busy = !S.setupDone || $('dialog').classList.contains('show') || $('veil').classList.contains('show') || document.querySelector('.presents'); if (busy) return setTimeout(mythReveal, 3000);
   mp().revealed = S.day; save(); [392, 523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 220));
-  showCard(`<div class="kicker">✦ SOMETHING HAS CHOSEN YOU ✦</div><h2>${F.name}</h2>${F.legend.map(l => `<p>${l}</p>`).join('')}
-    <p><b>This legend is now yours.</b> You can turn into it, use its power once a day, and get new missions every day.</p><p>Tap the 🪽 button on your hotbar to see everything.</p><p><b>It's a secret. Only you know you have it.</b></p>`, 'Turn into it now', () => { S.mythForm = true; save(); dressPlayer(); burst(player.position.clone().setY(1), F.colors[0], 40); drawHud(); setTimeout(mythMenu, 900); });
+  const perks = () => showCard(`<div class="kicker">✦ YOUR LEGEND ✦</div><h2>What you can do now</h2>
+    <div class="jlist">
+      <button>🪽 <b>Become ${F.name.replace('The ', 'the ')}</b><span class="sub"><br>Then press and hold anywhere to fly. You follow your finger to any island you have opened. Let go to land.</span></button>
+      <button>✨ <b>${F.power.name}</b>, once a day<span class="sub"><br>${F.power.text}</span></button>
+      <button>🌍 <b>Fly over someone's island</b>, once a day<span class="sub"><br>They'll see ${a} ${short} pass overhead. If they tap it, they get a gift. They'll never know it was you.</span></button>
+      <button>✦ <b>A new path every day</b><span class="sub"><br>${F.path}: 5 missions a day, finish any 3. Each one pays 40 coins and you go up a level. They never run out.</span></button>
+    </div><p style="margin-top:10px">All of this lives behind the 🪽 button on your hotbar.</p>`, `Become ${F.name.replace('The ', 'the ')}`, () => { S.mythForm = true; save(); dressPlayer(); burst(player.position.clone().setY(1), F.colors[0], 40); drawHud(); setTimeout(() => toast('Press and hold anywhere to fly. Let go to land.'), 1200); });
+  const secret = () => showCard(`<div class="kicker">✦ A SECRET ✦</div><h2>Where legends come from</h2>
+    <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">🌍</span><span>People all over the world tell stories of giant birds in the sky: the Garuda, the Thunderbird, the Roc from Sinbad's voyages. And ${F.name.replace('The ', 'the ')}.</span></p>
+    <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">🤔</span><span>Nobody knows how these stories started. Maybe someone saw something they couldn't explain.</span></p>
+    <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">✨</span><span>In Sky Garden, the stories start with you. When players spot ${a} ${short} crossing their sky, that's you. You're the story they tell.</span></p>
+    <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">🤫</span><span><b>No one is ever told. Only you, and the Creator, know.</b></span></p>`, 'What can I do?', perks);
+  const story = () => showCard(`<div class="kicker">✦ THE OTHER YOU ✦</div><h2>${F.name}</h2><p class="sub">From ${F.from || 'an old legend'}</p>${(F.fun || F.legend.map(l => ['✦', l])).map(([e, l]) => `<p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">${e}</span><span>${l}</span></p>`).join('')}`, 'Keep reading', secret);
+  const hex = c => '#' + c.toString(16).padStart(6, '0'); // it arrives as a present you open, wrapped in the legend's own colors
+  openPresents([{ icon:mythPortrait(mythKind()), title:`You are ${F.name.replace('The ', 'the ')}`, text:`A creature of ${F.from || 'an old legend'}. It has always been a part of you. Now you can let it out.`, wrap:[hex(F.colors[0]), hex(F.colors[1])], last:'Read the legend' }], story);
   logKeeper('mythfirst', F.name); }
 // developer mode: try any legend with its real content, then put your own back exactly as it was
 async function devTryLegend(k) { if (!devOn()) return;
@@ -5210,7 +5233,7 @@ var hintKey = o => { const p = new THREE.Vector3(); o.getWorldPosition(p); retur
 function noteTapped(o) { try { const k = hintKey(o); if (!(S.tapped || []).includes(k)) { S.tapped = [...(S.tapped || []), k].slice(-500); } } catch {} }
 var hintT = 0, hintNear = new Set(), hintLast = -1e9; // var: the game loop can start before this part loads
 function hintTick(dt, now) { if (!HINT_SKIP || (hintT += dt) < 1) return; hintT = 0;
-  if (!playing || S.tut !== 9 || cine || fish3 || flight.on || buildMode || VISIT || $('veil').classList.contains('show') || $('dialog').classList.contains('show')) return;
+  if (!playing || S.tut !== 9 || document.querySelector('.presents') || cine || fish3 || flight.on || buildMode || VISIT || $('veil').classList.contains('show') || $('dialog').classList.contains('show')) return;
   const p = new THREE.Vector3(), near = new Set(), tg = typeof questTarget === 'function' ? questTarget() : null; S.hintPass = S.hintPass || {};
   tappables().forEach(o => { if (HINT_SKIP.has(o.userData.kind) || o === tg) return; o.getWorldPosition(p); if (Math.abs(p.y - player.position.y) > 1.5 || Math.hypot(p.x - player.position.x, p.z - player.position.z) > 2.6) return;
     const k = hintKey(o); if ((S.tapped || []).includes(k) || (S.hinted || []).includes(k)) return; near.add(k);
