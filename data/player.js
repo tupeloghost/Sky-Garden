@@ -39,7 +39,7 @@ const MODES = [
   { id:'fisher',   name:"Fisher's Isle", blurb:'For people who love the water.',
     perks:['Your own fishing dock at home from day one', 'Fish sell for 25% more'] },
   { id:'scholar',  name:"Scholar's Isle", blurb:'For people who love to learn.',
-    perks:['Every new memory also pays 30 coins', 'Start with a bookshelf in your hut'] },
+    perks:['Earn 30 extra coins each time you dig up or learn something new', 'Start with a bookshelf in your hut'] },
   { id:'explorer', name:"Explorer's Isle", blurb:'For people who want to see everything.',
     perks:['Walk 25% faster', 'Bridges cost 30% less'] },
   { id:'cozy',     name:'Cozy Isle', blurb:'For people who like to take their time.',

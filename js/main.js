@@ -1470,7 +1470,7 @@ function allCats() {
     { name:'Heirlooms', ids:S.found.filter(isHeirloom), has:() => true, label:k => `${registerHeirloom(k) && ITEMS[k].name} (${codeOfHeirloom(k) === myCode ? 'yours' : 'island ' + codeOfHeirloom(k)})`, open:k => () => showCard(`<div class="kicker">HEIRLOOM FLOWERS</div><h2>${ITEMS[k].name}</h2><p>Only grows on island ${codeOfHeirloom(k)}.</p><h4>In real life</h4><p>Gardeners breed and name their own flower and vegetable varieties. In the 1930s one man bred the Mortgage Lifter tomato and paid off his house selling the seedlings.</p>`, 'Back', () => openCategory('Heirlooms')), hint:() => '' },
     { name:'Bugs', ids:[...BUTTERFLIES.map(b => b.id), ...INSECTS.map(b => b.id)], has:k => (S.bugs || []).includes(k), label:k => (BUTTERFLIES.find(b => b.id === k) || INSECTS.find(b => b.id === k)).name, open:k => () => { const b = BUTTERFLIES.find(x => x.id === k) || INSECTS.find(x => x.id === k); showCard(`<div class="kicker">BUGS</div><h2>${icon(k)} ${b.name}</h2><h4>In real life</h4><p>${b.fact}</p>`, 'Back', () => openCategory('Bugs')); }, hint:k => { const b = INSECTS.find(x => x.id === k); return b ? `Look ${ { air:'in the air', flower:'on flowers', ground:'on the ground', tree:'on tree trunks' }[b.where] } in ${b.seasons.map(x => SEASONS[x].toLowerCase()).join(' or ')}${b.time === 'night' ? ', at night' : b.time === 'day' ? ', in the day' : ''}.` : 'Tap a butterfly when you see one flying.'; } },
     { name:'Furniture', ids:Object.keys(FURN), has:k => S.found.includes(k), label:k => FURN[k].name, open:k => itemCard(k, 'Furniture'), hint:k => FINDS[k].hint },
-    { name:'Memories', ids:AHA_ORDER, has:k => S.aha.includes(k), label:k => AHA[k].title + (S.used.includes(k) ? ' ★' : ''), open:k => () => showCard(ahaHtml(k), 'Back', () => openCategory('Memories')), hint:() => 'Keep playing the story, digging, and celebrating festivals.' },
+    { name:'Memories', ids:AHA_ORDER, has:k => S.aha.includes(k), label:k => AHA[k].title + (S.used.includes(k) ? ' ★' : ''), open:k => () => showCard(ahaHtml(k), 'Back', () => openCategory('Memories')), hint:() => 'Find more by digging up sparkles, finishing chapters, and joining festivals.' },
     { name:'Dishes', ids:RECIPES.map(r => r.id), has:k => S.cooked.includes(k), label:k => RECIPES.find(r => r.id === k).name, open:k => () => showCard(lessonHtml(RECIPES.find(r => r.id === k).aha), 'Back', () => openCategory('Dishes')), hint:k => `Cook it at the Bakery. Needs ${Object.entries(RECIPES.find(r => r.id === k).needs).map(([i,n]) => `${n} ${ITEMS[i].name}`).join(' and ')}.` },
     { name:'Star Chart', ids:CONSTELLATIONS.map(c => c.id), has:k => S.charted.includes(k), label:k => CONSTELLATIONS.find(c => c.id === k).name, open:k => () => showCard(starHtml(CONSTELLATIONS.find(c => c.id === k)), 'Back', () => openCategory('Star Chart')), hint:k => `Chart it at the Observatory after 8 PM. Out in ${CONSTELLATIONS.find(c => c.id === k).months.map(month).join(', ')}.` },
     { name:'Library Books', ids:BOOKS.map(b => b.id), has:k => S.read.includes(k), label:k => BOOKS.find(b => b.id === k).title, open:k => () => showCard(lessonHtml({ kicker:'THE LIBRARY', ...BOOKS.find(b => b.id === k) }), 'Back', () => openCategory('Library Books')), hint:() => 'Build the Library. A new book arrives every week.' },
@@ -1637,7 +1637,7 @@ async function openMoveGame(back) {
 function itemUse(k) {
   const it = ITEMS[k], uses = [];
   if (it.kind === 'material') {
-    CRAFTS.forEach(c => { if (c.needs[k]) uses.push(c.name); });
+    CRAFTS.forEach(c => { if (c.needs[k] && (LIMITS_ON || !/^bag\d$/.test(c.id))) uses.push(c.name); });
     if (k === 'clay') uses.push('bricks and pots in the kiln'); if (k === 'log') uses.push('kiln fuel');
     if (k === 'copper' || k === 'tin') uses.push('bronze in the furnace'); if (k === 'brick' || k === 'stone' || k === 'log') uses.push('building pieces');
     return uses.length ? `Used for: ${[...new Set(uses)].join(', ')}.` : 'Used for building.';
@@ -1680,7 +1680,7 @@ $('bagBtn').onclick = openBag;
 $('buildBtn').onclick = () => setBuildMode(!buildMode);
 // --- daily goals: three small tasks each morning ---
 const GOAL_TYPES = {
-  water: n => `Water ${n} plants`, pick: n => `Pick ${n} crops`, sell: n => `Sell ${n} coins of stuff`,
+  water: n => `Water ${n} plants`, pick: n => `Pick ${n} crops`, sell: n => `Earn ${n} coins from selling`,
   talk: n => `Talk to ${n} neighbors`, gift: () => 'Give someone a gift', fish: n => `Catch ${n} fish`, fruit: n => `Pick ${n} fruits`,
 };
 function ensureGoals() {
@@ -1770,7 +1770,7 @@ async function checkInbox() {
     else if (ITEMS[registerHeirloom(it.item)] && ITEMS[it.item].kind !== 'quest') { bagAdd(it.item); lines.push(`${it.from} left you a ${ITEMS[it.item].name}.`); }
   });
   S.mailLog = [...(S.mailLog || []), ...lines].slice(-20); S.mailNew = true; save(); drawHud();
-  showCard(`<div class="kicker">WHILE YOU WERE AWAY</div><h2>You had visitors!</h2><div class="jlist">${lines.map(l => `<button>${l}</button>`).join('')}</div><p style="margin-top:8px">Gifts are in your Bag. Visit them back from your mailbox!</p>`, 'Yay!');
+  showCard(`<div class="kicker">WHILE YOU WERE AWAY</div><h2>You had visitors!</h2><div class="jlist">${lines.map(l => `<button>${l}</button>`).join('')}</div><p style="margin-top:8px">Their gifts are in your Bag. Tap your mailbox to visit them.</p>`, 'Yay!');
 }
 function openGoals() {
   ensureGoals();
@@ -1784,10 +1784,10 @@ function applyPaint() { roof.material.color.set(+S.roof); house.userData.awning.
 document.addEventListener('click', e => { if (e.target.closest('button,.slot,.hslot') && e.target.id !== 'mute') sfx('click'); });
 // S.tut: 1 Nana walks over, 2 dig the first spot, 3 plant, 4 water, 5 pick, 6 sell, 9 done
 const TUT = {
-  2: { text:'Tap the sparkly spot 3 times to dig it up.', help:'Nana showed you a gold sparkle right next to your garden. Walk to it and tap it 3 times. Each tap digs a little deeper.' },
+  2: { text:'Tap the gold sparkle 3 times to dig it up.', help:'Nana showed you a gold sparkle right next to your garden. Walk to it and tap it 3 times. Each tap digs a little deeper.' },
   3: { text:'Tap the garden square to dig the soil, then tap it again to plant.', help:'Your garden is the patch of squares near your hut. The gold arrow points at one. Tap it once to dig the soil, then tap it again to plant one of the seeds Nana gave you.' },
   4: { text:'Tap the planted square to water it.', help:'Seeds need water. Tap the square with your new sprout to water it.' },
-  5: { text:'Your first crop is ripe! Tap it to pick it.', help:'Grandma\'s soil grew your first plant right away. Tap it to pick it. Usually crops take a few days.' },
+  5: { text:'Your first crop is ripe! Tap it to pick it.', help:'Your grandma\'s garden soil grew your first plant right away. Tap it to pick it. Usually crops take a few days.' },
   6: { text:'Sell your crop. Tap the wooden crate.', help:'The wooden crate next to your garden buys anything you grow, catch, or pick. Tap it to sell your crop for coins.' },
 };
 function tutActive() { return S.tut >= 2 && S.tut <= 6; }
@@ -1800,7 +1800,7 @@ function tutAfterGreeting() {
 function tutAfterFirstMemory() {
   const c = Object.keys(CROPS).find(k => CROPS[k].seasons.includes(season()) && !CROPS[k].locked);
   S.tut = 3; S.tiles[0] = { s:0 }; S.seeds[c] = (S.seeds[c] || 0) + 2; S.sel = c; drawTile(0); save(); drawHud();
-  openDialog('Nana Gale', "You found your first memory! Your grandmother would be proud. Now, you'll need coins to rebuild the sky. Let me show you her garden. Here are 2 seeds that grow this season. Tap the square the arrow points at.", [], S.hearts.nana);
+  openDialog('Nana Gale', "You found your first memory! Your grandmother would be proud. Now, you'll need coins to fix bridges and rebuild. Let me show you her garden. Here are 2 seeds that grow this season. Tap the square the arrow points at.", [], S.hearts.nana);
 }
 function tutTile(i) {
   if (!tutActive() || i !== 0) return;
@@ -1841,7 +1841,7 @@ function questTarget() {
 const MARK_H = { npc:2.4, ship:4.2, windmill:5.6, greatbell:2.2, bellframe:1.4, house:3.8 };
 function currentHowto() {
   if (TUT[S.tut]) return TUT[S.tut].help;
-  if (S.tut >= 9 && (S.home || 0) < 3) return 'Grandma\'s hut blew away, so you are building a new one. First pick up sticks, stones, and grass that lie around the island. Craft a stone axe and a stone pickaxe at the tree stump. Then chop trees for logs, break rocks for stone, and cut bushes for grass fiber. Tap your home site to build the frame, the walls, and the roof. Until then, you sleep by the campfire.';
+  if (S.tut >= 9 && (S.home || 0) < 3) return 'Your hut blew away. Build a new one in 3 steps. 1: Pick up sticks, stones, and grass. 2: Make an axe and a pickaxe at the tree stump workbench. 3: Chop trees, break rocks, and cut bushes, then tap the old stones where your hut stood. Until then, you sleep by the campfire.';
   if (S.quest < 5) return HOWTO.c1[S.quest];
   if (S.q2 < 5) return HOWTO.c2[S.q2];
   if (S.q3 < 7) return HOWTO.c3[S.bridge2 && S.q3 === 0 ? 1 : S.q3];
@@ -2198,7 +2198,7 @@ function nanaQuest() {
   const h = S.hearts.nana;
   if (S.quest === 0) {
     S.quest = 1; if (S.tut === 1) tutAfterGreeting(); else spawnDigs(); drawHud(); save();
-    openDialog('Nana Gale', `Oh! You must be ${S.name || 'the new Keeper'}. You have her eyes. Your grandmother was our Keeper of Memory. When the Great Gust hit, the village's memories fell into the ground like seeds. See that sparkle, right by your garden? Tap it a few times to dig it up.`, [], h);
+    openDialog('Nana Gale', `Oh! You must be ${S.name || 'the new Keeper'}. You have her eyes. Your grandmother was our Keeper of Memory: she kept the village's old stories safe. When the Great Gust hit, the village's memories fell into the ground like seeds. See that sparkle, right by your garden? Tap it a few times to dig it up.`, [], h);
   } else if (S.quest === 1) openDialog('Nana Gale', `Keep digging, dear. ${S.relics} of 3 memories found. New sparkles show up each morning.`, neighborButtons('nana'), h);
   else if (S.quest === 2) openDialog('Nana Gale', "Three memories! Now, the old stone dial by your garden. Tap it when its shadow is the very shortest. Do not ask me why. Your grandmother always did.", neighborButtons('nana'), h);
   else if (S.quest === 3) openDialog('Nana Gale', "This is her Wind Bell frame. The big chime survived, but the small ones are all mixed up. Hang the three that sound sweetest with the big one.", [{ label:'Tune the bell', fn:() => { closeDialog(); openBell(); } }, ...neighborButtons('nana')], h);
@@ -3271,10 +3271,10 @@ function useBuildSite() {
   };
 }
 function homeStep() { // what the home-building goal says right now
-  if (!S.tools.axe) return enough(CRAFTS[0].needs) ? { text:'Tap the tree stump to craft a stone axe.', target:workbench } : { text:`Pick up sticks, stones, and grass around your island. For a stone axe: ${needText(CRAFTS[0].needs)}.`, target:pickupGroup.children[0] || null };
-  if (!S.tools.pick) return enough(CRAFTS[1].needs) ? { text:'Tap the tree stump to craft a stone pickaxe.', target:workbench } : { text:`Gather for a stone pickaxe: ${needText(CRAFTS[1].needs)}. Look for grey stones on the ground. More appear each morning.`, target:pickupGroup.children.find(g => S.pickups[g.userData.i]?.t === 'stone') || pickupGroup.children[0] || null };
+  if (!S.tools.axe) return enough(CRAFTS[0].needs) ? { text:'Tap the tree stump workbench to make a stone axe.', target:workbench } : { text:`Pick up sticks, stones, and grass around your island. For a stone axe: ${needText(CRAFTS[0].needs)}.`, target:pickupGroup.children[0] || null };
+  if (!S.tools.pick) return enough(CRAFTS[1].needs) ? { text:'Tap the tree stump workbench to make a stone pickaxe.', target:workbench } : { text:`Gather for a stone pickaxe: ${needText(CRAFTS[1].needs)}. Look for grey stones on the ground. More appear each morning.`, target:pickupGroup.children.find(g => S.pickups[g.userData.i]?.t === 'stone') || pickupGroup.children[0] || null };
   const stage = HOME_STAGES[S.home || 0];
-  if (enough(stage.needs)) return { text:`Tap your home site to build ${stage.name}.`, target:buildSite };
+  if (enough(stage.needs)) return { text:`Tap the old stones where your hut stood to build ${stage.name}.`, target:buildSite };
   const short = Object.entries(stage.needs).find(([k,n]) => have(k) < n)[0];
   const tg = short === 'log' ? woodTrees.find(t => S.chopped[t.userData.key] !== S.day && t.parent === scene) : short === 'stone' ? rocks.find(r => S.chopped[r.userData.key] !== S.day) : bushes.find(b => S.chopped[b.userData.key] !== S.day);
   return { text:`Gather for ${stage.name}: ${needText(stage.needs)}.`, target: tg || buildSite };
@@ -3951,7 +3951,7 @@ function tickFrame() {
   // life
   if (!inside && !lowGfx) swayTufts(now);
   if (playing && !lowGfx && perfCheck.n < 240 && !document.hidden) { perfCheck.n++; perfCheck.sum += dt;
-    if (perfCheck.n === 240 && perfCheck.sum / 240 > 1/32) { setLowGfx(true); toast('Switched to low graphics so the game runs smoother. You can change this in Sync my game.'); } }
+    if (perfCheck.n === 240 && perfCheck.sum / 240 > 1/32) { setLowGfx(true); toast('The game switched to low graphics so it runs smoother. To change it back: tap Bag, then Settings, then Sync my game.'); } }
   trees.forEach(t => { if (t.userData.shake) { t.userData.shake = Math.max(0, t.userData.shake - dt*2.5); t.rotation.z = Math.sin(now*40) * .06 * t.userData.shake; }
     t.userData.canopy.rotation.z = Math.sin(now*1.2 + t.userData.ph)*.035; t.userData.canopy.rotation.x = Math.cos(now*.9 + t.userData.ph)*.025; });
   if (nanaWalk) { const n = npcs.nana, d = nanaWalk.to.clone().sub(n.position); d.y = 0;
@@ -4149,7 +4149,7 @@ const ME = () => VISIT ? mine : S, saveMe = () => VISIT ? saveMine() : save();
 const TRADEABLE = ['crop','fruit','fish','dish','specialty','heirloom','material','bug'];
 const isKid = () => ageBand() === 'kid';
 async function api(path, body) {
-  if (TESTSLOT && body && !['/feedback','/bug'].includes(path.split('?')[0]) && !(DEV_OK && path.startsWith('/creator/'))) { setTimeout(() => toast('That only works on your real island. Switch back in Bag.'), 60); return { ok:false, status:0, error:'test island' }; }
+  if (TESTSLOT && body && !['/feedback','/bug'].includes(path.split('?')[0]) && !(DEV_OK && path.startsWith('/creator/'))) { setTimeout(() => toast('That only works on your real island. Tap Bag, then Back to my island.'), 60); return { ok:false, status:0, error:'test island' }; }
   if (TESTSLOT && body && path === '/feedback') body = { ...body, where:'[test island] ' + (body.where || '') };
   try { const r = await fetch(`${CLOUD}${path}`, body ? { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body) } : undefined);
     const j = await r.json().catch(() => ({})); return { ok:r.ok, status:r.status, ...j }; } catch { return { ok:false, status:0, error:'offline' }; }
@@ -4466,7 +4466,7 @@ function askReaction(m) {
 }
 function openMissions() {
   const list = missionList(), done = list.filter(m => S.missions?.[m.id]).length;
-  showCard(`<div class="kicker">✦ TESTER MISSIONS</div><h2>${done} of ${list.length} done</h2><p>Things we would love you to try. Each pays 50 coins. Play however you like. These are just ideas.</p>
+  showCard(`<div class="kicker">✦ FOUNDER MISSIONS</div><h2>${done} of ${list.length} done</h2><p>Things we would love you to try. Each pays 50 coins. Play however you like. These are just ideas.</p>
     <button id="myGifts">🎁 My founder gifts</button>
     <div class="jlist">${list.map(m => `<button class="${S.missions?.[m.id] ? 'mdone' : ''}">${S.missions?.[m.id] ? '✓ ' : ''}${m.title}<span class="sub"> ${m.how}</span></button>`).join('')}</div>`, 'Close');
   $('myGifts').onclick = () => openFounderGifts(openMissions);
@@ -5086,23 +5086,23 @@ function mythDaily() { const P = mp(), F = mythF();
   return P; }
 function mythCount(t, n = 1) { if (!mythOn()) return; const P = mythDaily(); let changed = false;
   P.list.forEach(m => { if (m.t === t && m.have < m.n) { m.have = Math.min(m.n, m.have + n); changed = true; if (m.have >= m.n) mythDone(m.text); } });
-  if (changed && !P.bonus && P.list.filter(m => m.have >= m.n).length >= 3) { P.bonus = true; P.light++; S.coins += 60; setTimeout(() => { toast(`3 missions done today! Bonus: +60 coins and ${MYTHS[mythKind()].name} went up a level.`); chime(1319); }, 1600); }
+  if (changed && !P.bonus && P.list.filter(m => m.have >= m.n).length >= 3) { P.bonus = true; P.light++; S.coins += 60; setTimeout(() => { toast(`3 legend tasks done today! Bonus: +60 coins, and you went up a level.`); chime(1319); }, 1600); }
   save(); }
 function mythDone(text) { const P = mp(); P.light++; P.done = (P.done || 0) + 1; S.coins += 40; drawHud();
-  setTimeout(() => { toast(`Mission done! +40 coins. ${MYTHS[mythKind()].name} went up a level.`); [784, 988, 1175].forEach((f, i) => setTimeout(() => chime(f), i * 110)); burst(player.position.clone().setY(1.2), MYTHS[mythKind()].colors[0], 18); }, 500);
+  setTimeout(() => { toast(`Legend task done! +40 coins, and you went up a level.`); [784, 988, 1175].forEach((f, i) => setTimeout(() => chime(f), i * 110)); burst(player.position.clone().setY(1.2), MYTHS[mythKind()].colors[0], 18); }, 500);
   logKeeper('mythpath', text); }
 function mythMenu() { if (!mythOn()) return; const F = mythF(), P = mythDaily(), T = S.trust || {}, form = !!S.mythForm, short = F.name.replace('The ', ''), a = /^[aeiou]/i.test(short) ? 'an' : 'a';
   const btn = m => m.t === 'reflect' ? 'Answer' : m.t === 'learn' ? 'Read' : mythAct(m.t) ? mythAct(m.t).label : m.self ? 'I did it' : '';
   const row = m => `<p>${m.have >= m.n ? '✅' : '◻️'} ${m.text} ${m.n > 1 ? `<b>${m.have}/${m.n}</b>` : ''} ${m.have < m.n && btn(m) ? `<button class="ghost" data-mt="${m.t}" style="padding:2px 10px">${btn(m)}</button>` : ''}</p>`;
   const cm = T.missions || [];
   showCard(`<div class="kicker">✦ ${F.path.toUpperCase()} ✦</div><h2>${F.name}</h2>
-    <p><b>${glowName(P.light || 0)}</b> <span class="sub">(goes up with every mission you finish)</span>${T.seen ? `<br>Players have tapped you ${T.seen} time${T.seen === 1 ? '' : 's'} as ${a} ${short}. They don't know it was you.` : ''}</p>
+    <p><b>${glowName(P.light || 0)}</b> <span class="sub">(you go up a level with every legend task)</span>${T.seen ? `<br>Players have tapped you ${T.seen} time${T.seen === 1 ? '' : 's'} as ${a} ${short}. They don't know it was you.` : ''}</p>
     <div class="chips"><button id="myForm">${form ? 'Back to your everyday self' : `Become ${F.name.replace('The ', 'the ')}`}</button><button id="myPow" class="${P.power === S.day ? 'ghost' : ''}">${F.power.name}${P.power === S.day ? ' (tomorrow)' : ''}</button>
     <button id="myApp" class="${P.appear === S.day ? 'ghost' : ''}">Fly over another island${P.appear === S.day ? ' (tomorrow)' : ''}</button><button id="myLeg" class="ghost">The legend</button>${P.journal && P.journal.length ? '<button id="myJr" class="ghost">Journal</button>' : ''}</div>
     ${form ? '<p class="sub"><b>To fly:</b> press and hold anywhere on the island. You follow your finger. Let go to land. On a keyboard, hold Space.</p>' : ''}
     <p class="sub">Once a day, you can fly over a random player's island as ${a} ${short}. If they tap it, they get a gift. They never find out it was you.</p>
-    <h4>Today's missions: finish any 3 of these 5</h4>${P.list.map(row).join('')}
-    ${cm.length ? `<h4>From the Creator</h4>${cm.map(m => `<p>✧ <b>${esc(m.title)}</b>${m.how ? `<br><span class="sub">${esc(m.how)}</span>` : ''} <button class="ghost" data-cm="${m.id}" style="padding:2px 10px">I did it (+${m.reward})</button></p>`).join('')}` : ''}
+    <h4>Today's legend tasks: finish any 3 of these 5</h4>${P.list.map(row).join('')}
+    ${cm.length ? `<h4>From the game's maker</h4>${cm.map(m => `<p>✧ <b>${esc(m.title)}</b>${m.how ? `<br><span class="sub">${esc(m.how)}</span>` : ''} <button class="ghost" data-cm="${m.id}" style="padding:2px 10px">I did it (+${m.reward})</button></p>`).join('')}` : ''}
     ${mythExtras.map(x => x.html()).join('')}
     <p class="sub">New missions every day.</p>`, 'Close');
   $('myForm').onclick = () => { S.mythForm = !form; save(); dressPlayer(); hideCard(); burst(player.position.clone().setY(1), F.colors[0], 30); chime(form ? 660 : 988); toast(form ? 'You are back to your everyday self.' : `You became ${F.name.replace('The ', 'the ')}. Press and hold anywhere to fly. Let go to land.`); };
@@ -5114,14 +5114,14 @@ function mythMenu() { if (!mythOn()) return; const F = mythF(), P = mythDaily(),
     if (t === 'reflect') return mythReflect(); if (t === 'learn') return mythLearn(); if (mythAct(t)) return mythAct(t).run();
     mythCount(t); mythMenu(); });
   document.querySelectorAll('[data-cm]').forEach(b => b.onclick = () => { const m = cm.find(x => x.id === +b.dataset.cm);
-    showCard(`<div class="kicker">FROM THE CREATOR</div><h2>${esc(m.title)}</h2><p>How did it go? (optional, only the Creator can read this)</p><textarea id="cmNote" maxlength="400" rows="3" style="width:100%;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:8px"></textarea><button id="cmGo">Done</button>`, 'Back', mythMenu);
+    showCard(`<div class="kicker">FROM THE GAME'S MAKER</div><h2>${esc(m.title)}</h2><p>How did it go? (optional, only the game's maker can read this)</p><textarea id="cmNote" maxlength="400" rows="3" style="width:100%;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:8px"></textarea><button id="cmGo">Done</button>`, 'Back', mythMenu);
     $('cmGo').onclick = async () => { const r = PREVIEW ? { ok:true } : await api('/mission-done', { key:S.syncKey, id:m.id, note:$('cmNote').value.trim() }); if (!r.ok && !devOn()) return toast('Could not connect. Check your internet and try again.');
-      T.missions = cm.filter(x => x !== m); S.coins += m.reward; mp().light++; save(); drawHud(); chime(1175); toast(`+${m.reward} coins. The Creator will see it.`); mythMenu(); }; });
+      T.missions = cm.filter(x => x !== m); S.coins += m.reward; mp().light++; save(); drawHud(); chime(1175); toast(`+${m.reward} coins. The game's maker will see it.`); mythMenu(); }; });
   mythExtras.forEach(x => x.bind && x.bind());
 }
 function mythReflect() { const F = mythF(), q = F.reflect[S.day % F.reflect.length];
   showCard(`<div class="kicker">TODAY'S QUESTION</div><h2>${q}</h2><textarea id="rfA" maxlength="600" rows="4" style="width:100%;font:16px 'Baloo 2',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:8px"></textarea>
-    <p><label><input type="checkbox" id="rfShare"> Share this with the Creator</label></p><p class="sub">Unless you tick the box, only you can read your answer. It's saved in your journal.</p><button id="rfGo">Save my answer</button>`, 'Back', mythMenu);
+    <p><label><input type="checkbox" id="rfShare"> Share this with the game's maker</label></p><p class="sub">Unless you tick the box, only you can read your answer. It's saved in your journal.</p><button id="rfGo">Save my answer</button>`, 'Back', mythMenu);
   $('rfGo').onclick = () => { const a = $('rfA').value.trim(); if (!a) return toast('Write a few words first.'); mp().journal = [...(mp().journal || []), { q, a, day:S.day }].slice(-60);
     if ($('rfShare').checked) logKeeper('reflection', `${q} | ${a}`); mythCount('reflect'); save(); mythMenu(); }; }
 function mythLearn() { const F = mythF(), f = F.learn[(S.day + (mp().done || 0)) % F.learn.length];
@@ -5187,13 +5187,13 @@ function mythReveal() { if (!mythOn() || mp().revealed) return; const F = mythF(
       <button>🪽 <b>Become ${F.name.replace('The ', 'the ')}</b><span class="sub"><br>Then press and hold anywhere to fly. You follow your finger to any island you have opened. Let go to land.</span></button>
       <button>✨ <b>${F.power.name}</b>, once a day<span class="sub"><br>${F.power.text}</span></button>
       <button>🌍 <b>Fly over someone's island</b>, once a day<span class="sub"><br>They'll see ${a} ${short} pass overhead. If they tap it, they get a gift. They'll never know it was you.</span></button>
-      <button>✦ <b>A new path every day</b><span class="sub"><br>${F.path}: 5 missions a day, finish any 3. Each one pays 40 coins and you go up a level. They never run out.</span></button>
-    </div><p style="margin-top:10px">All of this lives behind the 🪽 button on your hotbar.</p>`, `Become ${F.name.replace('The ', 'the ')}`, () => { S.mythForm = true; save(); dressPlayer(); burst(player.position.clone().setY(1), F.colors[0], 40); drawHud(); setTimeout(() => toast('Press and hold anywhere to fly. Let go to land.'), 1200); });
+      <button>✦ <b>Legend tasks every day</b><span class="sub"><br>${F.path}: 5 legend tasks a day, finish any 3. Each one pays 40 coins and you go up a level. New ones every day.</span></button>
+    </div><p style="margin-top:10px">Tap the 🪽 button at the bottom of your screen to find all of this.</p>`, `Become ${F.name.replace('The ', 'the ')}`, () => { S.mythForm = true; save(); dressPlayer(); burst(player.position.clone().setY(1), F.colors[0], 40); drawHud(); setTimeout(() => toast('Press and hold anywhere to fly. Let go to land.'), 1200); });
   const secret = () => showCard(`<div class="kicker">✦ A SECRET ✦</div><h2>Where legends come from</h2>
     <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">🌍</span><span>People all over the world tell stories of giant birds in the sky: the Garuda, the Thunderbird, the Roc from Sinbad's voyages. And ${F.name.replace('The ', 'the ')}.</span></p>
     <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">🤔</span><span>Nobody knows how these stories started. Maybe someone saw something they couldn't explain.</span></p>
     <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">✨</span><span>In Sky Garden, the stories start with you. When players spot ${a} ${short} crossing their sky, that's you. You're the story they tell.</span></p>
-    <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">🤫</span><span><b>No one is ever told. Only you, and the Creator, know.</b></span></p>`, 'What can I do?', perks);
+    <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">🤫</span><span><b>No one is ever told. Only you, and the game's maker, know.</b></span></p>`, 'What can I do?', perks);
   const story = () => showCard(`<div class="kicker">✦ THE OTHER YOU ✦</div><h2>${F.name}</h2><p class="sub">From ${F.from || 'an old legend'}</p>${(F.fun || F.legend.map(l => ['✦', l])).map(([e, l]) => `<p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">${e}</span><span>${l}</span></p>`).join('')}`, 'Keep reading', secret);
   const hex = c => '#' + c.toString(16).padStart(6, '0'); // it arrives as a present you open, wrapped in the legend's own colors
   openPresents([{ icon:mythPortrait(mythKind()), title:`You are ${F.name.replace('The ', 'the ')}`, text:`A creature of ${F.from || 'an old legend'}. It has always been a part of you. Now you can let it out.`, wrap:[hex(F.colors[0]), hex(F.colors[1])], last:'Read the legend' }], story);
