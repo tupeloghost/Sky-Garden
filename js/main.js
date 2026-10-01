@@ -4009,6 +4009,9 @@ function tickFrame() {
   const menuOpen = $('veil').classList.contains('show') || $('dialog').classList.contains('show');
   if (playing) {
     if (!menuOpen) S.t += dt * (window.__sgSpeed || 1) * (sitting ? 3 : 1) / (DAY_LEN * (S.mode === 'cozy' ? 2 : 1)); // the clock stops while any menu or conversation is open
+    { const hr = hour(), w = S.lateWarn && S.lateWarn.day === S.day ? S.lateWarn.n : 0, home3 = (S.home || 0) >= 3; // two gentle warnings before the day ends at midnight
+      if (!cine && hr >= 22 && w < 1) { S.lateWarn = { day:S.day, n:1 }; chime(523); toast(`It is 10 PM and getting late. ${home3 ? 'Tap your bed' : 'Tap the campfire'} to sleep, or you will doze off where you stand at midnight.`); }
+      else if (!cine && hr >= 23.5 && w < 2) { S.lateWarn = { day:S.day, n:2 }; chime(440); toast('Your eyes are closing. You will fall asleep in a few moments.'); } }
     if (S.t >= 1 && !cine) { if (S.room) exitRoom(); goSleep(S.where === 'hut' ? 'bed' : 'outside', true); }
     if ((hudTick += dt) > .5) { hudTick = 0; drawHud(); ambience(); cloudPush(); }
     playMusic(dt);
