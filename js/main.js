@@ -1815,6 +1815,16 @@ const HELP = {
       if ($('hpDone')) $('hpDone').onclick = () => { if (step === 0) { step = 1; return draw(); } helpDone('lumen', 'light', 'Red and green made yellow. All three made white. Light is strange and lovely.'); }; };
     draw(); } },
 };
+// the old stone: crack its symbols by comparing names you know, the way the real Rosetta Stone was read
+function readStone() { const sym = { N:'◆', A:'●', P:'▲', I:'■' }, w = t => [...t].map(c => sym[c]).join(' ');
+  const ask = (msg = '') => { showCard(`<div class="kicker">THE OLD STONE</div><h2>Can you read it?</h2><p>The stone says the same thing twice: once in letters you know, once in old symbols.</p>
+      <p class="itinfo" style="font-size:20px;line-height:1.8">N A N A &nbsp;=&nbsp; ${w('NANA')}<br>P I P &nbsp;=&nbsp; ${w('PIP')}</p>
+      <p style="margin-top:10px">Further down, one word is only in symbols:</p><p style="font-size:30px;text-align:center;letter-spacing:6px">${w('PAN')}</p><h4>What does it say?</h4>
+      <div class="chips">${['NAP', 'PIN', 'PAN', 'NIP'].map(x => `<button data-st="${x}">${x}</button>`).join('')}</div><p style="font-weight:700;min-height:22px;margin-top:8px">${msg}</p>`, 'Later');
+    document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { if (b.dataset.st !== 'PAN') { sfx('click'); return ask(`Not ${b.dataset.st}. Match each symbol to a letter in the two names above.`); }
+      const first = !S.stoneRead; S.stoneRead = true; if (first) S.coins += 40; save(); drawHud(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
+      showCard(`<p style="font-size:18px"><b>PAN!</b> You just read a language nobody taught you.${first ? ' <b>+40 coins.</b>' : ''}</p>` + ahaHtml('rosetta'), 'Huh. Neat.'); }); };
+  ask(); }
 function did(act, n = 1) { if (VISIT) return; S.did = S.did || {}; S.did[act] = (S.did[act] || 0) + n; }
 function knowTick() { if (S.tut !== 9 || S.knowDay === S.day || !S.did) return; const x = KNOWHOW.find(k => (S.did[k.act] || 0) >= k.n && !(S.know || []).includes(k.id)); if (!x) return;
   S.know = [...(S.know || []), x.id]; S.knowDay = S.day; S.coins += 40; save(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
@@ -2655,7 +2665,7 @@ function useStakes() {
       stakes.visible = false; save(); sfx('pick'); burst(new THREE.Vector3(2.45,0,2.75), 0x8fdc8a, 20); showRecall('rope', () => toast('Your garden grew by 3 plots!')); } });
 }
 function useBoulder() {
-  if (S.boulder) { toast('The old stone with three kinds of writing.'); return; }
+  if (S.boulder) return readStone();
   if (!S.aha.includes('lever')) { toast('A huge boulder. Something is carved underneath, but it will not budge.'); return; }
   leverPuzzle({ kicker:'THE BOULDER', title:'Move the boulder', heavy:80, push:20, text:'Something is carved under this boulder. It is heavier than the millstone, but you are stronger now. Move the log, then push.',
     done:() => { S.boulder = true; rock.visible = false; rosettaStone.visible = true; save(); sfx('dig'); burst(boulder.position, 0x9a93a8, 20);
@@ -4052,7 +4062,7 @@ function tickFrame() {
   if (mv.lengthSq()) { target = null; pending = null; }
   else if (target) {
     mv.subVectors(target, player.position); mv.y = 0;
-    if (mv.length() < (pending ? 1.3 : .1)) { const p = pending; target = null; pending = null; mv.set(0,0,0); if (p) arrive(p); }
+    if (mv.length() < (pending ? Math.max(1.3, (pending.userData.solid || 0) + .5) : .1)) { const p = pending; target = null; pending = null; mv.set(0,0,0); if (p) arrive(p); }
   }
   const inner = player.userData.inner;
   const flyNow = canFly() && ((flight.down && performance.now() - flight.at > 280) || keys[' ']);
@@ -4080,9 +4090,9 @@ function tickFrame() {
   if (mv.lengthSq() && !$('veil').classList.contains('show')) {
     mv.normalize().multiplyScalar((S.mode === 'explorer' ? 5.25 : 4.2) * (onPath() ? 1.35 : 1) * dt);
     const nx = player.position.x + mv.x, nz = player.position.z + mv.z;
-    let gy = groundAt(nx, player.position.y, nz);
-    if (gy === null) { gy = groundAt(nx, player.position.y, player.position.z); if (gy !== null) mv.z = 0; else { gy = groundAt(player.position.x, player.position.y, nz); if (gy !== null) mv.x = 0; } }
-    if (gy === null) for (const a of [.6, -.6, 1.1, -1.1]) { const r = mv.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), a), y = groundAt(player.position.x + r.x, player.position.y, player.position.z + r.z); if (y !== null) { mv.copy(r); gy = y; break; } } // slide along an edge (a dock, a bridge, the rim)
+    let gy = walkY(nx, nz);
+    if (gy === null) { gy = walkY(nx, player.position.z); if (gy !== null) mv.z = 0; else { gy = walkY(player.position.x, nz); if (gy !== null) mv.x = 0; } }
+    if (gy === null) for (const a of [.6, -.6, 1.1, -1.1, 1.5, -1.5]) { const r = mv.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), a), y = walkY(player.position.x + r.x, player.position.z + r.z); if (y !== null) { mv.copy(r); gy = y; break; } } // slide along an edge (a dock, a bridge, the rim)
     if (gy !== null) {
       player.position.x += mv.x; player.position.z += mv.z; player.position.y = gy;
       if ((stepDist += mv.length()) > .6) { stepDist = 0; sfx(onPlank ? 'wood' : 'step'); }
@@ -5088,7 +5098,7 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   fnt.add(mesh(new THREE.CylinderGeometry(.55, .55, .04, 24), water.material, 0, 1.5, 0));
   fnt.add(mesh(sph(.13), stone, 0, 1.68, 0));
   for (let i = 0; i < 10; i++) { const d = mesh(sph(.05), new THREE.MeshBasicMaterial({ color:0xdff3ff, transparent:true, opacity:.85 }), 0, 1.5, 0); d.userData.ph = i / 10; fnt.add(d); squareBits.drops.push(d); }
-  const fh = hitBox(3, 1.6, 3); fh.position.y = .8; fnt.add(fh); deco(fh, wishFountain).userData.label = 'Fountain: tap to make a wish';
+  const fh = hitBox(3, 1.6, 3); fh.position.y = .8; fnt.add(fh); deco(fh, wishFountain).userData.label = 'Fountain: tap to make a wish'; solid(fh, 1.5);
   // benches around the fountain: sit and let time pass faster
   [55, 235, 305].map(d => [Math.cos(d * Math.PI / 180) * 3, Math.sin(d * Math.PI / 180) * 3]).forEach(([x, z]) => { const b = new THREE.Group(); b.position.set(x, 0, z); faceCenter(b, x, z); g.add(b); const w = mat(0xc98f58);
     b.add(mesh(new THREE.BoxGeometry(1.3, .08, .42), w, 0, .42, 0)); b.add(mesh(new THREE.BoxGeometry(1.3, .34, .07), w, 0, .66, -.2));
@@ -5111,7 +5121,7 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   [-.62, .62].forEach(x => cart.add(mesh(new THREE.CylinderGeometry(.04, .04, 1.2, 6), mat(0xfff1d6), x, 1.55, -.3)));
   const aw = mesh(new THREE.BoxGeometry(1.6, .08, .9), mat(0xff8fa3), 0, 2.15, -.05); aw.rotation.x = .18; cart.add(aw);
   [[-.4, 0xffc857], [0, 0x8fdc8a], [.4, 0xc9b6ff]].forEach(([x, c]) => cart.add(mesh(new THREE.BoxGeometry(.28, .2, .22), mat(c), x, 1.13, .1)));
-  const ch = hitBox(1.7, 2.2, 1.1); ch.position.y = 1.1; cart.add(ch); deco(ch, pipCart).userData.label = "Pip's cart: tap to shop";
+  const ch = hitBox(1.7, 2.2, 1.1); ch.position.y = 1.1; cart.add(ch); deco(ch, pipCart).userData.label = "Pip's cart: tap to shop"; solid(ch, .95);
   // two planters by the entrance: Pip tucks a spare seed packet in one each day
   [[-1.37, 4.14], [-.78, 3.21]].forEach(([x, z], i) => { const p = new THREE.Group(); p.position.set(x, 0, z); p.rotation.y = 1.01; g.add(p); // lining the right side of the entrance
     p.add(mesh(new THREE.BoxGeometry(.8, .4, .5), mat(0xc98f58), 0, .2, 0));
@@ -5141,6 +5151,9 @@ const pipShop = new THREE.Group(); pipShop.position.copy(SQL(.9, -4.5)); faceCen
   const sg = signBoard("Pip's Shop", 1.5, .4, .5); sg.position.set(0, 1.62, 0); h.add(sg);
   const hb = hitBox(2.5, 2.4, 1.8); hb.position.y = 1.2; h.add(hb); }
 function drawHomes() { pipShop.visible = squareOpen(); }
+// --- solid things: you walk around them, not through them ---
+[[house, 1.55], [windmill, 1.3], [crate, .65], [sundial, .8], [workbench, .5], [kiln, .75], [furnace, .65], [nanaHome, 1.25], [pipShop, 1.3], [darkroom, 1.1], [lighthouse, .7], [ship, 1.4], [ship2, 1.4], [campfire, .45],
+  ...trees.map(t => [t, .32]), ...rocks.map(r => [r, .42]), ...siteGroups.map(g => [g, 1.5])].forEach(([o, r]) => solid(o, r));
 // shared things move here from the home island
 stall.position.copy(SQL(4.4, 1.5)); faceCenter(stall, 4.4, 1.5);
 townHall.position.copy(SQL(.5, -4.7)); faceCenter(townHall, .5, -4.7);
@@ -5438,6 +5451,7 @@ function nearLabel(o) { const k = o.userData.kind, u = o.userData;
   if (k === 'rock') return S.tools.pick ? 'Rock: tap to break' : 'Rock: you need a pickaxe';
   if (k === 'house') return 'Your hut: tap to go in';
   if (k === 'ship') return 'The Puddle Jumper: tap';
+  if (k === 'boulder') return S.boulder ? 'Old stone: tap to read it' : 'Boulder: tap';
   return ({ buildsite:'Your home site: tap to build', crate:'Sell crate: tap to sell', sundial:'Sundial: tap', campfire:'Campfire: tap to sleep', workbench:'Tree stump workbench: tap to make things',
     mailbox:'Mailbox: tap', sign:'Bridge sign: tap', sign2:'Bridge sign: tap', bush:'Bush: tap to cut grass', dig:'Gold sparkle: tap to dig', fruitTree:'Fruit tree: tap to pick', dock:'Dock: tap to fish',
     door:'Doormat: tap to go outside', roomdoor:'Doormat: tap to go outside', bed:'Your bed: tap to sleep', shelf:'Shelf: tap', kiln:'Kiln: tap to fire clay', furnace:'Furnace: tap to melt metal',
@@ -5454,6 +5468,14 @@ function nearTick(dt) { if (!nearEl) { nearEl = document.createElement('div'); n
   const b = new THREE.Box3().setFromObject(nearObj), c = b.getCenter(new THREE.Vector3()); c.y = Math.min(b.max.y, c.y + 1.6) + .25; c.project(camera);
   if (c.z > 1) { nearEl.style.opacity = 0; return; }
   nearEl.style.left = `${(c.x + 1) / 2 * innerWidth}px`; nearEl.style.top = `${Math.max(70, (1 - c.y) / 2 * innerHeight)}px`; nearEl.style.opacity = 1; }
+var SOLIDS;
+function solid(o, r) { o.userData.solid = r; (SOLIDS = SOLIDS || []).push(o); }
+function solidAt(x, z) { const p = new THREE.Vector3(); for (const o of (SOLIDS || [])) { let vis = true, top = o; for (let a = o; a; a = a.parent) { if (!a.visible) { vis = false; break; } top = a; } if (!vis || top !== scene) continue;
+    if (o.userData.kind === 'site' && !(S.built || []).includes(BUILDINGS[o.userData.i].id)) continue; // an empty building site is just a flat pad
+    o.getWorldPosition(p); if (Math.abs(p.y - player.position.y) > 1.6) continue; const r = o.userData.solid;
+    if (Math.hypot(p.x - x, p.z - z) < r && Math.hypot(p.x - player.position.x, p.z - player.position.z) >= r - .03) return true; } // (if you are somehow inside one, you can always walk out)
+  return false; }
+const walkY = (x, z) => solidAt(x, z) ? null : groundAt(x, player.position.y, z);
 function tappables() { const out = new Set(); const walk = o => { if (!o.visible) return; if (o.userData && o.userData.kind) { out.add(o); } o.children.forEach(walk); };
   [...clickables, ...lateClicks, ...digGroups].forEach(walk); decos.forEach(d => { let v = true; for (let o = d; o; o = o.parent) if (!o.visible) v = false; if (v) out.add(d); }); return [...out]; }
 window.__sg = { VERSION, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
