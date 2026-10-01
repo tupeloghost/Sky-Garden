@@ -6,9 +6,9 @@ const SHIP_PATHS = {
 // voyages: three real ways Pacific navigators found land without instruments
 const HEADINGS = [
   { id:'birds', label:'Follow the birds', hint:'At dusk, sea birds fly home toward land.' },
-  { id:'swells', label:'Read the swells', hint:'Islands bend the ocean waves. A navigator can feel it in the hull.' },
+  { id:'swells', label:'Read the waves', hint:'Islands bend the ocean waves. A sailor can feel it through the boat.' },
   { id:'stars', label:'Steer by the stars', hint:'Each star rises and sets at the same spot on the horizon. Memorize them, and they point the way.' },
 ];
-const WAYFINDING = 'Polynesian navigators crossed thousands of kilometers of open ocean with no compass or map. They read the stars, the ocean swells, the birds, and even the color of clouds over land. In 1976, the voyaging canoe Hokule\'a sailed from Hawaii to Tahiti this way, and showed the world how it was done.';
+const WAYFINDING = 'Polynesian sailors crossed thousands of kilometers of open ocean with no compass or map. They read the stars, the ocean waves, the birds, and even the color of clouds over land. In 1976, the sailing canoe Hokule\'a sailed from Hawaii to Tahiti this way, and showed the world how it was done.';
 const FLOATING = 'Floating markets are real. In Thailand, sellers have paddled boats full of fruit, noodles, and flowers along the canals for generations, and in Venice, a boat still sells fruit and vegetables right from the canal. When roads are water, the market comes to you.';
 export { SHIP_PATHS, HEADINGS, WAYFINDING, FLOATING };

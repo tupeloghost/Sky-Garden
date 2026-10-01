@@ -3,13 +3,13 @@
 const SPECIALTIES = [
   { id:'cacao',   name:'Cacao Pod',     color:0xb5651d, leaf:0x2f7a45, fact:'Cacao pods grow right on the trunk of the tree. The Maya and Aztecs made the beans into a bitter drink, and the Aztecs even used the beans as money.' },
   { id:'coffee',  name:'Coffee Cherry', color:0xd8323c, leaf:0x2f6b3f, fact:'Coffee first grew wild in Ethiopia. A coffee "bean" is really the seed inside a small red fruit called a coffee cherry.' },
-  { id:'vanilla', name:'Vanilla Pod',   color:0x4a3a2a, leaf:0x5aa85f, fact:'Vanilla comes from the pod of an orchid. Each flower opens for about one day, so most farms pollinate every flower by hand.' },
+  { id:'vanilla', name:'Vanilla Pod',   color:0x4a3a2a, leaf:0x5aa85f, fact:'Vanilla comes from the pod of an orchid flower. Each flower opens for about one day, so on most farms, people move the pollen by hand on every single flower.' },
   { id:'saffron', name:'Saffron',       color:0xd8452b, leaf:0x7fb069, fact:'Saffron is the red threads inside a crocus flower. It takes about 150 flowers to make a single gram, which is why it costs so much.' },
   { id:'tea',     name:'Tea Leaves',    color:0x6fae5a, leaf:0x3f8f55, fact:'All true tea, green or black, comes from the leaves of one plant, Camellia sinensis. People in China have drunk it for thousands of years.' },
   { id:'olive',   name:'Olives',        color:0x6b7a2a, leaf:0x8fa37a, fact:'Olive trees can live for well over 1,000 years, and people have pressed olives into oil for at least 6,000 years.' },
 ];
 const HOME_PRICE = 20, AWAY_MULT = 5;
-const TRADE_FACT = 'In real life, places that trade what they grow best end up with more for everyone. That is why the spice trade and the Silk Road crossed whole continents.';
+const TRADE_FACT = 'In real life, places that trade what they grow best end up with more for everyone. That is why the spice trade and the Silk Road, an old trade route across Asia, crossed whole continents.';
 
 // Heirloom flowers: every island breeds its own variety, made from its island code.
 // No two islands get the same one. Real gardeners breed and name their own varieties too.
