@@ -2097,7 +2097,7 @@ function talk(id) {
 }
 function neighborButtons(id) {
   const b = [];
-  if (HELP[id] && S.tut === 9 && !VISIT) b.push({ label:((S.helped || []).includes(id) ? 'Again: ' : '') + HELP[id].label, fn:() => { closeDialog(); HELP[id].run(); } });
+  if (HELP[id] && S.tut === 9 && !VISIT) b.push({ label:HELP[id].label, fn:() => { closeDialog(); HELP[id].run(); } });
   if (id === 'pip') {
     b.push({ label:'Buy seeds', fn:seedShop }, { label:'Furniture', fn:furnShop });
     const o = pipOrder();
