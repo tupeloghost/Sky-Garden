@@ -1502,7 +1502,7 @@ function showCard(html, btn='Okay', onClose) {
 }
 function ahaHtml(id) {
   const a = AHA[id];
-  return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2><h4>What you did</h4><p>${a.did}</p><h4>The real story</h4><p>${a.real}</p><h4>Where you see it today</h4><p>${a.today}</p>`;
+  return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2>${a.hook ? `<p class="memhook">${a.hook}</p>` : ''}${a.art ? `<div class="memart">${a.art}${a.cap ? `<span>${a.cap}</span>` : ''}</div>` : ''}<h4>What you did</h4><p>${a.did}</p><h4>The real story</h4><p>${a.real}</p><h4>Where you see it today</h4><p>${a.today}</p>`;
 }
 function showAha(id, onClose) {
   lean('scholar', 2);
