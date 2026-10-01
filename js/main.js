@@ -3532,6 +3532,7 @@ const PIECES = [
   { id:'walls',   name:'Stone Wall',     cost:{ stone:3 } },
   { id:'lamp',    name:'Lamp Post',      cost:{ log:1, stone:1 } },
   { id:'bench',   name:'Bench',          cost:{ log:2 } },
+  { id:'hammock', name:'Hammock',        cost:{ log:2, fiber:6 } },
   { id:'planter', name:'Flower Planter', cost:{ log:1, fiber:1 } },
   { id:'arch',    name:'Garden Arch',    cost:{ log:3, fiber:2 } },
   { id:'bpath',   name:'Brick Path',     cost:{ brick:2 }, age:'kiln' },
@@ -3553,6 +3554,9 @@ function pieceModel(id) {
   if (id === 'walls') for (let k=0;k<3;k++) for (let j=0;j<2;j++) g.add(mesh(new THREE.BoxGeometry(.48,.32,.3), stoneM, -.25 + j*.5 + (k%2)*.08, .16 + k*.33, 0));
   if (id === 'lamp') { g.add(mesh(new THREE.CylinderGeometry(.05,.07,1.5,8), dark, 0, .75, 0)); g.add(mesh(new THREE.BoxGeometry(.28,.3,.28), glow(0xffe0a8), 0, 1.6, 0)); g.add(mesh(new THREE.ConeGeometry(.24,.18,4), dark, 0, 1.84, 0).rotateY(Math.PI/4));
     const lh = halo(0xffc46b, 2.2, 0); lh.position.y = 1.6; g.add(lh); lampLights.push(lh); }
+  if (id === 'hammock') { [-.5, .5].forEach(x => { const po = mesh(new THREE.CylinderGeometry(.045,.06,1.15,8), dark, x, .57, 0); po.rotation.z = x > 0 ? -.12 : .12; g.add(po); });
+    const sling = mesh(new THREE.TorusGeometry(.46, .13, 8, 20, Math.PI), mat(0xfff1d6), 0, 1.02, 0); sling.rotation.z = Math.PI; sling.scale.set(1, .62, 2.3); g.add(sling); // hangs between the posts and sags in the middle
+    [-.2, .2].forEach(z => { const st = mesh(new THREE.TorusGeometry(.46, .03, 6, 20, Math.PI), mat(0xff8fa3), 0, 1.03, z); st.rotation.z = Math.PI; st.scale.set(1, .62, 1); g.add(st); }); }
   if (id === 'bench') { g.add(mesh(new THREE.BoxGeometry(.95,.08,.38), wood, 0, .4, 0)); g.add(mesh(new THREE.BoxGeometry(.95,.3,.06), wood, 0, .62, -.18)); [-.4,.4].forEach(x => g.add(mesh(new THREE.BoxGeometry(.08,.4,.34), dark, x, .2, 0))); }
   if (id === 'planter') { g.add(mesh(new THREE.BoxGeometry(.8,.3,.5), wood, 0, .15, 0)); for (let i=0;i<6;i++) g.add(mesh(sph(.08), mat([0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b,0xff8fa3][i]), -.28 + (i%3)*.28, .36, -.1 + Math.floor(i/3)*.2)); }
   if (id === 'bpath') for (let i=0;i<8;i++) g.add(mesh(new THREE.BoxGeometry(.46,.06,.22), mat(i%3 ? 0xc0703f : 0xa85c34), (i%2 ? .24 : -.24) + (Math.floor(i/2)%2 ? .06 : 0), .03, -.36 + Math.floor(i/2)*.24));
@@ -3713,9 +3717,20 @@ function spotButterfly(g) {
 }
 let sitting = null, danceT = 0; const lastPP = new THREE.Vector3(); const lanternFF = [];
 const onPath = () => S.where === 'home' && (S.builds || []).some(b => (b.p === 'path' || b.p === 'bpath') && Math.abs(player.position.x - b.x) < .5 && Math.abs(player.position.z - b.z) < .5);
+// a nap in the hammock skips ahead a few hours, never past 11 PM
+function napMenu(o) { const h = hour(), opts = [];
+  const nap = to => async () => { closeDialog(); const from = hour(); target = null; pending = null; fadeTo(true, true); await wait(900);
+    S.t = Math.min((23 - 6) / 18, (to - 6) / 18); S.napped = true; save(); drawHud(); await wait(500); fadeTo(false); sfx('heart');
+    const hr = Math.floor(hour()), h12 = ((hr + 11) % 12) + 1; toast(`You napped for ${Math.round(hour() - from)} hours. It is ${h12} ${hr < 12 ? 'AM' : 'PM'}.`); };
+  if (h < 11.5) opts.push({ label:'Nap until noon', fn:nap(12) });
+  if (h < 19.5) opts.push({ label:'Nap until 8 PM', fn:nap(20) });
+  if (h < 22) opts.push({ label:'Nap for 1 hour', fn:nap(h + 1) });
+  if (!opts.length) return toast('It is too late for a nap. Time for bed.');
+  openDialog('Hammock', 'A nap skips ahead in the day. Your crops and the story stay as they are.', opts); }
 function usePiece(o) {
   const b = o.userData.b, p = PIECES.find(x => x.id === b.p);
   if (b.p === 'path' || b.p === 'bpath') return toast(TAP_FACTS.path);
+  if (b.p === 'hammock') return napMenu(o);
   if (b.p === 'bench') { sitting = o; player.position.set(b.x, 0, b.z); player.rotation.y = (b.r || 0) * Math.PI/2; toast('You sit and rest. Time passes 3 times faster. Tap anywhere to get up.'); return; }
   if (b.p === 'lamp' || b.p === 'blamp' || b.p === 'flantern') { b.off = !b.off; drawBuilds(); save(); sfx('click'); toast(b.off ? 'Lamp off.' : 'Lamp on. It glows at night.'); return; }
   if (b.p === 'planter' || b.p === 'potplant') return pickSeeds(`pl${b.x},${b.z}`);
@@ -5445,6 +5460,7 @@ function hintTick(dt, now) { if (!HINT_SKIP || (hintT += dt) < 1) return; hintT 
 var nearEl = null, nearObj = null, nearT = 0;
 function nearLabel(o) { const k = o.userData.kind, u = o.userData;
   if (u.label) return u.label;
+  if (k === 'piece') return u.b && u.b.p === 'hammock' ? 'Hammock: tap to nap' : u.b && u.b.p === 'bench' ? 'Bench: tap to sit' : null;
   if (k === 'npc') return NEIGHBORS[u.id] ? `${NEIGHBORS[u.id].name}: tap to talk` : null;
   if (k === 'home') return ROOMS[u.room] ? `${ROOMS[u.room].name}: tap to go in` : null;
   if (k === 'tree') return S.tools.axe ? 'Tree: tap to chop' : 'Tree: you need an axe';
@@ -5466,7 +5482,7 @@ function nearTick(dt) { if (!nearEl) { nearEl = document.createElement('div'); n
   const off = !playing || cine || fish3 || buildMode || (flight && flight.on) || $('veil').classList.contains('show') || $('dialog').classList.contains('show') || document.querySelector('.presents');
   if (off) { nearEl.style.opacity = 0; nearObj = null; return; }
   if ((nearT += dt) > .25) { nearT = 0; let best = null, bd = 2.4; const p = new THREE.Vector3(), tg = typeof questTarget === 'function' ? questTarget() : null;
-    tappables().forEach(o => { if (['pickup', 'tile', 'pet', 'piece', 'spot'].includes(o.userData.kind)) return; o.getWorldPosition(p); if (Math.abs(p.y - player.position.y) > 2.5) return;
+    tappables().forEach(o => { if (['pickup', 'tile', 'pet', 'spot'].includes(o.userData.kind)) return; o.getWorldPosition(p); if (Math.abs(p.y - player.position.y) > 2.5) return;
       const d = Math.hypot(p.x - player.position.x, p.z - player.position.z); if (d < bd && nearLabel(o)) { bd = d; best = o; } });
     nearObj = best; if (best) nearEl.textContent = nearLabel(best); }
   if (!nearObj) { nearEl.style.opacity = 0; return; }
