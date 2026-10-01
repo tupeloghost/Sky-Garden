@@ -21,7 +21,7 @@ const ITEMS = {
   flour:  { name:'Bag of Flour',   sell:0,  kind:'quest' },
   stick:  { name:'Stick',          sell:0,  kind:'material' },
   stone:  { name:'Stone',          sell:0,  kind:'material' },
-  fiber:  { name:'Grass Fiber',    sell:0,  kind:'material' },
+  fiber:  { name:'Grass',    sell:0,  kind:'material' },
   log:    { name:'Log',            sell:0,  kind:'material' },
   clay:   { name:'Clay',           sell:0,  kind:'material' },
   brick:  { name:'Brick',          sell:0,  kind:'material' },
