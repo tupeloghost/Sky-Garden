@@ -3532,7 +3532,7 @@ const PIECES = [
   { id:'walls',   name:'Stone Wall',     cost:{ stone:3 } },
   { id:'lamp',    name:'Lamp Post',      cost:{ log:1, stone:1 } },
   { id:'bench',   name:'Bench',          cost:{ log:2 } },
-  { id:'hammock', name:'Hammock',        cost:{ log:2, fiber:6 } },
+  { id:'hammock', name:'Hammock',        cost:{ fiber:8 } }, // hangs between two trees
   { id:'planter', name:'Flower Planter', cost:{ log:1, fiber:1 } },
   { id:'arch',    name:'Garden Arch',    cost:{ log:3, fiber:2 } },
   { id:'bpath',   name:'Brick Path',     cost:{ brick:2 }, age:'kiln' },
@@ -3544,7 +3544,7 @@ const PIECES = [
   { id:'statue',  name:'Statue of Pip',  cost:{ bronze:2, stone:4 }, age:'furnace' },
 ];
 const lampLights = [];
-function pieceModel(id) {
+function pieceModel(id, hung) {
   const g = new THREE.Group(), wood = mat(0xc98f58), dark = mat(0x9b6b4a), stoneM = mat(0xc9c1d0);
   if (id === 'path') for (let i=0;i<4;i++){ const st = mesh(new THREE.CylinderGeometry(.24,.26,.06,7), stoneM, (i%2-.5)*.48, .03, (Math.floor(i/2)-.5)*.48); st.rotation.y = i; g.add(st); }
   if (id === 'deck') for (let i=0;i<4;i++) g.add(mesh(new THREE.BoxGeometry(.98,.08,.23), i%2 ? wood : mat(0xd9a066), 0, .04, -.37 + i*.245));
@@ -3554,9 +3554,11 @@ function pieceModel(id) {
   if (id === 'walls') for (let k=0;k<3;k++) for (let j=0;j<2;j++) g.add(mesh(new THREE.BoxGeometry(.48,.32,.3), stoneM, -.25 + j*.5 + (k%2)*.08, .16 + k*.33, 0));
   if (id === 'lamp') { g.add(mesh(new THREE.CylinderGeometry(.05,.07,1.5,8), dark, 0, .75, 0)); g.add(mesh(new THREE.BoxGeometry(.28,.3,.28), glow(0xffe0a8), 0, 1.6, 0)); g.add(mesh(new THREE.ConeGeometry(.24,.18,4), dark, 0, 1.84, 0).rotateY(Math.PI/4));
     const lh = halo(0xffc46b, 2.2, 0); lh.position.y = 1.6; g.add(lh); lampLights.push(lh); }
-  if (id === 'hammock') { [-.5, .5].forEach(x => { const po = mesh(new THREE.CylinderGeometry(.045,.06,1.15,8), dark, x, .57, 0); po.rotation.z = x > 0 ? -.12 : .12; g.add(po); });
-    const sling = mesh(new THREE.TorusGeometry(.46, .13, 8, 20, Math.PI), mat(0xfff1d6), 0, 1.02, 0); sling.rotation.z = Math.PI; sling.scale.set(1, .62, 2.3); g.add(sling); // hangs between the posts and sags in the middle
-    [-.2, .2].forEach(z => { const st = mesh(new THREE.TorusGeometry(.46, .03, 6, 20, Math.PI), mat(0xff8fa3), 0, 1.03, z); st.rotation.z = Math.PI; st.scale.set(1, .62, 1); g.add(st); }); }
+  if (id === 'hammock') { const L = hung && hung.len ? hung.len - .3 : .92, k = L / .92;
+    if (!hung || !hung.len) [-.5, .5].forEach(x => { const po = mesh(new THREE.CylinderGeometry(.045,.06,1.15,8), dark, x, .57, 0); po.rotation.z = x > 0 ? -.12 : .12; g.add(po); });
+    const sling = mesh(new THREE.TorusGeometry(.46, .13, 8, 24, Math.PI), mat(0xfff1d6), 0, 1.02, 0); sling.rotation.z = Math.PI; sling.scale.set(k, .7, 2.3); g.add(sling); // sags in the middle
+    [-.2, .2].forEach(z => { const st = mesh(new THREE.TorusGeometry(.46, .03, 6, 24, Math.PI), mat(0xff8fa3), 0, 1.03, z); st.rotation.z = Math.PI; st.scale.set(k, .7, 1); g.add(st); });
+    if (hung && hung.len) [-1, 1].forEach(sd => g.add(mesh(new THREE.TorusGeometry(.2, .03, 6, 14), mat(0xc9a27a), sd * (hung.len / 2 - .02), 1.02, 0).rotateY(Math.PI / 2))); } // rope tied around each trunk
   if (id === 'bench') { g.add(mesh(new THREE.BoxGeometry(.95,.08,.38), wood, 0, .4, 0)); g.add(mesh(new THREE.BoxGeometry(.95,.3,.06), wood, 0, .62, -.18)); [-.4,.4].forEach(x => g.add(mesh(new THREE.BoxGeometry(.08,.4,.34), dark, x, .2, 0))); }
   if (id === 'planter') { g.add(mesh(new THREE.BoxGeometry(.8,.3,.5), wood, 0, .15, 0)); for (let i=0;i<6;i++) g.add(mesh(sph(.08), mat([0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b,0xff8fa3][i]), -.28 + (i%3)*.28, .36, -.1 + Math.floor(i/3)*.2)); }
   if (id === 'bpath') for (let i=0;i<8;i++) g.add(mesh(new THREE.BoxGeometry(.46,.06,.22), mat(i%3 ? 0xc0703f : 0xa85c34), (i%2 ? .24 : -.24) + (Math.floor(i/2)%2 ? .06 : 0), .03, -.36 + Math.floor(i/2)*.24));
@@ -3771,7 +3773,7 @@ function openChest(chest) {
 }
 function drawBuilds() {
   buildGroup.clear(); lampLights.length = 0; lanternFF.length = 0;
-  (S.builds || []).filter(b => LIMITS_ON || b.p !== 'chest').forEach(b => { const m = pieceModel(b.p); m.position.set(b.x, 0, b.z); m.rotation.y = (b.r || 0) * Math.PI/2; buildGroup.add(m);
+  (S.builds || []).filter(b => LIMITS_ON || b.p !== 'chest').forEach(b => { const m = pieceModel(b.p, b); m.position.set(b.x, 0, b.z); m.rotation.y = b.len ? b.a : (b.r || 0) * Math.PI/2; buildGroup.add(m);
     if (!m.userData.kind) m.userData = { kind:'piece', b }; else m.userData.b = b;
     if (b.p === 'chest' && b.band) [-.2,.2].forEach(z => m.add(mesh(new THREE.BoxGeometry(.84,.06,.05), mat(0xd9a441, { metalness:.55, roughness:.4 }), 0, .3, z*1.35)));
     if (b.c) m.traverse(o => { if (o.isMesh && o.material?.color && !o.material.isMeshBasicMaterial) { o.material = o.material.clone(); o.material.color.lerp(new THREE.Color(b.c), .7); } });
@@ -3834,7 +3836,18 @@ function cellAt(e) {
 }
 function buildTap(e) {
   const c = cellAt(e); if (!c) return;
-  const idx = S.builds.findIndex(b => b.x === c.x && b.z === c.z);
+  let idx = S.builds.findIndex(b => b.x === c.x && b.z === c.z);
+  if (idx < 0) idx = S.builds.findIndex(b => b.len && Math.hypot(b.x - c.x, b.z - c.z) < 1.3); // a hammock hangs between squares
+  if (moving && !held && idx >= 0 && S.builds[idx].len) { toast('A hammock is tied to its trees. Use Remove, then hang it somewhere else.'); return; }
+  if (!moving && !removing && buildSel === 'hammock') { // it hangs between two trees that stand close together
+    const p = PIECES.find(x => x.id === 'hammock'), wp = t => t.getWorldPosition(new THREE.Vector3()), ts = trees.filter(t => { let v = true; for (let a = t; a; a = a.parent) if (!a.visible) v = false; return v && Math.abs(wp(t).y) < .3; }).map(wp); let best = null;
+    for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++) { const len = Math.hypot(ts[i].x - ts[j].x, ts[i].z - ts[j].z), mx = (ts[i].x + ts[j].x) / 2, mz = (ts[i].z + ts[j].z) / 2, d = Math.hypot(mx - c.x, mz - c.z);
+      if (len >= 1.8 && len <= 4.6 && d < 2.2 && (!best || d < best.d)) best = { d, len, x:mx, z:mz, a:-Math.atan2(ts[j].z - ts[i].z, ts[j].x - ts[i].x) }; }
+    if (!best) { toast('A hammock hangs between two trees. Tap the ground between two trees that stand close together.'); return; }
+    if (S.builds.some(b => b.len && Math.hypot(b.x - best.x, b.z - best.z) < .5)) { toast('A hammock already hangs between these trees.'); return; }
+    if (!enough(p.cost)) { toast('A hammock needs 8 grass. Cut bushes to get grass.'); return; }
+    Object.entries(p.cost).forEach(([k, n]) => bagAdd(k, -n)); S.builds.push({ p:'hammock', x:best.x, z:best.z, a:best.a, len:best.len }); lean('maker');
+    sfx('swish'); burst(new THREE.Vector3(best.x, 1, best.z), 0xffc857, 10); drawBuilds(); save(); drawBuildBar(); drawHud(); return; }
   if (moving) {
     if (!held) { if (idx < 0) { toast('Tap a piece you built to pick it up.'); return; }
       held = S.builds.splice(idx, 1)[0]; held.from = { x:held.x, z:held.z }; sfx('click'); drawBuilds(); drawBuildBar(); return; }
