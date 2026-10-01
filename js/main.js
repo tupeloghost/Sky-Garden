@@ -1825,7 +1825,19 @@ function readStone() { const sym = { N:'◆', A:'●', P:'▲', I:'■' }, w = t
       const first = !S.stoneRead; S.stoneRead = true; if (first) S.coins += 40; save(); drawHud(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
       showCard(`<p style="font-size:18px"><b>PAN!</b> You just read a language nobody taught you.${first ? ' <b>+40 coins.</b>' : ''}</p>` + ahaHtml('rosetta'), 'Huh. Neat.'); }); };
   ask(); }
-function did(act, n = 1) { if (VISIT) return; S.did = S.did || {}; S.did[act] = (S.did[act] || 0) + n; }
+function did(act, n = 1) { if (VISIT) return; S.did = S.did || {}; S.did[act] = (S.did[act] || 0) + n; S.dayDid = S.dayDid || {}; S.dayDid[act] = 1; }
+// dreams: a silly line each time you wake up. Half the time it is about something you did that day.
+const DREAMS = ['You dreamed the sundial was running late.', 'You dreamed the moon came down to borrow a cup of sugar.', 'You dreamed your hut had a second floor. It was all stairs.',
+  'You dreamed a cloud followed you around like a puppy.', 'You dreamed Pip finally spelled SHOP right. Everyone clapped.', 'You dreamed the bridge was made of toast. It held.',
+  'You dreamed a snail passed you and said sorry.', 'You dreamed every fish wore a tiny hat.', 'You dreamed you won a staring contest with an owl.',
+  'You dreamed the stars spelled your name. They spelled it wrong.', 'You dreamed you were a sandwich. A good one.', 'You dreamed you could fly, but only sideways.',
+  'You dreamed the Wind Bell rang. It was your alarm clock.', 'You dreamed Nana knitted a sweater for the whole island.', 'You dreamed a potato gave a speech. It was moving.'];
+const DAY_DREAMS = { fish:'You dreamed a fish caught you, then threw you back for being too small.', sell:'You dreamed Pip paid you in buttons. You were thrilled.', talk:'You dreamed Nana was 40 feet tall and still asked if you had eaten.',
+  gift:'You dreamed everyone gave you the same gift. It was a spoon.', water:'You dreamed your crops watered you.', pick:'You dreamed a pumpkin asked to speak to your manager.', dig:'You dreamed you dug up your own shoe. Twice.',
+  chop:'You dreamed the trees chopped back. Politely.', mine:'You dreamed a rock asked you to stop. You apologized.', wish:'You dreamed the fountain made a wish on you.', fruit:'You dreamed an apple fell up.', plant:'You dreamed you planted a spoon and grew a ladle.',
+  sit:'You dreamed the bench sat on you for a change.', ask:'You dreamed a neighbor asked you for 900 turnips by noon.' };
+function dream() { const mine = Object.keys(S.dayDid || {}).filter(k => DAY_DREAMS[k]), pool = mine.length && Math.random() < .5 ? mine.map(k => DAY_DREAMS[k]) : DREAMS.filter(d => d !== S.lastDream);
+  const d = pool[Math.floor(Math.random() * pool.length)]; S.lastDream = d; return '💭 ' + d; }
 function knowTick() { if (S.tut !== 9 || S.knowDay === S.day || !S.did) return; const x = KNOWHOW.find(k => (S.did[k.act] || 0) >= k.n && !(S.know || []).includes(k.id)); if (!x) return;
   S.know = [...(S.know || []), x.id]; S.knowDay = S.day; S.coins += 40; save(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
   showCard(knowHtml(x) + '<p style="margin-top:10px"><b>+40 coins.</b> Saved in Collections, under Know-how.</p>', 'Huh. Neat.', drawHud); }
@@ -3470,6 +3482,7 @@ function sleep(passedOut, where) {
   { const wm = wishMorning(); if (wm) msg += ' ' + wm; } // yesterday's fountain wish
   const fz = festival(); if (fz && !S.fests[fz.id + fz.year]) msg = `Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`;
   S.tiles.forEach((_, i) => drawTile(i));
+  { const dm = dream(); S.dayDid = {}; setTimeout(() => { if (!$('veil').classList.contains('show')) toast(dm); }, 6500); } // after the good-morning message
   spawnDigs(); applySeason(); S.goals = null; ensureGoals(); peopleNewDay(); drawShrooms(); mythLookUp(); setTimeout(founderDrip, 6000);
   S.pickups = S.pickups || []; spawnPickups();
   if (where === 'outside') { if (S.where === 'hut') S.where = 'home'; } // you wake up right where you slept
@@ -3727,7 +3740,7 @@ function napMenu(o) { const max = Math.floor(23 - hour()); if (max < 1) return t
       <p style="text-align:center;margin-top:8px">You will wake up at <b>${clock(hour() + n)}</b>.</p><button id="npGo">Nap</button>`, 'Not now');
     $('npMinus').onclick = () => { n = Math.max(1, n - 1); sfx('click'); draw(); }; $('npPlus').onclick = () => { n = Math.min(max, n + 1); sfx('click'); draw(); };
     $('npGo').onclick = async () => { hideCard(); target = null; pending = null; fadeTo(true, true); await wait(900);
-      S.t = Math.min((23 - 6) / 18, S.t + n / 18); S.napped = true; save(); drawHud(); await wait(500); fadeTo(false); sfx('heart'); toast(`You napped for ${n} ${n === 1 ? 'hour' : 'hours'}. It is ${clock(hour())}.`); }; };
+      S.t = Math.min((23 - 6) / 18, S.t + n / 18); S.napped = true; save(); drawHud(); await wait(500); fadeTo(false); sfx('heart'); toast(`You napped for ${n} ${n === 1 ? 'hour' : 'hours'}. It is ${clock(hour())}.`); const dm = dream(); setTimeout(() => toast(dm), 3200); }; };
   draw(); }
 function usePiece(o) {
   const b = o.userData.b, p = PIECES.find(x => x.id === b.p);
