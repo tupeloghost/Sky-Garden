@@ -21,7 +21,7 @@ const PERSONALITIES = {
     loves:['kind:fruit','candy','jam','sunbell'], hates:['saltfish'], invite:"Really?! I'd LOVE to live here! I'll build a cottage right away!" },
   sleepy:   { word:'sleepy', hi:["Mm... oh, hello. I was resting my eyes. For a while.","Your island has a very good napping breeze.","Do you ever just... lie in the grass? Best thing there is."],
     loves:['tea','soup','kind:heirloom','lunamoth'], hates:['coffee'], invite:"Stay here? Forever? That sounds... so cozy. Yes. Yes, please." },
-  bookish:  { word:'curious', hi:["Did you know most of the dust in your house is tiny bits of skin? Sorry. I read a lot.","I'm writing a book about islands. Yours is chapter one.","Every rock here has a story. I've been listening to them."],
+  bookish:  { word:'curious', hi:["Did you know most of the dust in your house blows in or walks in from outside? Sorry. I read a lot.","I'm writing a book about islands. Yours is chapter one.","Every rock here has a story. I've been listening to them."],
     loves:['tea','kind:specialty','starbloom','koi'], hates:['candy'], invite:"I'd be honored. I'll need a shelf. Several shelves. Many shelves." },
   sporty:   { word:'sporty', hi:["I ran here! From the next island! Well, I swam some of it.","Want to race to that tree? No? Maybe tomorrow.","Fishing is basically a sport. I'm counting it."],
     loves:['kind:fish','peach','dragonfly'], hates:['candy'], invite:"YES! I'll build my cottage by morning. Warm-ups first, obviously." },

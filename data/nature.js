@@ -1,8 +1,8 @@
 // Real butterflies you can spot on the islands (matched to the wing colors in the game).
 const BUTTERFLIES = [
   { id:'brimstone', color:0xffd35c, name:'Brimstone', fact:'One of the longest-living butterflies. An adult can live for about a year. Some people think its butter-yellow color gave butterflies their name.' },
-  { id:'paintedlady', color:0xff9fb2, name:'Painted Lady', fact:'It migrates farther than almost any other butterfly, up to about 12,000 km (7,500 miles) round trip between Africa and Europe, over several generations.' },
-  { id:'purpleemperor', color:0xc9b6ff, name:'Purple Emperor', fact:'It lives high in the tops of oak trees. Its wings only flash purple from some angles, because tiny scales bend the light.' },
+  { id:'paintedlady', color:0xff9fb2, name:'Painted Lady', fact:'It migrates farther than almost any other butterfly, about 12,000 km (7,500 miles) or more round trip between Africa and Europe, over several generations.' },
+  { id:'purpleemperor', color:0xc9b6ff, name:'Purple Emperor', fact:'It lives high in the tops of oak trees. The male\'s wings only flash purple from some angles, because tiny scales bend the light.' },
   { id:'morpho', color:0x9fe7e0, name:'Blue Morpho', fact:'Its wings have no blue paint at all. Tiny ridges on the wing scales bounce light so the wings look bright blue.' },
 ];
 // short, checked real-life notes for things you tap around the islands

@@ -1799,8 +1799,8 @@ const HELP = {
   nana: { label:'Help plant the old seeds', run() { const on = { corn:false, beans:false, squash:false };
     const tell = () => { const { corn, beans, squash } = on, out = [];
       if (!corn && !beans && !squash) return 'An empty mound of soil. Tap a seed to plant it. Tap again to take it out.';
-      if (corn) out.push('🌽 The corn grows tall.' + (beans ? '' : ' It looks hungry, though. Its leaves are pale.'));
-      if (beans) out.push(corn ? '🫘 The beans climb right up the corn, and the corn turns a deep green.' : '🫘 The beans flop on the ground. They have nothing to climb.');
+      if (corn) out.push('🌽 The corn grows tall.' + (beans ? '' : ' It uses up a lot of the soil\'s food, though.'));
+      if (beans) out.push(corn ? '🫘 The beans climb right up the corn. Their roots put food back in the soil for next year.' : '🫘 The beans flop on the ground. They have nothing to climb.');
       if (squash) out.push('🎃 The squash spreads big leaves over the soil. The ground under them stays damp.' + (corn || beans ? '' : ' It has the mound to itself.'));
       if (!squash && (corn || beans)) out.push('The bare soil dries out fast in the sun.');
       return out.join('<br>'); };
@@ -2388,7 +2388,7 @@ function nanaQuest() {
     openDialog('Nana Gale', `Oh! You must be ${S.name || 'the new Keeper'}. You have her eyes. Your grandmother was our Keeper of Memory: she kept the village's old stories safe. When the Great Gust hit, the village's memories fell into the ground like seeds. See that sparkle, right by your garden? Tap it a few times to dig it up.`, [], h);
   } else if (S.quest === 1) openDialog('Nana Gale', `Keep digging, dear. ${S.relics} of 3 memories found. New sparkles show up each morning.`, neighborButtons('nana'), h);
   else if (S.quest === 2) openDialog('Nana Gale', "Three memories! Now, the old stone dial by your garden. Tap it when its shadow is the very shortest. Do not ask me why. Your grandmother always did.", neighborButtons('nana'), h);
-  else if (S.quest === 3) openDialog('Nana Gale', "This is her Wind Bell frame. The big chime survived, but the small ones are all mixed up. Hang the three that sound sweetest with the big one.", [{ label:'Tune the bell', fn:() => { closeDialog(); openBell(); } }, ...neighborButtons('nana')], h);
+  else if (S.quest === 3) openDialog('Nana Gale', "This is her Wind Bell frame. The big pipe survived, but the small ones are all mixed up. Hang the three that sound sweetest with the big one.", [{ label:'Tune the bell', fn:() => { closeDialog(); openBell(); } }, ...neighborButtons('nana')], h);
   save();
 }
 function pipQuestion() {
@@ -2423,21 +2423,21 @@ function useSundial() {
 function openBell() {
   const picked = new Set();
   const draw = (msg='') => {
-    showCard(`<div class="kicker">THE WIND BELL</div><h2>Tune the chimes</h2>
-      <p>Each chime is a fraction as long as the big bell. <b>Simple fractions with small numbers ring sweetly. Messy fractions with big numbers clash.</b> Tap a chime to hear it with the big bell. Pick the 3 simplest, then tap Ring the bell.</p>
-      <div class="jlist">${CHIMES.map((c,i)=>`<button data-i="${i}" style="${picked.has(i)?'background:#ffc857':''}">${picked.has(i)?'✓ ':''}Chime ${i+1}: ${c.label} as long</button>`).join('')}</div>
+    showCard(`<div class="kicker">THE WIND BELL</div><h2>Tune the pipes</h2>
+      <p>The Wind Bell sings when wind blows across its pipes, like a flute. Each pipe is a fraction as long as the big pipe. <b>Simple fractions with small numbers sound sweet. Messy fractions with big numbers clash.</b> Tap a pipe to hear it with the big pipe. Pick the 3 simplest, then tap Ring the bell.</p>
+      <div class="jlist">${CHIMES.map((c,i)=>`<button data-i="${i}" style="${picked.has(i)?'background:#ffc857':''}">${picked.has(i)?'✓ ':''}Pipe ${i+1}: ${c.label} as long</button>`).join('')}</div>
       <p style="margin-top:10px;min-height:22px;font-weight:700">${msg}</p>
       <button id="ring">Ring the bell</button> <button id="deaf" class="ghost">Give me a hint</button> <button id="later" class="ghost">Later</button>`, null);
     $('deaf').onclick = () => draw('Hint: the 3 simplest are 1/2, 2/3, and 3/4.');
     document.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const i = +b.dataset.i, base = 262;
-      if (muted) toast('Turn sound on to hear the chimes.');
+      if (muted) toast('Turn sound on to hear the pipes.');
       chime(base); chime(base * CHIMES[i].r);
       picked.has(i) ? picked.delete(i) : picked.add(i); draw();
     });
     $('later').onclick = hideCard;
     $('ring').onclick = () => {
-      if (picked.size !== 3) return draw('Pick exactly 3 chimes.');
+      if (picked.size !== 3) return draw('Pick exactly 3 pipes.');
       if ([...picked].some(i => !CHIMES[i].sweet)) { chime(262); chime(262*16/15); return draw('One of those clashes. Look for the smallest numbers: 1/2 is simpler than 8/15.'); }
       hideCard();
       S.quest = S.bridge ? 5 : 4; S.coins += 50; bell.visible = true; save(); drawHud(); burst(bell.position, 0xffc857, 20);
@@ -2788,7 +2788,7 @@ function useCrystals() {
   const picked = new Set();
   const draw = (msg='') => {
     showCard(`<div class="kicker">LUMEN'S GARDEN</div><h2>Tune the crystals</h2>
-      <p>Tap a crystal to hear it ring together with the tallest one. Some pairs sound nice. Some sound harsh. Pick the 2 that sound nice, then tap Ring them.</p>
+      <p>Tap a crystal to hear it ring together with the tallest one. Some pairs sound nice. Some sound harsh. Pick the 2 that sound nice, then tap Ring them. <span class="sub">In Sky Garden, crystals follow the same rule as strings and flutes: simple fractions sound sweet.</span></p>
       <div class="jlist">${list.map((c,i) => `<button data-c="${i}" style="${picked.has(i)?'background:#c9b6ff':''}">${picked.has(i)?'✓ ':''}Crystal ${i+1}: ${c.l} as tall</button>`).join('')}</div>
       <p style="margin-top:10px;min-height:22px;font-weight:700">${msg}</p>
       <button id="ring">Ring them</button> <button id="deaf" class="ghost">Give me a hint</button> <button id="later" class="ghost">Later</button>`, null);
@@ -5207,7 +5207,7 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   [75, 170, 250].forEach(deg => { const a = deg * Math.PI / 180, x = Math.cos(a) * 4.9, z = Math.sin(a) * 4.9, l = new THREE.Group(); l.position.set(x, 0, z); g.add(l);
     l.add(mesh(new THREE.CylinderGeometry(.06, .08, 1.9, 8), mat(0x3b2f4a), 0, .95, 0)); l.add(mesh(new THREE.BoxGeometry(.3, .34, .3), glow(0xffe7a8), 0, 2.02, 0)); l.add(mesh(new THREE.ConeGeometry(.26, .2, 4), mat(0x3b2f4a), 0, 2.29, 0).rotateY(Math.PI/4));
     const lh = halo(0xffc46b, 2.4, 0); lh.position.y = 2.02; l.add(lh); lampLights.push(lh);
-    const h = hitBox(.5, 2.4, .5); h.position.y = 1.2; l.add(h); deco(h, () => toast('Before electric streetlights, lamplighters walked the streets at dusk to light each lamp by hand. London still has about 1,500 gas street lamps.')); });
+    const h = hitBox(.5, 2.4, .5); h.position.y = 1.2; l.add(h); deco(h, () => toast('Before electric streetlights, lamplighters walked the streets at dusk to light each lamp by hand. London still has more than 1,000 gas street lamps.')); });
   // the notice board: goals, missions, votes, and what's happening
   const nb = new THREE.Group(); nb.position.set(-4.3, 0, -1.7); faceCenter(nb, -4.3, -1.7); g.add(nb);
   [-.6, .6].forEach(x => nb.add(mesh(new THREE.CylinderGeometry(.06, .07, 1.6, 8), mat(0x9b6b4a), x, .8, 0)));
