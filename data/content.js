@@ -63,6 +63,7 @@ const NEIGHBORS = {
     "Water your crops each day, dear. Rain does it for you, if you are lucky.",
     "Every season has its own crops. Plant what the sky wants, not what you want.",
     "Bridges are how islands hold hands. Pip says that. I think he stole it from me.",
+    "I talk to my plants. The kale never answers. The mint will not stop.",
   ], heartLines:[
     "Your grandmother kept a Wind Bell. It rang the whole village awake.",
     "You are good company. The sky feels less empty lately.",
@@ -73,6 +74,7 @@ const NEIGHBORS = {
     "Cloudberries grow fast. Sunflowers sell high. I did that math myself.",
     "I sell furniture now too. Your hut looks like a cloud with a door.",
     "You are my best customer. You are also my only customer.",
+    "Everything is on sale today! The price is the same. But it is on sale.",
   ], heartLines:[
     "Here is a secret: I cannot actually fly very far. That is why I need the bridges too.",
   ]},
@@ -82,6 +84,7 @@ const NEIGHBORS = {
     "Rain is just the sky giving back what it borrowed.",
     "Pick the fruit trees every day. They like the attention.",
     "The cloud stream by the dock is full of fish. Cast a line!",
+    "A captain never gets lost. He just explores by accident.",
   ], heartLines:[
     "Your grandmother charted every island in this sky. I have her old map somewhere. Under the fish.",
   ]},
@@ -91,6 +94,7 @@ const NEIGHBORS = {
     "Every night the moon looks a little different. I paint it anyway.",
     "Do you see those glowing mushrooms? They are my night lights.",
     "I like how the stars do not rush.",
+    "I tried painting the sun once. I got one yellow dot and a headache.",
   ], heartLines:[
     "Your grandmother used to sit right there and watch me paint. She never said much. It was nice.",
   ]},
@@ -100,6 +104,7 @@ const NEIGHBORS = {
     "Moss: Worms are great listeners. Fern: They have no ears. Moss: Exactly.",
     "Fern: We can smell rain coming. Moss: Also cake. Mostly cake.",
     "Moss: Fern is the smart one. Fern: Moss is the other smart one.",
+    "Moss: We found the middle of the island. Fern: By digging through it. Moss: Sorry about the hole.",
   ], heartLines:[
     "Fern: Your grandmother gave us our first shovels. Moss: Tiny ones. Fern: We were tiny.",
   ]},

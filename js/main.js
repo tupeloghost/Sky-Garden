@@ -2444,7 +2444,7 @@ function openBell() {
       hideCard();
       S.quest = S.bridge ? 5 : 4; S.coins += 50; bell.visible = true; save(); drawHud(); burst(bell.position, 0xffc857, 20);
       [262,330,392,524,660].forEach((f,i)=>setTimeout(()=>chime(f),i*220));
-      setTimeout(() => showAha('bell', () => openDialog('Nana Gale', "Listen... Far to the east, another bell just answered. Someone is out there. Fix that bridge, dear. I put 50 coins in your pocket to help.", [], S.hearts.nana)), 1300);
+      setTimeout(() => showAha('bell', () => openDialog('Nana Gale', "Listen... Far away, another bell just answered. Someone is out there. Fix that bridge, dear. I put 50 coins in your pocket to help.", [], S.hearts.nana)), 1300);
     };
   };
   draw();
@@ -2470,7 +2470,7 @@ function drizzleQuest() {
   } else if (S.q2 === 1) openDialog('Captain Drizzle', "The pot, sailor! Fill it with cloud-sea water, put the little cup in the middle, lid on top, and leave it in the sun until tomorrow. Trust the captain.", nb, h);
   else if (S.q2 === 2) openDialog('Captain Drizzle', "Fresh water, check! Now the sail. The mast needs a perfect square corner or she flies in circles. Tap the ship and use my knotted rope.", nb, h);
   else if (S.q2 === 3) {
-    if (hour() >= 20) openDialog('Captain Drizzle', "Good, the stars are out. A captain needs a star that never moves. Look up and find it for me.", [{ label:'Look at the stars', fn:() => { closeDialog(); starPuzzle(); } }, ...nb], h);
+    if (hour() >= 20) openDialog('Captain Drizzle', "Good, the stars are out. A captain needs a star that never moves. Look up and find it for me. I would do it myself, but looking up makes me dizzy.", [{ label:'Look at the stars', fn:() => { closeDialog(); starPuzzle(); } }, ...nb], h);
     else openDialog('Captain Drizzle', "Now we need stars, and it is too bright. Come back after 8 PM.", nb, h);
   } else if (S.q2 === 4) drizzleFinale();
   save();
@@ -2485,7 +2485,7 @@ function usePot() {
 }
 function drizzleOldHeart() {
   S.q5 = 1; save(); drawHud(); sfx('heart');
-  openDialog('Captain Drizzle', "Lumen told me everything. The Old Heart, the great bell, your grandmother. Well, sailor, the Puddle Jumper can do more than hover now. The center of the old village is due north. Tap her whenever you are ready, and we fly.", [], S.hearts.drizzle);
+  openDialog('Captain Drizzle', "Lumen told me everything. The Old Heart, the great bell, your grandmother. Well, sailor, the Puddle Jumper can do more than hover now. The center of the old village is straight ahead, past the clouds. Tap her whenever you are ready, and we fly. I packed snacks. They are all fish.", [], S.hearts.drizzle);
 }
 function flyTo(where) {
   const f = $('fade'); f.style.opacity = 1; sfx('cast');
@@ -2501,7 +2501,7 @@ function useShip() {
     if (S.q5 >= 1) b.push({ label:'Fly to the Old Heart', fn:() => { closeDialog(); flyTo('heart'); } });
     if (S.shipPath === 'explore') b.push({ label:'Go on a voyage', fn:() => { closeDialog(); voyage(); } }); else b.push({ label:'Market day', fn:() => { closeDialog(); marketDay(); } });
     openDialog('The Puddle Jumper', S.shipPath === 'explore' ? 'The explorer\'s ship, ready to sail.' : 'The floating market is open for business.', b); return; }
-  if (S.q5 >= 1) { openDialog('The Puddle Jumper', 'Fly north to the Old Heart?', [{ label:'Fly to the Old Heart', fn:() => { closeDialog(); flyTo('heart'); } }]); return; }
+  if (S.q5 >= 1) { openDialog('The Puddle Jumper', 'Fly to the Old Heart?', [{ label:'Fly to the Old Heart', fn:() => { closeDialog(); flyTo('heart'); } }]); return; }
   if (S.q2 < 2) { toast('The Puddle Jumper. Her sail is a mess.'); return; }
   if (S.q2 === 2) return ropePuzzle();
   if (S.q2 < 5) { toast('The sail looks great. Now she needs a navigator.'); return; }
@@ -2583,11 +2583,11 @@ function starPuzzle(o = {}) {
 function drizzleFinale() {
   S.q2 = 5; S.coins += 100; ship.userData.lift = 1.4; save(); drawHud();
   [392,523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*180)); burst(ship.position, 0xffc857, 24);
-  openDialog('Captain Drizzle', "She flies! Well. She hovers. That is a start! Listen, sailor: when you rang that bell, I heard one more answer. Far north, past the old Windmill. Someone else is waiting. Here, 100 coins for the best crew I ever had.", featureOn('journey') ? [{ label:'What happens to her now?', fn:() => { closeDialog(); shipChoice(); } }] : [], S.hearts.drizzle);
+  openDialog('Captain Drizzle', "She flies! Well. She hovers. That is a start! Listen, sailor: when you rang that bell, I heard one more answer. Far off, past the old Windmill. Someone else is waiting. Here, 100 coins for the best crew I ever had.", featureOn('journey') ? [{ label:'What happens to her now?', fn:() => { closeDialog(); shipChoice(); } }] : [], S.hearts.drizzle);
 }
 function useSign2() {
   if (S.bridge2) { toast('The bridge to Windmill Isle. Walk across!'); return; }
-  openDialog('Broken Bridge', `This bridge goes north to Windmill Isle. Cost: ${bridgeCost(BRIDGE2_COST)} coins. You have ${S.coins}.`, [{ label:S.coins >= bridgeCost(BRIDGE2_COST) ? `Fix it for ${bridgeCost(BRIDGE2_COST)} coins` : `You need ${bridgeCost(BRIDGE2_COST) - S.coins} more coins`, fn:() => {
+  openDialog('Broken Bridge', `This bridge goes to Windmill Isle. Cost: ${bridgeCost(BRIDGE2_COST)} coins. You have ${S.coins}.`, [{ label:S.coins >= bridgeCost(BRIDGE2_COST) ? `Fix it for ${bridgeCost(BRIDGE2_COST)} coins` : `You need ${bridgeCost(BRIDGE2_COST) - S.coins} more coins`, fn:() => {
     if (S.coins < bridgeCost(BRIDGE2_COST)) { toast('Not enough coins yet.'); return; }
     S.coins -= bridgeCost(BRIDGE2_COST); S.bridge2 = true; if (S.q3 === 0) S.q3 = 1; buildBridge(); save(); drawHud();
     [523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*160)); burst(sign2.position, 0xffc857, 20);

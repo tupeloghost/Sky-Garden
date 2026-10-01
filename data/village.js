@@ -7,24 +7,28 @@ const VILLAGERS = {
     "Cooking is just science you can eat.",
     "Bring me crops, fruit, or fish and we will turn them into something wonderful.",
     "A good dish sells for much more than what went into it. That is the baker's secret.",
+    "I named my oven Gerald. Gerald runs hot.",
   ], heartLines:["Your grandmother taught me my first recipe. Burnt, of course. Everyone's first is burnt."] },
   hoot: { name:'Professor Hoot', building:'library', lines:[
     "Ah, a reader! Every week I shelve one new book. Come back and see what it is.",
     "Hoo. Knowledge is the only thing that grows when you give it away.",
     "Libraries are memory with a roof on it.",
     "I have read every book here twice. The third time is the best.",
+    "I shush people for a living. Shh. See? Still got it.",
   ], heartLines:["Your grandmother never returned a single book on time. I forgave her every time."] },
   allegra: { name:'Allegra', building:'musichall', lines:[
     "Oh, a visitor! Want to play the xylophone? There are no wrong notes. Well. Some. Not many.",
     "Music is just math that makes you feel something.",
     "Try playing only the colored bars. Anything you play will sound nice. Trust me.",
     "I can hear the bells from every island from here. They are all in tune now.",
+    "I once sneezed in the middle of a concert. Everyone clapped. Best note of the night.",
   ], heartLines:["I used to play for your grandmother while she worked. She always hummed along, slightly off key."] },
   sage: { name:'Sage', building:'temple', lines:[
     "Welcome, young one. Sit. There is no hurry in a garden.",
     "People have asked the same big questions in every language. The answers are different. The questions are the same.",
     "Each day I read one saying. Would you like to hear today's?",
     "The moon gate lets everyone in. That is the only rule of this garden.",
+    "I am slow, yes. I have also never once tripped.",
   ], heartLines:["I am 190 years old. Your grandmother was a baby when I planted that tree. Now look at us."] },
 };
 const VILLAGER_LOVES = { mabel:['jam','bread','peach'], hoot:['tea','trout','starbloom'], allegra:['candy','minnow','cloudberry'], sage:['tea','frostmint','soup'] };
