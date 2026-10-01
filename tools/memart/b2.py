@@ -17,10 +17,10 @@ def string(y, frac, label, note):
     L = 250 * frac
     return (f'<path d="M30 {y} H{30+L:.0f}" stroke="#b98a3e" stroke-width="2.4"/><circle cx="30" cy="{y}" r="4" fill="#7a5236"/><circle cx="{30+L:.0f}" cy="{y}" r="4" fill="#7a5236"/>'
             f'<path d="M{30+L:.0f} {y} H280" stroke="#d9c7ad" stroke-width="1.2" stroke-dasharray="3 3"/>' + txt(292, y + 4, label, 13, INK, 'start') + txt(30, y - 8, note, 10.5, SUB, 'start'))
-add('bell', 'Shorten a string to half. You get the same note, one octave higher.',
+add('bell', 'Shorten a string to half. You get the same note, but higher.',
   svg(330, 120, 'A diagram of four strings: a full one, one half as long, one two thirds as long, and one three quarters as long',
-    string(22, 1, '1', 'the whole string') + string(52, .5, '1/2', 'same note, higher (an octave)') + string(82, 2/3, '2/3', 'a fifth: sounds sweet with the whole string') + string(112, .75, '3/4', 'a fourth: also sweet')),
-  'These simple fractions show up in music all over the world. Try it on a guitar: press a string at the halfway mark and pluck.')
+    string(22, 1, '1', 'the whole string') + string(52, .5, '1/2', 'the same note, higher') + string(82, 2/3, '2/3', 'sounds sweet with the whole string') + string(112, .75, '3/4', 'also sounds sweet')),
+  'Musicians call the jump to the higher note an octave. These simple fractions show up in music all over the world. Try it on a guitar: press a string at the halfway mark and pluck.')
 
 # ---- still (solar still) ----
 drops = ''.join(f'<circle cx="{x}" cy="{y}" r="2.2" fill="#7ec8e3"/>' for x, y in ((120, 44), (140, 51), (158, 57), (182, 56), (200, 50), (220, 43)))
@@ -33,7 +33,7 @@ add('still', 'The sun can pull fresh water out of salt water.',
     '<path d="M86 40 Q170 78 254 40" fill="none" stroke="#9fd3ff" stroke-width="3"/><circle cx="170" cy="56" r="5" fill="#8a7a66"/>' + drops +
     '<g stroke="#7ec8e3" stroke-width="1.4" stroke-dasharray="2 4" fill="none"><path d="M118 82 V56 M222 82 V54"/></g><circle cx="170" cy="70" r="2.4" fill="#7ec8e3"/>'
     + txt(292, 92, 'salt water', 11, INK) + txt(292, 60, 'clear cover', 11, INK) + txt(170, 122, 'cup of fresh water', 11, INK)),
-  'Water rises as vapor and leaves the salt behind. It turns back into drops on the cover, runs to the lowest point, and drips into the cup. A small stone on the cover makes that low point.')
+  'The sun turns some of the water into a gas you cannot see, like steam. The salt stays behind. The gas turns back into drops on the cover, runs to the lowest point, and drips into the cup. A small stone on the cover makes that low point.')
 
 # ---- rope (3-4-5) ----
 A = (60, 100); B = (220, 100); C = (60, -20)
@@ -58,10 +58,10 @@ add('stars', 'Leave a camera open all night, and the stars draw circles.',
   svg(330, 120, 'A drawing of a night sky photo where every star has left a curved streak, all circling one bright point above dark hills',
     f'<clipPath id="st"><rect width="330" height="120" rx="10"/></clipPath><g clip-path="url(#st)"><rect width="330" height="120" fill="#16203f"/><g fill="none" stroke-linecap="round">{arcs}</g>'
     f'<circle cx="{cx}" cy="{cy}" r="2.4" fill="#fff"/><path d="M0 120 V100 Q50 82 96 98 Q150 76 204 100 Q262 84 330 102 V120Z" fill="#0b1124"/></g>' + txt(cx + 34, cy - 6, 'Polaris', 11, '#ffe9c4')),
-  'A drawing of a real kind of photo, taken over several hours. Earth is turning, so every star smears into an arc. Polaris sits almost exactly over the North Pole, so it hardly moves at all.')
+  'A drawing of a real kind of photo, taken over several hours. Earth is turning, so every star smears into a curved line. Polaris sits almost exactly over the North Pole, so it hardly moves at all.')
 
 # ---- lever ----
-add('lever', 'Move the pivot, and a small push lifts a big stone.',
+add('lever', 'Move the resting point, and a small push lifts a big stone.',
   svg(330, 120, 'A diagram of a long beam resting on a pivot close to a heavy stone, with a person pushing down on the far end',
     '<path d="M20 108 H310" stroke="#c9ab88" stroke-width="2"/><path d="M84 108 L96 86 L108 108Z" fill="#7a6452"/>'
     '<path d="M36 100 L300 62" stroke="#9b6b4a" stroke-width="7" stroke-linecap="round"/>'
@@ -69,7 +69,7 @@ add('lever', 'Move the pivot, and a small push lifts a big stone.',
     + person(292, 108, 44) + '<path d="M292 36 v20 m-5 -6 l5 6 l5 -6" stroke="#ff6b6b" stroke-width="2.4" fill="none" stroke-linecap="round"/>'
     '<path d="M48 124 m0 -8 H96 M96 116 H292" stroke="#9a7f66" stroke-width="1.4"/><path d="M48 112 v8 M96 112 v8 M292 112 v8" stroke="#9a7f66" stroke-width="1.4"/>'
     + txt(72, 113, '1', 11, INK) + txt(196, 113, '4', 11, INK) + txt(48, 54, '100 kg', 12, INK) + txt(260, 30, 'a push of 25 kg', 12, INK)),
-  'The push is 4 times farther from the pivot than the stone is. So it only needs to be 1/4 as strong. The far end has to move 4 times as far, though. You trade distance for strength.')
+  'The beam rests on one point, called the pivot. The push is 4 times farther from the pivot than the stone is. So it only needs to be 1/4 as strong. The far end has to move 4 times as far, though. You trade distance for strength.')
 
 # ---- bread ----
 r = R(12)
@@ -79,7 +79,7 @@ add('bread', 'Every hole is a bubble blown up by something alive.',
   svg(330, 116, 'A drawing of a slice of bread with a brown crust and a pale inside full of holes of different sizes',
     f'<clipPath id="br"><path d="{loaf}"/></clipPath><path d="{loaf}" fill="#f3e2bd" stroke="#a8713a" stroke-width="6" stroke-linejoin="round"/><g clip-path="url(#br)">{holes}</g>'
     f'<path d="{loaf}" fill="none" stroke="#a8713a" stroke-width="6" stroke-linejoin="round"/>'),
-  'Yeast is a living fungus, too small to see. It eats sugar in the dough and breathes out gas. The gas swells tiny air bubbles in the stretchy dough, and baking sets each bubble in place.')
+  'Yeast is alive. It is a relative of mushrooms, too small to see. It eats sugar in the dough and breathes out gas. The gas swells tiny air bubbles in the stretchy dough, and baking sets each bubble in place.')
 
 # ---- moon phases ----
 def moon(cx, f):  # f: 0 new .. .5 full .. 1 new; lit side on the right while growing (seen from north of the equator)
@@ -129,10 +129,10 @@ add('fibonacci', 'One simple rule makes every spiral in a sunflower.',
     f'<g transform="translate(0 0) scale(.92) translate(8 6)">{petals}<circle cx="110" cy="66" r="64" fill="#3f2a12"/>{seeds}</g>'
     '<g transform="translate(262 62)"><circle r="30" fill="none" stroke="#c9ab88" stroke-width="1.5"/><path d="M0 0 L30 0 M0 0 L-22.1 20.3" stroke="#3b2f4a" stroke-width="2"/><path d="M12 0 A12 12 0 1 1 -8.800 8.100" fill="none" stroke="#c98a1f" stroke-width="2"/><circle cx="30" cy="0" r="4" fill="#5a3d1e"/><circle cx="-22.1" cy="20.3" r="4" fill="#5a3d1e"/></g>'
     + txt(262, 112, 'each seed: 137.5 degrees', 10.5, INK) + txt(262, 124, 'around from the last', 10.5, INK)),
-  'Each new seed grows about 137.5 degrees around from the one before. That single rule packs the seeds as tightly as they can go, and the spirals appear by themselves. Count them one way, then the other: you usually get two Fibonacci numbers.')
+  'Each new seed grows a little more than a third of a turn around from the one before (137.5 degrees). That single rule packs the seeds as tightly as they can go, and the spirals appear by themselves. Count the spirals one way, then the other. You usually get two numbers from this list: 21, 34, 55, 89.')
 
 # ---- migration (European robin) ----
-add('migration', 'This small bird may be able to see Earth\'s magnetic field.',
+add('migration', 'This small bird may be able to see the pull that moves a compass.',
   svg(330, 120, 'A drawing of a European robin on a twig: a round brown bird with an orange face and chest and a pale belly',
     '<path d="M60 100 Q170 92 290 104" stroke="#8a6a52" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M230 100 l24 -14" stroke="#8a6a52" stroke-width="3" stroke-linecap="round"/>'
     '<path d="M226 78 L276 92 L270 98 L222 88Z" fill="#6b5a48"/>'
@@ -142,7 +142,7 @@ add('migration', 'This small bird may be able to see Earth\'s magnetic field.',
     '<circle cx="134" cy="40" r="4.5" fill="#1d1a22"/><circle cx="135.300" cy="38.700" r="1.3" fill="#fff"/><path d="M112 44 L98 47 L112 51Z" fill="#3b3438"/>'
     '<path d="M166 96 v10 M178 97 v9" stroke="#7a5a46" stroke-width="2.2"/>'
     + txt(282, 30, 'European robin', 11, INK) + txt(282, 44, 'about 14 cm long', 10.5, SUB)),
-  'A drawing of a European robin. In tests in closed rooms, with no sun or stars to see, robins still faced the way they migrate. When scientists turned the magnetic field, the birds turned too. Scientists think light-sensing molecules in their eyes may react to Earth\'s magnetic field. They are still working out how.')
+  'A drawing of a European robin. In tests in closed rooms, with no sun or stars to see, robins still faced the way they fly each season. Earth has an invisible pull, called its magnetic field, that moves a compass needle. When scientists turned that pull, the birds turned too. Scientists think tiny light-sensing parts in the birds\' eyes may react to it. They are still working out how.')
 
 # ---- roads (Roman road section) ----
 r = R(14)
@@ -168,4 +168,4 @@ add('thatch', 'A roof made of dried reeds can last 40 years.',
     f'<g clip-path="url(#th)">{straw}<path d="M40 72 Q150 60 260 72 V62 Q150 50 40 62Z" fill="#6b5630" opacity=".45"/></g><path d="M100 22 Q150 10 200 22 Q150 18 100 22Z" fill="#7a6234" stroke="#7a6234" stroke-width="5" stroke-linejoin="round"/>'
     '<rect x="206" y="6" width="14" height="18" fill="#b0705a"/><path d="M20 110 H300" stroke="#c9ab88" stroke-width="2"/>'
     + '<g transform="translate(286 56)"><path d="M-20 -22 L20 6 M-20 -14 L20 14 M-20 -6 L20 22" stroke="#b8975a" stroke-width="3" stroke-linecap="round"/><path d="M-8 -30 v10 M4 -30 v16" stroke="#3d8fe0" stroke-width="2" stroke-dasharray="3 3"/><path d="M-8 -18 L18 0" stroke="#3d8fe0" stroke-width="1.6"/></g>' + txt(286, 96, 'rain runs down', 10, INK) + txt(286, 108, 'the stems', 10, INK)),
-  'The stems are packed tight and laid steep. A raindrop hits a stem, runs down it to the next one, and so on to the edge. Only the top few centimeters get wet.')
+  'The stems are packed tight and laid on a steep slope. A raindrop hits a stem, runs down it to the next one, and so on to the edge. Only the top few centimeters get wet.')

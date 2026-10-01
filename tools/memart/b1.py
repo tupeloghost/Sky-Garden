@@ -40,7 +40,7 @@ add('tablet', 'Counting in 60s like this is why your hour has 60 minutes.',
     f'<clipPath id="tb"><path d="{slab}"/></clipPath><path d="{slab}" fill="#b9a58c"/><g clip-path="url(#tb)"><path d="M0 96 H330 V124 H0Z" fill="#8f7a62" opacity=".35"/><path d="M0 0 H330 V20 H0Z" fill="#d6c6ae" opacity=".5"/>'
     f'<g stroke="#7d6a55" stroke-width=".8" fill="none">{rules}</g><g stroke="#5c4a3a" stroke-width=".9" fill="#5c4a3a" stroke-linecap="round">{w}</g>'
     '<path d="M240 60 l26 -8 l10 10 l-14 8Z" fill="#8f7a62" opacity=".8"/></g>'),
-  'A drawing of a Babylonian clay tablet, about the size of a hand. A scribe pressed a cut reed into wet clay to make each wedge. The columns are numbers, written in 60s.')
+  'A drawing of a Babylonian clay tablet, about the size of a hand. A writer pressed the cut end of a reed, a tall stiff grass, into wet clay to make each wedge. The columns are numbers, written in 60s.')
 
 # ---- gears (Antikythera fragment A): corroded green-bronze lump, big wheel with four spokes ----
 r = R(11)

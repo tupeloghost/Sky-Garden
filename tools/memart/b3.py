@@ -207,7 +207,7 @@ def diya(x, y, s=1): return f'<path d="M{x-16*s} {y} Q{x-14*s} {y+12*s} {x} {y+1
 add('diwali', 'Rows of small clay lamps, lit against the dark.',
   svg(330, 112, 'A drawing of seven small clay oil lamps, each a shallow dish with a pinched spout and a single flame, glowing on a dark floor',
     '<rect width="330" height="112" rx="10" fill="#1d1730"/>' + diya(60, 44, .8) + diya(130, 40, .8) + diya(200, 44, .8) + diya(270, 40, .8) + diya(96, 82, 1.1) + diya(170, 86, 1.1) + diya(244, 82, 1.1)),
-  'A drawing of diyas. Each one is a little dish of baked clay, filled with oil or ghee, with a cotton wick resting in the spout. Families set them along doorsteps, windows, and rooftops.')
+  'A drawing of diyas. Each one is a little dish of baked clay, filled with oil or ghee, which is clear butter, with a cotton wick resting in the spout. Families set them along doorsteps, windows, and rooftops.')
 
 # ---- hanukkah: the menorah ----
 arms = ''.join(f'<path d="M{165 - d} 36 V52 Q{165 - d} {58 + d*.42:.0f} 165 {58 + d*.42:.0f} Q{165 + d} {58 + d*.42:.0f} {165 + d} 52 V36" fill="none" stroke="#c9a23a" stroke-width="4"/>' for d in (26, 52, 78, 104))
