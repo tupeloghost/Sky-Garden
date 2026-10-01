@@ -1860,7 +1860,7 @@ function goal(t, n=1) {
   const g = S.goals.list.find(x => x.t === t && x.have < x.need); if (!g) return;
   g.have = Math.min(g.need, g.have + n);
   if (g.have >= g.need) { S.coins += 20; setTimeout(() => { toast(`Goal done: ${GOAL_TYPES[t](g.need)}! +20 coins`); sfx('coin'); }, 700); }
-  if (!S.goals.bonus && S.goals.list.every(x => x.have >= x.need)) { S.goals.bonus = true; S.coins += 30; if (!hammockOpen()) setTimeout(() => toast('New in Build: the Hammock. Hang it between two trees and nap.'), 5200); did('goals'); setTimeout(() => { toast('All 3 goals done today! +30 bonus coins'); sfx('heart'); }, 2400); }
+  if (!S.goals.bonus && S.goals.list.every(x => x.have >= x.need)) { S.goals.bonus = true; S.coins += 30; did('goals'); setTimeout(() => { toast('All 3 goals done today! +30 bonus coins'); sfx('heart'); }, 2400); }
   drawHud(); save();
 }
 function communityGoal() {
@@ -1937,7 +1937,7 @@ function openGoals() {
   setTimeout(async () => { const box = $('goalCg'); if (box) { box.innerHTML = await communityHtml(); wireClaim(); } }, 0);
   showCard(`<div class="kicker">TODAY</div><h2>Today's goals</h2><p>Each one pays 20 coins. Finish all 3 for 30 more. New goals every morning.</p>
     <div class="jlist">${S.goals.list.map(g => { const done = g.have >= g.need, k = Math.min(1, g.have / g.need);
-      return `<button class="goal ${done ? 'done' : ''}"><span class="gck">${done ? '✓' : ''}</span><span class="gtx">${GOAL_TYPES[g.t](g.need)}<small>${done ? 'Done' : g.t === 'sell' ? `${Math.min(g.have, g.need)} of ${g.need} coins` : `${Math.min(g.have, g.need)} of ${g.need}`}</small><i class="gbar"><b style="width:${Math.round(k * 100)}%"></b></i></span></button>`; }).join('')}</div><div id="goalCg"><p style="margin-top:12px">Loading the community goal...</p></div>`, 'Close');
+      return `<button class="goal ${done ? 'done' : ''}"><span class="gck">${done ? '✓' : ''}</span><span class="gtx">${GOAL_TYPES[g.t](g.need)}<small>${done ? 'Done' : g.t === 'sell' ? `${Math.min(g.have, g.need)} of ${g.need} coins` : `${Math.min(g.have, g.need)} of ${g.need}`}</small><i class="gbar"><b style="width:${Math.round(k * 100)}%"></b></i></span></button>`; }).join('')}</div>${hammockStep() ? `<h4>A mission from Nana: the hammock</h4><p>${hammockStep()}</p>` : ''}<div id="goalCg"><p style="margin-top:12px">Loading the community goal...</p></div>`, 'Close');
 }
 $('goalsBtn').onclick = openGoals;
 function applyPaint() { roof.material.color.set(+S.roof); house.userData.awning.material.color.set(+S.roof); house.children[0].material.color.set(+S.wall); }
@@ -2109,6 +2109,7 @@ function talk(id) {
 }
 function neighborButtons(id) {
   const b = [];
+  if (id === 'nana' && S.tut === 9 && !VISIT && !founderOn() && (S.hq || 0) < 4) b.push({ label:!S.hq ? 'Ask about the two trees' : S.hq === 1 && have('fiber') >= 8 ? 'Give Nana 8 grass' : 'About the hammock', fn:() => { closeDialog(); hammockTalk(); } });
   if (HELP[id] && S.tut === 9 && !VISIT) b.push({ label:HELP[id].label, fn:() => { closeDialog(); HELP[id].run(); } });
   if (id === 'pip') {
     b.push({ label:'Buy seeds', fn:seedShop }, { label:'Buy furniture', fn:furnShop });
@@ -3733,7 +3734,25 @@ function spotButterfly(g) {
 let sitting = null, danceT = 0; const lastPP = new THREE.Vector3(); const lanternFF = [];
 const onPath = () => S.where === 'home' && (S.builds || []).some(b => (b.p === 'path' || b.p === 'bpath') && Math.abs(player.position.x - b.x) < .5 && Math.abs(player.position.z - b.z) < .5);
 // a nap in the hammock skips ahead a few hours, never past 11 PM
-const hammockOpen = () => founderOn() || (S.did && S.did.goals >= 1);
+const hammockOpen = () => founderOn() || S.hq >= 4;
+// Nana's hammock: a short story mission. Each step says why you are doing it.
+// hq: 0 not started, 1 gather 8 grass, 3 hang it between the two trees, 4 done
+const HQ_SPOT = [6.25, -3.25];
+function hammockStep() { return S.hq === 1 ? `Cut bushes until you have 8 grass, then bring it to Nana. She twists grass into rope. (You have ${Math.min(8, have('fiber'))} of 8.)` : S.hq === 3 ? 'Hang the hammock between the two trees behind your garden. Tap the glowing spot between them.' : ''; }
+function hammockTalk() {
+  if (!S.hq) return openDialog('Nana Gale', "See those two trees behind your garden? Your grandmother kept a hammock there. She said her best ideas came to her half asleep in it. The Great Gust took it.", [{ label:'Can we make a new one?', fn:() => { S.hq = 1; save(); drawHud();
+      openDialog('Nana Gale', "We can. A hammock is only rope and knots, and rope is only grass. Bring me 8 grass. Bushes have plenty.", [], S.hearts.nana); } }], S.hearts.nana);
+  if (S.hq === 1 && have('fiber') < 8) return openDialog('Nana Gale', `I need 8 grass for the rope, dear. You have ${have('fiber')}. Cut a few more bushes.`, [], S.hearts.nana);
+  if (S.hq === 1) { bagAdd('fiber', -8); S.hq = 3; save(); drawHud(); drawHammockSpot(); sfx('swish');
+    return openDialog('Nana Gale', "Watch. One blade of grass snaps in your fingers. Twist many together and each one holds the others. That is all rope is. There. Now hang it where hers used to be, between the two trees behind your garden.", [], S.hearts.nana); }
+  if (S.hq === 3) return openDialog('Nana Gale', 'It is ready. Hang it between the two trees behind your garden. Tap the glowing spot.', [], S.hearts.nana); }
+var hammockSpot = null;
+function drawHammockSpot() { if (!hammockSpot) { hammockSpot = new THREE.Group(); hammockSpot.position.set(HQ_SPOT[0], 0, HQ_SPOT[1]); const ring = new THREE.Mesh(new THREE.RingGeometry(.45, .6, 32), new THREE.MeshBasicMaterial({ color:0xffe07a, transparent:true, opacity:.8, side:THREE.DoubleSide })); ring.rotation.x = -Math.PI/2; ring.position.y = .04; hammockSpot.add(ring);
+    const h = halo(0xffe07a, 1.6, .6); h.position.y = .5; hammockSpot.add(h); const hb = hitBox(1.4, 1.4, 1.4); hb.position.y = .7; hammockSpot.add(hb); deco(hb, hangHammock).userData.label = 'Hang the hammock here: tap'; scene.add(hammockSpot); lateClicks.push(hammockSpot); }
+  hammockSpot.visible = S.hq === 3 && !VISIT; }
+function hangHammock() { if (S.hq !== 3) return; S.hq = 4; S.builds = [...(S.builds || []), { p:'hammock', x:HQ_SPOT[0], z:HQ_SPOT[1], a:-Math.atan2(3, 1.5), len:3.354 }]; drawBuilds(); drawHammockSpot(); save(); drawHud();
+  burst(new THREE.Vector3(HQ_SPOT[0], 1, HQ_SPOT[1]), 0xffc857, 24); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
+  showCard(`<div class="kicker">NANA'S HAMMOCK</div><h2>It is up!</h2><p>The hammock hangs right where your grandmother's did. Tap it any time to take a nap and skip ahead in the day.</p><p style="margin-top:8px">You can hang more in Build, between any two trees that stand close together.</p>`, 'Try it'); }
 function napMenu(o) { const max = Math.floor(23 - hour()); if (max < 1) return toast('It is too late for a nap. Time for bed.');
   let n = 1; const clock = h => { const hr = Math.floor(h), mn = Math.floor((h - hr) * 6) * 10; return `${((hr + 11) % 12) + 1}:${String(mn).padStart(2, '0')} ${hr < 12 ? 'AM' : 'PM'}`; };
   const draw = () => { showCard(`<div class="kicker">HAMMOCK</div><h2>How long a nap?</h2>
@@ -3741,7 +3760,7 @@ function napMenu(o) { const max = Math.floor(23 - hour()); if (max < 1) return t
       <p style="text-align:center;margin-top:8px">You will wake up at <b>${clock(hour() + n)}</b>.</p><button id="npGo">Nap</button>`, 'Not now');
     $('npMinus').onclick = () => { n = Math.max(1, n - 1); sfx('click'); draw(); }; $('npPlus').onclick = () => { n = Math.min(max, n + 1); sfx('click'); draw(); };
     $('npGo').onclick = async () => { hideCard(); target = null; pending = null; fadeTo(true, true); await wait(900);
-      S.t = Math.min((23 - 6) / 18, S.t + n / 18); S.napped = true; save(); drawHud(); await wait(500); fadeTo(false); sfx('heart'); toast(`You napped for ${n} ${n === 1 ? 'hour' : 'hours'}. It is ${clock(hour())}.`); const dm = dream(); setTimeout(() => toast(dm), 3200); }; };
+      S.t = Math.min((23 - 6) / 18, S.t + n / 18); S.napped = true; did('nap'); save(); drawHud(); await wait(500); fadeTo(false); sfx('heart'); toast(`You napped for ${n} ${n === 1 ? 'hour' : 'hours'}. It is ${clock(hour())}.`); const dm = dream(); setTimeout(() => toast(dm), 3200); }; };
   draw(); }
 function usePiece(o) {
   const b = o.userData.b, p = PIECES.find(x => x.id === b.p);
@@ -3816,7 +3835,7 @@ function drawBuildBar() {
   const bar = $('buildbar');
   bar.innerHTML = `<p class="bhelp">${held ? `Holding your ${PIECES.find(x => x.id === held.p).name.toLowerCase()}. Tap an empty square to set it down. Rotate turns it.` : moving ? 'Tap a piece you built to pick it up and move it.' : removing ? 'Tap a piece to pick it up. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
     <div class="bpieces">${PIECES.filter(p => (p.id !== 'hammock' || hammockOpen()) && (!p.founder || (S.founder && fGot('lantern') && !(S.builds || []).some(b => b.p === p.id))) && (!p.age || S.stations[p.age]) && (p.id !== 'chest' || (LIMITS_ON && featureOn('chest')))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
-    ${hammockOpen() ? '' : '<p class="bhelp" style="font-weight:500;margin-top:6px">🔒 Hammock: finish all 3 of Today\'s goals in one day to unlock it.</p>'}
+    ${hammockOpen() ? '' : '<p class="bhelp" style="font-weight:500;margin-top:6px">🔒 Hammock: Nana knows how to make one. Talk to her.</p>'}
     <div class="bctl"><button id="bRot">Rotate</button><button id="bMove" class="${moving ? 'on' : ''}">Move</button><button id="bRem" class="${removing ? 'on' : ''}">Remove</button><button id="bTidy">Tidy up</button><button id="bDone" class="done">Done</button></div>`;
   bar.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { dropHeld(); buildSel = b.dataset.pc; removing = moving = false; drawBuildBar(); });
   ghostPiece();
@@ -4239,6 +4258,7 @@ function tickFrame() {
   if (outline) outline.render(scene, camera); else renderer.render(scene, camera);
 }
 snapCam(); tameOutlines();
+try { drawHammockSpot(); } catch {}
 if (S.room && ROOMS[S.room] && S.where === 'hut') roomLight.position.set(ROOMS[S.room].c.x, 3, ROOMS[S.room].c.z + .5); else S.room = null;
 bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = !S.bigGarden; rock.visible = !S.boulder; rosettaStone.visible = S.boulder; applyPaint(); drawSites(); spawnDigs(); drawHome(); drawBuilds(); drawStations(); if (!(S.pickups || []).length) spawnPickups(); else drawPickups(); syncHomeDock(); if (lowGfx) setLowGfx(true);
 drawHud(); tick();

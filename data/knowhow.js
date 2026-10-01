@@ -43,6 +43,10 @@ const KNOWHOW = [
     did:'You finished your 3 goals, day after day.',
     real:'A short list of steps is called a <b>checklist</b>. Pilots started using one in 1935, so they would never forget a step before takeoff.',
     today:'Pilots still read a checklist before every flight. Doctors use one before surgery.' },
+  { id:'nap', act:'nap', n:1, icon:'😴', title:'You know a nap can help',
+    did:'You took a nap in the hammock and woke up later in the day.',
+    real:'In 1995, a NASA study let pilots nap for about 26 minutes on long flights. The pilots who napped were more alert afterward than the ones who stayed awake.',
+    today:'Some airlines still plan short naps for pilots on very long flights.' },
   // learned by helping a neighbor with their craft (shown right after you help)
   { id:'pricing', act:'help', n:99, icon:'🍋', title:'You can find the right price',
     did:'You helped Pip try different prices for his lemonade.',
