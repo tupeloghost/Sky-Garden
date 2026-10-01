@@ -2139,7 +2139,7 @@ function seedShop() {
   closeDialog();
   const s = season(), o = pipOrder();
   const crops = Object.entries(CROPS).filter(([,c]) => c.seasons.includes(s) && (!c.locked || S.q4 >= 5));
-  const draw = () => showCard(`<div class="kicker">PIP'S SEEDS</div><h2>${SEASONS[s]} seeds</h2><p>You have ${S.coins} coins. ${o && !o.done ? `Pip's order today: a ${CROPS[o.crop].name}, pays ${o.pay} coins.` : ''}</p>
+  const draw = () => showCard(`<div class="kicker">PIP'S SEEDS</div><h2>${SEASONS[s]} seeds</h2><p>You have ${S.coins} coins.</p>${o && !o.done ? `<p class="itinfo">Pip wants to buy 1 ${CROPS[o.crop].name} from you today. He will pay ${o.pay} coins, more than the sell crate. ${S.bag[o.crop] ? 'You have one: talk to Pip and tap Give Pip the ' + CROPS[o.crop].name + '.' : 'Grow one and bring it to him.'}</p>` : ''}
     <div class="jlist">${crops.map(([k,c]) => {
       return `<div class="seedrow"><span class="ic">${icon(k)}</span><div class="si"><b>${c.name}</b> <small>${c.seed} coins each. Grows in ${c.days} days. Sells for ${c.sell} coins. You have ${S.seeds[k] || 0}.</small></div>
         <div class="sb">${[1,5,10].map(n => `<button data-sb="${k}:${n}" class="${S.coins >= c.seed * n ? '' : 'ghost'}">Buy ${n}</button>`).join('')}</div></div>`; }).join('')}</div>
