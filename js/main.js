@@ -1697,7 +1697,7 @@ const GOAL_TYPES = {
   wish: () => 'Make a wish at the fountain', sit: () => 'Sit on a bench in the Town Square', ask: () => 'Bring a neighbor what they asked for (see the notice board)',
 };
 // know-how: count what you do; after a few times, show the real skill you've been practicing (one a day, never during the first steps)
-function knowHtml(x) { return `<div class="kicker">YOU ALREADY KNOW HOW</div><h2>${x.icon} ${x.title}</h2><h4>What you did</h4><p>${x.did}</p><h4>In real life</h4><p>${x.real}</p><h4>Where you see it today</h4><p>${x.today}</p>`; }
+function knowHtml(x) { return `<div class="kicker">YOU JUST LEARNED SOMETHING REAL</div><h2>${x.icon} ${x.title}</h2><h4>What you did</h4><p>${x.did}</p><h4>What that really is</h4><p>${x.real}</p><h4>You see it here too</h4><p>${x.today}</p>`; }
 function did(act, n = 1) { if (VISIT) return; S.did = S.did || {}; S.did[act] = (S.did[act] || 0) + n; }
 function knowTick() { if (S.tut !== 9 || S.knowDay === S.day || !S.did) return; const x = KNOWHOW.find(k => (S.did[k.act] || 0) >= k.n && !(S.know || []).includes(k.id)); if (!x) return;
   S.know = [...(S.know || []), x.id]; S.knowDay = S.day; S.coins += 40; save(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
