@@ -563,10 +563,11 @@ framePosts.add(mesh(new THREE.BoxGeometry(4.1,.35,.35), mat(0x9b6b4a), 0, 4.2, 0
 const frameGear = new THREE.Group(); frameGear.position.set(2.05, 4.2, 0); bellFrame.add(frameGear);
 frameGear.add(mesh(new THREE.CylinderGeometry(.55,.55,.12,24), mat(0xc98f58), 0, 0, 0).rotateZ(Math.PI/2));
 for (let i=0;i<12;i++){ const a = i/12*Math.PI*2; frameGear.add(mesh(new THREE.BoxGeometry(.12,.14,.14), mat(0xc98f58), 0, Math.cos(a)*.62, Math.sin(a)*.62)); }
-const ship2 = new THREE.Group(); ship2.position.set(OH.x + 9.3, OH.y, OH.z - .6); ship2.rotation.y = -1.45;
+const ship2 = new THREE.Group(); ship2.position.set(OH.x + 10.1, OH.y, OH.z + .2); ship2.rotation.y = -1.45;
 const hull2 = mesh(new THREE.SphereGeometry(1.2, 20, 10, 0, Math.PI*2, Math.PI/2, Math.PI/2), mat(0x3f86c9), 0, .85, 0); hull2.scale.set(1.5,.75,.75); ship2.add(hull2);
 ship2.add(mesh(new THREE.CylinderGeometry(.07,.08,2.6,8), mat(0x9b6b4a), 0, 2.2, 0));
 ship2.add(mesh(new THREE.PlaneGeometry(1.3,1.5), new THREE.MeshStandardMaterial({ color:0xfff6e6, side:THREE.DoubleSide }), .7, 2.4, 0));
+{ const hb = hitBox(4.2, 4, 2.6); hb.position.y = 1.9; ship2.add(hb); } // easy to tap from any angle
 ship2.userData.kind = 'ship2'; scene.add(ship2);
 // building sites for rebuilding the village
 function buildingModel(id) {
@@ -1314,7 +1315,8 @@ function babble(who, text) {
 function ambience() {
   if (!actx) return;
   const h = hour(), now = actx.currentTime, on = muted ? 0 : 1, inside = S.where === 'hut';
-  wind.g.gain.setTargetAtTime(on * (inside ? .012 : h > 19 ? .03 : .05), now, 1.5);
+  const listening = /THE WIND BELL|MUSIC HALL/.test(($('veil').classList.contains('show') && $('card').querySelector('.kicker') || {}).textContent || ''); // hush the wind while a sound puzzle is open
+  wind.g.gain.setTargetAtTime(on * (listening ? .004 : inside ? .012 : h > 19 ? .03 : .05), now, listening ? .2 : 1.5);
   rainNode.g.gain.setTargetAtTime(on * (raining && S.t < .5 && season() !== 3 ? (inside ? .05 : .12) : 0), now, 1.5);
   if (!inside && season() !== 3 && h >= 6.3 && h < 18.5 && Math.random() < .12) sfx('bird');
   if (!inside && season() < 3 && h >= 20 && Math.random() < .1) sfx('cricket');
@@ -1393,7 +1395,7 @@ function drawHud() {
   $('bar').innerHTML = (tools || xt ? xt + tools + '<i class="hdiv"></i>' : '') + shown.map(([k,c]) => { const n = S.seeds[k] || 0, now = c.seasons.includes(s);
     return `<div class="hslot seed ${S.sel===k?'on':''} ${now ? '' : 'late'} ${n ? '' : 'none'}" data-k="${k}" title="${c.name}"><span>${icon(k)}</span><b>${n}</b><small>${now ? c.name : 'Not now'}</small></div>`; }).join('');
   document.querySelectorAll('.hslot.seed').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); const c = CROPS[S.sel], n = S.seeds[S.sel] || 0;
-    toast(n ? `${c.name} seeds ready. Tap an empty plot to plant.` : `No ${c.name} seeds. Buy some from Pip.`); });
+    toast(n ? `${c.name} seeds ready. Tap an empty plot to plant.` : `No ${c.name} seeds. Tap another seed in this bar, or buy more from Pip on the Town Square.`); });
   document.querySelectorAll('[data-xt]').forEach(el => el.onclick = () => extraTools[+el.dataset.xt].run());
   document.querySelectorAll('.hslot.tool:not([data-xt])').forEach(el => el.onclick = () => el.dataset.tool === 'balloon' ? balloonMenu() : el.dataset.tool === 'myth' ? mythMenu() : toast(el.dataset.how));
 }
@@ -1873,9 +1875,11 @@ function useTile(i) {
     else if (tutActive()) toast('Tilled! Now tap it to plant.'); else fx('Tilled');
   }
   else if (t.s === 1) {
-    const c = CROPS[S.sel];
+    let c = CROPS[S.sel];
+    if (!c.seasons.includes(season()) || S.seeds[S.sel] <= 0) { const k2 = Object.keys(CROPS).find(k => S.seeds[k] > 0 && CROPS[k].seasons.includes(season()));
+      if (k2) { S.sel = k2; c = CROPS[k2]; drawHud(); toast(`Planting ${c.name}. To plant something else, tap a seed in the bar at the bottom first.`); } }
     if (!c.seasons.includes(season())) { toast(`${c.name} only grows in ${c.seasons.map(s => SEASONS[s]).join(' and ')}. Pick another seed from the bar below.`); return; }
-    if (S.seeds[S.sel] <= 0) { toast(`No ${c.name} seeds. Buy some from Pip.`); return; }
+    if (S.seeds[S.sel] <= 0) { toast('You have no seeds that grow this season. Pip sells seeds at his cart on the Town Square.'); return; }
     S.seeds[S.sel]--; Object.assign(t, { s:2, c:S.sel, d:0 }); sfx('plant'); if (tutActive()) toast(`Planted ${c.name}. Tap to water.`); else fx(`🌱 ${c.name}`);
   } else {
     const c = CROPS[t.c];
@@ -1906,16 +1910,18 @@ const SELL_KINDS = ['crop','fruit','fish','dish','bug','specialty','heirloom'], 
 function useCrate() {
   const list = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && SELL_KINDS.includes(ITEMS[k].kind));
   if (!list.length) { toast('Nothing to sell yet. Pick crops, fruit, or fish first.'); return; }
-  const pick = Object.fromEntries(list.map(([k]) => [k, tutActive() || !KEEP_BY_DEFAULT.includes(ITEMS[k].kind)]));
-  const draw = () => { const total = list.reduce((a, [k,n]) => a + (pick[k] ? Math.round(n * sellPrice(k)) : 0), 0);
-    showCard(`<div class="kicker">SELL CRATE</div><h2>What should go?</h2><p>Tap to choose. Checked items get sold. Pip picks up the crate and pays you right away.</p>
-      <div class="igrid">${list.map(([k,n]) => `<button class="itile ${pick[k] ? 'sel' : 'off'}" data-sl="${k}"><span class="ic">${icon(k, ITEMS[k].kind)}</span><b>${n}</b><small>${esc(ITEMS[k].name)}<br>${Math.round(n * sellPrice(k))}c</small>${pick[k] ? '<i class="chk">✓</i>' : ''}</button>`).join('')}</div>
-      <div style="margin-top:10px"><button id="slAll" class="ghost">Check all</button> <button id="slNone" class="ghost">Uncheck all</button></div>
+  const qty = Object.fromEntries(list.map(([k, n]) => [k, tutActive() || !KEEP_BY_DEFAULT.includes(ITEMS[k].kind) ? n : 0])); let cur = null; // how many of each to sell
+  const draw = () => { const total = list.reduce((a, [k]) => a + Math.round(qty[k] * sellPrice(k)), 0), cn = cur ? S.bag[cur] : 0;
+    showCard(`<div class="kicker">SELL CRATE</div><h2>What should go?</h2><p>Tap an item to choose it. Then use − and + to pick how many to sell. Pip pays you right away.</p>
+      <div class="igrid">${list.map(([k,n]) => `<button class="itile ${qty[k] ? 'sel' : 'off'}" data-sl="${k}" ${cur === k ? 'style="outline:3px solid #ff8fa3"' : ''}><span class="ic">${icon(k, ITEMS[k].kind)}</span><b>${qty[k]}/${n}</b><small>${esc(ITEMS[k].name)}<br>${Math.round(qty[k] * sellPrice(k))}c</small>${qty[k] ? '<i class="chk">✓</i>' : ''}</button>`).join('')}</div>
+      ${cur ? `<div class="steppers" style="margin-top:10px"><div>${esc(ITEMS[cur].name)}: sell <button id="slMinus" class="ghost">−</button> <b>${qty[cur]}</b> of ${cn} <button id="slPlus" class="ghost">+</button> <button id="slOne" class="ghost">Just 1</button> <button id="slMax" class="ghost">All</button></div></div>` : ''}
+      <div style="margin-top:10px"><button id="slAll" class="ghost">Sell everything</button> <button id="slNone" class="ghost">Keep everything</button></div>
       <button id="slGo" ${total ? '' : 'style="opacity:.5"'}>Sell for ${total} coins</button>`, 'Not now');
-    document.querySelectorAll('[data-sl]').forEach(b => b.onclick = () => { pick[b.dataset.sl] = !pick[b.dataset.sl]; sfx('click'); draw(); });
-    $('slAll').onclick = () => { list.forEach(([k]) => pick[k] = true); draw(); }; $('slNone').onclick = () => { list.forEach(([k]) => pick[k] = false); draw(); };
+    document.querySelectorAll('[data-sl]').forEach(b => b.onclick = () => { const k = b.dataset.sl; if (cur === k) qty[k] = qty[k] ? 0 : S.bag[k]; else { cur = k; if (!qty[k]) qty[k] = S.bag[k]; } sfx('click'); draw(); });
+    if (cur) { $('slMinus').onclick = () => { qty[cur] = Math.max(0, qty[cur] - 1); draw(); }; $('slPlus').onclick = () => { qty[cur] = Math.min(cn, qty[cur] + 1); draw(); }; $('slOne').onclick = () => { qty[cur] = 1; draw(); }; $('slMax').onclick = () => { qty[cur] = cn; draw(); }; }
+    $('slAll').onclick = () => { list.forEach(([k, n]) => qty[k] = n); draw(); }; $('slNone').onclick = () => { list.forEach(([k]) => qty[k] = 0); draw(); };
     $('slGo').onclick = () => { if (!total) { toast('Tap the things you want to sell first.'); return; }
-      list.forEach(([k]) => { if (pick[k]) delete S.bag[k]; }); S.coins += total; S.soldPick = true; hideCard(); sfx('coin'); burst(crate.position, 0xffc857); floatText(`+${total} coins`, crate.position.clone());
+      list.forEach(([k]) => { if (qty[k]) bagAdd(k, -qty[k]); }); S.coins += total; S.soldPick = true; hideCard(); sfx('coin'); burst(crate.position, 0xffc857); floatText(`+${total} coins`, crate.position.clone());
       goal('sell', total); drawHud(); save(); tutSold(); };
   };
   draw();
@@ -2238,11 +2244,11 @@ function openBell() {
   const picked = new Set();
   const draw = (msg='') => {
     showCard(`<div class="kicker">THE WIND BELL</div><h2>Tune the chimes</h2>
-      <p>Tap a chime to hear it ring together with the big bell. Some pairs sound nice. Some sound harsh. Pick the 3 that sound nice, then tap Ring the bell.</p>
+      <p>Each chime is a fraction as long as the big bell. <b>Simple fractions with small numbers ring sweetly. Messy fractions with big numbers clash.</b> Tap a chime to hear it with the big bell. Pick the 3 simplest, then tap Ring the bell.</p>
       <div class="jlist">${CHIMES.map((c,i)=>`<button data-i="${i}" style="${picked.has(i)?'background:#ffc857':''}">${picked.has(i)?'✓ ':''}Chime ${i+1}: ${c.label} as long</button>`).join('')}</div>
       <p style="margin-top:10px;min-height:22px;font-weight:700">${msg}</p>
-      <button id="ring">Ring the bell</button> <button id="deaf" class="ghost">Can't hear it?</button> <button id="later" class="ghost">Later</button>`, null);
-    $('deaf').onclick = () => draw('Hint: the nice-sounding chimes have the simplest lengths: 1/2, 2/3, and 3/4.');
+      <button id="ring">Ring the bell</button> <button id="deaf" class="ghost">Give me a hint</button> <button id="later" class="ghost">Later</button>`, null);
+    $('deaf').onclick = () => draw('Hint: the 3 simplest are 1/2, 2/3, and 3/4.');
     document.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       const i = +b.dataset.i, base = 262;
       if (muted) toast('Turn sound on to hear the chimes.');
@@ -2252,7 +2258,7 @@ function openBell() {
     $('later').onclick = hideCard;
     $('ring').onclick = () => {
       if (picked.size !== 3) return draw('Pick exactly 3 chimes.');
-      if ([...picked].some(i => !CHIMES[i].sweet)) { chime(262); chime(262*16/15); return draw('Hmm. One of them clashes. Listen again.'); }
+      if ([...picked].some(i => !CHIMES[i].sweet)) { chime(262); chime(262*16/15); return draw('One of those clashes. Look for the smallest numbers: 1/2 is simpler than 8/15.'); }
       hideCard();
       S.quest = S.bridge ? 5 : 4; S.coins += 50; bell.visible = true; save(); drawHud(); burst(bell.position, 0xffc857, 20);
       [262,330,392,524,660].forEach((f,i)=>setTimeout(()=>chime(f),i*220));
@@ -2317,7 +2323,7 @@ function useShip() {
   if (S.q2 < 2) { toast('The Puddle Jumper. Her sail is a mess.'); return; }
   if (S.q2 === 2) return ropePuzzle();
   if (S.q2 < 5) { toast('The sail looks great. Now she needs a navigator.'); return; }
-  toast('The Puddle Jumper, ready to fly.');
+  toast('The Puddle Jumper is fixed and ready, but she has nowhere to fly yet. Keep following the story note at the top of your screen.');
 }
 function ropePuzzle(o = {}) {
   const total = o.total || 12, max = total - 2;
@@ -2605,7 +2611,7 @@ function useCrystals() {
       <p>Tap a crystal to hear it ring together with the tallest one. Some pairs sound nice. Some sound harsh. Pick the 2 that sound nice, then tap Ring them.</p>
       <div class="jlist">${list.map((c,i) => `<button data-c="${i}" style="${picked.has(i)?'background:#c9b6ff':''}">${picked.has(i)?'✓ ':''}Crystal ${i+1}: ${c.l} as tall</button>`).join('')}</div>
       <p style="margin-top:10px;min-height:22px;font-weight:700">${msg}</p>
-      <button id="ring">Ring them</button> <button id="deaf" class="ghost">Can't hear it?</button> <button id="later" class="ghost">Later</button>`, null);
+      <button id="ring">Ring them</button> <button id="deaf" class="ghost">Give me a hint</button> <button id="later" class="ghost">Later</button>`, null);
     $('deaf').onclick = () => draw('Hint: just like the Wind Bell, the simplest fractions sound nice: 1/2 and 2/3.');
     document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const i = +b.dataset.c;
       if (muted) toast('Turn sound on to hear the crystals.'); chime(392); chime(392 * list[i].r); picked.has(i) ? picked.delete(i) : picked.add(i); draw(); });
@@ -3350,11 +3356,11 @@ async function goSleep(where, passedOut) {
     lying = false; burst(p.clone().setY(p.y + .5), 0xfff3a0, 10);
   } else {
     const bw = new THREE.Vector3(); bed.getWorldPosition(bw);
-    player.position.set(bw.x, .42, bw.z + .15); player.rotation.y = 0; lying = true;
+    player.position.set(bw.x, .42, bw.z + .92); player.rotation.y = 0; lying = true;
     const up = bw.clone().add(V(1.4, 2.4, 2.4)), look = bw.clone().setY(.5);
     await shot(1.5, camera.position, up, player.position.clone().setY(.8), look); await wait(900);
     await fadeTo(true, true);
-    sleep(passedOut, 'bed'); player.position.set(bw.x, .42, bw.z + .15); lying = true; camera.position.copy(up);
+    sleep(passedOut, 'bed'); player.position.set(bw.x, .42, bw.z + .92); lying = true; camera.position.copy(up);
     cine = { t:0, dur:.01, p0:up, p1:up, l0:look, l1:look, res:() => {} };
     await wait(500); await fadeTo(false, true); sfx('bird'); await wait(1300);
     lying = false; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); await wait(200);
@@ -3720,7 +3726,7 @@ renderer.domElement.addEventListener('pointerdown', e => {
   if (buildMode) return buildTap(e);
   closeDialog();
   const o = tapTarget(e.clientX, e.clientY);
-  if (o) { const wp = new THREE.Vector3(); o.getWorldPosition(wp); target = wp; pending = o; return; }
+  if (o) { const wp = new THREE.Vector3(); o.getWorldPosition(wp); if (o === house || o === buildSite) wp.z += 2.6; target = wp; pending = o; return; /* the hut: stop at the door, not inside the walls */ }
   const g = ray.intersectObjects(walkables, false)[0];
   if (g) { target = g.point.clone(); pending = null; markTap(g.point); }
 });
