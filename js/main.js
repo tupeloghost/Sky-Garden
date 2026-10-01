@@ -1860,7 +1860,7 @@ function goal(t, n=1) {
   const g = S.goals.list.find(x => x.t === t && x.have < x.need); if (!g) return;
   g.have = Math.min(g.need, g.have + n);
   if (g.have >= g.need) { S.coins += 20; setTimeout(() => { toast(`Goal done: ${GOAL_TYPES[t](g.need)}! +20 coins`); sfx('coin'); }, 700); }
-  if (!S.goals.bonus && S.goals.list.every(x => x.have >= x.need)) { S.goals.bonus = true; S.coins += 30; did('goals'); setTimeout(() => { toast('All 3 goals done today! +30 bonus coins'); sfx('heart'); }, 2400); }
+  if (!S.goals.bonus && S.goals.list.every(x => x.have >= x.need)) { S.goals.bonus = true; S.coins += 30; if (!hammockOpen()) setTimeout(() => toast('New in Build: the Hammock. Hang it between two trees and nap.'), 5200); did('goals'); setTimeout(() => { toast('All 3 goals done today! +30 bonus coins'); sfx('heart'); }, 2400); }
   drawHud(); save();
 }
 function communityGoal() {
@@ -3733,6 +3733,7 @@ function spotButterfly(g) {
 let sitting = null, danceT = 0; const lastPP = new THREE.Vector3(); const lanternFF = [];
 const onPath = () => S.where === 'home' && (S.builds || []).some(b => (b.p === 'path' || b.p === 'bpath') && Math.abs(player.position.x - b.x) < .5 && Math.abs(player.position.z - b.z) < .5);
 // a nap in the hammock skips ahead a few hours, never past 11 PM
+const hammockOpen = () => founderOn() || (S.did && S.did.goals >= 1);
 function napMenu(o) { const max = Math.floor(23 - hour()); if (max < 1) return toast('It is too late for a nap. Time for bed.');
   let n = 1; const clock = h => { const hr = Math.floor(h), mn = Math.floor((h - hr) * 6) * 10; return `${((hr + 11) % 12) + 1}:${String(mn).padStart(2, '0')} ${hr < 12 ? 'AM' : 'PM'}`; };
   const draw = () => { showCard(`<div class="kicker">HAMMOCK</div><h2>How long a nap?</h2>
@@ -3814,7 +3815,8 @@ function drawGrid() { const pts = [], seg = (x0, z0, x1, z1) => { if (onLand(x0,
 function drawBuildBar() {
   const bar = $('buildbar');
   bar.innerHTML = `<p class="bhelp">${held ? `Holding your ${PIECES.find(x => x.id === held.p).name.toLowerCase()}. Tap an empty square to set it down. Rotate turns it.` : moving ? 'Tap a piece you built to pick it up and move it.' : removing ? 'Tap a piece to pick it up. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
-    <div class="bpieces">${PIECES.filter(p => (!p.founder || (S.founder && fGot('lantern') && !(S.builds || []).some(b => b.p === p.id))) && (!p.age || S.stations[p.age]) && (p.id !== 'chest' || (LIMITS_ON && featureOn('chest')))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
+    <div class="bpieces">${PIECES.filter(p => (p.id !== 'hammock' || hammockOpen()) && (!p.founder || (S.founder && fGot('lantern') && !(S.builds || []).some(b => b.p === p.id))) && (!p.age || S.stations[p.age]) && (p.id !== 'chest' || (LIMITS_ON && featureOn('chest')))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
+    ${hammockOpen() ? '' : '<p class="bhelp" style="font-weight:500;margin-top:6px">🔒 Hammock: finish all 3 of Today\'s goals in one day to unlock it.</p>'}
     <div class="bctl"><button id="bRot">Rotate</button><button id="bMove" class="${moving ? 'on' : ''}">Move</button><button id="bRem" class="${removing ? 'on' : ''}">Remove</button><button id="bTidy">Tidy up</button><button id="bDone" class="done">Done</button></div>`;
   bar.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => { dropHeld(); buildSel = b.dataset.pc; removing = moving = false; drawBuildBar(); });
   ghostPiece();
@@ -4645,6 +4647,10 @@ function founderDrip() { if (!founderOn() || VISIT || TESTSLOT || PREVIEW) retur
   if (!S.giftsSeen && (S.fGot || []).length > 1 && !(mythOn() && !mp().revealed)) { S.giftsSeen = true; save(); openFounderGifts(); } // once: founders who already opened gifts see what they have and how to use each
 }
 addEventListener('sg-playing', () => setTimeout(founderDrip, 4000));
+// testers can nap from the start: a hammock already hangs between the two trees behind the garden
+addEventListener('sg-playing', () => { if (!founderOn() || S.fHammock || VISIT || TESTSLOT) return; S.fHammock = true;
+  if (!(S.builds || []).some(b => b.len)) { S.builds = [...(S.builds || []), { p:'hammock', x:6.25, z:-3.25, a:-Math.atan2(3, 1.5), len:3.354 }]; drawBuilds(); }
+  S.fGot = [...new Set([...(S.fGot || []), 'hammock'])]; save(); });
 function testerCodeCard() {
   showCard(`<div class="kicker">TESTER CODE</div><h2>Enter your code</h2><p>If Sky Garden sent you a tester code, type it here. It looks like SKY-AB12-CD34.</p>
     <input id="tcIn" maxlength="13" placeholder="SKY-XXXX-XXXX" class="numin" style="width:100%;text-transform:uppercase;font-size:18px;margin-top:8px"><p id="tcMsg" style="min-height:22px;font-weight:700;margin-top:6px"></p><button id="tcGo">Use my code</button>`, 'Cancel', openBag);
@@ -4676,6 +4682,7 @@ function openMissions() {
 const GIFT_HOW = [
   ['pet', '🐾', 'Your companion', 'It follows you everywhere. Tap it to give it a pat.'],
   ['missions', '✦', 'Tester missions', 'Tap ✦ Missions at the top of your screen. Each one pays 50 coins.'],
+  ['hammock', '😴', 'A hammock', 'It hangs between the two trees behind your garden. Tap it to take a nap and skip ahead in the day.'],
   ['outfit', '🧥', 'The Sky Pioneer outfit', 'Tap Bag, then Settings, then Change my look, then Clothes.'],
   ['lantern', '🏮', "The Founder's Lantern", 'Tap Build, pick Founder\'s Lantern, and tap a square. Fireflies gather around it at night.'],
 ];

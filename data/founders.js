@@ -5,7 +5,7 @@ const MISSIONS = [
   { id:'row',     title:'Plant a whole row', how:'Plant 3 plots in one row, then water one of them.', done:S => [0,3,6,9].some(r => [0,1,2].every(c => S.tiles[r + c] && S.tiles[r + c].s === 2)) },
   { id:'crate',   title:'Choose what to sell', how:'Tap the sell crate and pick what goes.', done:S => !!S.soldPick },
   { id:'stars',   title:'Sleep under the stars', how:'Tap the campfire at night and sleep outside.', done:S => !!S.sleptOutside },
-  { id:'nap',     title:'Take a nap in a hammock', how:'After your hut is rebuilt, tap Build, pick Hammock (8 grass), and tap the ground between two trees. Then tap the hammock to nap.', done:S => !!S.napped },
+  { id:'nap',     title:'Take a nap in a hammock', how:'Tap the hammock between the two trees behind your garden.', done:S => !!S.napped },
   { id:'build',   title:'Build something', how:'After your hut is rebuilt, tap Build and place a piece anywhere on your island.', done:S => (S.builds || []).length > 0 },
   { id:'taste',   title:'Learn what a neighbor loves', how:'Give gifts and watch how they react.', done:S => Object.values(S.tastesKnown || {}).some(t => Object.values(t).includes(0)) },
   { id:'bug',     title:'Catch a bug with a net', how:'Make a Bug Net at the workbench, then swing at an insect.', feature:'butterflies', done:S => !!S.tools.net && (S.bugs || []).length > 0 },
