@@ -1117,7 +1117,7 @@ function makeRoom(id, n, o) { const c = new THREE.Vector3(ROOM.x + 24 * n, 0, RO
   const m = mesh(new THREE.BoxGeometry(1.4,.04,.7), mat(o.mat), 0, .02, 2.8); m.userData = { kind:'roomdoor' }; g.add(m);
   lateClicks.push(g); ROOMS[id] = { g, c, mat:m, out:o.out, name:o.name, win }; return g; }
 // put a thing in a room and make all of it tappable
-const thing = (g, obj, x, z, w, h, d, fn) => { obj.position.set(x, 0, z); g.add(obj); const hb = hitBox(w, h, d); hb.position.set(x, h / 2, z); g.add(hb); deco(hb, fn); return obj; };
+const thing = (g, obj, x, z, w, h, d, fn, label) => { obj.position.set(x, 0, z); g.add(obj); const hb = hitBox(w, h, d); hb.position.set(x, h / 2, z); g.add(hb); deco(hb, fn); hb.userData.label = label; return obj; };
 const G = (...kids) => { const g = new THREE.Group(); kids.forEach(k => g.add(k)); return g; };
 function enterRoom(id) { const R = ROOMS[id]; if (!R) return; S.where = 'hut'; S.room = id; player.position.set(R.c.x, 0, R.c.z + 2.2); roomLight.position.set(R.c.x, 3, R.c.z + .5); target = null; pending = null; snapCam(); sfx('door'); drawHud(); save(); toast(R.name); }
 function exitRoom() { const R = ROOMS[S.room]; S.room = null; S.where = 'home'; roomLight.position.set(ROOM.x, 3, ROOM.z + .5); if (R) player.position.copy(R.out()); target = null; pending = null; snapCam(); sfx('door'); drawHud(); save(); }
@@ -1126,22 +1126,22 @@ function exitRoom() { const R = ROOMS[S.room]; S.room = null; S.where = 'home'; 
   const wood = mat(0x9b6b4a), dark = mat(0x7a5236);
   // the seed cabinet: lots of little drawers
   const cab = G(mesh(new THREE.BoxGeometry(1.9,1.7,.5), wood, 0, .85, 0)); for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) { cab.add(mesh(new THREE.BoxGeometry(.3,.3,.05), mat(0xc98f58), -.72 + c*.36, .3 + r*.38, .26)); cab.add(mesh(sph(.03), mat(0xffc857), -.72 + c*.36, .3 + r*.38, .3)); }
-  thing(g, cab, 2.3, -2.9, 2, 1.8, .7, () => HELP.nana.run());
+  thing(g, cab, 2.3, -2.9, 2, 1.8, .7, () => HELP.nana.run(), 'Seed cabinet: tap to help Nana');
   // herbs hung up to dry
   const herbs = G(mesh(new THREE.CylinderGeometry(.02,.02,2.2,6), dark, 0, 2.75, 0).rotateZ(Math.PI/2)); [-.8,-.4,0,.4,.8].forEach((x, i) => { const b = mesh(new THREE.ConeGeometry(.12,.45,7), mat([0x7fb86a,0xc9b6ff,0x8fdc8a,0xd9c06a,0x7fb86a][i]), x, 2.45, 0); b.rotation.x = Math.PI; herbs.add(b); });
-  thing(g, herbs, .9, -3.0, 2.2, 3, .5, () => toast('Herbs hung upside down to dry. With the water gone, they keep for months. It is one of the oldest ways to store food.'));
+  thing(g, herbs, .9, -3.0, 2.2, 3, .5, () => toast('Herbs hung upside down to dry. With the water gone, they keep for months. It is one of the oldest ways to store food.'), 'Drying herbs: tap');
   // kettle on a little stove
   const stove = G(mesh(new THREE.BoxGeometry(.9,.8,.7), mat(0x5a5560), 0, .4, 0), mesh(new THREE.CylinderGeometry(.2,.24,.26,14), mat(0x7ec8e3), 0, .93, 0), mesh(new THREE.TorusGeometry(.14,.025,6,14,Math.PI), mat(0x3b2f4a), 0, 1.06, 0), mesh(new THREE.CylinderGeometry(.03,.05,.22,8), mat(0x7ec8e3), .24, .98, 0).rotateZ(-.9));
-  thing(g, stove, -3.0, -2.6, 1, 1.3, .9, () => { sfx('water'); toast('Nana pours you a cup of mint tea. In Morocco, serving mint tea to a guest is a sign of welcome.'); });
+  thing(g, stove, -3.0, -2.6, 1, 1.3, .9, () => { sfx('water'); toast('Nana pours you a cup of mint tea. In Morocco, serving mint tea to a guest is a sign of welcome.'); }, 'Kettle: tap for tea');
   // rocking chair
   const chair = G(mesh(new THREE.BoxGeometry(.7,.08,.6), wood, 0, .45, 0), mesh(new THREE.BoxGeometry(.7,.9,.08), wood, 0, .9, -.28)); [-.3,.3].forEach(x => { const rk = mesh(new THREE.TorusGeometry(.5,.035,6,16,1.6), dark, x, .52, 0); rk.rotation.set(0, Math.PI/2, Math.PI*1.245); chair.add(rk); [-.22,.22].forEach(z => chair.add(mesh(new THREE.BoxGeometry(.06,.4,.06), wood, x, .25, z))); });
-  chair.rotation.y = .7; thing(g, chair, -2.4, .6, 1, 1.4, 1, () => { const L = NEIGHBORS.nana.heartLines; openDialog('Nana Gale', L[Math.floor(Math.random() * L.length)], [], S.hearts.nana); });
+  chair.rotation.y = .7; thing(g, chair, -2.4, .6, 1, 1.4, 1, () => { const L = NEIGHBORS.nana.heartLines; openDialog('Nana Gale', L[Math.floor(Math.random() * L.length)], [], S.hearts.nana); }, 'Rocking chair: tap');
   // your grandmother's picture
   const pic = G(mesh(new THREE.BoxGeometry(.8,.95,.05), mat(0xffc857), 0, 2.05, 0), mesh(new THREE.BoxGeometry(.64,.79,.02), mat(0xfff1d6), 0, 2.05, .03), mesh(sph(.14), mat(0xf4c9a0), 0, 2.15, .05), mesh(new THREE.BoxGeometry(.3,.26,.02), mat(0x9a93a8), 0, 1.88, .05));
-  thing(g, pic, .2, -3.16, 1, 3, .3, () => showCard(`<div class="kicker">ON NANA'S WALL</div><h2>Your grandmother</h2><p>A drawing of her, smiling, with the Wind Bell behind her. Nana keeps it where the morning light hits it.</p>`, 'Okay'));
+  thing(g, pic, .2, -3.16, 1, 3, .3, () => showCard(`<div class="kicker">ON NANA'S WALL</div><h2>Your grandmother</h2><p>A drawing of her, smiling, with the Wind Bell behind her. Nana keeps it where the morning light hits it.</p>`, 'Okay'), 'A picture: tap to look');
   // seedlings on the windowsill: one seed a day
   const pots = G(mesh(new THREE.BoxGeometry(1.5,.06,.3), wood, 0, 1.3, 0)); [-.5,0,.5].forEach(x => { pots.add(mesh(new THREE.CylinderGeometry(.11,.08,.16,10), mat(0xc0703f), x, 1.41, 0)); pots.add(mesh(sph(.09), mat(0x7fd88a), x, 1.55, 0)); });
-  thing(g, pots, -1.2, -3.0, 1.6, 1.9, .5, () => pickSeeds('nanaSill'));
+  thing(g, pots, -1.2, -3.0, 1.6, 1.9, .5, () => pickSeeds('nanaSill'), 'Seedlings: tap for a seed');
   // a braided rug
   const rug = mesh(new THREE.CylinderGeometry(1.3,1.3,.03,28), mat(0xd9825b), 0, .02, 0); g.add(mesh(new THREE.CylinderGeometry(1,1,.035,28), mat(0xfff1d6), 0, .02, .4)); rug.position.z = .4; g.add(rug);
 }
@@ -1150,22 +1150,22 @@ function exitRoom() { const R = ROOMS[S.room]; S.room = null; S.where = 'home'; 
   const wood = mat(0xc98f58), dark = mat(0x9b6b4a);
   // the counter, with jars of seeds
   const counter = G(mesh(new THREE.BoxGeometry(3,.9,.8), mat(0x86c7ff), 0, .45, 0), mesh(new THREE.BoxGeometry(3.1,.08,.9), wood, 0, .94, 0)); [0xffc857,0x8fdc8a,0xc9b6ff,0xff8fa3].forEach((c, i) => { counter.add(mesh(new THREE.CylinderGeometry(.13,.13,.3,12), new THREE.MeshStandardMaterial({ color:0xdff3ff, transparent:true, opacity:.55 }), -1.1 + i*.4, 1.13, .1)); counter.add(mesh(sph(.09), mat(c), -1.1 + i*.4, 1.08, .1)); });
-  thing(g, counter, -.6, -1.4, 3.2, 1.4, 1, () => seedShop());
+  thing(g, counter, -.6, -1.4, 3.2, 1.4, 1, () => seedShop(), 'Seed counter: tap to buy seeds');
   // lemonade
   const lem = G(mesh(new THREE.CylinderGeometry(.14,.12,.34,12), new THREE.MeshStandardMaterial({ color:0xfff3a0, transparent:true, opacity:.8 }), 0, 1.15, 0), mesh(sph(.06), mat(0xffe07a), .05, 1.3, 0));
-  thing(g, lem, .65, -1.35, .5, 1.6, .6, () => HELP.pip.run());
+  thing(g, lem, .65, -1.35, .5, 1.6, .6, () => HELP.pip.run(), 'Lemonade: tap to help Pip');
   // a balance scale
   const scale = G(mesh(new THREE.CylinderGeometry(.03,.05,.5,8), mat(0xd9a441, { metalness:.5 }), 0, 1.23, 0), mesh(new THREE.BoxGeometry(.7,.03,.03), mat(0xd9a441, { metalness:.5 }), 0, 1.48, 0)); [-.33,.33].forEach(x => scale.add(mesh(new THREE.CylinderGeometry(.13,.1,.04,12), mat(0xd9a441, { metalness:.5 }), x, 1.32, 0)));
-  thing(g, scale, 1.25, -1.4, .8, 1.7, .6, () => toast('A balance scale. Put the same weight on both sides and it sits level. Traders have used scales like this for more than 4,000 years.'));
+  thing(g, scale, 1.25, -1.4, .8, 1.7, .6, () => toast('A balance scale. Put the same weight on both sides and it sits level. Traders have used scales like this for more than 4,000 years.'), 'Scale: tap');
   // furniture for sale
   const furn = G(mesh(new THREE.BoxGeometry(.7,.4,.7), mat(0xff8fa3), 0, .3, 0), mesh(new THREE.BoxGeometry(.7,.7,.14), mat(0xff8fa3), 0, .65, -.3), mesh(new THREE.CylinderGeometry(.03,.05,1.3,8), dark, .9, .65, -.2), mesh(new THREE.ConeGeometry(.28,.3,12,1,true), mat(0xfff3a0), .9, 1.4, -.2));
-  thing(g, furn, -2.7, 1.2, 1.9, 1.6, 1.1, () => furnShop());
+  thing(g, furn, -2.7, 1.2, 1.9, 1.6, 1.1, () => furnShop(), 'Furniture: tap to buy');
   // the sign he keeps repainting
   const easel = G(mesh(new THREE.BoxGeometry(1.2,.6,.05), mat(0xfff6e6), 0, 1.25, 0), mesh(new THREE.BoxGeometry(.5,.08,.02), mat(0xff8fa3), -.2, 1.33, .03), mesh(new THREE.BoxGeometry(.3,.08,.02), mat(0x7ec8e3), .25, 1.15, .03)); [-.45,.45].forEach(x => easel.add(mesh(new THREE.BoxGeometry(.06,1.5,.06), dark, x, .75, -.06)));
-  easel.rotation.y = -.5; thing(g, easel, 2.7, .6, 1.3, 1.7, .8, () => toast('Pip is painting his shop sign. So far he has spelled SHOP three different ways.'));
+  easel.rotation.y = -.5; thing(g, easel, 2.7, .6, 1.3, 1.7, .8, () => toast('Pip is painting his shop sign. So far he has spelled SHOP three different ways.'), "Pip's sign: tap");
   // his first coin
   const jar = G(mesh(new THREE.BoxGeometry(.5,.5,.3), dark, 0, 1.75, 0), mesh(new THREE.CylinderGeometry(.11,.11,.03,16), mat(0xffc857, { metalness:.5 }), 0, 1.75, .17).rotateX(Math.PI/2));
-  thing(g, jar, -2.9, -3.1, .7, 2.2, .4, () => toast('The first coin Pip ever earned, in a frame. Lots of shopkeepers keep theirs.'));
+  thing(g, jar, -2.9, -3.1, .7, 2.2, .4, () => toast('The first coin Pip ever earned, in a frame. Lots of shopkeepers keep theirs.'), 'A framed coin: tap');
   // shelves of goods on the back wall
   const sh = G(); [1.2, 1.9].forEach(y => { sh.add(mesh(new THREE.BoxGeometry(2.4,.06,.35), wood, 0, y, 0)); [0xffc857,0x8fdc8a,0xff8fa3,0xc9b6ff,0x7ec8e3].forEach((c, i) => sh.add(mesh(new THREE.BoxGeometry(.3,.3,.25), mat(c), -.9 + i*.45, y + .18, 0))); }); sh.position.set(-.9, 0, -3.0); g.add(sh);
 }
@@ -4127,7 +4127,7 @@ function tickFrame() {
     if (u.flee > 0) { u.flee = Math.max(0, u.flee - dt); b.position.y += Math.sin(u.flee / 1.2 * Math.PI) * 1.5; } });
   lobes.forEach(L => { if (!L.rise) return; L.rise = Math.max(0, L.rise - dt / 2.5); const k = 1 - L.rise; L.g.position.y = -5 * (1 - k) * (1 - k); if (!L.rise) { L.g.position.y = 0; L.extra.forEach(o => o.visible = true); burst(new THREE.Vector3(L.e.x, .5, L.e.z), 0x8fdc8a, 30); } });
   if (lighthouse && lighthouse.visible) { const nb = Math.min(1, Math.max(0, (hour() - 18.5) / 1.5)); lighthouse.userData.pivot.rotation.y = now * .8; lighthouse.userData.beam.material.opacity = .04 + nb * .14; }
-  animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt); updatePet(dt, now); mythAnimate(dt, now); squareTick(dt, now); hintTick(dt, now);
+  animatePools(now); if (tapMark.userData.t < 1) { tapMark.userData.t = Math.min(1, tapMark.userData.t + dt * 1.6); const k = tapMark.userData.t; tapMark.scale.setScalar(.6 + k * 1.2); tapMark.material.opacity = .8 * (1 - k); } animateBugs(now, dt); updatePet(dt, now); mythAnimate(dt, now); squareTick(dt, now); hintTick(dt, now); if (HINT_SKIP) nearTick(dt);
   { const sp = player.position.distanceTo(lastPP) / Math.max(dt, .001); lastPP.copy(player.position); const sc = player.userData.inner?.userData.scarf;
     if (sc) { let seg = sc, i = 0; while (seg && seg.children.length) { const k = Math.min(1, sp / 4); seg.rotation.x = -.15 - k * (.35 + i * .12) + Math.sin(now * (6 + i) + i) * (.06 + k * .12); seg = seg.children.find(c => c.isGroup); i++; } } }
   if (lanternFF.length) { const nf = Math.min(1, Math.max(0, (hour() - 19) / 2)); lanternFF.forEach((f, i) => { f.visible = nf > .2; const a = now * .8 + i * .78; f.position.set(Math.cos(a) * (.55 + Math.sin(now + i) * .15), 1.4 + Math.sin(now * 1.3 + i) * .45, Math.sin(a) * (.55 + Math.cos(now + i) * .15)); f.material.opacity = nf * (.5 + Math.sin(now * 4 + i) * .5); }); }
@@ -5088,12 +5088,12 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   fnt.add(mesh(new THREE.CylinderGeometry(.55, .55, .04, 24), water.material, 0, 1.5, 0));
   fnt.add(mesh(sph(.13), stone, 0, 1.68, 0));
   for (let i = 0; i < 10; i++) { const d = mesh(sph(.05), new THREE.MeshBasicMaterial({ color:0xdff3ff, transparent:true, opacity:.85 }), 0, 1.5, 0); d.userData.ph = i / 10; fnt.add(d); squareBits.drops.push(d); }
-  const fh = hitBox(3, 1.6, 3); fh.position.y = .8; fnt.add(fh); deco(fh, wishFountain);
+  const fh = hitBox(3, 1.6, 3); fh.position.y = .8; fnt.add(fh); deco(fh, wishFountain).userData.label = 'Fountain: tap to make a wish';
   // benches around the fountain: sit and let time pass faster
   [55, 235, 305].map(d => [Math.cos(d * Math.PI / 180) * 3, Math.sin(d * Math.PI / 180) * 3]).forEach(([x, z]) => { const b = new THREE.Group(); b.position.set(x, 0, z); faceCenter(b, x, z); g.add(b); const w = mat(0xc98f58);
     b.add(mesh(new THREE.BoxGeometry(1.3, .08, .42), w, 0, .42, 0)); b.add(mesh(new THREE.BoxGeometry(1.3, .34, .07), w, 0, .66, -.2));
     [-.55, .55].forEach(sx => b.add(mesh(new THREE.BoxGeometry(.07, .42, .38), mat(0x5a3a28), sx, .21, 0)));
-    const h = hitBox(1.4, .9, .8); h.position.y = .45; b.add(h); deco(h, () => sitBench(b)); });
+    const h = hitBox(1.4, .9, .8); h.position.y = .45; b.add(h); deco(h, () => sitBench(b)).userData.label = 'Bench: tap to sit'; });
   // lamp posts that glow at night
   [75, 170, 250].forEach(deg => { const a = deg * Math.PI / 180, x = Math.cos(a) * 4.9, z = Math.sin(a) * 4.9, l = new THREE.Group(); l.position.set(x, 0, z); g.add(l);
     l.add(mesh(new THREE.CylinderGeometry(.06, .08, 1.9, 8), mat(0x3b2f4a), 0, .95, 0)); l.add(mesh(new THREE.BoxGeometry(.3, .34, .3), glow(0xffe7a8), 0, 2.02, 0)); l.add(mesh(new THREE.ConeGeometry(.26, .2, 4), mat(0x3b2f4a), 0, 2.29, 0).rotateY(Math.PI/4));
@@ -5104,19 +5104,19 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   [-.6, .6].forEach(x => nb.add(mesh(new THREE.CylinderGeometry(.06, .07, 1.6, 8), mat(0x9b6b4a), x, .8, 0)));
   nb.add(mesh(new THREE.BoxGeometry(1.5, .95, .08), mat(0xc98f58), 0, 1.35, 0)); nb.add(mesh(new THREE.BoxGeometry(1.64, .1, .2), mat(0x8a5a3a), 0, 1.88, 0));
   { const f = boardFace('Notices', 1.4, .85, 'notice'); f.position.set(0, 1.35, .045); nb.add(f); }
-  const nh = hitBox(1.7, 2, .6); nh.position.y = 1; nb.add(nh); deco(nh, openNotice);
+  const nh = hitBox(1.7, 2, .6); nh.position.y = 1; nb.add(nh); deco(nh, openNotice).userData.label = 'Notice board: tap to read';
   // Pip's cart: seeds and furniture, restocked every morning
   const cart = new THREE.Group(); cart.position.set(3.7, 0, -3.1); faceCenter(cart, 3.7, -3.1); g.add(cart);
   cart.add(mesh(new THREE.BoxGeometry(1.5, .55, .8), mat(0x86c7ff), 0, .75, 0)); [-.6, .6].forEach(x => { const wh = mesh(new THREE.TorusGeometry(.28, .06, 8, 16), mat(0x5a3a28), x, .3, .42); cart.add(wh); });
   [-.62, .62].forEach(x => cart.add(mesh(new THREE.CylinderGeometry(.04, .04, 1.2, 6), mat(0xfff1d6), x, 1.55, -.3)));
   const aw = mesh(new THREE.BoxGeometry(1.6, .08, .9), mat(0xff8fa3), 0, 2.15, -.05); aw.rotation.x = .18; cart.add(aw);
   [[-.4, 0xffc857], [0, 0x8fdc8a], [.4, 0xc9b6ff]].forEach(([x, c]) => cart.add(mesh(new THREE.BoxGeometry(.28, .2, .22), mat(c), x, 1.13, .1)));
-  const ch = hitBox(1.7, 2.2, 1.1); ch.position.y = 1.1; cart.add(ch); deco(ch, pipCart);
+  const ch = hitBox(1.7, 2.2, 1.1); ch.position.y = 1.1; cart.add(ch); deco(ch, pipCart).userData.label = "Pip's cart: tap to shop";
   // two planters by the entrance: Pip tucks a spare seed packet in one each day
   [[-1.37, 4.14], [-.78, 3.21]].forEach(([x, z], i) => { const p = new THREE.Group(); p.position.set(x, 0, z); p.rotation.y = 1.01; g.add(p); // lining the right side of the entrance
     p.add(mesh(new THREE.BoxGeometry(.8, .4, .5), mat(0xc98f58), 0, .2, 0));
     for (let k = 0; k < 4; k++) { p.add(mesh(new THREE.CylinderGeometry(.015, .015, .25, 4), mat(0x4fb46a), -.27 + k * .18, .5, 0)); p.add(mesh(sph(.07), mat([0xff8fa3, 0xfff3a0, 0xc9b6ff, 0xffffff][k]), -.27 + k * .18, .64, 0)); }
-    const h = hitBox(.9, .8, .6); h.position.y = .4; p.add(h); deco(h, () => planterSeed(i)); });
+    const h = hitBox(.9, .8, .6); h.position.y = .4; p.add(h); deco(h, () => planterSeed(i)).userData.label = 'Planter: tap'; });
   // the sign at the entrance (a Keeper-approved name replaces it)
   const sg = signBoard('Town Square'); sg.position.set(...SQ_SIGN); g.add(sg); squareBits.sign = sg;
   const sh = hitBox(1.7, 1.9, .5); sh.position.y = 1; sg.add(sh); deco(sh, () => showCard(`<div class="kicker">THE TOWN SQUARE</div><h2>Where the neighbors gather</h2><p>Towns have gathered around open squares for thousands of years. In ancient Athens it was the agora: a marketplace where people traded, talked, and argued about big ideas. In Rome it was the Forum, the center of public life.</p><p>In Sky Garden, the square is where the village comes together: markets, votes, festivals, and news.</p>`, 'Okay'));
@@ -5428,6 +5428,32 @@ function hintTick(dt, now) { if (!HINT_SKIP || (hintT += dt) < 1) return; hintT 
       const b = new THREE.Box3().setFromObject(o), c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + .3; burst(c, 0xffe07a, 18); chime(1175);
       toast(o.userData.kind === 'npc' ? 'Someone here might have something to say. Tap them to chat.' : 'That sparkle: you have walked past this a few times. Tap it to see what it does.'); } });
   hintNear = near; }
+// name tags: walk near something and a small label says what it is and what tapping does
+var nearEl = null, nearObj = null, nearT = 0;
+function nearLabel(o) { const k = o.userData.kind, u = o.userData;
+  if (u.label) return u.label;
+  if (k === 'npc') return NEIGHBORS[u.id] ? `${NEIGHBORS[u.id].name}: tap to talk` : null;
+  if (k === 'home') return ROOMS[u.room] ? `${ROOMS[u.room].name}: tap to go in` : null;
+  if (k === 'tree') return S.tools.axe ? 'Tree: tap to chop' : 'Tree: you need an axe';
+  if (k === 'rock') return S.tools.pick ? 'Rock: tap to break' : 'Rock: you need a pickaxe';
+  if (k === 'house') return 'Your hut: tap to go in';
+  if (k === 'ship') return 'The Puddle Jumper: tap';
+  return ({ buildsite:'Your home site: tap to build', crate:'Sell crate: tap to sell', sundial:'Sundial: tap', campfire:'Campfire: tap to sleep', workbench:'Tree stump workbench: tap to make things',
+    mailbox:'Mailbox: tap', sign:'Bridge sign: tap', sign2:'Bridge sign: tap', bush:'Bush: tap to cut grass', dig:'Gold sparkle: tap to dig', fruitTree:'Fruit tree: tap to pick', dock:'Dock: tap to fish',
+    door:'Doormat: tap to go outside', roomdoor:'Doormat: tap to go outside', bed:'Your bed: tap to sleep', shelf:'Shelf: tap', kiln:'Kiln: tap to fire clay', furnace:'Furnace: tap to melt metal',
+    site:'Building site: tap', ship2:'The Puddle Jumper: tap to fly home', pot:'Salt pot: tap', windmill:'Windmill: tap', easel:"Lumen's easel: tap", darkroom:"Lumen's dark room: tap", greatbell:'The Great Bell: tap',
+    visitor:'A traveler: tap to talk', stakes:'Fence stakes: tap' })[k] || (k === 'claypit' ? 'Clay: tap to scoop' : k === 'ore' ? 'Ore: tap to dig' : null); }
+function nearTick(dt) { if (!nearEl) { nearEl = document.createElement('div'); nearEl.className = 'neartag'; document.body.appendChild(nearEl); }
+  const off = !playing || cine || fish3 || buildMode || (flight && flight.on) || $('veil').classList.contains('show') || $('dialog').classList.contains('show') || document.querySelector('.presents');
+  if (off) { nearEl.style.opacity = 0; nearObj = null; return; }
+  if ((nearT += dt) > .25) { nearT = 0; let best = null, bd = 2.4; const p = new THREE.Vector3(), tg = typeof questTarget === 'function' ? questTarget() : null;
+    tappables().forEach(o => { if (['pickup', 'tile', 'pet', 'piece', 'spot'].includes(o.userData.kind)) return; o.getWorldPosition(p); if (Math.abs(p.y - player.position.y) > 2.5) return;
+      const d = Math.hypot(p.x - player.position.x, p.z - player.position.z); if (d < bd && nearLabel(o)) { bd = d; best = o; } });
+    nearObj = best; if (best) nearEl.textContent = nearLabel(best); }
+  if (!nearObj) { nearEl.style.opacity = 0; return; }
+  const b = new THREE.Box3().setFromObject(nearObj), c = b.getCenter(new THREE.Vector3()); c.y = Math.min(b.max.y, c.y + 1.6) + .25; c.project(camera);
+  if (c.z > 1) { nearEl.style.opacity = 0; return; }
+  nearEl.style.left = `${(c.x + 1) / 2 * innerWidth}px`; nearEl.style.top = `${Math.max(70, (1 - c.y) / 2 * innerHeight)}px`; nearEl.style.opacity = 1; }
 function tappables() { const out = new Set(); const walk = o => { if (!o.visible) return; if (o.userData && o.userData.kind) { out.add(o); } o.children.forEach(walk); };
   [...clickables, ...lateClicks, ...digGroups].forEach(walk); decos.forEach(d => { let v = true; for (let o = d; o; o = o.parent) if (!o.visible) v = false; if (v) out.add(d); }); return [...out]; }
 window.__sg = { VERSION, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };

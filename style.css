@@ -341,3 +341,8 @@ html, body, * { -webkit-user-select:none; user-select:none; -webkit-touch-callou
 canvas { touch-action:none; }
 input, textarea, select { -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
 input, textarea, select { font-size:max(16px, 1em); } /* iPhone zooms in on any box with smaller text */
+
+/* name tags over the thing you're standing near */
+.neartag { position:fixed; transform:translate(-50%, -100%); z-index:2; pointer-events:none; background:rgba(59,47,74,.86); color:#fff; font-weight:700; font-size:14px; padding:3px 12px; border-radius:999px; white-space:nowrap; opacity:0; transition:opacity .2s; box-shadow:0 4px 12px rgba(30,20,50,.25); }
+.neartag::after { content:''; position:absolute; left:50%; bottom:-5px; margin-left:-5px; border:5px solid transparent; border-top-color:rgba(59,47,74,.86); border-bottom:0; }
+.on-title .neartag, .in-setup .neartag { display:none; }
