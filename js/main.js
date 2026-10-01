@@ -30,6 +30,8 @@ import { VILLAGERS, VILLAGER_LOVES, VILLAGER_LOOK, RECIPES, BOOKS, XYLO, XYLO_NA
 Object.assign(NEIGHBORS, VILLAGERS); Object.assign(LOVES, VILLAGER_LOVES);
 RECIPES.forEach(r => ITEMS[r.id] = { name:r.name, sell:r.sell, kind:'dish' });
 Object.assign(AHA, FESTIVAL_AHA);
+import { MEM_ART } from '../data/memart.js';
+Object.keys(MEM_ART).forEach(k => { if (AHA[k]) Object.assign(AHA[k], MEM_ART[k]); }); // pictures and hooks for the Memory cards
 INSECTS.forEach(b => ITEMS[b.id] = { name:b.name, sell:b.sell, kind:'bug' }); BUTTERFLIES.forEach(b => ITEMS[b.id] = { name:b.name, sell:50, kind:'bug' });
 SPECIALTIES.forEach(sp => { ITEMS[sp.id] = { name:sp.name, sell:HOME_PRICE, kind:'specialty' }; FINDS[sp.id] = { fact:sp.fact, hint:'Every island grows one specialty. Trade with friends to get the others.' }; });
 // heirloom flowers are named after the island they came from, so register any we hold
