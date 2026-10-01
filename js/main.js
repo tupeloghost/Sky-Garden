@@ -1488,8 +1488,11 @@ function showCard(html, btn='Okay', onClose) {
   $('card').className = 'card ' + (/ALREADY KNEW/.test(kick) ? 'k-recall' : /FESTIVAL/.test(kick) ? 'k-fest' : /STAR|OBSERVATORY|NIGHT SKY/.test(kick) ? 'k-star' : /MEMORY|STORY|TALE|SECRET|QUESTION/.test(kick) ? 'k-mem' : /LETTER|CHAPTER/.test(kick) ? 'k-letter' : 'k-plain');
   if (!$('veil').classList.contains('show')) { const c = $('card'); c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); } // pops in when a menu opens
   if (cardCleanup) { cardCleanup(); cardCleanup = null; }
+  btn = { 'Got it':'Okay', Done:'Close', Later:'Not now', 'Never mind':'Not now', Cancel:'Not now' }[btn] || btn; // a few words for closing, used the same way everywhere
   $('card').innerHTML = html + (btn ? `<button id="cardBtn">${btn}</button>` : '');
   $('veil').classList.add('show'); cardClose = onClose;
+  // rows you can tap get an arrow; rows that are only information look like plain text (checked once the caller has wired its buttons)
+  setTimeout(() => document.querySelectorAll('#card .jlist button, #card .igrid .itile').forEach(b => { const tap = !!b.onclick && !b.classList.contains('locked'); b.classList.toggle('plain', !tap); b.classList.toggle('tap', tap && !!b.closest('.jlist')); if (!tap) b.tabIndex = -1; }), 0);
   if (btn) $('cardBtn').onclick = () => { hideCard(); const f = cardClose; cardClose = null; if (f) f(); };
 }
 function ahaHtml(id) {
@@ -1512,7 +1515,7 @@ function lessonHtml(a) {
   return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2>${a.did ? `<h4>What you did</h4><p>${a.did}</p>` : ''}<h4>The real story</h4><p>${a.real}</p><h4>Where you see it today</h4><p>${a.today}</p>`;
 }
 function collectionList(title, kicker, items, have, show) {
-  showCard(`<div class="kicker">${kicker}</div><h2>${title}</h2><div class="jlist">${items.map(x => have.includes(x.id) ? `<button data-cl="${x.id}">${x.name || x.title}</button>` : `<button class="locked">??? Not found yet</button>`).join('')}</div>`, 'Back', openJournal);
+  showCard(`<div class="kicker">${kicker}</div><h2>${title}</h2><div class="jlist">${items.map(x => have.includes(x.id) ? `<button data-cl="${x.id}">${x.name || x.title}</button>` : `<button class="locked">Not found yet</button>`).join('')}</div>`, 'Back', openJournal);
   document.querySelectorAll('[data-cl]').forEach(b => b.onclick = () => show(items.find(x => x.id === b.dataset.cl)));
 }
 let quietFind = false; // the fishing reveal shows its own fact
@@ -1555,7 +1558,7 @@ function allCats() {
 }
 function openCategory(name) {
   const c = collectionCats().find(x => x.name === name), got = c.ids.filter(c.has).length;
-  showCard(`<div class="kicker">COLLECTIONS</div><h2>${name}: ${got} of ${c.ids.length}</h2><div class="jlist">${c.ids.map(k => c.has(k) ? `<button data-ck="${k}">${name === 'Bugs' ? icon(k) + ' ' : ['Crops','Fruit','Fish','Furniture','Dishes'].includes(name) ? icon(k, ITEMS[k]?.kind) + ' ' : ''}${c.label(k)}</button>` : `<button class="locked">??? <span class="sub">${c.hint(k)}</span></button>`).join('')}</div>`, 'Back', openJournal);
+  showCard(`<div class="kicker">COLLECTIONS</div><h2>${name}: ${got} of ${c.ids.length}</h2><div class="jlist">${c.ids.map(k => c.has(k) ? `<button data-ck="${k}">${name === 'Bugs' ? icon(k) + ' ' : ['Crops','Fruit','Fish','Furniture','Dishes'].includes(name) ? icon(k, ITEMS[k]?.kind) + ' ' : ''}${c.label(k)}</button>` : `<button class="locked"><span class="sub">${c.hint(k)}</span></button>`).join('')}</div>`, 'Back', openJournal);
   document.querySelectorAll('[data-ck]').forEach(b => b.onclick = c.open(b.dataset.ck));
 }
 const MONTH_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1620,14 +1623,14 @@ function openJournal() {
   const cats = collectionCats(), tot = cats.reduce((a, c) => a + c.ids.length, 0), got = cats.reduce((a, c) => a + c.ids.filter(c.has).length, 0);
   showCard(`<div class="kicker">COLLECTIONS: YEAR ${islandYear()} ON YOUR ISLAND</div><h2>${got} of ${tot} found</h2><p>Everything you have discovered in the sky. Tap a group to see what you have and what is still out there.</p>
     <div style="height:10px;border-radius:99px;background:#eadfd0;margin-top:10px;overflow:hidden"><div style="height:100%;width:${Math.round(got/tot*100)}%;background:#ffc857"></div></div>
-    <button id="friendsBtn" class="ghost" style="margin-top:10px">Friends</button> ${featureOn('journey') ? '<button id="storyBtn" class="ghost" style="margin-top:10px">Your story</button>' : ''}
-    <div class="jlist">${cats.map(c => { const n = c.ids.filter(c.has).length; return `<button data-cat="${c.name}">${n === c.ids.length ? '✓ ' : ''}${c.name} <span class="sub">${n} of ${c.ids.length}</span></button>`; }).join('')}</div>`, 'Close');
+    <button id="friendsBtn" class="ghost" style="margin-top:10px">What your neighbors like</button> ${featureOn('journey') ? '<button id="storyBtn" class="ghost" style="margin-top:10px">Your story</button>' : ''}
+    <div class="jlist">${cats.map(c => { const n = c.ids.filter(c.has).length; return `<button data-cat="${c.name}">${c.name} <span class="sub">${n === c.ids.length ? `all ${n} found` : `${n} of ${c.ids.length} found`}</span></button>`; }).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => openCategory(b.dataset.cat));
   if ($('storyBtn')) $('storyBtn').onclick = openStory;
   $('friendsBtn').onclick = openFriends;
 }
 function openJournalOld() {
-  const items = AHA_ORDER.map(id => S.aha.includes(id) ? `<button data-id="${id}">${AHA[id].title}${S.used.includes(id) ? ' <span class="sub">★ used again</span>' : ''}</button>` : `<button class="locked">??? Not found yet</button>`).join('');
+  const items = AHA_ORDER.map(id => S.aha.includes(id) ? `<button data-id="${id}">${AHA[id].title}${S.used.includes(id) ? ' <span class="sub">★ used again</span>' : ''}</button>` : `<button class="locked">Not found yet</button>`).join('');
   showCard(`<div class="kicker">MEMORY JOURNAL</div><h2>${S.aha.length} of ${AHA_ORDER.length} memories</h2><p>Everything you have brought back to the sky.</p><div class="jlist">${S.built.includes('observatory') ? `<button id="starList">Star Chart <span class="sub">${S.charted.length} of ${CONSTELLATIONS.length} charted</span></button>` : ''}${items}</div>`, 'Close');
   if ($('starList')) $('starList').onclick = openStarList;
   const extra = [
@@ -2912,7 +2915,7 @@ function starHtml(c) {
 }
 function openStarList() {
   showCard(`<div class="kicker">STAR CHART</div><h2>${S.charted.length} of ${CONSTELLATIONS.length} charted</h2><p>Chart them at the Observatory after 8 PM. Each one only comes out in certain months.</p>
-    <div class="jlist">${CONSTELLATIONS.map(c => S.charted.includes(c.id) ? `<button data-sc="${c.id}">${c.name}</button>` : `<button class="locked">??? <span class="sub">out in ${c.months.map(m => MONTH_NAMES[m-1].slice(0,3)).join(', ')}</span></button>`).join('')}</div>`, 'Back', openJournal);
+    <div class="jlist">${CONSTELLATIONS.map(c => S.charted.includes(c.id) ? `<button data-sc="${c.id}">${c.name}</button>` : `<button class="locked"><span class="sub">out in ${c.months.map(m => MONTH_NAMES[m-1].slice(0,3)).join(', ')}</span></button>`).join('')}</div>`, 'Back', openJournal);
   document.querySelectorAll('[data-sc]').forEach(b => b.onclick = () => showCard(starHtml(CONSTELLATIONS.find(c => c.id === b.dataset.sc)), 'Back', openStarList));
 }
 function traceStars(c) {

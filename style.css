@@ -346,3 +346,13 @@ input, textarea, select { font-size:max(16px, 1em); } /* iPhone zooms in on any 
 .neartag { position:fixed; transform:translate(-50%, -100%); z-index:2; pointer-events:none; background:rgba(59,47,74,.86); color:#fff; font-weight:700; font-size:14px; padding:3px 12px; border-radius:999px; white-space:nowrap; opacity:0; transition:opacity .2s; box-shadow:0 4px 12px rgba(30,20,50,.25); }
 .neartag::after { content:''; position:absolute; left:50%; bottom:-5px; margin-left:-5px; border:5px solid transparent; border-top-color:rgba(59,47,74,.86); border-bottom:0; }
 .on-title .neartag, .in-setup .neartag { display:none; }
+
+/* menus: what you can tap looks like a button with an arrow; plain information looks like text */
+.jlist button.tap { position:relative; padding-right:34px; }
+.jlist button.tap::after { content:'›'; position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:22px; font-weight:800; color:#b79a78; }
+.jlist button.plain { background:transparent; box-shadow:none; border:0; border-bottom:1.5px solid var(--line); border-radius:0; cursor:default; padding:8px 4px; font-weight:600; }
+.jlist button.plain:active { transform:none; }
+.jlist button.plain.goal { border:0; border-radius:14px; padding:8px 12px; } .jlist button.goal.plain:not(.done) { background:var(--surface); } .jlist button.goal.plain.done { background:#eaf8e6; }
+.jlist .locked { opacity:.55; }
+/* phones: keep the words on the top buttons (they wrap to a second line if they need to) */
+@media (max-width:520px) { .pill .lbl { display:inline; } #fbBtn .lbl { display:none; } .row.acts { flex-wrap:wrap; } }
