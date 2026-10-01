@@ -266,7 +266,7 @@ const QUESTIONS = [
     a:['Only nice birds','Everybody','Start with the crow'], r:["Hmm. But then who is nice first?", "Everybody! Even the crow. Deep breath.", "The crow?! Brave. Okay. Tomorrow."] },
 ];
 const QUEST3 = [
-  "Earn 300 coins. Then tap the sign on the north edge of Orchard Isle.",
+  "Earn 300 coins. Then tap the sign at the far edge of Orchard Isle.",
   "Walk across the new bridge to Windmill Isle. Talk to the mole twins.",
   "Tap the windmill to fix its gears.",
   "Tap the windmill to lift the millstone.",
@@ -276,7 +276,7 @@ const QUEST3 = [
   "Chapter 3 done! Night Isle is coming.",
 ];
 const QUEST4 = [
-  "After 8 PM, cross the glowing bridge east of Windmill Isle. Talk to Lumen.",
+  "After 8 PM, cross the glowing bridge on the right side of Windmill Isle. Talk to Lumen.",
   "Tap Lumen's easel to sort her moon paintings.",
   "Tap Lumen's little black house.",
   "Tap the purple crystals.",
@@ -308,7 +308,7 @@ const CHIMES = [ // length as a fraction of the big chime; simple = sweet
 
 const QUEST5 = [
   "Talk to Captain Drizzle on Orchard Isle.",
-  "Tap the ship on Orchard Isle to fly north.",
+  "Tap the ship on Orchard Isle to fly to the Old Heart.",
   "Tap the fallen bell to lift it.",
   "Tap the pile of wooden beams next to the bell to build a frame.",
   "Tap the pile of wooden beams again to fix the gears.",

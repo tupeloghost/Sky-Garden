@@ -356,3 +356,10 @@ input, textarea, select { font-size:max(16px, 1em); } /* iPhone zooms in on any 
 .jlist .locked { opacity:.55; }
 /* phones: keep the words on the top buttons (they wrap to a second line if they need to) */
 @media (max-width:520px) { .pill .lbl { display:inline; } #fbBtn .lbl { display:none; } .row.acts { flex-wrap:wrap; } }
+
+/* goal arrow: shows at the screen edge when your goal is out of view */
+#goalArrow { position:fixed; z-index:3; transform:translate(-50%,-50%); pointer-events:none; display:none; flex-direction:column; align-items:center; gap:0; font-family:'Baloo 2',sans-serif; }
+#goalArrow.show { display:flex; }
+#goalArrow span { font-size:30px; line-height:1; color:#ffc857; text-shadow:0 2px 0 #3b2f4a, 0 0 10px #ffc857aa; display:block; animation:pulse2 1.4s ease-in-out infinite; }
+#goalArrow b { font-size:12px; color:#fff; background:#3b2f4acc; border-radius:8px; padding:0 7px; }
+body.on-title #goalArrow, body.in-setup #goalArrow, .building #goalArrow { display:none !important; }

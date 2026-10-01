@@ -322,7 +322,7 @@ export default {
       const players = await all(`SELECT id, created, updated, json_extract(data,'$.name') AS name, json_extract(data,'$.quest') AS q1, json_extract(data,'$.q2') AS q2, json_extract(data,'$.q3') AS q3, json_extract(data,'$.q4') AS q4, json_extract(data,'$.q5') AS q5,
         json_extract(data,'$.day') AS day, json_extract(data,'$.home') AS home, json_extract(data,'$.founder.code') AS founder, json_extract(data,'$.missions') AS missions, json_array_length(json_extract(data,'$.playDates')) AS playdays FROM saves ORDER BY updated DESC LIMIT 200`);
       const founders = await all('SELECT t.code, t.label, t.used_at, t.level, t.paused, t.revoked, t.myth, (SELECT COUNT(*) FROM blessings b JOIN sightings s ON s.id = b.sighting WHERE s.code = t.code) AS seen, json_extract(s.data,\'$.name\') AS name FROM tester_codes t LEFT JOIN saves s ON s.id = t.used_by ORDER BY t.created');
-      const feedback = await all('SELECT at, player, mood, note, place, day FROM feedback ORDER BY at DESC LIMIT 60');
+      const feedback = await all('SELECT f.id, f.at, f.player, f.mood, f.note, f.place, f.day, (SELECT t.changed FROM thanks t WHERE t.feedback = f.id) AS thanked, (SELECT t.claimed FROM thanks t WHERE t.feedback = f.id) AS opened FROM feedback f ORDER BY f.at DESC LIMIT 60');
       const bugs = await all('SELECT msg, COUNT(*) AS n, MAX(at) AS last, MAX(place) AS place, MAX(stack) AS stack FROM bugs GROUP BY msg ORDER BY last DESC LIMIT 40');
       const polls = await all('SELECT p.id, p.question, p.options, p.open, p.audience, (SELECT json_group_array(json_object(\'c\', choice, \'n\', n)) FROM (SELECT choice, COUNT(*) AS n FROM votes v WHERE v.poll = p.id GROUP BY choice)) AS counts FROM polls p ORDER BY p.created DESC LIMIT 10');
       const events = await all('SELECT at, code, kind, detail FROM events ORDER BY at DESC LIMIT 300');
@@ -342,7 +342,17 @@ export default {
         out.missions = results.filter(x => missionFor(x.audience, m)).map(({ audience, ...x }) => x);
         Object.assign(out, await EXTRA.me(env, m, H));
       }
+      // thank-you gifts for feedback that led to a change, for any player
+      out.thanks = (await env.DB.prepare('SELECT id, note, changed, coins FROM thanks WHERE player = ? AND claimed = 0 ORDER BY id LIMIT 20').bind((await hashKey(url.searchParams.get('key'))).slice(0, 12)).all()).results;
       return json(out, 200, origin);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/thanks-claim') {
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      if (!KEY_RE.test(b.key || '')) return json({ error: 'bad key' }, 400, origin);
+      const pid = (await hashKey(b.key)).slice(0, 12);
+      for (const id of (Array.isArray(b.ids) ? b.ids : []).slice(0, 20)) await env.DB.prepare('UPDATE thanks SET claimed = 1 WHERE id = ?1 AND player = ?2').bind(int(id, 1, 1e9), pid).run();
+      return json({ ok: true }, 200, origin);
     }
 
     if (request.method === 'POST' && url.pathname === '/appear') {
@@ -417,6 +427,11 @@ export default {
       else if (b.action === 'paused') await env.DB.prepare('UPDATE tester_codes SET paused = ? WHERE code = ?').bind(JSON.stringify((b.value || []).filter(x => ['propose','vote','missions','testisland','myth'].includes(x))), code).run();
       else if (b.action === 'revoke') await env.DB.prepare('UPDATE tester_codes SET revoked = ? WHERE code = ?').bind(b.value ? 1 : 0, code).run();
       else if (await EXTRA.adminAct(env, b, H)) { /* handled privately */ }
+      else if (b.action === 'thank') { // a thank-you gift for one feedback note: what changed, and coins
+        const f = await env.DB.prepare('SELECT id, player, note FROM feedback WHERE id = ?').bind(int(b.id, 1, 1e9)).first(), changed = String(b.changed || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 200);
+        if (!f || !f.player || !changed) return json({ error: 'need a note from a known player, and what changed' }, 400, origin);
+        if (await env.DB.prepare('SELECT id FROM thanks WHERE feedback = ?').bind(f.id).first()) return json({ error: 'already thanked' }, 400, origin);
+        await env.DB.prepare('INSERT INTO thanks (at, player, feedback, note, changed, coins) VALUES (?1, ?2, ?3, ?4, ?5, ?6)').bind(Date.now(), f.player, f.id, String(f.note || '').slice(0, 140), changed, [25, 50, 100, 200].includes(+b.coins) ? +b.coins : 50).run(); }
       else if (b.action === 'myth') await env.DB.prepare('UPDATE tester_codes SET myth = ? WHERE code = ?').bind(MYTHS.includes(b.value) ? b.value : null, code).run();
       else if (b.action === 'mission') { const err = await addMission(env, b); if (err) return json({ error: err }, 400, origin); }
       else if (b.action === 'missionoff') await env.DB.prepare('UPDATE cmissions SET active = 0 WHERE id = ?').bind(int(b.id, 1, 1e9)).run();
