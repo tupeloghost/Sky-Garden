@@ -3720,15 +3720,15 @@ function spotButterfly(g) {
 let sitting = null, danceT = 0; const lastPP = new THREE.Vector3(); const lanternFF = [];
 const onPath = () => S.where === 'home' && (S.builds || []).some(b => (b.p === 'path' || b.p === 'bpath') && Math.abs(player.position.x - b.x) < .5 && Math.abs(player.position.z - b.z) < .5);
 // a nap in the hammock skips ahead a few hours, never past 11 PM
-function napMenu(o) { const h = hour(), opts = [];
-  const nap = to => async () => { closeDialog(); const from = hour(); target = null; pending = null; fadeTo(true, true); await wait(900);
-    S.t = Math.min((23 - 6) / 18, (to - 6) / 18); S.napped = true; save(); drawHud(); await wait(500); fadeTo(false); sfx('heart');
-    const hr = Math.floor(hour()), h12 = ((hr + 11) % 12) + 1; toast(`You napped for ${Math.round(hour() - from)} hours. It is ${h12} ${hr < 12 ? 'AM' : 'PM'}.`); };
-  if (h < 11.5) opts.push({ label:'Nap until noon', fn:nap(12) });
-  if (h < 19.5) opts.push({ label:'Nap until 8 PM', fn:nap(20) });
-  if (h < 22) opts.push({ label:'Nap for 1 hour', fn:nap(h + 1) });
-  if (!opts.length) return toast('It is too late for a nap. Time for bed.');
-  openDialog('Hammock', 'A nap skips ahead in the day. Your crops and the story stay as they are.', opts); }
+function napMenu(o) { const max = Math.floor(23 - hour()); if (max < 1) return toast('It is too late for a nap. Time for bed.');
+  let n = 1; const clock = h => { const hr = Math.floor(h), mn = Math.floor((h - hr) * 6) * 10; return `${((hr + 11) % 12) + 1}:${String(mn).padStart(2, '0')} ${hr < 12 ? 'AM' : 'PM'}`; };
+  const draw = () => { showCard(`<div class="kicker">HAMMOCK</div><h2>How long a nap?</h2>
+      <div class="steppers"><div><button id="npMinus" class="ghost">−</button> <b style="font-size:22px">${n} ${n === 1 ? 'hour' : 'hours'}</b> <button id="npPlus" class="ghost">+</button></div></div>
+      <p style="text-align:center;margin-top:8px">You will wake up at <b>${clock(hour() + n)}</b>.</p><button id="npGo">Nap</button>`, 'Not now');
+    $('npMinus').onclick = () => { n = Math.max(1, n - 1); sfx('click'); draw(); }; $('npPlus').onclick = () => { n = Math.min(max, n + 1); sfx('click'); draw(); };
+    $('npGo').onclick = async () => { hideCard(); target = null; pending = null; fadeTo(true, true); await wait(900);
+      S.t = Math.min((23 - 6) / 18, S.t + n / 18); S.napped = true; save(); drawHud(); await wait(500); fadeTo(false); sfx('heart'); toast(`You napped for ${n} ${n === 1 ? 'hour' : 'hours'}. It is ${clock(hour())}.`); }; };
+  draw(); }
 function usePiece(o) {
   const b = o.userData.b, p = PIECES.find(x => x.id === b.p);
   if (b.p === 'path' || b.p === 'bpath') return toast(TAP_FACTS.path);
