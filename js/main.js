@@ -1698,6 +1698,58 @@ const GOAL_TYPES = {
 };
 // know-how: count what you do; after a few times, show the real skill you've been practicing (one a day, never during the first steps)
 function knowHtml(x) { return `<div class="kicker">YOU JUST LEARNED SOMETHING REAL</div><h2>${x.icon} ${x.title}</h2><h4>What you did</h4><p>${x.did}</p><h4>What that really is</h4><p>${x.real}</p><h4>You see it here too</h4><p>${x.today}</p>`; }
+// --- neighbors as experts: help with their craft by trying things. Nothing is explained until after you've done it. ---
+function helpDone(id, know, thanks) { const first = !(S.helped || []).includes(id); if (first) { S.helped = [...(S.helped || []), id]; S.hearts[id] = Math.min(10, (S.hearts[id] || 0) + 1); }
+  const x = KNOWHOW.find(k => k.id === know), isNew = !(S.know || []).includes(know); if (isNew) { S.know = [...(S.know || []), know]; S.coins += 40; }
+  save(); drawHud(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
+  showCard(`<p style="font-size:18px"><b>${NEIGHBORS[id].name}:</b> "${thanks}"</p>` + knowHtml(x) + (isNew ? '<p style="margin-top:10px"><b>+40 coins.</b> Saved in Collections, under Know-how.</p>' : ''), 'Huh. Neat.'); }
+const HELP = {
+  pip: { label:'Help price the lemonade', run() { const tried = {}; let best = null;
+    const draw = (msg = '"I made 10 cups of lemonade. Each cup cost me 2 coins to make. What should I charge?"') => { const n = Object.keys(tried).length;
+      showCard(`<div class="kicker">HELP PIP</div><h2>🍋 Pip's lemonade</h2><p>${msg}</p><h4>Pick a price for one cup</h4><div class="chips">${[2, 4, 6, 7, 8, 10, 12].map(p => `<button data-pr="${p}" class="${tried[p] != null ? 'ghost' : ''}">${p} coins${tried[p] != null ? ` (earned ${tried[p]})` : ''}</button>`).join('')}</div>
+        ${n >= 3 ? `<button id="hpDone">Go with ${best} coins</button>` : `<p class="sub" style="margin-top:8px">Try a few prices and see what happens.</p>`}`, 'Later');
+      document.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => { const p = +b.dataset.pr, sold = Math.max(0, Math.min(10, 12 - p)), earn = sold * (p - 2); tried[p] = earn; if (best == null || earn > tried[best]) best = p; sfx(sold ? 'coin' : 'click');
+        draw(`${'🥤'.repeat(sold) || 'Nobody came.'}<br><b>At ${p} coins, ${sold} ${sold === 1 ? 'neighbor' : 'neighbors'} bought a cup.</b> ${p === 2 ? 'Pip sold them all, but earned nothing. Each cup cost 2 coins to make.' : sold === 0 ? 'Too pricey. Pip earned nothing.' : `Pip earned ${earn} coins after paying for the lemons.`}`); });
+      if ($('hpDone')) $('hpDone').onclick = () => helpDone('pip', 'pricing', best === 7 ? 'Seven coins! Best day my cart has ever had.' : `${best} coins it is. That earned more than my guess would have!`); };
+    draw(); } },
+  nana: { label:'Help plant the old seeds', run() { const on = { corn:false, beans:false, squash:false };
+    const tell = () => { const { corn, beans, squash } = on, out = [];
+      if (!corn && !beans && !squash) return 'An empty mound of soil. Tap a seed to plant it. Tap again to take it out.';
+      if (corn) out.push('🌽 The corn grows tall.' + (beans ? '' : ' It looks hungry, though. Its leaves are pale.'));
+      if (beans) out.push(corn ? '🫘 The beans climb right up the corn, and the corn turns a deep green.' : '🫘 The beans flop on the ground. They have nothing to climb.');
+      if (squash) out.push('🎃 The squash spreads big leaves over the soil. The ground under them stays damp.' + (corn || beans ? '' : ' It has the mound to itself.'));
+      if (!squash && (corn || beans)) out.push('The bare soil dries out fast in the sun.');
+      return out.join('<br>'); };
+    const draw = () => { const all = on.corn && on.beans && on.squash;
+      showCard(`<div class="kicker">HELP NANA</div><h2>🌱 Grandma's old seeds</h2><p>"Your grandmother planted these three in one mound. I never asked her why. Try them and see what happens."</p>
+        <div class="chips">${[['corn', '🌽 Corn'], ['beans', '🫘 Beans'], ['squash', '🎃 Squash']].map(([k, l]) => `<button data-sd="${k}" class="${on[k] ? '' : 'ghost'}">${on[k] ? '✓ ' : ''}${l}</button>`).join('')}</div>
+        <p class="itinfo">${tell()}</p>${all ? '<button id="hpDone">All three are thriving!</button>' : ''}`, 'Later');
+      document.querySelectorAll('[data-sd]').forEach(b => b.onclick = () => { on[b.dataset.sd] = !on[b.dataset.sd]; sfx('plant'); draw(); });
+      if ($('hpDone')) $('hpDone').onclick = () => helpDone('nana', 'sisters', 'So that is why she did it. Each one helps the other two.'); };
+    draw(); } },
+  drizzle: { label:'Help sail upwind', run() { let up = 0, side = 0, last = '';
+    const draw = (msg = '"See that island? The wind is blowing straight from it, right at us. Get us there."') => { const won = up >= 4 && side === 0;
+      showCard(`<div class="kicker">HELP CAPTAIN DRIZZLE</div><h2>⛵ Into the wind</h2><p>${msg}</p>
+        <p class="itinfo">🏝 The island is <b>${Math.max(0, 4 - up)}</b> away, straight ahead.${side ? ` You have drifted <b>${Math.abs(side)}</b> to the ${side < 0 ? 'left' : 'right'} of it.` : up ? ' You are lined up with it.' : ''}<br>💨 The wind blows from the island toward you.</p>
+        ${won ? '<button id="hpDone">Land ho!</button>' : `<h4>Point the ship</h4><div class="chips"><button data-sl="l">↖ Up and to the left</button><button data-sl="s">↑ Straight at the island</button><button data-sl="r">↗ Up and to the right</button></div>`}`, 'Later');
+      document.querySelectorAll('[data-sl]').forEach(b => b.onclick = () => { const d = b.dataset.sl;
+        if (d === 's') { sfx('click'); return draw('The sail flaps and the ship stops. She will not sail straight into the wind.'); }
+        up = Math.min(4, up + 1); side += d === 'l' ? -1 : 1; sfx('cast'); last = d;
+        draw(up >= 4 && side !== 0 ? `You are level with the island, but ${Math.abs(side)} to the ${side < 0 ? 'left' : 'right'} of it. Start again and turn back sooner.` + ((up = 0, side = 0), '') : `The sail fills! The ship moves up and to the ${d === 'l' ? 'left' : 'right'}.`); });
+      if ($('hpDone')) $('hpDone').onclick = () => helpDone('drizzle', 'tack', 'Ha! You zigzagged like an old sea dog. Left, then right, then left again.'); };
+    draw(); } },
+  lumen: { label:'Help mix the light', run() { const on = { r:false, g:false, b:false }; let step = 0;
+    const draw = () => { const { r, g, b } = on, col = `rgb(${r ? 255 : 30},${g ? 255 : 30},${b ? 255 : 30})`, want = step === 0 ? 'yellow' : 'white', hit = step === 0 ? (r && g && !b) : (r && g && b);
+      const name = r && g && b ? 'white' : r && g ? 'yellow' : r && b ? 'pink-purple (magenta)' : g && b ? 'blue-green (cyan)' : r ? 'red' : g ? 'green' : b ? 'blue' : 'dark';
+      showCard(`<div class="kicker">HELP LUMEN</div><h2>💡 Painting with light</h2><p>"I have three lanterns: red, green, and blue. I need <b>${want}</b> light for my painting. Can you make it?"</p>
+        <div style="height:110px;border-radius:18px;background:#1f2552;display:grid;place-items:center;margin-top:8px"><div style="width:84px;height:84px;border-radius:50%;background:${col};box-shadow:0 0 34px ${col}"></div></div>
+        <p style="text-align:center;font-weight:700;margin-top:6px">The light is ${name}.</p>
+        <div class="chips" style="justify-content:center">${[['r', '🔴 Red'], ['g', '🟢 Green'], ['b', '🔵 Blue']].map(([k, l]) => `<button data-lt="${k}" class="${on[k] ? '' : 'ghost'}">${l}: ${on[k] ? 'on' : 'off'}</button>`).join('')}</div>
+        ${hit ? `<button id="hpDone">${step === 0 ? 'Yellow! Now she needs white' : 'White light!'}</button>` : ''}`, 'Later');
+      document.querySelectorAll('[data-lt]').forEach(x => x.onclick = () => { on[x.dataset.lt] = !on[x.dataset.lt]; chime(on[x.dataset.lt] ? 880 : 660); draw(); });
+      if ($('hpDone')) $('hpDone').onclick = () => { if (step === 0) { step = 1; return draw(); } helpDone('lumen', 'light', 'Red and green made yellow. All three made white. Light is strange and lovely.'); }; };
+    draw(); } },
+};
 function did(act, n = 1) { if (VISIT) return; S.did = S.did || {}; S.did[act] = (S.did[act] || 0) + n; }
 function knowTick() { if (S.tut !== 9 || S.knowDay === S.day || !S.did) return; const x = KNOWHOW.find(k => (S.did[k.act] || 0) >= k.n && !(S.know || []).includes(k.id)); if (!x) return;
   S.know = [...(S.know || []), x.id]; S.knowDay = S.day; S.coins += 40; save(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
@@ -1970,6 +2022,7 @@ function talk(id) {
 }
 function neighborButtons(id) {
   const b = [];
+  if (HELP[id] && S.tut === 9 && !VISIT) b.push({ label:((S.helped || []).includes(id) ? 'Again: ' : '') + HELP[id].label, fn:() => { closeDialog(); HELP[id].run(); } });
   if (id === 'pip') {
     b.push({ label:'Buy seeds', fn:seedShop }, { label:'Furniture', fn:furnShop });
     const o = pipOrder();

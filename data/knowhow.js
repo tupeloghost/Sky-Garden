@@ -43,5 +43,22 @@ const KNOWHOW = [
     did:'You finished your 3 goals, day after day.',
     real:'A short list of steps is called a <b>checklist</b>. Pilots started using one in 1935, so they would never forget a step before takeoff.',
     today:'Pilots still read a checklist before every flight. Doctors use one before surgery.' },
+  // learned by helping a neighbor with their craft (shown right after you help)
+  { id:'pricing', act:'help', n:99, icon:'🍋', title:'You can find the right price',
+    did:'You helped Pip try different prices for his lemonade.',
+    real:'Too high, and almost nobody buys. Too low, and you sell a lot but earn very little on each cup. The best price is in between. How many people want something at a price is called <b>demand</b>.',
+    today:'Shops test prices the same way. That is why prices change.' },
+  { id:'sisters', act:'help', n:99, icon:'🌽', title:'You know plants can help each other',
+    did:'You helped Nana plant corn, beans, and squash together.',
+    real:'These three are called the <b>Three Sisters</b>. Native American farmers have grown them together for hundreds of years. The corn is a pole for the beans to climb. The beans feed the soil. The big squash leaves shade the ground and keep it damp.',
+    today:'Gardeners still plant helpers side by side. It is called companion planting.' },
+  { id:'tack', act:'help', n:99, icon:'⛵', title:'You can sail against the wind',
+    did:'You helped Captain Drizzle reach an island the wind was blowing away from.',
+    real:'A sailboat can not sail straight into the wind. The sail just flaps. So sailors zigzag: a bit to the left, then a bit to the right. Each turn is called a <b>tack</b>.',
+    today:'Watch sailboats on a lake. The ones going upwind are zigzagging.' },
+  { id:'light', act:'help', n:99, icon:'💡', title:'You can mix light',
+    did:'You helped Lumen mix red, green, and blue light.',
+    real:'Light does not mix like paint. Red light and green light make yellow. Red, green, and blue together make white. These three are called <b>RGB</b>.',
+    today:'Every phone and TV screen makes all its colors from tiny red, green, and blue lights.' },
 ];
 export { KNOWHOW };
