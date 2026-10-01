@@ -4,6 +4,7 @@ import { HOWTO, QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, IT
 import { CONSTELLATIONS } from '../data/stars.js';
 import { FINDS } from '../data/finds.js';
 import { FISH } from '../data/fish.js';
+import { KNOWHOW } from '../data/knowhow.js';
 import { icon } from '../data/icons.js';
 import { FEATURES } from '../data/features.js';
 import { ROLLOUT } from '../data/rollout.js';
@@ -1460,6 +1461,12 @@ function noteFind(k) {
   el.classList.add('show'); chime(1047); setTimeout(() => chime(1319), 120);
   clearTimeout(noteFind.t); noteFind.t = setTimeout(() => el.classList.remove('show'), 7000);
 }
+function collTick() { const first = !S.collPaid; S.collPaid = S.collPaid || {};
+  for (const c of collectionCats()) { const n = c.ids.filter(c.has).length, tiers = [...new Set([5, 10, c.ids.length])].filter(t => t <= c.ids.length).sort((a, b) => a - b), paid = S.collPaid[c.name] || 0;
+    if (first) { S.collPaid[c.name] = tiers.filter(t => n >= t).length; continue; } // older games start from where they are
+    if (paid < tiers.length && n >= tiers[paid]) { S.collPaid[c.name] = paid + 1; const full = tiers[paid] === c.ids.length, pay = full ? 200 : paid ? 80 : 40; S.coins += pay; save(); drawHud(); sfx('coin'); chime(1047);
+      toast(full ? `Collections: you found every one of the ${c.name}! +${pay} coins` : `Collections: ${tiers[paid]} ${c.name} found! +${pay} coins`); return; } }
+  if (first) save(); }
 function collectionCats() { return allCats().filter(c => !({ Bugs:'butterflies', Specialties:'specialty', Heirlooms:'heirloom' })[c.name] || featureOn({ Bugs:'butterflies', Specialties:'specialty', Heirlooms:'heirloom' }[c.name])); }
 function allCats() {
   const month = m => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
@@ -1477,6 +1484,7 @@ function allCats() {
     { name:'Star Chart', ids:CONSTELLATIONS.map(c => c.id), has:k => S.charted.includes(k), label:k => CONSTELLATIONS.find(c => c.id === k).name, open:k => () => showCard(starHtml(CONSTELLATIONS.find(c => c.id === k)), 'Back', () => openCategory('Star Chart')), hint:k => `Chart it at the Observatory after 8 PM. Out in ${CONSTELLATIONS.find(c => c.id === k).months.map(month).join(', ')}.` },
     { name:'Library Books', ids:BOOKS.map(b => b.id), has:k => S.read.includes(k), label:k => BOOKS.find(b => b.id === k).title, open:k => () => showCard(lessonHtml({ kicker:'THE LIBRARY', ...BOOKS.find(b => b.id === k) }), 'Back', () => openCategory('Library Books')), hint:() => 'Build the Library. A new book arrives every week.' },
     { name:'Songs', ids:[...SONGS.map(x => x.id), 'penta'], has:k => k === 'penta' ? S.penta : S.songs.includes(k), label:k => k === 'penta' ? 'The Five-Note Scale' : SONGS.find(x => x.id === k).name, open:k => () => showCard(lessonHtml(k === 'penta' ? PENTA_AHA : SONGS.find(x => x.id === k).aha), 'Back', () => openCategory('Songs')), hint:() => 'Build the Music Hall and play the xylophone.' },
+    { name:'Know-how', ids:KNOWHOW.map(x => x.id), has:k => (S.know || []).includes(k), label:k => { const x = KNOWHOW.find(y => y.id === k); return `${x.icon} ${x.title}`; }, open:k => () => showCard(knowHtml(KNOWHOW.find(y => y.id === k)), 'Back', () => openCategory('Know-how')), hint:() => 'You pick these up by doing things, not by looking for them.' },
     { name:'Sayings', ids:SAYINGS.map(x => x.id), has:k => S.sayings.includes(k), label:k => SAYINGS.find(x => x.id === k).text.slice(0, 44) + '...', open:k => () => showCard(sayingHtml(SAYINGS.find(x => x.id === k)), 'Back', () => openCategory('Sayings')), hint:() => 'Build the Temple Garden. Sage shares a new saying each day.' },
   ];
 }
@@ -1685,10 +1693,20 @@ $('buildBtn').onclick = () => setBuildMode(!buildMode);
 const GOAL_TYPES = {
   water: n => `Water ${n} plants`, pick: n => `Pick ${n} crops`, sell: n => `Earn ${n} coins from selling`,
   talk: n => `Talk to ${n} neighbors`, gift: () => 'Give someone a gift', fish: n => `Catch ${n} fish`, fruit: n => `Pick ${n} fruits`,
+  plant: n => `Plant ${n} seeds`, dig: () => 'Dig up a gold sparkle', chop: n => `Chop ${n} trees`, mine: n => `Break ${n} rocks`,
+  wish: () => 'Make a wish at the fountain', sit: () => 'Sit on a bench in the Town Square', ask: () => 'Bring a neighbor what they asked for (see the notice board)',
 };
+// know-how: count what you do; after a few times, show the real skill you've been practicing (one a day, never during the first steps)
+function knowHtml(x) { return `<div class="kicker">YOU ALREADY KNOW HOW</div><h2>${x.icon} ${x.title}</h2><h4>What you did</h4><p>${x.did}</p><h4>In real life</h4><p>${x.real}</p><h4>Where you see it today</h4><p>${x.today}</p>`; }
+function did(act, n = 1) { if (VISIT) return; S.did = S.did || {}; S.did[act] = (S.did[act] || 0) + n; }
+function knowTick() { if (S.tut !== 9 || S.knowDay === S.day || !S.did) return; const x = KNOWHOW.find(k => (S.did[k.act] || 0) >= k.n && !(S.know || []).includes(k.id)); if (!x) return;
+  S.know = [...(S.know || []), x.id]; S.knowDay = S.day; S.coins += 40; save(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
+  showCard(knowHtml(x) + '<p style="margin-top:10px"><b>+40 coins.</b> Saved in Collections, under Know-how.</p>', 'Huh. Neat.', drawHud); }
 function ensureGoals() {
   if (S.goals && S.goals.day === S.day) return;
-  const pool = [['pick',3],['sell',100],['talk',2],['gift',1]];
+  const pool = [['pick',3],['sell',100],['talk',2],['gift',1],['plant',3]];
+  if ((S.digs || []).length) pool.push(['dig',1]); if (S.tools.axe) pool.push(['chop',2]); if (S.tools.pick) pool.push(['mine',2]);
+  if (squareOpen()) pool.push(['wish',1], ['sit',1], ['ask',1]);
   if (!S.sprinklers) pool.push(['water',3]);
   if (S.bridge) pool.push(['fish',2]);
   if (S.bridge && season() !== 3) pool.push(['fruit',2]);
@@ -1696,14 +1714,14 @@ function ensureGoals() {
   S.goals = { day:S.day, list, bonus:false };
 }
 function goal(t, n=1) {
-  mythCount(t, n);
+  mythCount(t, n); did(t, t === 'sell' ? 1 : n);
   lean({ water:'grower', pick:'grower', sell:'trader', talk:'friend', gift:'friend', fish:'explorer', fruit:'explorer' }[t], t === 'sell' ? 1 : n);
   if (!featureOn('goals')) return;
   ensureGoals();
   const g = S.goals.list.find(x => x.t === t && x.have < x.need); if (!g) return;
   g.have = Math.min(g.need, g.have + n);
   if (g.have >= g.need) { S.coins += 20; setTimeout(() => { toast(`Goal done: ${GOAL_TYPES[t](g.need)}! +20 coins`); sfx('coin'); }, 700); }
-  if (!S.goals.bonus && S.goals.list.every(x => x.have >= x.need)) { S.goals.bonus = true; S.coins += 30; setTimeout(() => { toast('All 3 goals done today! +30 bonus coins'); sfx('heart'); }, 2400); }
+  if (!S.goals.bonus && S.goals.list.every(x => x.have >= x.need)) { S.goals.bonus = true; S.coins += 30; did('goals'); setTimeout(() => { toast('All 3 goals done today! +30 bonus coins'); sfx('heart'); }, 2400); }
   drawHud(); save();
 }
 function communityGoal() {
@@ -1871,7 +1889,7 @@ function useTile(i) {
   if (t.s === 0) {
     t.s = 1; sfx('till'); burst(pos, 0xb98a63, 8);
     const c = CROPS[S.sel];
-    if (!tutActive() && c && c.seasons.includes(season()) && S.seeds[S.sel] > 0) { S.seeds[S.sel]--; Object.assign(t, { s:2, c:S.sel, d:0 }); setTimeout(() => sfx('plant'), 150); fx(`🌱 ${c.name}`); }
+    if (!tutActive() && c && c.seasons.includes(season()) && S.seeds[S.sel] > 0) { S.seeds[S.sel]--; Object.assign(t, { s:2, c:S.sel, d:0 }); goal('plant'); setTimeout(() => sfx('plant'), 150); fx(`🌱 ${c.name}`); }
     else if (tutActive()) toast('Tilled! Now tap it to plant.'); else fx('Tilled');
   }
   else if (t.s === 1) {
@@ -1880,7 +1898,7 @@ function useTile(i) {
       if (k2) { S.sel = k2; c = CROPS[k2]; drawHud(); toast(`Planting ${c.name}. To plant something else, tap a seed in the bar at the bottom first.`); } }
     if (!c.seasons.includes(season())) { toast(`${c.name} only grows in ${c.seasons.map(s => SEASONS[s]).join(' and ')}. Pick another seed from the bar below.`); return; }
     if (S.seeds[S.sel] <= 0) { toast('You have no seeds that grow this season. Pip sells seeds at his cart on the Town Square.'); return; }
-    S.seeds[S.sel]--; Object.assign(t, { s:2, c:S.sel, d:0 }); sfx('plant'); if (tutActive()) toast(`Planted ${c.name}. Tap to water.`); else fx(`🌱 ${c.name}`);
+    S.seeds[S.sel]--; Object.assign(t, { s:2, c:S.sel, d:0 }); goal('plant'); sfx('plant'); if (tutActive()) toast(`Planted ${c.name}. Tap to water.`); else fx(`🌱 ${c.name}`);
   } else {
     const c = CROPS[t.c];
     if (t.d >= c.days) {
@@ -2226,7 +2244,7 @@ function dig(i) {
   d.n++; sfx('dig'); burst(digGroups[i].position, 0x9b6b4a, 8);
   if (d.n < 3) { toast(`${LAYERS[d.n - 1]} Tap again to dig deeper.`); drawDigs(); save(); return; }
   const r = RELICS[S.relics];
-  S.relics++; S.digs.splice(i, 1);
+  S.relics++; S.digs.splice(i, 1); goal('dig');
   if (S.relics >= RELICS.length) { S.quest = Math.max(S.quest, 2); S.digs = []; }
   drawDigs(); drawHud(); save();
   toast(`${LAYERS[2]} You found ${r.name}!`);
@@ -3137,13 +3155,13 @@ function chopTree(t) {
   if (!canCarry('log')) return bagFull();
   S.chopped[key] = S.day; t.userData.shake = 1; sfx('chop');
   if (S.chopDay !== S.day) { S.chopDay = S.day; S.chopN = 0; } if (++S.chopN === 7) karma('harmony', -1); const wp = new THREE.Vector3(); t.getWorldPosition(wp);
-  const nl = S.tools.bronzeAxe ? 4 : 3; gain('log', nl, wp.setY(wp.y + 1), true); hintToast();
+  const nl = S.tools.bronzeAxe ? 4 : 3; gain('log', nl, wp.setY(wp.y + 1), true); hintToast(); goal('chop');
 }
 function mineRock(r) {
   if (!S.tools.pick) { toast('You need a stone pickaxe to break rocks. Craft one at the tree stump workbench.'); return; }
   const key = r.userData.key; if (S.chopped[key] === S.day) { toast('You got all the stone from this rock today. Try again tomorrow.'); return; }
   if (!canCarry('stone')) return bagFull();
-  S.chopped[key] = S.day; sfx('stone'); const ns = S.tools.bronzePick ? 5 : 3; gain('stone', ns, r.position.clone(), true); hintToast();
+  S.chopped[key] = S.day; sfx('stone'); const ns = S.tools.bronzePick ? 5 : 3; gain('stone', ns, r.position.clone(), true); hintToast(); goal('mine');
 }
 function cutBush(b) {
   const key = b.userData.key; if (S.chopped[key] === S.day) { toast('You already cut grass here today.'); return; }
@@ -4997,7 +5015,7 @@ function squareIntro() { if (!S.squareNew || VISIT) return;
 function wishFountain() {
   if (S.coins < 1) return toast('You need 1 coin to toss in the fountain.');
   if (S.wishDay === S.day) return toast('You already made a wish today. Come back tomorrow.');
-  S.coins -= 1; S.wishDay = S.day; save(); drawHud(); sfx('water'); burst(SQL(0, 0).setY(.6), 0x9fd3ff, 22); [880, 1175, 1568].forEach((f, i) => setTimeout(() => chime(f), i * 140));
+  S.coins -= 1; S.wishDay = S.day; goal('wish'); save(); drawHud(); sfx('water'); burst(SQL(0, 0).setY(.6), 0x9fd3ff, 22); [880, 1175, 1568].forEach((f, i) => setTimeout(() => chime(f), i * 140));
   const facts = ['About 3,000 euros are tossed into Rome\'s Trevi Fountain every day. The city collects it and gives it to Caritas, a charity that feeds people in need.',
     'At the Trevi Fountain, the tradition is to toss a coin over your left shoulder with your right hand. The legend says it means you will return to Rome.',
     'People have tossed coins into springs and wells for thousands of years. Ancient Romans and Celts left offerings in water for luck and health.',
@@ -5013,12 +5031,26 @@ function planterSeed(i) { S.planter = S.planter || {}; if (S.planter[i] === S.da
 function pipCart() { showCard(`<div class="kicker">PIP'S CART</div><h2>What do you need?</h2><p>Pip restocks the cart every morning.</p><div class="jlist"><button id="pcS">🌱 Seeds</button><button id="pcF">🪑 Furniture</button></div>`, 'Not now');
   $('pcS').onclick = () => { hideCard(); seedShop(); }; $('pcF').onclick = () => { hideCard(); furnShop(); }; }
 function sitBench(b) { const wp = new THREE.Vector3(); b.getWorldPosition(wp); sitting = b; target = null; pending = null; player.position.set(wp.x, wp.y, wp.z); player.rotation.y = b.rotation.y; // face out from the bench, the way the seat faces
-  toast('You sit and rest. Time passes 3 times faster. Tap anywhere to get up.'); }
-function openNotice() { const fz = festival(), rows = [];
+  toast('You sit and rest. Time passes 3 times faster. Tap anywhere to get up.'); if (b.parent === squareBits.g) goal('sit'); }
+// each morning, two neighbors post something they'd love. Bring it for coins and a warmer friendship.
+function ensureAsks() { if (S.asks && S.asks.day === S.day) return S.asks;
+  const who = [...new Set(['nana', 'pip', ...(S.bridge ? ['drizzle'] : []), ...(S.bridge2 ? ['twins'] : []), ...Object.keys(S.talked || {})])].filter(id => NEIGHBORS[id] && npcs[id]), opts = []; // neighbors you can reach
+  Object.keys(CROPS).filter(k => !CROPS[k].locked && CROPS[k].seasons.includes(season())).forEach(k => opts.push([k, 2 + Math.floor(Math.random() * 2), 'for a recipe']));
+  if (S.bridge && season() !== 3) ['apple', 'peach'].forEach(k => ITEMS[k] && opts.push([k, 2, 'for a pie']));
+  Object.keys(S.fishLog || {}).forEach(k => ITEMS[k] && opts.push([k, 1, 'for supper']));
+  const list = []; while (list.length < 2 && who.length && opts.length) { const id = who.splice(Math.floor(Math.random() * who.length), 1)[0], [k, n, why] = opts.splice(Math.floor(Math.random() * opts.length), 1)[0];
+    list.push({ id, k, n, why, pay:Math.round(ITEMS[k].sell * n * 1.25) + 10, done:false }); }
+  S.asks = { day:S.day, list }; save(); return S.asks; }
+function openNotice() { const fz = festival(), rows = [], asks = ensureAsks().list;
+  asks.forEach((a, i) => { const nm = NEIGHBORS[a.id].name, it = ITEMS[a.k].name, h = have(a.k);
+    rows.push(`<button data-ask="${i}" class="${a.done ? 'mdone' : ''}">${a.done ? '✓ ' : '🧺 '}${nm} would love ${a.n} ${it} ${a.why}.<span class="sub"><br>${a.done ? 'Delivered. Thank you!' : `Pays ${a.pay} coins. ${h >= a.n ? '<b>Tap to bring it.</b>' : `You have ${h}.`}`}</span></button>`); });
   rows.push(`<button id="nbG">✅ Today's goals</button>`);
   if (founderOn() && fGot('missions') && !paused('missions')) rows.push(`<button id="nbM">✦ Tester missions</button>`);
   if (featureOn('townhall')) rows.push(`<button id="nbT">🗳 Town Hall votes</button>`);
-  showCard(`<div class="kicker">NOTICE BOARD</div><h2>What's happening</h2><p><b>${dateLabel ? dateLabel(today()) : ''}</b>${fz ? `<br>🎉 Today is <b>${fz.name}</b>. Talk to ${NEIGHBORS[fz.host].name}.` : ''}</p><div class="jlist">${rows.join('')}</div>`, 'Close');
+  showCard(`<div class="kicker">NOTICE BOARD</div><h2>What's happening</h2>${asks.length ? '<h4>Neighbors are asking</h4>' : ''}<p><b>${dateLabel ? dateLabel(today()) : ''}</b>${fz ? `<br>🎉 Today is <b>${fz.name}</b>. Talk to ${NEIGHBORS[fz.host].name}.` : ''}</p><div class="jlist">${rows.join('')}</div>`, 'Close');
+  document.querySelectorAll('[data-ask]').forEach(b => b.onclick = () => { const a = asks[+b.dataset.ask]; if (a.done) return; const nm = NEIGHBORS[a.id].name;
+    if (have(a.k) < a.n) return toast(`${nm} asked for ${a.n} ${ITEMS[a.k].name}. You have ${have(a.k)}.`);
+    bagAdd(a.k, -a.n); a.done = true; S.coins += a.pay; S.hearts[a.id] = Math.min(10, (S.hearts[a.id] || 0) + 1); goal('ask'); save(); drawHud(); sfx('coin'); chime(698); toast(`${nm} is delighted. +${a.pay} coins, and you two are better friends.`); openNotice(); });
   if ($('nbG')) $('nbG').onclick = () => { hideCard(); openGoals(); }; if ($('nbM')) $('nbM').onclick = () => { hideCard(); openMissions(); }; if ($('nbT')) $('nbT').onclick = () => { hideCard(); openTownHall(); }; }
 function squareTick(dt, now) { if (!squareBits) return;
   squareBits.drops.forEach(d => { const k = (now * .6 + d.userData.ph) % 1, a = d.userData.ph * Math.PI * 2; d.position.set(Math.cos(a) * (.1 + k * .95), 1.55 + k * .5 - k * k * 1.4, Math.sin(a) * (.1 + k * .95)); });
@@ -5240,6 +5272,7 @@ var hintKey = o => { const p = new THREE.Vector3(); o.getWorldPosition(p); retur
 function noteTapped(o) { try { const k = hintKey(o); if (!(S.tapped || []).includes(k)) { S.tapped = [...(S.tapped || []), k].slice(-500); } } catch {} }
 var hintT = 0, hintNear = new Set(), hintLast = -1e9; // var: the game loop can start before this part loads
 function hintTick(dt, now) { if (!HINT_SKIP || (hintT += dt) < 1) return; hintT = 0;
+  if (playing && !cine && !fish3 && !buildMode && !VISIT && !$('veil').classList.contains('show') && !$('dialog').classList.contains('show') && !document.querySelector('.presents')) { try { knowTick(); collTick(); } catch {} }
   if (!playing || S.tut !== 9 || document.querySelector('.presents') || cine || fish3 || flight.on || buildMode || VISIT || $('veil').classList.contains('show') || $('dialog').classList.contains('show')) return;
   const p = new THREE.Vector3(), near = new Set(), tg = typeof questTarget === 'function' ? questTarget() : null; S.hintPass = S.hintPass || {};
   tappables().forEach(o => { if (HINT_SKIP.has(o.userData.kind) || o === tg) return; o.getWorldPosition(p); if (Math.abs(p.y - player.position.y) > 1.5 || Math.hypot(p.x - player.position.x, p.z - player.position.z) > 2.6) return;
