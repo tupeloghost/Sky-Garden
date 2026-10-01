@@ -1837,6 +1837,66 @@ const HELP = {
       document.querySelectorAll('[data-lt]').forEach(x => x.onclick = () => { on[x.dataset.lt] = !on[x.dataset.lt]; chime(on[x.dataset.lt] ? 880 : 660); draw(); });
       if ($('hpDone')) $('hpDone').onclick = () => { if (step === 0) { step = 1; return draw(); } helpDone('lumen', 'light', 'Red and green made yellow. All three made white. Light is strange and lovely.'); }; };
     draw(); } },
+  twins: { label:'Help dig a tunnel that holds', run() { const tried = {};
+    const pic = k => `<svg viewBox="0 0 200 90" style="display:block;width:100%;max-width:260px;margin:8px auto 0" aria-hidden="true"><rect width="200" height="90" rx="12" fill="#8a6a44"/><path d="${{ flat:'M50 86 V40 H150 V86Z', point:'M50 86 V52 L100 20 L150 52 V86Z', arch:'M50 86 V52 Q50 20 100 20 Q150 20 150 52 V86Z' }[k]}" fill="#2a1c12"/><circle cx="88" cy="74" r="8" fill="#b98a63"/><circle cx="112" cy="74" r="8" fill="#9b7b5a"/></svg>`;
+    const out = { flat:'Moss stands on top. The flat roof sags in the middle, and dirt rains down. <b>It caves in.</b> Fern: "Moss! Again?"', point:'Moss stands on top and it holds. Then Fern climbs up too. <b>It cracks right at the tip.</b>', arch:'Moss climbs on. Fern climbs on. They jump up and down. <b>The round roof does not move.</b>' };
+    const draw = (k) => { if (k) tried[k] = 1;
+      showCard(`<div class="kicker">HELP MOSS & FERN</div><h2>🕳️ The tunnel that keeps falling in</h2><p>${k ? out[k] : '"Fern: Our new tunnel keeps caving in. Moss: We tried digging faster. Fern: That was worse. Moss: What shape should the roof be?"'}</p>${k ? pic(k) : ''}
+        <h4>Pick a roof shape to try</h4><div class="chips">${[['flat', 'Flat roof'], ['point', 'Pointed roof'], ['arch', 'Round roof']].map(([id, l]) => `<button data-tn="${id}" class="${tried[id] ? 'ghost' : ''}">${l}</button>`).join('')}</div>
+        ${tried.arch ? '<button id="hpDone">Tell the twins: round roof</button>' : '<p class="sub" style="margin-top:8px">Try a shape and see what happens.</p>'}`, 'Later');
+      document.querySelectorAll('[data-tn]').forEach(b => b.onclick = () => { sfx(b.dataset.tn === 'arch' ? 'pick' : 'chop'); draw(b.dataset.tn); });
+      if ($('hpDone')) $('hpDone').onclick = () => helpDone('twins', 'arch', 'Moss: Round! Fern: Like a worm. Moss: The worms knew all along. Fern: We owe the worms an apology.'); };
+    draw(); } },
+  mabel: { label:'Help the dough rise', run() { const tried = {};
+    const out = { cold:'An hour later, the dough has barely moved. It looks sleepy. <b>Too cold.</b>', warm:'An hour later, the dough is twice as big, soft, and full of bubbles. <b>Just right.</b>', hot:'The dough puffed up fast, then stopped. The bottom is cooked hard. <b>Too hot.</b> Mabel: "Gerald, no!"' };
+    const draw = (k) => { if (k) tried[k] = 1;
+      showCard(`<div class="kicker">HELP MABEL</div><h2>🍞 The dough that will not rise</h2><p>${k ? out[k] : '"My dough needs to rest for an hour before I bake it. But where? Somewhere in this kitchen is the right spot. I have three balls of dough. Try them."'}</p>
+        <h4>Where should the dough rest?</h4><div class="chips">${[['cold', '❄️ By the open window'], ['warm', '☀️ On the shelf near the oven'], ['hot', '🔥 On top of the hot oven']].map(([id, l]) => `<button data-dg="${id}" class="${tried[id] ? 'ghost' : ''}">${l}</button>`).join('')}</div>
+        ${tried.warm ? '<button id="hpDone">Tell Mabel: the warm shelf</button>' : '<p class="sub" style="margin-top:8px">Try a spot and see what happens.</p>'}`, 'Later');
+      document.querySelectorAll('[data-dg]').forEach(b => b.onclick = () => { sfx(b.dataset.dg === 'warm' ? 'pick' : 'click'); draw(b.dataset.dg); });
+      if ($('hpDone')) $('hpDone').onclick = () => helpDone('mabel', 'warm', 'Warm, not hot. Like a good bath. I will tell Gerald to keep his distance.'); };
+    draw(); } },
+  hoot: { label:'Help find the lost book', run() { const target = 1 + Math.floor(Math.random() * 16); let lo = 1, hi = 16, tries = 0, found = false;
+    const draw = (msg = '"Hoo. Someone put a book back in the wrong place. The shelf has 16 books, in order from 1 to 16. Open one and I will tell you if the lost book is earlier or later. I get tired, so use as few tries as you can."') => {
+      showCard(`<div class="kicker">HELP PROFESSOR HOOT</div><h2>📚 The lost book</h2><p>${msg}</p>
+        <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px">${Array.from({ length:16 }, (_, k) => k + 1).map(n => `<button data-bk="${n}" class="${n < lo || n > hi ? 'ghost' : ''}" ${found || n < lo || n > hi ? 'disabled' : ''} style="padding:10px 0;${n < lo || n > hi ? 'opacity:.35' : ''}${found && n === target ? ';background:#8fdc8a' : ''}">${n}</button>`).join('')}</div>
+        <p class="sub" style="margin-top:8px">Tries so far: <b>${tries}</b>${found ? '' : `. The book is somewhere from ${lo} to ${hi}.`}</p>
+        ${found ? `<button id="hpDone">Give Hoot the book</button>${tries > 4 ? ' <button id="hpAgain" class="ghost">Try again in fewer tries</button>' : ''}` : ''}`, 'Later');
+      document.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { const n = +b.dataset.bk; tries++;
+        if (n === target) { found = true; sfx('pick'); return draw(tries <= 4 ? `<b>Book ${n}. That is the one!</b> Found in ${tries} ${tries === 1 ? 'try' : 'tries'}.` : `<b>Book ${n}. That is the one!</b> It took ${tries} tries. Hoot: "Hoo. Next time, try opening the middle one first."`); }
+        sfx('click'); if (n < target) lo = n + 1; else hi = n - 1; draw(`Book ${n} is not it. Hoot: "The lost book is <b>${n < target ? 'later' : 'earlier'}</b> than that one."`); });
+      if ($('hpAgain')) $('hpAgain').onclick = () => HELP.hoot.run();
+      if ($('hpDone')) $('hpDone').onclick = () => helpDone('hoot', 'halving', tries <= 4 ? `${tries} ${tries === 1 ? 'try' : 'tries'}! You opened the middle and threw away half the shelf each time. I have been checking one by one for 40 years.` : 'Found! Here is my trick: open the middle one, and half the shelf is ruled out at once.'); };
+    draw(); } },
+  allegra: { label:'Help tune the water glasses', run() { const G = [['Full', 1, 330, 'a low note'], ['Three quarters full', .75, 392, 'a fairly low note'], ['Half full', .5, 494, 'a fairly high note'], ['A little water', .2, 659, 'a high note']];
+    const order = [2, 0, 3, 1]; let seq = [];
+    const glass = (g, k) => `<button data-gl="${k}" aria-label="${G[g][0]} glass" style="padding:8px 4px;border-radius:14px;background:none;border:2px solid ${seq.includes(k) ? '#e8a33d' : '#eadfd0'};box-shadow:none"><svg viewBox="0 0 40 60" style="display:block;width:44px;margin:0 auto" aria-hidden="true"><path d="M6 4 L10 56 H30 L34 4Z" fill="#eef7fb" stroke="#9fc7da" stroke-width="2"/><path d="M${7.6 + (1 - G[g][1]) * 3.2} ${10 + (1 - G[g][1]) * 44} L10.8 55 H29.2 L${32.4 - (1 - G[g][1]) * 3.2} ${10 + (1 - G[g][1]) * 44}Z" fill="#7ec8e3"/></svg><span style="display:block;font-size:12px;font-weight:700;margin-top:2px">${seq.includes(k) ? seq.indexOf(k) + 1 : '&nbsp;'}</span></button>`;
+    const draw = (msg = '"I filled four glasses with water to make a tiny xylophone. Tap a glass to hear it. Then help me: <b>tap all four in order, from the lowest note to the highest.</b>"', won) => {
+      showCard(`<div class="kicker">HELP ALLEGRA</div><h2>🥛 The singing glasses</h2><p>${msg}</p>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">${order.map((g, k) => glass(g, k)).join('')}</div>
+        ${won ? '<button id="hpDone">Play it for Allegra</button>' : `<p class="sub" style="margin-top:8px">${seq.length ? `You have tapped ${seq.length} of 4.` : 'Listen to each one first if you like. Your taps are counted in order.'} <button id="glReset" class="ghost" style="padding:2px 10px">Start over</button></p>`}`, 'Later');
+      if ($('glReset')) $('glReset').onclick = () => { seq = []; draw(); };
+      document.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { const k = +b.dataset.gl, g = order[k]; if (won) return chime(G[g][2]); chime(G[g][2]); if (muted) toast('Sound is off, so the words will tell you each note.');
+        if (seq.includes(k)) return draw(`${G[g][0]}: <b>${G[g][3]}.</b>`);
+        seq.push(k);
+        if (seq.length < 4) return draw(`${G[g][0]}: <b>${G[g][3]}.</b>`);
+        const ok = seq.every((kk, n) => n === 0 || G[order[kk]][2] > G[order[seq[n - 1]]][2]);
+        if (ok) { [330, 392, 494, 659].forEach((f, n) => setTimeout(() => chime(f), 300 + n * 220)); return draw('<b>Low to high. That is a scale!</b> Did you notice which glass was the lowest?', true); }
+        seq = []; draw('Not quite in order. Tap each glass and listen again. <b>Hint: the emptiest glass is not the lowest.</b>'); });
+      if ($('hpDone')) $('hpDone').onclick = () => helpDone('allegra', 'pitch', 'The fullest glass sings the lowest! I had them backwards for a week. My neighbors were very patient.'); };
+    draw(); } },
+  sage: { label:'Help stack the garden stones', run() { const ST = [['big', 'Big flat stone', 46], ['mid', 'Middle stone', 32], ['small', 'Small round stone', 20]]; let stack = [];
+    const pile = () => { let y = 84, h = ''; stack.forEach(k => { const w = ST.find(x => x[0] === k)[2], hh = w * .42; y -= hh; h += `<ellipse cx="100" cy="${y + hh / 2}" rx="${w}" ry="${hh / 2}" fill="${{ big:'#8a8f96', mid:'#a3a8ae', small:'#bcc1c6' }[k]}"/>`; });
+      return `<svg viewBox="0 0 200 90" style="display:block;width:100%;max-width:240px;margin:8px auto 0" aria-hidden="true"><path d="M10 84 H190" stroke="#8fbf7a" stroke-width="4" stroke-linecap="round"/>${h}</svg>`; };
+    const draw = (msg = '"These three stones marked the garden path. The wind knocked them down. Stack them so they stand. There is no hurry. Tap the stone that should go on the bottom first."', won) => {
+      showCard(`<div class="kicker">HELP SAGE</div><h2>🪨 Three stones</h2><p>${msg}</p>${pile()}
+        ${won ? '<button id="hpDone">Show Sage</button>' : `<h4>${stack.length ? 'Which stone goes on next?' : 'Which stone goes on the bottom?'}</h4><div class="chips">${ST.filter(x => !stack.includes(x[0])).map(x => `<button data-sn="${x[0]}">${x[1]}</button>`).join('')}</div>`}`, 'Later');
+      document.querySelectorAll('[data-sn]').forEach(b => b.onclick = () => { stack.push(b.dataset.sn); sfx('click');
+        if (stack.length < 3) return draw('It sits there. So far, so good.');
+        if (stack.join() === 'big,mid,small') { sfx('pick'); return draw('<b>The stack stands.</b> A breeze goes by. Nothing moves.', true); }
+        const top = stack.slice(); stack = []; draw(`The stack wobbles, tips, and falls. <b>${top[0] !== 'big' ? 'The bottom stone was too small to hold the rest.' : 'The stone on top was too heavy for the one under it.'}</b> Sage: "Hm. Again. Slowly."`); });
+      if ($('hpDone')) $('hpDone').onclick = () => helpDone('sage', 'balance', 'Heavy things low. Light things high. I have been low and heavy for 190 years, and nothing has tipped me over yet.'); };
+    draw(); } },
 };
 // the old stone: crack its symbols by comparing names you know, the way the real Rosetta Stone was read
 function readStone() { const sym = { N:'◆', A:'●', P:'▲', I:'■' }, w = t => [...t].map(c => sym[c]).join(' ');
