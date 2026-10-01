@@ -10,17 +10,17 @@ add('sundial', 'A stick, a shadow, and a long walk measured the whole Earth.',
     '<rect x="232" y="56" width="12" height="20" fill="#3b2f4a"/><path d="M228 56 h20" stroke="#7a6452" stroke-width="3"/>'
     '<path d="M92 79 L78 49" stroke="#7a5236" stroke-width="4" stroke-linecap="round"/><path d="M92 79 L74 85" stroke="#3b2f4a" stroke-width="3" stroke-linecap="round" opacity=".7"/>'
     + txt(60, 110, 'Alexandria: a shadow', 11, INK) + txt(246, 110, 'Syene: no shadow', 11, INK) + txt(165, 14, 'sunlight', 11, '#c98a1f')),
-  'At noon the sun shone straight down a well in Syene. In Alexandria, a stick still had a shadow. The angle was about 7 degrees, which is 1/50 of a circle. So the Earth is about 50 times the distance between the two cities.')
+  'At noon on the longest day of the year, the sun shone straight down a well in Syene. In Alexandria, a stick still had a shadow. The angle was about 7.2 degrees, which is 1/50 of a circle. So the distance around the Earth is about 50 times the distance between the two cities.')
 
 # ---- bell (string lengths) ----
 def string(y, frac, label, note):
     L = 250 * frac
     return (f'<path d="M30 {y} H{30+L:.0f}" stroke="#b98a3e" stroke-width="2.4"/><circle cx="30" cy="{y}" r="4" fill="#7a5236"/><circle cx="{30+L:.0f}" cy="{y}" r="4" fill="#7a5236"/>'
             f'<path d="M{30+L:.0f} {y} H280" stroke="#d9c7ad" stroke-width="1.2" stroke-dasharray="3 3"/>' + txt(292, y + 4, label, 13, INK, 'start') + txt(30, y - 8, note, 10.5, SUB, 'start'))
-add('bell', 'Shorten a string to half. You get the same note, one step higher.',
+add('bell', 'Shorten a string to half. You get the same note, one octave higher.',
   svg(330, 120, 'A diagram of four strings: a full one, one half as long, one two thirds as long, and one three quarters as long',
     string(22, 1, '1', 'the whole string') + string(52, .5, '1/2', 'same note, higher (an octave)') + string(82, 2/3, '2/3', 'a fifth: sounds sweet with the whole string') + string(112, .75, '3/4', 'a fourth: also sweet')),
-  'These simple fractions sit at the heart of most of the world\'s music. Try it on a guitar: press a string at the halfway mark and pluck.')
+  'These simple fractions show up in music all over the world. Try it on a guitar: press a string at the halfway mark and pluck.')
 
 # ---- still (solar still) ----
 drops = ''.join(f'<circle cx="{x}" cy="{y}" r="2.2" fill="#7ec8e3"/>' for x, y in ((120, 44), (140, 51), (158, 57), (182, 56), (200, 50), (220, 43)))
@@ -75,11 +75,11 @@ add('lever', 'Move the pivot, and a small push lifts a big stone.',
 r = R(12)
 loaf = 'M84 104 V52 Q84 30 104 28 Q110 12 165 12 Q220 12 226 28 Q246 30 246 52 V104Z'
 holes = ''.join(f'<path d="{blob(r.uniform(98,232), r.uniform(26,96), rr, rr*r.uniform(.6,.95), 8, .22, 40+i)}" fill="#d9bd8a"/>' for i, rr in enumerate([r.uniform(1.5, 7.5) for _ in range(70)]))
-add('bread', 'Every hole is a bubble made by something alive.',
+add('bread', 'Every hole is a bubble blown up by something alive.',
   svg(330, 116, 'A drawing of a slice of bread with a brown crust and a pale inside full of holes of different sizes',
     f'<clipPath id="br"><path d="{loaf}"/></clipPath><path d="{loaf}" fill="#f3e2bd" stroke="#a8713a" stroke-width="6" stroke-linejoin="round"/><g clip-path="url(#br)">{holes}</g>'
     f'<path d="{loaf}" fill="none" stroke="#a8713a" stroke-width="6" stroke-linejoin="round"/>'),
-  'Yeast is a living fungus, too small to see. It eats sugar in the dough and breathes out gas. The gas gets trapped in the stretchy dough, and baking sets each bubble in place.')
+  'Yeast is a living fungus, too small to see. It eats sugar in the dough and breathes out gas. The gas swells tiny air bubbles in the stretchy dough, and baking sets each bubble in place.')
 
 # ---- moon phases ----
 def moon(cx, f):  # f: 0 new .. .5 full .. 1 new; lit side on the right while growing (seen from north of the equator)
@@ -106,7 +106,7 @@ add('optics', 'Light travels in straight lines, so the picture lands upside down
     + tree(54, 96, 1.6) + tree(274, 34, 1, -1) +
     '<g stroke="#f2b84b" stroke-width="1.4" fill="none"><path d="M54 36 L150 62 L274 94"/><path d="M54 96 L150 62 L274 34"/></g>'
     + txt(110, 116, 'one tiny hole', 11, INK) + txt(230, 104, 'dark room', 11, '#cfc4dd')),
-  'Light from the top of the tree goes straight through the hole and lands low on the wall. Light from the bottom lands high. A smaller hole gives a sharper picture, but a dimmer one. Your eye and every camera work this way.')
+  'Light from the top of the tree goes straight through the hole and lands low on the wall. Light from the bottom lands high. A smaller hole gives a sharper picture, but a dimmer one. Your eye and a camera flip the picture the same way, but they use a lens to let in more light.')
 
 # ---- prism ----
 cols = ['#e5484d', '#f08c2e', '#f6d32d', '#4cb86a', '#3d8fe0', '#5a55c9', '#8e44ad']
@@ -116,7 +116,7 @@ add('prism', 'White light is every color at once.',
     '<rect width="330" height="120" rx="10" fill="#1d1a2b"/><path d="M10 78 L150 52" stroke="#fff" stroke-width="5"/>' + fan +
     '<path d="M168 16 L212 96 H124Z" fill="#bfe6f5" opacity=".35" stroke="#dff3ff" stroke-width="2" stroke-linejoin="round"/><path d="M150 52 L188 56" stroke="#fff" stroke-width="3" opacity=".6"/>'
     + txt(268, 26, 'red bends least', 10.5, '#ffb3b3') + txt(264, 116, 'violet bends most', 10.5, '#d5b8ff') + txt(60, 100, 'sunlight', 11, '#fff')),
-  'Glass bends each color by a different amount, so the colors spread apart. Newton then sent the rainbow through a second prism and got white light back. Raindrops do the same thing to make a rainbow.')
+  'Glass bends each color by a different amount, so the colors spread apart. Newton then used a lens to bring the colors back together and got white light again. Raindrops bend and bounce sunlight the same way to make a rainbow.')
 
 # ---- fibonacci (sunflower head) ----
 seeds = ''
@@ -129,10 +129,10 @@ add('fibonacci', 'One simple rule makes every spiral in a sunflower.',
     f'<g transform="translate(0 0) scale(.92) translate(8 6)">{petals}<circle cx="110" cy="66" r="64" fill="#3f2a12"/>{seeds}</g>'
     '<g transform="translate(262 62)"><circle r="30" fill="none" stroke="#c9ab88" stroke-width="1.5"/><path d="M0 0 L30 0 M0 0 L-22.1 20.3" stroke="#3b2f4a" stroke-width="2"/><path d="M12 0 A12 12 0 1 1 -8.800 8.100" fill="none" stroke="#c98a1f" stroke-width="2"/><circle cx="30" cy="0" r="4" fill="#5a3d1e"/><circle cx="-22.1" cy="20.3" r="4" fill="#5a3d1e"/></g>'
     + txt(262, 112, 'each seed: 137.5 degrees', 10.5, INK) + txt(262, 124, 'around from the last', 10.5, INK)),
-  'Each new seed grows about 137.5 degrees around from the one before. That single rule packs the seeds with no gaps, and the spirals appear by themselves. Count them one way, then the other: you usually get two Fibonacci numbers.')
+  'Each new seed grows about 137.5 degrees around from the one before. That single rule packs the seeds as tightly as they can go, and the spirals appear by themselves. Count them one way, then the other: you usually get two Fibonacci numbers.')
 
 # ---- migration (European robin) ----
-add('migration', 'This small bird may be able to see which way is north.',
+add('migration', 'This small bird may be able to see Earth\'s magnetic field.',
   svg(330, 120, 'A drawing of a European robin on a twig: a round brown bird with an orange face and chest and a pale belly',
     '<path d="M60 100 Q170 92 290 104" stroke="#8a6a52" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M230 100 l24 -14" stroke="#8a6a52" stroke-width="3" stroke-linecap="round"/>'
     '<path d="M226 78 L276 92 L270 98 L222 88Z" fill="#6b5a48"/>'
@@ -149,23 +149,23 @@ r = R(14)
 big = ''.join(f'<path d="{blob(64 + i*24 + r.uniform(-3,3), 96, 12, 8, 7, .2, 60+i)}" fill="#8a8f96"/>' for i in range(9))
 grav = ''.join(f'<circle cx="{r.uniform(56,276):.0f}" cy="{r.uniform(66,82):.0f}" r="{r.uniform(1.6,3.6):.1f}" fill="{r.choice(["#b9a58c","#9c8f7c","#cfc0a6"])}"/>' for _ in range(110))
 pave = ''.join(f'<path d="{blob(70 + i*27, 52 - 6*math.cos((i-3.5)/3.5*1.3) + 5, 13, 6.5, 6, .12, 80+i)}" fill="#6f747a" stroke="#4d5156" stroke-width="1"/>' for i in range(8))
-add('roads', 'Most of a Roman road is underground.',
-  svg(330, 122, 'A cutaway drawing of a Roman road: fitted paving stones on top, curved so water runs off, then gravel, then big stones at the bottom, with a ditch on each side',
-    '<path d="M0 60 H40 L50 74 L50 110 H280 L280 74 L290 60 H330 V122 H0Z" fill="#b08a5e"/><path d="M0 60 H40 L46 68 L34 76 L22 66Z M330 60 H290 L284 68 L296 76 L308 66Z" fill="#8a6a44"/>'
+add('roads', 'A Roman road is much more than its top stones.',
+  svg(330, 122, 'A cutaway drawing of one of the best Roman roads, built up higher than the land beside it: fitted paving stones on top, curved so water runs off, then gravel, then big stones at the bottom, with a ditch on each side',
+    '<path d="M0 90 H16 L26 104 L38 90 H292 L304 104 L314 90 H330 V122 H0Z" fill="#b08a5e"/><path d="M38 90 L52 60 V112 H38Z M292 90 L278 60 V112 H292Z" fill="#9c7a50"/><rect x="52" y="86" width="226" height="26" fill="#a58a66"/>'
     '<rect x="52" y="62" width="226" height="24" fill="#d9cbb0"/>' + grav + big + pave
-    + txt(304, 50, 'ditch', 10.5, INK) + txt(165, 30, 'paving stones, higher in the middle', 11, INK) + txt(165, 118, 'big stones at the bottom', 10.5, '#fff6e6') + txt(26, 96, 'gravel', 10.5, INK)
-    + '<path d="M40 92 L58 78" stroke="#3b2f4a" stroke-width="1"/>'),
-  'The Romans dug a trench and filled it in layers. Rain runs off the curved top into the ditches, and what soaks in drains through the stones. A dry road does not crack or wash away.')
+    + txt(308, 84, 'ditch', 10.5, INK) + txt(165, 30, 'paving stones, higher in the middle', 11, INK) + txt(165, 118, 'big stones at the bottom', 10.5, '#fff6e6') + txt(22, 56, 'gravel', 10.5, INK)
+    + '<path d="M30 60 L58 74" stroke="#3b2f4a" stroke-width="1"/>'),
+  'For their best roads, the Romans dug down to firm ground and built the road up in layers, higher than the land beside it. Rain runs off the curved top into the ditches. Most Roman roads had packed gravel on top, not paving stones.')
 
 # ---- thatch ----
 r = R(15)
 straw = ''.join(f'<path d="M{x:.0f} 22 L{x + (x-150)*.42 + r.uniform(-3,3):.0f} 70" stroke="{r.choice(["#b8975a","#a3854d","#c9aa6c","#8f7340"])}" stroke-width="1.2"/>' for x in [r.uniform(70, 230) for _ in range(150)])
-add('thatch', 'A roof made of dried grass can last 40 years.',
-  svg(330, 122, 'A drawing of a white cottage with a thick, rounded roof of straw that hangs low over the walls and curves around a small window',
+add('thatch', 'A roof made of dried reeds can last 40 years.',
+  svg(330, 122, 'A drawing of a white cottage with a thick, rounded roof of reeds that hangs low over the walls and curves around a small window',
     '<rect x="62" y="64" width="176" height="46" fill="#f4efe4"/><rect x="62" y="104" width="176" height="6" fill="#cfc6b4"/>'
     '<rect x="132" y="78" width="22" height="32" fill="#5a3d2a"/><rect x="84" y="78" width="26" height="18" fill="#3b4a5a"/><rect x="186" y="78" width="26" height="18" fill="#3b4a5a"/><path d="M97 78 v18 M84 87 h26 M199 78 v18 M186 87 h26" stroke="#f4efe4" stroke-width="1.5"/>'
     '<clipPath id="th"><path d="M40 72 Q52 30 104 20 Q150 12 196 20 Q248 30 260 72 Q150 60 40 72Z"/></clipPath><path d="M40 72 Q52 30 104 20 Q150 12 196 20 Q248 30 260 72 Q150 60 40 72Z" fill="#a98a52"/>'
     f'<g clip-path="url(#th)">{straw}<path d="M40 72 Q150 60 260 72 V62 Q150 50 40 62Z" fill="#6b5630" opacity=".45"/></g><path d="M100 22 Q150 10 200 22 Q150 18 100 22Z" fill="#7a6234" stroke="#7a6234" stroke-width="5" stroke-linejoin="round"/>'
     '<rect x="206" y="6" width="14" height="18" fill="#b0705a"/><path d="M20 110 H300" stroke="#c9ab88" stroke-width="2"/>'
     + '<g transform="translate(286 56)"><path d="M-20 -22 L20 6 M-20 -14 L20 14 M-20 -6 L20 22" stroke="#b8975a" stroke-width="3" stroke-linecap="round"/><path d="M-8 -30 v10 M4 -30 v16" stroke="#3d8fe0" stroke-width="2" stroke-dasharray="3 3"/><path d="M-8 -18 L18 0" stroke="#3d8fe0" stroke-width="1.6"/></g>' + txt(286, 96, 'rain runs down', 10, INK) + txt(286, 108, 'the stems', 10, INK)),
-  'The stems are packed tight and laid steep. A raindrop hits a stem, runs down it to the next one, and so on to the edge. Only the top layer ever gets wet.')
+  'The stems are packed tight and laid steep. A raindrop hits a stem, runs down it to the next one, and so on to the edge. Only the top few centimeters get wet.')

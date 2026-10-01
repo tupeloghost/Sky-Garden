@@ -5,15 +5,15 @@ def flame(x, y, s=1): return f'<path d="M{x} {y} q{-5*s} {-7*s} 0 {-15*s} q{5*s}
 
 # ---- worldtree (a ceiba) ----
 r = R(21)
-thorns = ''.join(f'<path d="M{160 + sd*8} {y} l{sd*5} -2 l{-sd*5} -3Z" fill="#8f9488"/>' for y in range(52, 96, 7) for sd in (-1, 1))
+thorns = ''
 crown = ''.join(f'<ellipse cx="{r.uniform(90,230):.0f}" cy="{r.uniform(18,34):.0f}" rx="{r.uniform(20,34):.0f}" ry="{r.uniform(8,13):.0f}" fill="{r.choice(["#4f9a5c","#5fae6b","#3f8a50"])}"/>' for _ in range(16))
 add('worldtree', 'Many peoples pictured one giant tree holding the world together.',
-  svg(330, 126, 'A drawing of a ceiba tree: a tall straight grey trunk with thorns, wide wing-like roots at the bottom, and a flat, spreading top',
+  svg(330, 126, 'A drawing of a ceiba tree: a tall straight grey trunk, wide wing-like roots at the bottom, and a flat, spreading top',
     '<path d="M0 102 H330" stroke="#c9ab88" stroke-width="2"/><path d="M110 102 Q140 96 152 70 L152 40 L168 40 L168 70 Q180 96 210 102Z" fill="#a7ab9d"/><path d="M160 40 V102" stroke="#8f9488" stroke-width="1"/>'
     '<path d="M152 44 L112 30 M168 44 L208 30 M156 40 L140 22 M164 40 L182 22" stroke="#a7ab9d" stroke-width="5" stroke-linecap="round"/>' + thorns + crown +
     '<path d="M150 104 q-14 10 -30 12 M170 104 q14 10 30 12 M160 104 v16" stroke="#7a6452" stroke-width="2" fill="none" stroke-dasharray="4 3"/>'
     + txt(290, 30, 'the heavens', 11, INK) + txt(290, 78, 'the earth', 11, INK) + txt(290, 120, 'the underworld', 11, INK) + person(60, 102, 14)),
-  'A drawing of a ceiba, the tree in the Maya story, with a person for size. Real ceibas are among the tallest trees in the rainforest. Their roots stand out like walls, and young trunks are covered in thorns.')
+  'A drawing of a ceiba, the tree in the Maya story, with a person for size. Real ceibas are among the tallest trees in the rainforest. Their roots stand out like walls. Young ceibas have thorns all over the trunk, and most lose them as they grow.')
 
 # ---- harvest (a sukkah) ----
 r = R(22)
@@ -31,14 +31,14 @@ add('harvest', 'When the crops come in, people everywhere stop and eat together.
 r = R(23)
 hull = 'M24 62 Q28 86 60 90 L262 90 Q292 88 300 60 Q306 40 296 26 Q300 46 282 62 L50 62 Q34 62 22 70Z'
 planks = ''.join(f'<rect x="{60 + i*22}" y="{66 + j*8}" width="20" height="6.500" fill="{"#e9cf9a" if r.random() < .38 else "#8a6240"}"/>' for i in range(10) for j in range(3))
-oars = ''.join(f'<path d="M{70 + i*13} 88 l-10 22" stroke="#c9a06a" stroke-width="1.6"/>' for i in range(15))
+oars = ''.join(f'<path d="M{66 + i*13 + lv*4} {68 + lv*8} L{52 + i*13 + lv*4} 112" stroke="#c9a06a" stroke-width="1.2"/><circle cx="{66 + i*13 + lv*4}" cy="{68 + lv*8}" r="1.600" fill="#2a1c12"/>' for i in range(15) for lv in range(3))
 add('theseus', 'Replace every plank. Is it still the same ship?',
-  svg(330, 124, 'A drawing of a long, low Greek warship with a row of oars, a pointed ram at the front, and a high curved tail. Some planks are new, pale wood and some are old, dark wood',
-    '<path d="M0 102 Q40 96 80 102 T160 102 T240 102 T330 102 V124 H0Z" fill="#7ec8e3"/>' + oars +
-    f'<path d="{hull}" fill="#6f4c30"/>{planks}<path d="M22 70 L4 74 L24 80Z" fill="#b98a3e"/><circle cx="40" cy="70" r="3.500" fill="#fff"/><circle cx="40" cy="70" r="1.500" fill="#1d1a22"/>'
+  svg(330, 124, 'A drawing of a long, low Greek warship with three levels of oars, a pointed ram at the front, and a high curved tail. Some planks are new, pale wood and some are old, dark wood',
+    f'<path d="{hull}" fill="#6f4c30"/>{planks}' + oars + '<path d="M0 102 Q40 96 80 102 T160 102 T240 102 T330 102 V124 H0Z" fill="#7ec8e3" opacity=".85"/>'
+    f'<path d="M22 70 L4 74 L24 80Z" fill="#b98a3e"/><circle cx="40" cy="70" r="3.500" fill="#fff"/><circle cx="40" cy="70" r="1.500" fill="#1d1a22"/>'
     '<path d="M150 62 V14 M118 22 H182" stroke="#7a5236" stroke-width="3"/><path d="M120 24 H180 L176 52 H124Z" fill="#f6efdc"/>'
     + txt(262, 20, 'pale = new plank', 10.5, INK) + txt(262, 34, 'dark = old plank', 10.5, INK)),
-  'A drawing of an ancient Greek ship, based on Olympias, a full-size copy that really sails. Wooden ships rot, so planks were always being replaced. Sooner or later, none of the first ones were left.')
+  'A drawing of an ancient Greek warship, based on Olympias, a full-size copy that has really been rowed and sailed at sea. It has three levels of oars. Wooden ships rot, so planks were always being replaced. Sooner or later, none of the first ones were left.')
 
 # ---- zeno ----
 segs = ''; x = 20; w = 290; cols = ['#ff8fa3', '#ffc857', '#8fdc8a', '#7ec8e3', '#c9b6ff', '#f0a3d0']
@@ -47,7 +47,7 @@ for i in range(6):
     if i < 4: segs += txt(x + ww / 2, 58, f'1/{2 ** (i + 1)}', 15 - i * 2, INK)
     x += ww
 add('zeno', 'Half, then half of what is left, forever. It still adds up to 1.',
-  svg(330, 104, 'A diagram of a bar cut in half, then the rest cut in half again and again, into smaller and smaller pieces that never quite reach the end',
+  svg(330, 104, 'A diagram of a bar cut in half, then the rest cut in half again and again, into smaller and smaller pieces that get closer and closer to the end',
     '<rect x="20" y="34" width="290" height="38" fill="#fff6e6"/>' + segs + '<rect x="20" y="34" width="290" height="38" fill="none" stroke="#3b2f4a" stroke-width="2"/>'
     + txt(20, 24, 'start', 11, INK, 'start') + txt(310, 24, 'finish', 11, INK, 'end') + txt(165, 94, '1/2 + 1/4 + 1/8 + 1/16 + ... = 1', 13, INK)),
   'Zeno said you can never finish, because there is always another half to cross. The pieces do go on forever, but they shrink so fast that all of them together fit in exactly one whole.')
@@ -62,8 +62,8 @@ add('cave', 'What if everything you have ever seen was only a shadow?',
     + '<rect x="160" y="84" width="46" height="24" fill="#5a4f60"/><path d="M170 84 q6 -16 12 0Z M190 84 l6 -18 l6 18Z" fill="#17131c"/>' + person(182, 108, 16, '#8a7a96')
     + '<path d="M232 108 l8 -14 l8 14Z" fill="#7a5236"/>' + flame(240, 98, 1.5)
     + '<g stroke="#f6b53a" stroke-width="1" stroke-dasharray="3 4" opacity=".7"><path d="M236 86 L22 60 M236 90 L44 70"/></g>'
-    + txt(36, 118, 'shadows', 10, '#f6ead8') + txt(112, 121, 'the watchers', 10, '#f6ead8') + txt(240, 121, 'fire', 10, '#f6ead8') + txt(282, 62, 'the way out', 10, '#f6ead8')),
-  'A drawing of the cave in Plato\'s story. The watchers have only ever seen the shadows on the wall, so they think the shadows are the real world. The real things, the fire, and the sun are all behind them.')
+    + txt(36, 118, 'shadows', 10, '#f6ead8') + txt(112, 121, 'the prisoners', 10, '#f6ead8') + txt(240, 121, 'fire', 10, '#f6ead8') + txt(282, 62, 'the way out', 10, '#f6ead8')),
+  'A drawing of the cave in Plato\'s story. The prisoners are chained so they cannot turn around. They have only ever seen the shadows on the wall, so they think the shadows are the real world. The shadows come from carved figures carried past a fire behind them. The real things, and the sun, are outside the cave.')
 
 # ---- river ----
 r = R(25)
@@ -91,7 +91,7 @@ add('stoic', 'Sort every worry into two piles.',
     '<circle cx="92" cy="62" r="52" fill="#dff5e3" stroke="#5fae6b" stroke-width="3"/><circle cx="238" cy="62" r="52" fill="#eee9f7" stroke="#9a8fc0" stroke-width="3" stroke-dasharray="6 5"/>'
     + txt(92, 34, 'UP TO YOU', 12, '#2f7a45') + txt(92, 56, 'your choices', 12, INK) + txt(92, 73, 'your effort', 12, INK) + txt(92, 90, 'your words', 12, INK)
     + txt(238, 34, 'NOT UP TO YOU', 12, '#6a5fa0') + txt(238, 56, 'the weather', 12, INK) + txt(238, 73, 'the past', 12, INK) + txt(238, 90, 'other people', 12, INK)),
-  'Epictetus taught that peace comes from working on the first pile and letting go of the second. It takes practice. Most worries turn out to have a piece in each.')
+  'Epictetus taught that peace comes from working on the first pile and letting go of the second. It takes practice. Many people find a worry has a piece in each pile.')
 
 # ---- golden rule ----
 add('golden', 'One rule shows up almost everywhere people have lived.',
@@ -113,16 +113,16 @@ add('lunarnewyear', 'Red envelopes, for luck in the new year.',
   svg(330, 112, 'A drawing of three red envelopes with gold decoration, fanned out, next to a round red paper lantern with a gold tassel',
     env(60, 22, -14, m1) + env(104, 18, 0, m2) + env(148, 22, 14, m3) +
     '<path d="M258 6 v10" stroke="#8a6a44" stroke-width="2"/><ellipse cx="258" cy="50" rx="34" ry="32" fill="#d6332e"/><g stroke="#a82420" stroke-width="1.5" fill="none"><ellipse cx="258" cy="50" rx="20" ry="32"/><ellipse cx="258" cy="50" rx="7" ry="32"/></g><rect x="246" y="14" width="24" height="6" fill="#f6c531"/><rect x="246" y="80" width="24" height="6" fill="#f6c531"/><path d="M254 86 v18 M258 86 v20 M262 86 v18" stroke="#f6c531" stroke-width="2"/>'),
-  'Older family members give children money in red envelopes. Red is the color of good luck. Homes and streets are hung with red lanterns for the two weeks of the festival.')
+  'In Chinese tradition, older family members give children money in red envelopes. Red is the color of good luck. Homes and streets are hung with red lanterns for the 15 days of the festival. Other countries keep the new year in their own ways.')
 
 # ---- holi: bowls of colored powder ----
 r = R(31)
 def pile(x, c, d): return f'<path d="M{x-24} 84 Q{x-22} 100 {x} 100 Q{x+22} 100 {x+24} 84Z" fill="#b08a5e"/><ellipse cx="{x}" cy="84" rx="24" ry="5" fill="#8a6a44"/><path d="M{x-21} 84 Q{x-8} 44 {x} 46 Q{x+8} 44 {x+21} 84Z" fill="{c}"/><path d="M{x-21} 84 Q{x-8} 44 {x} 46 Q{x-2} 66 {x-4} 84Z" fill="{d}" opacity=".5"/>'
 puffs = ''.join(f'<circle cx="{r.uniform(20,310):.0f}" cy="{r.uniform(8,40):.0f}" r="{r.uniform(5,16):.0f}" fill="{r.choice(["#ec4899","#f6c531","#3d8fe0","#4cb86a","#f08c2e","#8e44ad"])}" opacity="{r.uniform(.25,.5):.2f}"/>' for _ in range(34))
-add('holi', 'For one day, everyone is covered in color.',
+add('holi', 'For one morning, everyone is covered in color.',
   svg(330, 108, 'A drawing of five bowls heaped with bright powder in pink, yellow, blue, green, and orange, with clouds of color in the air above',
     puffs + pile(48, '#ec4899', '#b0266f') + pile(106, '#f6c531', '#c79a12') + pile(164, '#3d8fe0', '#2563a8') + pile(222, '#4cb86a', '#2f8a49') + pile(280, '#f08c2e', '#b5621a')),
-  'A drawing of the colored powder, called gulal, sold in heaps before the festival. Friends and strangers throw it and smear it on each other in the street. By afternoon, nobody can tell who is who.')
+  'A drawing of the colored powder, called gulal, sold in heaps before the festival. The night before, people light bonfires. Then friends and strangers throw it and smear it on each other in the street. By afternoon, nobody can tell who is who.')
 
 # ---- nowruz: haft-sin ----
 r = R(32)
@@ -134,7 +134,7 @@ add('nowruz', 'Seven things on the table, each starting with the letter S.',
     + '<path d="M96 66 q-14 0 -12 14 q2 10 12 10 q10 0 12 -10 q2 -14 -12 -14Z" fill="#d6332e"/><path d="M96 66 q2 -6 6 -8" stroke="#7a5236" stroke-width="1.6" fill="none"/>' + txt(96, 104, 'apple', 9.5, INK)
     + '<path d="M136 66 q-12 4 -11 14 q1 10 11 10 q10 0 11 -10 q1 -10 -11 -14Z" fill="#f4efe4" stroke="#cfc6b4" stroke-width="1.2"/><path d="M136 66 v-7 M131 72 q3 8 0 16 M141 72 q-3 8 0 16" stroke="#cfc6b4" stroke-width="1.2" fill="none"/>' + txt(136, 104, 'garlic', 9.5, INK)
     + bowl(178, '#e9d9a8', 'vinegar') + bowl(220, '#8f2436', 'sumac') + bowl(262, '#8a5a34', 'pudding') + bowl(304, '#b9783e', 'dried fruit')),
-  'A drawing of a Haft-sin table. In Persian the seven are sabzeh, sib, sir, serkeh, somaq, samanu, and senjed. Each stands for a wish for the year, like new life, health, or patience.')
+  'A drawing of a Haft-sin table. In Persian the seven are sabzeh, sib, sir, serkeh, somaq, samanu, and senjed. Each is said to stand for a wish for the year, like new life, health, or patience. The dried fruit is from the oleaster tree.')
 
 # ---- passover: matzah ----
 r = R(33)
@@ -155,17 +155,17 @@ add('easter', 'Its date is set by the sun and the moon together.',
   svg(330, 112, 'A drawing of a woven basket full of painted eggs in red, green, orange, blue, and pink',
     egg(130, 52, '#e5484d', d1, -14) + egg(160, 44, '#4cb86a', d2, 4) + egg(192, 50, '#f08c2e', d3, 16) + egg(146, 66, '#3d8fe0', d2, -6) + egg(178, 68, '#ec4899', d1, 10) +
     '<path d="M100 66 Q104 104 165 104 Q226 104 230 66Z" fill="#b8854a"/><g stroke="#8a5f2e" stroke-width="1.5" fill="none"><path d="M104 76 H226 M110 88 H220 M124 98 H206"/><path d="M124 66 V98 M144 66 V102 M165 66 V104 M186 66 V102 M206 66 V98"/></g><path d="M100 66 H230" stroke="#8a5f2e" stroke-width="5" stroke-linecap="round"/>'),
-  'Eggs are an old sign of new life, and painting them for Easter goes back many centuries. Easter falls on the first Sunday after the first full moon of spring, so its date moves every year.')
+  'Eggs are an old sign of new life, and painting them for Easter goes back many centuries. For most churches, Easter falls on the first Sunday after the first full moon of spring, so its date moves every year. Orthodox churches use an older calendar, so their Easter is often on a different Sunday.')
 
 # ---- eid: the thin new crescent ----
 r = R(35)
 stars = ''.join(f'<circle cx="{r.uniform(10,320):.0f}" cy="{r.uniform(6,60):.0f}" r="{r.uniform(.5,1.3):.1f}" fill="#fff" opacity="{r.uniform(.4,.9):.2f}"/>' for _ in range(26))
-add('eid', 'The month ends when someone sees this thin moon.',
+add('eid', 'For many Muslims, the fasting month ends when this thin moon is seen.',
   svg(330, 118, 'A drawing of a very thin crescent moon low in a dusk sky above the outline of rooftops and a dome with a tower',
     '<defs><linearGradient id="dk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2450"/><stop offset=".7" stop-color="#6a4c8c"/><stop offset="1" stop-color="#f0a070"/></linearGradient></defs><rect width="330" height="118" rx="10" fill="url(#dk)"/>' + stars +
     '<path d="M214 44 A17 17 0 1 0 238 68 A21 21 0 0 1 214 44Z" fill="#fdf6dc"/>'
     '<path d="M0 118 V98 H40 V88 H70 V98 H96 Q96 76 118 76 Q140 76 140 98 H170 V60 l5 -10 l5 10 V98 H220 V90 H262 V98 H330 V118Z" fill="#15152a"/>'),
-  'A drawing of the new crescent just after sunset. It is very thin and sets soon after the sun, so it is easy to miss. People gather outside to look for it, and Eid begins when it is seen.')
+  'A drawing of the new crescent just after sunset. It is very thin and sets soon after the sun, so it is easy to miss. People gather outside to look for it. In many places, Eid al-Fitr begins when it is seen. Other communities work out the date ahead of time.')
 
 # ---- june solstice: Stonehenge ----
 r = R(36)
@@ -176,7 +176,7 @@ add('junesolstice', 'Built so the midsummer sun rises in line with the stones.',
   svg(330, 118, 'A drawing of Stonehenge: a ring of tall grey standing stones with flat stones laid across the tops, on green grass, with the sun rising between two of them',
     '<rect width="330" height="94" rx="10" fill="#fbe3b8"/><circle cx="180" cy="70" r="15" fill="#f6b53a"/><g stroke="#f6b53a" stroke-width="2" opacity=".6"><path d="M180 44 V30 M158 54 L146 44 M202 54 L214 44"/></g>'
     + stones + lint + '<path d="M0 90 H330 V118 H0Z" fill="#7fbf6a"/>' + person(292, 100, 15)),
-  'A drawing of Stonehenge in England, with a person for size. The stones in the ring stand about 4 meters tall, and the tallest stone is almost 7. On the longest day, people standing in the middle see the sun come up over a marker stone outside the ring.')
+  'A drawing of Stonehenge in England, with a person for size. The stones in the ring stand about 4 meters tall, and the tallest stone is almost 7. On the longest day, people standing in the middle see the sun come up right beside a marker stone outside the ring.')
 
 # ---- mid-autumn: mooncake ----
 petal = ''.join(f'<path d="M110 60 m0 -24 q7 6 0 14 q-7 -8 0 -14Z" fill="none" stroke="#9a6a22" stroke-width="1.5" transform="rotate({i*45} 110 60)"/>' for i in range(8))
@@ -186,7 +186,7 @@ add('midautumn', 'A round cake for a round moon.',
     scal + '<circle cx="110" cy="60" r="43" fill="#d49a3a"/><circle cx="110" cy="60" r="34" fill="none" stroke="#9a6a22" stroke-width="1.5"/>' + petal + '<circle cx="110" cy="60" r="7" fill="none" stroke="#9a6a22" stroke-width="1.5"/>'
     '<path d="M214 96 L214 34 Q262 36 286 78Z" fill="#d49a3a"/><path d="M219 91 L219 42 Q256 44 277 78Z" fill="#6b4226"/><circle cx="236" cy="66" r="13" fill="#f2a52e"/><circle cx="232" cy="62" r="4" fill="#f8c869" opacity=".8"/>'
     + txt(292, 30, 'egg yolk,', 10.5, INK) + txt(292, 43, 'like the moon', 10.5, INK) + '<path d="M262 46 L244 58" stroke="#3b2f4a" stroke-width="1"/>'),
-  'A drawing of a mooncake, about as wide as your palm. The top is pressed in a carved mold. Inside is a thick, sweet paste, often with a salted egg yolk in the middle that looks like a full moon. One cake is cut and shared.')
+  'A drawing of a mooncake, about as wide as your palm. The top is pressed in a carved mold. In this style, from southern China, the inside is a thick, sweet paste, often with a salted egg yolk in the middle that looks like a full moon. One cake is cut and shared.')
 
 # ---- dia de los muertos: an ofrenda ----
 r = R(38)
@@ -239,4 +239,4 @@ add('christmas', 'A decorated tree, lights, carols, and gifts. No two countries 
     '<rect x="159" y="104" width="12" height="12" fill="#7a5236"/>' + tiers + baub +
     '<path d="M165 4 l3 7 l7 0 l-6 5 l2 7 l-6 -4 l-6 4 l2 -7 l-6 -5 l7 0Z" fill="#f6c531"/>'
     '<rect x="104" y="100" width="26" height="18" fill="#e5484d"/><path d="M117 100 v18 M104 108 h26" stroke="#f6c531" stroke-width="2.5"/><rect x="198" y="96" width="22" height="22" fill="#3d8fe0"/><path d="M209 96 v22 M198 106 h22" stroke="#fff" stroke-width="2.5"/><rect x="224" y="104" width="20" height="14" fill="#f6c531"/><path d="M234 104 v14" stroke="#e5484d" stroke-width="2.5"/>'),
-  'The decorated indoor tree started in Germany and spread around the world in the 1800s. Other customs change from place to place: who brings the gifts, what is eaten, and even which day is the main one.')
+  'The decorated indoor tree started in German-speaking lands in the 1500s and spread around the world in the 1800s. Other customs change from place to place: who brings the gifts, what is eaten, and even which day is the main one.')

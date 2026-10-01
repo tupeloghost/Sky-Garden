@@ -14,11 +14,11 @@ for n in (11,13,17,19):
     labels += txt(round((x0+x)/2-2), 84, n, 13); x += r.uniform(9,13)
 bl = ''.join(f'<ellipse cx="{r.uniform(40,300):.0f}" cy="{r.uniform(40,56):.0f}" rx="{r.uniform(8,22):.0f}" ry="{r.uniform(2,5):.0f}" fill="{r.choice(["#8f6f52","#c9ab88","#7d5f46"])}" opacity=".35"/>' for _ in range(12))
 add('bone', 'Someone cut these marks about 20,000 years ago. Count them.',
-  svg(330, 92, 'A drawing of a rough brown bone, narrow at one end with a small crystal, scratched with four groups of short notches',
+  svg(330, 92, 'A drawing of a rough brown bone, narrow at one end with a tiny crystal, scratched with four groups of short notches',
     f'<clipPath id="ib"><path d="{path}"/></clipPath><path d="{path}" fill="#ad8b68"/><g clip-path="url(#ib)">{bl}<rect x="0" y="52" width="330" height="20" fill="#5e4532" opacity=".28"/></g>'
-    '<path d="M23 38 L12 39 L9 43 L13 47 L23 49Z" fill="#eef3f5" stroke="#b9c6cc" stroke-width=".8"/>'
+    '<path d="M23 40 L18 41 L17 43.500 L19 46 L23 47Z" fill="#eef3f5" stroke="#b9c6cc" stroke-width=".8"/>'
     f'<g stroke="#3f2c1f" stroke-width="1.1" stroke-linecap="round" fill="none" opacity=".85">{marks}</g>{labels}'),
-  'A drawing, not a photo. The real bone is about 10 centimeters long, with a sharp crystal fixed in one end. The notches are shallow scratches. One row has groups of 11, 13, 17, and 19.')
+  'A drawing, not a photo. The real bone is about 10 centimeters long, with a tiny piece of sharp crystal set in one end. The notches are shallow scratches. One row has groups of 11, 13, 17, and 19.')
 
 # ---- tablet (Plimpton 322 style): clay slab, ruled columns, rows of wedge marks, chipped edges ----
 r = R(3)
@@ -35,7 +35,7 @@ for row in range(11):
             w += vwedge(x, y - 1) if r.random() < .55 else wedge(x, y + 1); x += r.uniform(6, 9.5)
             if r.random() < .22: x += 6
 rules = ''.join(f'<path d="M{b+4} 14 L{b+3} 110" />' for a, b in cols[:-1]) + '<path d="M22 21 L306 16"/>'
-add('tablet', 'This is why your hour has 60 minutes.',
+add('tablet', 'Counting in 60s like this is why your hour has 60 minutes.',
   svg(330, 124, 'A drawing of a clay tablet with chipped edges, ruled into columns and covered in rows of small wedge-shaped marks',
     f'<clipPath id="tb"><path d="{slab}"/></clipPath><path d="{slab}" fill="#b9a58c"/><g clip-path="url(#tb)"><path d="M0 96 H330 V124 H0Z" fill="#8f7a62" opacity=".35"/><path d="M0 0 H330 V20 H0Z" fill="#d6c6ae" opacity=".5"/>'
     f'<g stroke="#7d6a55" stroke-width=".8" fill="none">{rules}</g><g stroke="#5c4a3a" stroke-width=".9" fill="#5c4a3a" stroke-linecap="round">{w}</g>'
@@ -44,19 +44,20 @@ add('tablet', 'This is why your hour has 60 minutes.',
 
 # ---- gears (Antikythera fragment A): corroded green-bronze lump, big wheel with four spokes ----
 r = R(11)
-lump = blob(150, 66, 88, 58, 22, .1, 5)
-teeth = ''.join(f'<path d="M{150+52*math.cos(a):.1f} {64+52*math.sin(a):.1f} L{150+55.5*math.cos(a+.014):.1f} {64+55.5*math.sin(a+.014):.1f} L{150+52*math.cos(a+.028):.1f} {64+52*math.sin(a+.028):.1f}"/>' for a in [i/110*math.tau for i in range(8, 100)])
-spk = ''.join(f'<path d="M{150+8*math.cos(a-.5):.1f} {64+8*math.sin(a-.5):.1f} L{150+48*math.cos(a-.09):.1f} {64+48*math.sin(a-.09):.1f} L{150+48*math.cos(a+.09):.1f} {64+48*math.sin(a+.09):.1f} L{150+8*math.cos(a+.5):.1f} {64+8*math.sin(a+.5):.1f}Z"/>' for a in (.35, .35+math.pi/2, .35+math.pi, .35+3*math.pi/2))
-crust = ''.join(f'<path d="{blob(r.uniform(70,230), r.uniform(18,112), r.uniform(5,16), r.uniform(4,11), 9, .25, i)}" fill="{r.choice(["#2f4a40","#5f8a76","#243a33","#6e9a84","#8a7a52"])}" opacity="{r.uniform(.35,.7):.2f}"/>' for i in range(34))
-add('gears', 'This lump of green metal is a machine. It is 2,100 years old.',
-  svg(330, 132, 'A drawing of a corroded green lump of bronze with a large gear wheel inside it, with four spokes and tiny teeth around its edge',
+lump = blob(150, 66, 88, 72, 22, .08, 5)
+CXg, CYg, RG = 150, 72, 63
+teeth = ''.join(f'<path d="M{CXg+(RG+2)*math.cos(a):.1f} {CYg+(RG+2)*math.sin(a):.1f} L{CXg+(RG+5.5)*math.cos(a+.012):.1f} {CYg+(RG+5.5)*math.sin(a+.012):.1f} L{CXg+(RG+2)*math.cos(a+.024):.1f} {CYg+(RG+2)*math.sin(a+.024):.1f}"/>' for a in [i/130*math.tau for i in range(10, 118)])
+spk = ''.join(f'<path d="M{CXg+9*math.cos(a-.5):.1f} {CYg+9*math.sin(a-.5):.1f} L{CXg+(RG-2)*math.cos(a-.08):.1f} {CYg+(RG-2)*math.sin(a-.08):.1f} L{CXg+(RG-2)*math.cos(a+.08):.1f} {CYg+(RG-2)*math.sin(a+.08):.1f} L{CXg+9*math.cos(a+.5):.1f} {CYg+9*math.sin(a+.5):.1f}Z"/>' for a in (.35, .35+math.pi/2, .35+math.pi, .35+3*math.pi/2))
+crust = ''.join(f'<path d="{blob(r.uniform(66,234), r.uniform(8,136), r.uniform(5,16), r.uniform(4,11), 9, .25, i)}" fill="{r.choice(["#2f4a40","#5f8a76","#243a33","#6e9a84","#8a7a52"])}" opacity="{r.uniform(.35,.7):.2f}"/>' for i in range(44))
+add('gears', 'This lump of green metal is a machine. It is about 2,100 years old.',
+  svg(330, 150, 'A drawing of a corroded green lump of bronze with a large gear wheel inside it, with four spokes and tiny teeth around its edge',
     f'<clipPath id="ak"><path d="{lump}"/></clipPath><path d="{lump}" fill="#3d5f52"/><g clip-path="url(#ak)">{crust}'
-    f'<circle cx="150" cy="64" r="50" fill="#1f332d" opacity=".55"/><g fill="#7fa893">{spk}</g><circle cx="150" cy="64" r="50" fill="none" stroke="#7fa893" stroke-width="5"/><g stroke="#a9cdb9" stroke-width="1" fill="none">{teeth}</g>'
-    '<circle cx="150" cy="64" r="9" fill="#7fa893"/><rect x="146.500" y="60.500" width="7" height="7" fill="#1f332d"/>'
-    '<circle cx="206" cy="38" r="15" fill="none" stroke="#7fa893" stroke-width="3"/><circle cx="206" cy="38" r="3" fill="#7fa893"/><circle cx="96" cy="104" r="11" fill="none" stroke="#7fa893" stroke-width="2.5"/>'
-    + ''.join(f'<path d="{blob(r.uniform(90,215), r.uniform(20,108), r.uniform(6,13), r.uniform(4,9), 8, .3, 90+i)}" fill="#2a4239" opacity=".7"/>' for i in range(9)) + '</g>'
-    + f'<path d="M262 124 h54" stroke="#9a7f66" stroke-width="2"/><path d="M262 120 v8 M316 120 v8" stroke="#9a7f66" stroke-width="2"/>' + txt(289, 116, '5 cm', 11)),
-  'A drawing of the biggest piece that survived, about 18 centimeters wide. The large wheel has four spokes and once had about 223 teeth, each cut by hand.')
+    f'<circle cx="{CXg}" cy="{CYg}" r="{RG}" fill="#1f332d" opacity=".55"/><g fill="#7fa893">{spk}</g><circle cx="{CXg}" cy="{CYg}" r="{RG}" fill="none" stroke="#7fa893" stroke-width="5"/><g stroke="#a9cdb9" stroke-width="1" fill="none">{teeth}</g>'
+    f'<circle cx="{CXg}" cy="{CYg}" r="10" fill="#7fa893"/><rect x="{CXg-3.5}" y="{CYg-3.5}" width="7" height="7" fill="#1f332d"/>'
+    '<circle cx="212" cy="30" r="13" fill="none" stroke="#7fa893" stroke-width="3"/><circle cx="212" cy="30" r="3" fill="#7fa893"/>'
+    + ''.join(f'<path d="{blob(r.uniform(90,215), r.uniform(14,130), r.uniform(6,13), r.uniform(4,9), 8, .3, 90+i)}" fill="#2a4239" opacity=".7"/>' for i in range(10)) + '</g>'
+    + '<path d="M266 140 h49" stroke="#9a7f66" stroke-width="2"/><path d="M266 136 v8 M315 136 v8" stroke="#9a7f66" stroke-width="2"/>' + txt(290, 132, '5 cm', 11)),
+  'A drawing of the biggest piece that survived, about 18 centimeters wide. The large wheel is about 13 centimeters across. It has four spokes and once had about 223 teeth, each cut by hand.')
 
 # ---- rosetta: dark slab, broken top corners, three bands of writing ----
 r = R(5)
@@ -76,7 +77,7 @@ add('rosetta', 'One message, written three ways.',
     f'<g fill="#c9c6bd" stroke="#c9c6bd" opacity=".9">{lines(22, 40, 5, "h")}{lines(50, 76, 9, "d")}{lines(85, 116, 13, "g")}</g>'
     '<path d="M82 44.500 H218 M82 80.500 H218" stroke="#2a2a2e" stroke-width="1"/></g>'
     + txt(228, 34, 'Hieroglyphs', 12, '#9a7f66', 'start') + txt(228, 66, 'Demotic', 12, '#9a7f66', 'start') + txt(228, 104, 'Greek', 12, '#9a7f66', 'start') + '<path d="M66 8 V120 M61 8 h10 M61 120 h10" stroke="#9a7f66" stroke-width="1.6" fill="none"/>' + txt(34, 68, '112 cm', 12)),
-  'A drawing of the Rosetta Stone. It is 112 centimeters tall, about waist high, and has 14 lines of hieroglyphs, 32 of Demotic, and 54 of Greek. The top is broken off.')
+  'A drawing of the Rosetta Stone. It is 112 centimeters tall and has 14 lines of hieroglyphs, 32 of Demotic, and 54 of Greek. The top and one bottom corner are broken off.')
 
 # ---- tools: an Oldowan chopper, and a stone axe head tied to a handle ----
 r = R(2)
@@ -84,10 +85,10 @@ cob = 'M30 78 Q20 50 44 34 L62 30 L74 42 L88 34 L104 46 L112 40 Q128 58 118 84 Q
 scars = '<path d="M44 34 L56 52 L62 30 M74 42 L78 60 L88 34 M104 46 L100 62 L112 40 M56 52 L78 60 L100 62" fill="none" stroke="#3f3040" stroke-width="1.2" stroke-linejoin="round"/>'
 head = 'M214 30 L250 22 L262 40 L252 62 L216 58 L206 44Z'
 lash = ''.join(f'<path d="M{228+i*4} 62 L{238+i*4} 40" />' for i in range(-2, 4)) + ''.join(f'<path d="M{238+i*4} 62 L{228+i*4} 40" />' for i in range(-1, 4))
-add('tools', 'The first tool was a rock with one sharp edge.',
+add('tools', 'One of the first tools was a rock with one sharp edge.',
   svg(330, 118, 'Two drawings: a rounded stone with chips knocked off one edge, and a stone axe head tied to a wooden handle',
     f'<path d="{cob}" fill="#7a5f6a"/><path d="M30 78 Q38 96 60 100 Q96 104 118 84 Q100 92 62 90 Q40 88 30 78Z" fill="#4f3c47" opacity=".6"/><path d="M44 34 L62 30 L74 42 L88 34 L104 46 L112 40 L100 62 L78 60 L56 52Z" fill="#a08592"/>{scars}'
-    + txt(74, 114, 'about 2.6 million years old', 11)
+    + txt(84, 114, '2.6 million years old, or older', 11)
     + '<path d="M236 36 L246 36 L262 108 L250 110Z" fill="#9b6b4a"/><path d="M240 36 L246 36 L262 108 L257 109Z" fill="#7a5236" opacity=".6"/>'
     f'<path d="{head}" fill="#6f7377"/><path d="M214 30 L250 22 L238 38 L206 44Z" fill="#8d9296"/><path d="M206 44 L216 58 L222 46Z" fill="#555a5e"/>'
     f'<g stroke="#d9c49a" stroke-width="1.6" stroke-linecap="round">{lash}</g>' + txt(248, 12, 'stone tied to a handle', 11)),
@@ -99,7 +100,7 @@ pil = 'M118 12 L214 8 L218 34 L190 38 L192 122 L140 122 L142 38 L114 36Z'
 fox = '<path d="M150 62 q8 -8 18 -4 l6 -6 l2 8 q6 4 4 10 l-8 2 l-2 10 l-4 0 l0 -8 l-10 0 l-2 8 l-4 0 l0 -12 q-6 -6 -8 -14Z" fill="#c9bda6" stroke="#8c8068" stroke-width="1"/>'
 arms = '<path d="M146 44 L146 86 L172 92 M186 44 L186 84" fill="none" stroke="#8c8068" stroke-width="2.2"/><path d="M160 96 h5 M160 99 h5 M160 102 h5 M170 96 h5 M170 99 h5 M170 102 h5" stroke="#8c8068" stroke-width="1.4"/><path d="M141 108 H192" stroke="#8c8068" stroke-width="3"/>'
 speck = ''.join(f'<circle cx="{r.uniform(116,216):.0f}" cy="{r.uniform(10,120):.0f}" r="{r.uniform(.6,1.6):.1f}" fill="#9c8f76" opacity=".6"/>' for _ in range(70))
-add('temple', 'People carved these giant stone pillars before anyone farmed.',
+add('temple', 'Hunters and gatherers carved these giant stone pillars before farming began.',
   svg(330, 130, 'A drawing of a tall T-shaped stone pillar carved with arms, hands, a belt, and a fox, with a person beside it for size',
     f'<path d="M20 122 H310" stroke="#c9ab88" stroke-width="2"/><clipPath id="gt"><path d="{pil}"/></clipPath><path d="{pil}" fill="#d9cfb9"/><g clip-path="url(#gt)">{speck}<path d="M176 0 H230 V130 H182Z" fill="#b7ab92" opacity=".55"/></g>{arms}{fox}'
     + person(96, 122, 36) + txt(258, 60, '5.5 meters', 12) + '<path d="M228 10 V122 M223 10 h10 M223 122 h10" stroke="#9a7f66" stroke-width="1.6" fill="none"/>'),
