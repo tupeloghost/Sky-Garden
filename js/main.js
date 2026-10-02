@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HOWTO, QUEST5, BUILDINGS, GRANDMA_LETTER2, MUTE_KEY, SEASONS, CROPS, ITEMS, FURN, LOVES, BRIDGE2_COST, BRIDGE_COST, DAY_LEN, SAVE_KEY, NEIGHBORS, AHA, RECALL, AHA_ORDER, RELICS, LAYERS, QUESTIONS, QUEST3, QUEST4, ROOFS, WALLS, PAINT_PRICE, QUEST1, QUEST2, CHIMES } from '../data/content.js';
 import { CONSTELLATIONS } from '../data/stars.js';
 import { FINDS } from '../data/finds.js';
@@ -234,7 +235,7 @@ function island(r, x, y, z, o = {}) {
     const root = mesh(new THREE.CylinderGeometry(.035, .012, len, 5), mat(vine ? 0x5fb85c : 0x7a5236), Math.cos(a)*rr, -1.7 - len/2 - (1 - rr/r)*r*.5, Math.sin(a)*rr);
     root.rotation.z = Math.sin(i)*.15; g.add(root);
     if (vine) root.add(mesh(sph(.08), mat(0x7fd88a), 0, -len/2, 0)); }
-  scene.add(g); if (!o.hidden) walkables.push(top); return { g, top, lip, r };
+  bake(g); scene.add(g); if (!o.hidden) walkables.push(top); return { g, top, lip, r };
 }
 const HOME = island(9, 0, 0, 0);
 const ORCH_POS = new THREE.Vector3(28, -1.5, 3);
@@ -293,6 +294,7 @@ function tree(parent, x, z, fruitKind) {
   for (let i = 0; i < 14; i++) { const a = i * 2.4 + r(20), e = .1 + r(i + 21) * 1.2, rr = .92, b = mesh(sph(.16 + r(i + 30) * .1), i % 2 ? cm : cm2, Math.cos(a) * Math.cos(e) * rr, .5 + Math.sin(e) * .62, Math.sin(a) * Math.cos(e) * rr); b.scale.y = .8; canopy.add(b); } // small clumps of leaves break up the outline
   const fruits = new THREE.Group(); canopy.add(fruits);
   if (fruitKind) for (let i=0;i<8;i++){ const a=i*.8 + r(9); fruits.add(mesh(sph(.13), mat(fruitKind === 'apple' ? 0xff6b6b : 0xffb36b), Math.cos(a)*.82, .3+Math.sin(i*2)*.35, Math.sin(a)*.82)); }
+  fruits.userData.keep = true; bake(canopy);
   g.userData = { canopy, cm, cm2, fruits, ph:Math.random()*6 };
   parent.add(g); trees.push(g); return g;
 }
@@ -327,6 +329,17 @@ const HOME_SIZES = [null, { name:'hut' },
 const homeStyle = () => HOME_STYLES[S.homeStyle] ? S.homeStyle : 'daub', homeSize = () => (S.home || 0) < 3 ? 1 : Math.min(3, S.homeSize || 1), homeName = () => HOME_SIZES[homeSize()].name;
 roofMat.map = tx('straw', 4, 1); wallMat.map = tx('plaster', 2, 2);
 const ridgeMat = mat(0xff8fa3, { map:tx('straw', 4, 1) }), lampMat = new THREE.MeshStandardMaterial({ color:0xffe9b8, emissive:0xffc46b, emissiveIntensity:.15, roughness:.5 }); lampMat.userData.outlineParameters = NO_OUTLINE;
+// --- keeping the detail cheap: once a building is drawn, parts that look the same are joined into one piece, so the phone draws a few pieces instead of hundreds ---
+function bake(root) { try { root.updateWorldMatrix(true, true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), buckets = new Map();
+  const walk = o => { if (o !== root && (o.userData.kind || o.userData.use || o.userData.spin || o.userData.keep || !o.visible || o.isSprite || o.isLine)) return; // things you tap, things that move, and hidden things stay as they are
+    if (o.isMesh && !o.children.length && o.material && !Array.isArray(o.material) && o.material.visible !== false && o.geometry.attributes.normal && o.geometry.attributes.uv && !o.userData.baked) { const m = o.material;
+      const key = [m.type, m.color ? m.color.getHex() : '', m.map ? m.map.uuid : '', m.transparent, m.opacity, m.side, m.emissive ? m.emissive.getHex() : '', m.userData.outlineParameters ? 'n' : 'o', m.metalness, m.roughness, o.castShadow, o.receiveShadow, m.vertexColors].join('|');
+      if (!buckets.has(key)) buckets.set(key, []); buckets.get(key).push(o); }
+    [...o.children].forEach(walk); };
+  walk(root);
+  buckets.forEach(list => { if (list.length < 2) return; const geos = list.map(o => { const src = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(), g = new THREE.BufferGeometry(); ['position', 'normal', 'uv'].forEach(k => g.setAttribute(k, src.attributes[k])); g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld)); return g; });
+    const merged = mergeGeometries(geos); if (!merged) return; const one = new THREE.Mesh(merged, list[0].material); one.castShadow = list[0].castShadow; one.receiveShadow = list[0].receiveShadow; one.userData.baked = true; root.add(one); list.forEach(o => o.parent && o.parent.remove(o)); });
+} catch (e) { console.warn('bake', e); } return root; }
 // --- detailed parts shared by every building: windows, doors, stone footings, chimneys, layered roofs, pots of flowers ---
 const townHalos = [];
 const KIT = (() => {
@@ -484,6 +497,7 @@ function drawHouse() {
       const vane = fine(0x4a4450); add(mesh(new THREE.CylinderGeometry(.015, .015, .6, 5), vane, 0, wh + rh + .6, 0)); add(mesh(new THREE.BoxGeometry(.5, .025, .025), vane, 0, wh + rh + .82, 0)); const tip = add(mesh(new THREE.ConeGeometry(.06, .16, 4), vane, .3, wh + rh + .82, 0)); tip.rotation.z = -Math.PI / 2; add(mesh(new THREE.BoxGeometry(.14, .12, .02), vane, -.24, wh + rh + .82, 0));
     }
   }
+  bake(house);
 }
 const buildSite = new THREE.Group(); buildSite.position.copy(house.position); buildSite.userData.kind = 'buildsite'; scene.add(buildSite);
 const siteStones = new THREE.Group(), siteFrame = new THREE.Group(), siteWalls = new THREE.Group(); buildSite.add(siteStones, siteFrame, siteWalls);
@@ -818,7 +832,7 @@ function buildingModel(id) {
     [-1, 1].forEach(sd => { const a = sd * .95; KIT.win(g, Math.sin(a) * 1.66, 1.05, Math.cos(a) * 1.66, { w:.36, round:true, ry:a, frame:0x8a7fc0 }); });
     [[.9,2.9,-.6],[-.7,3.2,.5],[-1.1,2.5,-.5],[.2,3.4,-.4]].forEach(([x, y, z], i) => { const st = mesh(new THREE.CircleGeometry(.06, 5), glow(0xfff3a0), x, y, z); st.lookAt(x * 3, y * 3 - 3, z * 3); g.add(st); }); // gold stars set into the dome
   }
-  return g;
+  return bake(g);
 }
 const siteGroups = BUILDINGS.map((b, i) => {
   const g = new THREE.Group(); g.position.set(OH.x + b.pos[0], OH.y, OH.z + b.pos[1]); g.userData = { kind:'site', i };
@@ -6036,7 +6050,7 @@ const nanaHome = new THREE.Group(); nanaHome.position.set(-1, 0, -6); nanaHome.u
   KIT.pot(h, -1.02, 1.02, .9, 1); KIT.pot(h, .1, 1.04, .7, 3); KIT.pot(h, 1.2, .95, 1, 0);
   { const can = fine(0x8fa3b0); h.add(mesh(new THREE.CylinderGeometry(.09,.1,.16,10), can, .92, .08, 1.12)); const sp = mesh(new THREE.CylinderGeometry(.015,.02,.2,6), can, 1.05, .12, 1.12); sp.rotation.z = -.9; h.add(sp); const hd = mesh(new THREE.TorusGeometry(.06,.012,6,10,Math.PI), can, .92, .17, 1.12); h.add(hd); } // a watering can
   [[-1.3,.5],[-1.35,.1],[1.4,.4],[-1.25,-.4]].forEach(([x, z], i) => { h.add(mesh(new THREE.CylinderGeometry(.015,.015,.3,4), fine(0x4fb46a), x, .15, z)); h.add(mesh(sph(.09), mat(KIT.BLOOM[i % 5]), x, .33, z)); const lf = mesh(sph(.07), fine(0x4fb46a), x + .06, .12, z); lf.scale.y = .4; h.add(lf); });
-  const hb = hitBox(2.3, 2.6, 1.9); hb.position.y = 1.3; h.add(hb); }
+  const hb = hitBox(2.3, 2.6, 1.9); hb.position.y = 1.3; h.add(hb); } bake(nanaHome);
 // Pip's Shop on the Town Square: his cart grew up
 const pipShop = new THREE.Group(); pipShop.position.copy(SQL(.9, -4.5)); faceCenter(pipShop, .9, -4.5); pipShop.userData = { kind:'home', room:'pip' }; scene.add(pipShop); lateClicks.push(pipShop);
 { const h = pipShop, wallM = mat(0x86c7ff, { map:tx('planks', 6, 1) }), cream = mat(0xfff6e6), rose = mat(0xff8fa3);
@@ -6052,7 +6066,7 @@ const pipShop = new THREE.Group(); pipShop.position.copy(SQL(.9, -4.5)); faceCen
   for (let i = 0; i < 9; i++) { const fl = mesh(new THREE.ConeGeometry(.07,.14,3), fine(KIT.BLOOM[i % 5]), -1.08 + i * .27, 1.5 - Math.sin(i / 8 * Math.PI) * .07, .86); fl.rotation.x = Math.PI; fl.scale.z = .3; h.add(fl); } // a string of little flags
   KIT.lantern(h, -1.02, 1.1, .88); KIT.barrel(h, 1.0, 1.0, .9); { const c = KIT.crate(h, -1.05, 1.05, .9, .3); [[-.08,.36,0,0xff8fa3],[.08,.36,.05,0xffc857],[0,.38,-.08,0x8fdc8a]].forEach(([x, y, z, col]) => c.add(mesh(sph(.08), mat(col), x, y, z))); }
   KIT.pot(h, .1, 1.0, .8, 2);
-  const hb = hitBox(2.5, 2.4, 1.8); hb.position.y = 1.2; h.add(hb); }
+  const hb = hitBox(2.5, 2.4, 1.8); hb.position.y = 1.2; h.add(hb); } bake(pipShop);
 // Captain Drizzle's cabin, on shore beside his ship: blue boards, a round window, a life ring
 const drizzleHome = new THREE.Group(); drizzleHome.position.set(ORCH_POS.x - 3, ORCH_POS.y, ORCH_POS.z + 5); drizzleHome.userData = { kind:'home', room:'drizzle' }; scene.add(drizzleHome); lateClicks.push(drizzleHome);
 { const h = drizzleHome, cream = mat(0xfff6e6), roofM = mat(0xd9a066, { map:tx('planks', 1, 8) });
@@ -6068,7 +6082,7 @@ const drizzleHome = new THREE.Group(); drizzleHome.position.set(ORCH_POS.x - 3, 
   KIT.lantern(h, .98, 1.05, .88); KIT.barrel(h, 1.25, .5, 1);
   { const iron = mat(0x4a4450), an = KIT.at(h, -1.2, 0, .7, .4); an.rotation.z = .25; an.add(mesh(new THREE.CylinderGeometry(.03,.03,.7,6), iron, 0, .4, 0)); an.add(mesh(new THREE.TorusGeometry(.07,.02,6,12), iron, 0, .8, 0)); an.add(mesh(new THREE.BoxGeometry(.3,.04,.04), iron, 0, .68, 0)); const ar = mesh(new THREE.TorusGeometry(.22,.035,6,14,Math.PI), iron, 0, .27, 0); ar.rotation.z = Math.PI; an.add(ar); } // an anchor leaning on the wall
   { const rope = mat(0xd9c39a); [0, 1, 2].forEach(i => { const c = mesh(new THREE.TorusGeometry(.16 - i * .02,.035,6,16), rope, .2, .04 + i * .06, 1.0); c.rotation.x = Math.PI / 2; h.add(c); }); [[.75,0xff5a5a],[.95,0xffc857]].forEach(([x, c]) => { h.add(mesh(sph(.1), mat(c), x, .1, 1.0)); h.add(mesh(new THREE.BoxGeometry(.21,.03,.21), fine(0xffffff), x, .1, 1.0)); }); } // a coil of rope and two floats
-  const hb = hitBox(2.2, 2.6, 1.7); hb.position.y = 1.3; h.add(hb); }
+  const hb = hitBox(2.2, 2.6, 1.7); hb.position.y = 1.3; h.add(hb); } bake(drizzleHome);
 // Moss & Fern's burrow: a round door in a grassy mound against the windmill
 const twinsHome = new THREE.Group(); twinsHome.position.set(WIND_POS.x + 3.4, WIND_POS.y, WIND_POS.z - .3); twinsHome.userData = { kind:'home', room:'twins' }; scene.add(twinsHome); lateClicks.push(twinsHome);
 { const h = twinsHome; const md = mesh(new THREE.SphereGeometry(1.25, 28, 16, 0, Math.PI*2, 0, Math.PI/2), mat(0x7fbf6a, { map:tx('straw', 8, 2) }), 0, 0, 0); md.scale.set(1.05, .95, 1); h.add(md);
@@ -6081,7 +6095,7 @@ const twinsHome = new THREE.Group(); twinsHome.position.set(WIND_POS.x + 3.4, WI
   [[1.05,.9,.14,0xe0556f],[1.2,1.05,.1,0xe0556f],[-1.15,.95,.12,0xf2c14e],[.95,1.15,.08,0xf2c14e]].forEach(([x, z, r, c]) => { h.add(mesh(new THREE.CylinderGeometry(r * .3, r * .4, r * 1.4, 8), mat(0xfff1d6), x, r * .7, z)); const cap = mesh(new THREE.SphereGeometry(r, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(c), x, r * 1.3, z); h.add(cap); [0, 2, 4].forEach(k => h.add(mesh(sph(r * .16), fine(0xffffff), x + Math.cos(k) * r * .55, r * 1.3 + r * .62, z + Math.sin(k) * r * .55))); }); // mushrooms
   [[0,1.35],[.12,1.72],[-.1,2.05]].forEach(([x, z], i) => { const st = mesh(new THREE.CylinderGeometry(.2,.22,.05,9), mat(i % 2 ? 0xbfb6a8 : 0xd8cfc0), x, .025, z); st.scale.z = .75; h.add(st); }); // stepping stones
   const sg = signBoard('The Burrow', 1.2, .36, 1); sg.position.set(1.6, 0, .9); h.add(sg);
-  const hb = hitBox(2.5, 1.7, 2.4); hb.position.y = .85; h.add(hb); }
+  const hb = hitBox(2.5, 1.7, 2.4); hb.position.y = .85; h.add(hb); } bake(twinsHome);
 // Lumen's studio on Night Isle: dark walls, a big window that glows, a crescent moon on the roof
 const lumenHome = new THREE.Group(); lumenHome.position.set(NIGHT_POS.x - 1.8, NIGHT_POS.y, NIGHT_POS.z - 4.4); lumenHome.userData = { kind:'home', room:'lumen' }; scene.add(lumenHome); lateClicks.push(lumenHome);
 { const h = lumenHome, wallM = mat(0x3b2f6a, { map:tx('planks', 5, 1) }), trimM = mat(0x5b4a94), roofM = mat(0x2d3a6b, { map:tx('straw', 4, 1) });
@@ -6096,7 +6110,7 @@ const lumenHome = new THREE.Group(); lumenHome.position.set(NIGHT_POS.x - 1.8, N
   for (let i = 0; i < 9; i++) { const t = i / 8; h.add(mesh(sph(.045), glow([0xffe0a8, 0xc9b6ff, 0x9fe7e0][i % 3]), -1 + t * 2, 1.52 - Math.sin(t * Math.PI) * .12, .86)); } // a string of lights under the roof
   [[-1.2,.95,0xff8fa3],[-1.0,1.1,0x9fe7e0],[-1.25,1.2,0xfff3a0]].forEach(([x, z, c]) => { h.add(mesh(new THREE.CylinderGeometry(.08,.07,.14,10), mat(0xdfe3ea), x, .07, z)); h.add(mesh(new THREE.CylinderGeometry(.07,.07,.02,10), glow(c), x, .145, z)); }); // pots of glowing paint
   { const br = mesh(new THREE.CylinderGeometry(.015,.015,.4,5), mat(0x9b6b4a), -1.0, .12, 1.25); br.rotation.z = 1.2; h.add(br); h.add(mesh(sph(.03), glow(0xff8fa3), -.82, .19, 1.25)); }
-  const hb = hitBox(2.3, 2.8, 1.8); hb.position.y = 1.4; h.add(hb); }
+  const hb = hitBox(2.3, 2.8, 1.8); hb.position.y = 1.4; h.add(hb); } bake(lumenHome);
 // The Museum, at the back of Orchard Isle: cream stone, four columns, and a red banner
 const museumHome = new THREE.Group(); museumHome.position.set(ORCH_POS.x - .6, ORCH_POS.y, ORCH_POS.z - 4.4); museumHome.userData = { kind:'home', room:'museum' }; scene.add(museumHome); lateClicks.push(museumHome);
 { const h = museumHome, st = mat(0xf3ead8, { map:tx('stone', 2, 2) }), tr = mat(0xd9cdb6), tile = mat(0xb5622f, { map:tx('planks', 12, 1) });
@@ -6111,7 +6125,7 @@ const museumHome = new THREE.Group(); museumHome.position.set(ORCH_POS.x - .6, O
   [-.75,.75].forEach(x => { h.add(mesh(new THREE.BoxGeometry(.3,1,.03), mat(0xd6332e), x, 1.2, .73)); h.add(mesh(new THREE.BoxGeometry(.34,.04,.05), mat(0xffc857), x, 1.71, .73)); const tp = mesh(new THREE.ConeGeometry(.15,.16,4), mat(0xd6332e), x, .62, .73); tp.rotation.set(Math.PI, Math.PI / 4, 0); tp.scale.z = .1; h.add(tp); h.add(mesh(new THREE.CircleGeometry(.07, 5), fine(0xffc857), x, 1.25, .75)); }); // banners with a star
   [-1.35, 1.35].forEach(x => { h.add(mesh(new THREE.BoxGeometry(.4,.34,.4), tr, x, .17, 1.15)); h.add(mesh(sph(.24), mat(0x4fb46a), x, .52, 1.15)); h.add(mesh(sph(.16), mat(0x3f9a5c), x + .08, .72, 1.12)); KIT.lantern(h, x * .98, 1.3, .78); }); // clipped bushes in stone planters
   const sg = signBoard('Museum', 1.2, .36, 1); sg.position.set(1.9, 0, 1.1); h.add(sg);
-  const hb = hitBox(3, 2.6, 2.3); hb.position.y = 1.3; h.add(hb); }
+  const hb = hitBox(3, 2.6, 2.3); hb.position.y = 1.3; h.add(hb); } bake(museumHome);
 // --- small playthings: things to mess about with. Play a few times and the real idea behind each one shows up in Know-how ---
 var toyBall, ballV = new THREE.Vector3(), ballPrev = new THREE.Vector3(), toySwing, toyPuffs;
 { // a ball on the meadow: walk into it or tap it to kick it
@@ -6601,6 +6615,11 @@ try { const hr = KIT.hr, ringOf = (g, r, y, n, c1 = 0xd8cfc0, c2 = 0xbfb6a8, h =
     const rope = fine(0xd9c39a); [1.7, -1.7].forEach(x => { const len = Math.hypot(x, 2.5), r = mesh(new THREE.CylinderGeometry(.011,.011,len,4), rope, x / 2, 2.25, 0); r.rotation.z = Math.atan2(x, 2.5); ship2.add(r); }); }
   { // the sell crate: wood grain on the slats
     crate.children[0].material.map = tx('planks', 4, 1); crate.children[0].material.needsUpdate = true; }
+  // join the look-alike parts of the big static things (moving and changing parts are marked to stay separate)
+  blades.userData.keep = millstone.userData.keep = true; bake(windmill);
+  [sail, saggy, flag, shipExplore, shipMarket].forEach(o => o.userData.keep = true); bake(ship); bake(ship2);
+  if (squareBits && squareBits.fnt) { squareBits.water.userData.keep = true; squareBits.drops.forEach(d => d.userData.keep = true); bake(squareBits.fnt); }
+  [workbench, kiln, furnace, sundial, darkroom].forEach(o => { if (o === kiln) kilnMouth.userData.keep = kilnDome.userData.keep = true; if (o === furnace) furnaceGlow.userData.keep = true; if (o === sundial) gnomon.userData.keep = true; bake(o); }); if (lighthouse) { lighthouse.userData.pivot.userData.keep = true; bake(lighthouse); }
 } catch (e) { console.warn('detail', e); }
 window.__sg = { VERSION, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
