@@ -1941,6 +1941,8 @@ function showCard(html, btn='Okay', onClose) {
   if (cardCleanup) { cardCleanup(); cardCleanup = null; }
   btn = { 'Got it':'Okay', Done:'Close', Later:'Not now', 'Never mind':'Not now', Cancel:'Not now' }[btn] || btn; // a few words for closing, used the same way everywhere
   $('card').innerHTML = html + (btn ? `<button id="cardBtn">${btn}</button>` : '');
+  // easy to take in: a long paragraph is shown one sentence to a line, on every card in the game
+  $('card').querySelectorAll('p').forEach(p => { if (p.classList.contains('letter') || p.querySelector('button,input,select,textarea,svg,br') || p.textContent.length < 110) return; p.innerHTML = p.innerHTML.replace(/([.!?]"?)\s+(?=[A-Z0-9"“(]|<b>)/g, '$1<span class="brk"></span>'); });
   $('veil').classList.add('show'); cardClose = onClose;
   // rows you can tap get an arrow; rows that are only information look like plain text (checked once the caller has wired its buttons)
   setTimeout(() => document.querySelectorAll('#card .jlist button, #card .igrid .itile').forEach(b => { const tap = !!b.onclick && !b.classList.contains('locked'); b.classList.toggle('plain', !tap); b.classList.toggle('tap', tap && !!b.closest('.jlist')); if (!tap) b.tabIndex = -1; }), 0);

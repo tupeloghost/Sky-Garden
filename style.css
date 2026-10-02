@@ -375,3 +375,5 @@ body.on-title #goalArrow, body.in-setup #goalArrow, .building #goalArrow { displ
 .card p.gap { margin-top:10px; }
 
 .card .memart + p { margin-top:10px; }
+
+.card p .brk { display:block; height:7px; }
