@@ -2954,7 +2954,7 @@ function dig(i) {
   if (S.relics >= RELICS.length) { S.quest = Math.max(S.quest, 2); S.digs = []; }
   drawDigs(); drawHud(); save();
   toast(`${LAYERS[2]} You found ${r.name}!`);
-  const after = () => showAha(r.id, () => { if (S.tut === 2) return tutAfterFirstMemory(); if (S.quest === 2 && S.relics === 3) toast('Go talk to Nana Gale.'); });
+  const after = () => showAha(r.id, () => { if (S.tut === 2) return tutAfterFirstMemory(); });
   if (RELIC_PLAY[r.id] && !S.aha.includes(r.id)) { S.aha.push(r.id); save(); } // kept even if the game is closed halfway through
   setTimeout(() => RELIC_PLAY[r.id] ? RELIC_PLAY[r.id](after) : after(), 700);
 }
