@@ -46,11 +46,11 @@ for i in range(6):
     ww = w / 2 ** (i + 1); segs += f'<rect x="{x:.1f}" y="34" width="{ww:.1f}" height="38" fill="{cols[i]}"/>'
     if i < 4: segs += txt(x + ww / 2, 58, f'1/{2 ** (i + 1)}', 15 - i * 2, INK)
     x += ww
-add('zeno', 'Half, then half of what is left, forever. It still adds up to 1.',
+add('zeno', 'Walk halfway to a door. Then halfway again. There is always a bit left. So how do you ever arrive?',
   svg(330, 104, 'A diagram of a bar cut in half, then the rest cut in half again and again, into smaller and smaller pieces that get closer and closer to the end',
     '<rect x="20" y="34" width="290" height="38" fill="#fff6e6"/>' + segs + '<rect x="20" y="34" width="290" height="38" fill="none" stroke="#3b2f4a" stroke-width="2"/>'
     + txt(20, 24, 'start', 11, INK, 'start') + txt(310, 24, 'finish', 11, INK, 'end') + txt(165, 94, '1/2 + 1/4 + 1/8 + 1/16 + ... = 1', 13, INK)),
-  'Zeno said you can never finish, because there is always another half to cross. The pieces do go on forever, but they shrink so fast that all of them together fit in exactly one whole.')
+  'Each colored block is one step: half the way, then half of what was left. The steps shrink so fast that all of them together make the whole way.')
 
 # ---- cave ----
 add('cave', 'What if everything you have ever seen was only a shadow?',
