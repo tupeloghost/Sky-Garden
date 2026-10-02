@@ -72,7 +72,7 @@ const NEIGHBORS = {
     "Seeds! Fresh seeds! Well. Fresh-ish. They were in my hat.",
     "One day I will have a real shop. On a big island. With a sign!",
     "Cloudberries grow fast. Sunflowers sell high. I did that math myself.",
-    "I sell furniture now too. Your hut looks like a cloud with a door.",
+    "I sell furniture now too. Your home looks like a cloud with a door.",
     "You are my best customer. You are also my only customer.",
     "Everything is on sale today! The price is the same. But it is on sale.",
   ], heartLines:[
@@ -235,7 +235,7 @@ const RECALL = {
   bell:  { title:'Harmony, Remembered', text:'Remember tuning Grandma\'s Wind Bell? Simple lengths like 1/2 and 2/3 sounded sweet then, and they sound sweet now. The same numbers work on guitar strings and flutes.' },
   rope:  { title:'The Rope Trick, Doubled', text:'Remember the 3-4-5 rope on Captain Drizzle\'s ship? You just used it again. 6, 8, 10 is the same triangle, twice as big. The same math works at any size.' },
   stars: { title:'Your Own Star Map', text:'Remember the star that stays? Sailors used it to hold a steady course at night. You just used it the same way, to find a hidden fishing spot no one else knows about.' },
-  lever: { title:'Archimedes Again', text:'Remember the millstone at the windmill? This boulder is heavier and your push is stronger, but the rule has not changed: put the pivot close to the weight.' },
+  lever: { title:'Archimedes Again', text:'Remember the millstone at the windmill? This boulder is heavier and your push is stronger. The rule has not changed: put the pivot close to the weight.' },
 };
 Object.assign(AHA, {
   moon: { kicker:'MEMORY FOUND', title:'Why the Moon Changes Shape',

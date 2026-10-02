@@ -43,7 +43,7 @@ const FESTIVALS = [
     dates:{ 2026:[4,1], 2027:[4,21], 2028:[4,10], 2029:[3,30], 2030:[4,17] },
     line:"Passover begins tonight. Here, try this flat bread. Remember how my bread puffed up? This bread is never given time to rise. There's a reason for that." },
   { id:'easter', name:'Easter', host:'pip', color:0xfff3a0, len:1, calc:easter,
-    line:"Happy Easter! I hid painted eggs all over the island. Then I forgot where. Do you know how they pick the date? It's the moon!" },
+    line:"Happy Easter! I painted eggs for everyone. Mine has a hat. Do you know how they pick the date? It's the moon!" },
   { id:'eid', name:'Eid al-Fitr', host:'nana', color:0x9fe7e0, len:3,
     dates:{ 2026:[3,20], 2027:[3,9], 2028:[2,26], 2029:[2,14], 2030:[2,4] },
     line:"Eid Mubarak, dear! The new crescent moon was spotted, so the month of fasting is over. Today is for sweets, family, and giving to others." },

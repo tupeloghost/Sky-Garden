@@ -2089,9 +2089,10 @@ function closeDialog() { $('dialog').classList.remove('show'); clearInterval(typ
 // what someone says, easy to take in: one sentence to a line, and when two people talk (Moss and Fern) each gets a line with their name in bold
 function sayLines(text) { const safe = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;'), who = safe.split(/(?=(?:Moss|Fern): )/).map(p => p.trim()).filter(Boolean);
   if (who.length > 1) return who.map(p => p.replace(/^(Moss|Fern): /, '<b>$1:</b> '));
-  if (safe.length < 90) return [safe];
+  const ACT = /^(?:(?:First|Then|Now),? )?(?:Tap|Go|Walk|Bring|Come back|Talk|Pick|Find|Fix|Take|Use|Cut|Help|Tell|Cross|Ring|Climb|Hang|Start|Look up|Gather|Make|Leave)\b/i, parts = safe.split(/(?<=[.!?]["”]?) (?=[A-Z0-9"“])/), isAct = t => t.length > 12 && ACT.test(t);
+  if (safe.length < 90 && !parts.some(isAct)) return [safe];
   const out = []; // short sentences share a line (so "Oh!" is not a line by itself); a sentence that tells you what to do always gets a line to itself
-  safe.split(/(?<=[.!?]["”]?) (?=[A-Z0-9"“])/).forEach(t => { const act = /^(Tap|Go|Walk|Bring|Come back|Talk|Pick|Find|Fix|Take|Use|Cut|Help|Tell|Cross|Ring|Climb)\b/.test(t), last = out[out.length - 1];
+  parts.forEach(t => { const act = isAct(t), last = out[out.length - 1];
     if (last && !act && !last.act && last.t.length + t.length <= 64) last.t += ' ' + t; else out.push({ t, act }); });
   return out.map(o => o.t); }
 // a long speech is shown a few lines at a time, with Next, so it is never a wall of text
@@ -2546,7 +2547,7 @@ function helpDone(id, know, thanks) { const first = !(S.helped || []).includes(i
   save(); drawHud(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
   // one thing at a time: first what the neighbor says, then the idea on its own card
   const said = id === 'twins' ? thanks.split(/(?=Moss: |Fern: )/).map(l => l.replace(/^(Moss|Fern): /, '<b>$1:</b> ')).join('<br>') : `"${thanks}"`;
-  showCard(`<div class="kicker">${NEIGHBORS[id].name.toUpperCase()}</div><p style="font-size:18px;line-height:1.5">${said}</p>`, 'Next', () => showCard(knowHtml(x) + (isNew ? '<p style="margin-top:10px"><b>+40 coins.</b> Saved in Collections, under Know-how.</p>' : ''), 'Huh. Neat.', () => { if (id === 'pip' && S.meetPip) { delete S.meetPip; save(); drawHud(); if ((S.home || 0) < 3) setTimeout(() => openDialog('Pip', "You are the new Keeper! Nana says you have no roof. I slept in my hat for a year. First, gather sticks and stones. Then make an axe at the old tree stump by your garden.", [], S.hearts.pip), 500); } })); }
+  showCard(`<div class="kicker">${NEIGHBORS[id].name.toUpperCase()}</div><p style="font-size:18px;line-height:1.5">${said}</p>`, 'Next', () => showCard(knowHtml(x) + (isNew ? '<p style="margin-top:10px"><b>+40 coins.</b> Saved in Collections, under Know-how.</p>' : ''), 'Huh. Neat.', () => { if (id === 'pip' && S.meetPip) { delete S.meetPip; save(); drawHud(); if ((S.home || 0) < 3) setTimeout(() => openDialog('Pip', "You are the new Keeper! Nana says you have no roof. I slept in my hat for a year. First, gather sticks and stones. Then make an axe at the tree stump workbench by your garden.", [], S.hearts.pip), 500); } })); }
 const HELP = {
   pip: { label:'Help price the lemonade', run() { const tried = {}; let best = null;
     const draw = (msg = '"I made 10 cups of lemonade. Each cup cost me 2 coins to make. What should I charge?"') => { const n = Object.keys(tried).length;
@@ -3210,7 +3211,7 @@ const SCENES = {
   },
   nana6() {
     S.furn.rocker = (S.furn.rocker||0) + 1; sfx('heart'); save();
-    openDialog('Nana Gale', "Your grandmother and I found this island when it was just a rock with one tree. She said memory is a kind of farming: you plant what you know, and it grows in someone else. I kept her rocking chair all these years. It belongs in your hut now.", [
+    openDialog('Nana Gale', "Your grandmother and I found this island when it was just a rock with one tree. She said memory is a kind of farming: you plant what you know, and it grows in someone else. I kept her rocking chair all these years. It belongs in your home now.", [
       { label:'Thank you, Nana', fn:() => { closeDialog(); toast("You got Grandma's Rocker! Place it inside your home."); } }], S.hearts.nana);
   },
   pip3() {
@@ -3226,7 +3227,7 @@ const SCENES = {
   },
   drizzle3() {
     sfx('heart');
-    openDialog('Captain Drizzle', "Sit, sit. Want to hear what holds the sky up? Old sailors say there is a tree so big its roots grip the deepest cloud and its branches hold every island. When the Great Gust came, it shook that tree. That is why we all fell apart.", [
+    openDialog('Captain Drizzle', "Sit, sit. Want to hear what holds the sky up? Old sailors say there is a giant tree. Its roots grip the deepest cloud. Its branches hold every island. The Great Gust shook that tree. That is why we all fell apart.", [
       { label:'Is that true?', fn:() => { closeDialog(); showAha('worldtree', () => openDialog('Captain Drizzle', "True or not, it is a good story. And good stories keep sailors going.", [], S.hearts.drizzle)); } }], S.hearts.drizzle);
   },
   lumen3() {
@@ -3596,7 +3597,7 @@ function lumenQuest() {
   if (S.q3 < 7) { openDialog('Lumen', "Oh! Someone crossed the... how did you get here? Never mind. Come back when the windmill is working again.", nb, h); return; }
   if (S.q4 === 0) {
     S.q4 = 1; save(); drawHud();
-    openDialog('Lumen', "Oh. Hello. I am Lumen. I paint at night. Nobody visits, so... sorry, I am nervous. I paint the moon every night, but the wind knocked my paintings over and now they are all mixed up. Could you help me put them back in order? They are on my easel.", [], h);
+    openDialog('Lumen', "Oh. Hello. I am Lumen. I paint at night. Nobody visits, so... sorry, I am nervous. I paint the moon every night. The wind mixed up my paintings. Could you help me put them back in order? They are on my easel.", [], h);
   } else if (S.q4 === 1) openDialog('Lumen', "My moon paintings are on the easel. Start with the darkest one.", nb, h);
   else if (S.q4 === 2) openDialog('Lumen', "Try my dark room. It is the little black house. There is a tiny window in it.", nb, h);
   else if (S.q4 === 3) openDialog('Lumen', "The crystals in my garden used to sing. Now they sound wrong. Tap the crystals and listen.", nb, h);
@@ -4732,7 +4733,7 @@ function hammockStep() { return S.hq === 1 ? `Cut bushes for grass, then bring i
 function hammockTalk() {
   if (!S.hq) return openDialog('Nana Gale', "See those two trees behind your garden? Your grandmother kept a hammock there. She said her best ideas came to her half asleep in it. The Great Gust took it.", [{ label:'Can we make a new one?', fn:() => { S.hq = 1; save(); drawHud();
       openDialog('Nana Gale', "We can. A hammock is only rope and knots, and rope is only grass. Bring me 8 grass. Bushes have plenty.", [], S.hearts.nana); } }], S.hearts.nana);
-  if (S.hq === 1 && have('fiber') < 8) return openDialog('Nana Gale', `I need 8 grass for the rope, dear. You have ${have('fiber')}. Cut a few more bushes.`, [], S.hearts.nana);
+  if (S.hq === 1 && have('fiber') < 8) return openDialog('Nana Gale', `Grass ${have('fiber')}/8, dear. Cut a few more bushes.`, [], S.hearts.nana);
   if (S.hq === 1) { bagAdd('fiber', -8); S.hq = 3; save(); drawHud(); drawHammockSpot(); sfx('swish');
     return openDialog('Nana Gale', "Watch. One blade of grass snaps in your fingers. Twist many together and each one holds the others. That is all rope is. Now go hang it. Tap the glowing spot between the two trees behind your garden.", [], S.hearts.nana); }
   if (S.hq === 3) return openDialog('Nana Gale', 'It is ready. Hang it between the two trees behind your garden. Tap the glowing spot.', [], S.hearts.nana); }
