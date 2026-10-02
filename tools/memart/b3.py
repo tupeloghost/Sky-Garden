@@ -38,7 +38,7 @@ add('theseus', 'Replace every plank. Is it still the same ship?',
     f'<path d="M22 70 L4 74 L24 80Z" fill="#b98a3e"/><circle cx="40" cy="70" r="3.500" fill="#fff"/><circle cx="40" cy="70" r="1.500" fill="#1d1a22"/>'
     '<path d="M150 62 V14 M118 22 H182" stroke="#7a5236" stroke-width="3"/><path d="M120 24 H180 L176 52 H124Z" fill="#f6efdc"/>'
     + txt(262, 20, 'pale = new plank', 10.5, INK) + txt(262, 34, 'dark = old plank', 10.5, INK)),
-  'A drawing of an ancient Greek warship, based on Olympias, a full-size copy that has really been rowed and sailed at sea. It has three levels of oars. Wooden ships rot, so planks were always being replaced. Sooner or later, none of the first ones were left.')
+  'A drawing of an ancient Greek warship, based on Olympias, a full-size copy that has really been rowed and sailed at sea. It has three levels of oars.')
 
 # ---- zeno ----
 segs = ''; x = 20; w = 290; cols = ['#ff8fa3', '#ffc857', '#8fdc8a', '#7ec8e3', '#c9b6ff', '#f0a3d0']
@@ -83,7 +83,7 @@ add('floating', 'No sight, no sound, no touch. Would you still know you are ther
     '<rect width="330" height="118" rx="10" fill="#9fd3ff"/>' + cl +
     '<g transform="rotate(-12 165 58)"><path d="M150 52 L112 40 M180 52 L220 42 M158 80 L140 110 M174 80 L190 110" stroke="#e8b98f" stroke-width="7" stroke-linecap="round"/><rect x="148" y="44" width="34" height="40" rx="10" fill="#7a6cc9"/>'
     '<circle cx="165" cy="30" r="14" fill="#e8b98f"/><path d="M152 26 q13 -16 26 0 q-13 -6 -26 0Z" fill="#3b2f4a"/><path d="M158 31 q3 3 6 0 M167 31 q3 3 6 0" stroke="#3b2f4a" stroke-width="1.5" fill="none" stroke-linecap="round"/></g>'),
-  'Ibn Sina asked you to picture it: floating in still air, eyes closed, arms and legs spread so nothing touches anything. You would feel nothing at all. He said you would still be sure of one thing: that you exist.')
+  'Ibn Sina asked you to picture it: floating in still air, eyes closed, arms and legs spread so nothing touches anything.')
 
 # ---- stoic ----
 add('stoic', 'Sort every worry into two piles.',
@@ -100,7 +100,7 @@ add('golden', 'One rule shows up almost everywhere people have lived.',
     '<path d="M108 48 Q165 22 222 48" fill="none" stroke="#c98a1f" stroke-width="3"/><path d="M214 40 l9 8 l-11 4" fill="none" stroke="#c98a1f" stroke-width="3" stroke-linecap="round"/>'
     '<path d="M222 74 Q165 100 108 74" fill="none" stroke="#c98a1f" stroke-width="3"/><path d="M116 82 l-9 -8 l11 -4" fill="none" stroke="#c98a1f" stroke-width="3" stroke-linecap="round"/>'
     + txt(165, 30, 'how I treat you', 11, INK) + txt(165, 108, 'how I would want to be treated', 11, INK)),
-  'Before you act, swap places in your head. Would you want that done to you? People in many places and times, who never met, came up with the same rule.')
+  'Before you act, swap places in your head. Would you want that done to you?')
 
 # =================== festivals ===================
 # ---- lunar new year: red envelopes ----
@@ -122,7 +122,7 @@ puffs = ''.join(f'<circle cx="{r.uniform(20,310):.0f}" cy="{r.uniform(8,40):.0f}
 add('holi', 'For one morning, everyone is covered in color.',
   svg(330, 108, 'A drawing of five bowls heaped with bright powder in pink, yellow, blue, green, and orange, with clouds of color in the air above',
     puffs + pile(48, '#ec4899', '#b0266f') + pile(106, '#f6c531', '#c79a12') + pile(164, '#3d8fe0', '#2563a8') + pile(222, '#4cb86a', '#2f8a49') + pile(280, '#f08c2e', '#b5621a')),
-  'A drawing of the colored powder, called gulal, sold in heaps before the festival. The night before, people light bonfires. Then friends and strangers throw the powder and smear it on each other in the street. By afternoon, nobody can tell who is who.')
+  'A drawing of the colored powder, called gulal, sold in heaps before the festival. The night before, people light bonfires. Then friends and strangers throw the powder and smear it on each other in the street.')
 
 # ---- nowruz: haft-sin ----
 r = R(32)
@@ -140,7 +140,7 @@ add('nowruz', 'Seven things on the table. In Persian, each one starts with S.',
 r = R(33)
 perf = ''.join(f'<path d="M{x} 20 V96" stroke="#d9b877" stroke-width="2" stroke-dasharray="1.500 4"/>' for x in range(122, 216, 8))
 blis = ''.join(f'<path d="{blob(r.uniform(120,212), r.uniform(22,94), r.uniform(2,6), r.uniform(1.5,4), 7, .3, 300+i)}" fill="{r.choice(["#a8713a","#8a5a2a","#c08a4a"])}" opacity=".85"/>' for i in range(60))
-add('passover', 'Flat bread, baked in a hurry, with no time to rise.',
+add('passover', 'Flat bread, baked in a hurry.',
   svg(330, 116, 'A drawing of a square of matzah: a thin, pale cracker with rows of tiny holes and many small brown scorch marks',
     f'<path d="{blob(166, 58, 56, 46, 28, .03, 9)}" fill="none"/><path d="M114 14 L220 12 L222 100 L112 102Z" fill="#f0dcae" stroke="#d2b47a" stroke-width="1.5" stroke-linejoin="round"/>' + perf + blis
     + txt(274, 50, 'rows of holes', 10.5, INK) + txt(274, 64, 'let steam out', 10.5, INK)),
@@ -165,7 +165,7 @@ add('eid', 'For many Muslims, the fasting month ends when this thin moon is seen
     '<defs><linearGradient id="dk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2450"/><stop offset=".7" stop-color="#6a4c8c"/><stop offset="1" stop-color="#f0a070"/></linearGradient></defs><rect width="330" height="118" rx="10" fill="url(#dk)"/>' + stars +
     '<path d="M214 44 A17 17 0 1 0 238 68 A21 21 0 0 1 214 44Z" fill="#fdf6dc"/>'
     '<path d="M0 118 V98 H40 V88 H70 V98 H96 Q96 76 118 76 Q140 76 140 98 H170 V60 l5 -10 l5 10 V98 H220 V90 H262 V98 H330 V118Z" fill="#15152a"/>'),
-  'A drawing of the new crescent just after sunset. It is very thin and sets soon after the sun, so it is easy to miss. People gather outside to look for it. In many places, Eid al-Fitr begins when it is seen. Other communities work out the date ahead of time.')
+  'A drawing of the new crescent just after sunset. It is very thin and sets soon after the sun, so it is easy to miss. Some communities work out the date ahead of time instead.')
 
 # ---- june solstice: Stonehenge ----
 r = R(36)

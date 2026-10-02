@@ -142,7 +142,7 @@ add('migration', 'This small bird knows which way to fly, even with no sun or st
     '<circle cx="134" cy="40" r="4.5" fill="#1d1a22"/><circle cx="135.300" cy="38.700" r="1.3" fill="#fff"/><path d="M112 44 L98 47 L112 51Z" fill="#3b3438"/>'
     '<path d="M166 96 v10 M178 97 v9" stroke="#7a5a46" stroke-width="2.2"/>'
     + txt(282, 30, 'European robin', 11, INK) + txt(282, 44, 'about 14 cm long', 10.5, SUB)),
-  'A drawing of a European robin. In tests in closed rooms, with no sun or stars to see, robins still faced the way they fly each season. Earth has an invisible pull, called its magnetic field, that moves a compass needle. When scientists turned that pull, the birds turned too. Scientists think tiny light-sensing parts in the birds\' eyes may react to it. They are still working out how.')
+  'A drawing of a European robin. In tests in closed rooms, robins still faced the way they fly each season. Earth has an invisible pull, called its magnetic field, that moves a compass needle. When scientists turned that pull, the birds turned too. Scientists think tiny light-sensing parts in the birds\' eyes may react to it. They are still working out how.')
 
 # ---- roads (Roman road section) ----
 r = R(14)
