@@ -5053,13 +5053,18 @@ function tameOutlines() { scene.traverse(o => { const ms = Array.isArray(o.mater
   ms.forEach(m => { if (!m.isMeshToonMaterial || m.transparent || o.isInstancedMesh || o.isPoints || o.isSprite) m.userData.outlineParameters = NO_OUTLINE; }); }); }
 if (LOOK === 'b') renderer.domElement.style.filter = 'saturate(1.12) contrast(1.04)';
 if (LOOK === 'c') { renderer.domElement.style.filter = 'saturate(.88) brightness(1.04) sepia(.08)'; document.body.classList.add('paper'); }
-const clock = new THREE.Clock(); let playing = false, hudTick = 0, stepDist = 0, steerSide = 0, steerT = 0, route = null, routeFor = null, stallT = 0, stallD = 1e9;
+const clock = new THREE.Clock(); let playing = false, hudTick = 0, stepDist = 0, steerSide = 0, steerT = 0, route = null, routeFor = null, stallT = 0, stallD = 1e9, stallN = 0, stallLen = 1e9;
 // is this spot inside something solid (whether or not you are standing there)
 function solidPt(x, z) { const px = player.position.x, pz = player.position.z; player.position.x = 1e5; player.position.z = 1e5; const r = solidAt(x, z); player.position.x = px; player.position.z = pz; return r; }
 // a route to (tx, tz) around buildings, trees and edges: spreads out over the ground in half-steps from where you stand and walks back along the shortest way found
-function findRoute(tx, tz) { const C = .5, sx = player.position.x, sz = player.position.z, key = (i, j) => i * 1000 + j, from = new Map([[key(0, 0), null]]), open = [[0, 0, player.position.y]];
+// how close counts as there: right up to a thing you tapped, or the spot itself
+const reach = () => pending ? Math.max(1.3, (pending.userData.solid || 0) + .5) : .4;
+// is the straight line from you to (tx, tz) open ground all the way (up to where you would stop)
+function clearLine(tx, tz) { const sx = player.position.x, sz = player.position.z, len = Math.hypot(tx - sx, tz - sz) - reach(); let y = player.position.y;
+  for (let d = .4; d < len; d += .4) { const k = d / (len + reach()), x = sx + (tx - sx) * k, z = sz + (tz - sz) * k; y = groundAt(x, y, z); if (y === null || solidPt(x, z)) return false; } return true; }
+function findRoute(tx, tz, stop = .4) { const C = .5, sx = player.position.x, sz = player.position.z, key = (i, j) => i * 1000 + j, from = new Map([[key(0, 0), null]]), open = [[0, 0, player.position.y]];
   let best = [0, 0], bestD = Math.hypot(tx - sx, tz - sz); const startD = bestD;
-  for (let n = 0, q = 0; q < open.length && n < 3200; n++, q++) { const [i, j, y] = open[q], x = sx + i * C, z = sz + j * C, d = Math.hypot(tx - x, tz - z); if (d < bestD) { bestD = d; best = [i, j]; if (d < C * .8) break; }
+  for (let n = 0, q = 0; q < open.length && n < 3200; n++, q++) { const [i, j, y] = open[q], x = sx + i * C, z = sz + j * C, d = Math.hypot(tx - x, tz - z); if (d < bestD) { bestD = d; best = [i, j]; if (d < stop) break; }
     for (const [di, dj] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) { const k = key(i + di, j + dj); if (from.has(k)) continue; from.set(k, 0); const nx = x + di * C, nz = z + dj * C, ny = groundAt(nx, y, nz); if (ny === null || solidPt(nx, nz)) continue;
       if (di && dj && (solidPt(x + di * C, z) || solidPt(x, z + dj * C))) { from.delete(k); continue; } // no cutting a corner between two solid things
       from.set(k, [i, j]); open.push([i + di, j + dj, ny]); } }
@@ -5129,13 +5134,15 @@ function tickFrame() {
   let mv = cine ? new THREE.Vector3() : new THREE.Vector3((keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0), 0, (keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0));
   if (mv.lengthSq()) { target = null; pending = null; }
   else if (target) {
-    if (routeFor !== target) { routeFor = target; route = null; stallT = 0; stallD = 1e9; }
+    if (routeFor !== target) { routeFor = target; route = null; stallT = 0; stallD = 1e9; stallN = 0; stallLen = 1e9; if (!clearLine(target.x, target.z)) { route = findRoute(target.x, target.z, reach()); stallLen = route ? route.length : 1e9; } } // something is in the way: work out the way round before setting off
     mv.subVectors(target, player.position); mv.y = 0; const left = mv.length();
     if (left < (pending ? Math.max(1.3, (pending.userData.solid || 0) + .5) : .1)) { const p = pending; target = null; pending = null; route = null; mv.set(0,0,0); if (p) arrive(p); }
     else { if (route && route.length) { mv.set(route[0][0] - player.position.x, 0, route[0][1] - player.position.z); if (mv.length() < .3) { route.shift(); if (route.length) mv.set(route[0][0] - player.position.x, 0, route[0][1] - player.position.z); else mv.subVectors(target, player.position).setY(0); } }
       if ((stallT += dt) > .9) { // not getting closer: stop pushing against it and work out a way around
-        if (left > stallD - .3 && !(route && route.length)) { route = findRoute(target.x, target.z); if (!route) { target = null; pending = null; mv.set(0,0,0); } }
-        stallT = 0; stallD = left; } }
+        const onRoute = route && route.length, stuck = onRoute ? route.length >= stallLen : left > stallD - .3; // on a route, being held up means the next step of it was not reached
+        if (!stuck) stallN = 0; else if (onRoute && ++stallN > 2) { target = null; pending = null; route = null; mv.set(0,0,0); } // tried twice from here and still held up: stop instead of shuffling on the spot
+        else { route = findRoute(target.x, target.z, reach()); if (!route) { target = null; pending = null; mv.set(0,0,0); } }
+        stallT = 0; stallD = left; stallLen = route ? route.length : 1e9; } }
   } else route = null;
   const inner = player.userData.inner;
   const flyNow = canFly() && ((flight.down && performance.now() - flight.at > 280) || keys[' ']);
@@ -5176,7 +5183,7 @@ function tickFrame() {
       inner.position.y = Math.abs(Math.sin(now*14))*.12; inner.rotation.z = Math.sin(now*14)*.06;
     inner.userData.arms.forEach((a, i) => a.rotation.x = Math.sin(now*14 + i*Math.PI) * .7);
       S.pos = [player.position.x, player.position.y, player.position.z];
-    } else { if (target && !(route && route.length)) { route = findRoute(target.x, target.z); stallT = 0; } if (!target || !route) { target = null; pending = null; } // boxed in: look for a way round before giving up
+    } else { if (target && !(route && route.length)) { route = findRoute(target.x, target.z, reach()); stallT = 0; } if (!target || !route) { target = null; pending = null; } // boxed in: look for a way round before giving up
       if (groundAt(player.position.x, player.position.y, player.position.z) === null) { const L = nearestLand(); let y = null; for (const h of [player.position.y, 0, -1.5, -3, 1.5, -4.5]) { y = groundAt(L.x, h, L.z); if (y !== null) break; }
         if (y !== null) { player.position.set(L.x, y, L.z); S.pos = [L.x, y, L.z]; } } } // stuck with no ground underfoot: step back onto land
   } else { inner.position.y *= .8; inner.rotation.z *= .8; inner.scale.y = 1 + Math.sin(now*2.5)*.02; }
