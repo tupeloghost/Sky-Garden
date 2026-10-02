@@ -17,7 +17,7 @@ const OUTFITS = ['cardigan','vest','coat','overalls','apron','dress','robe'];
 const TOP_COLORS = [0xff8fa3,0x7ec8e3,0xffc857,0x8fdc8a,0xc9b6ff,0xff9a3c,0x5b5bd6,0xd2334c];
 // how each kind of person talks. {name} is replaced with the player's name.
 const PERSONALITIES = {
-  cheerful: { word:'cheerful', hi:["Hi hi HI! Isn't today the best day?","I love it here already! Can I tell you a secret? I love it everywhere.","You have the nicest island I've seen all week. And I've seen FOUR."],
+  cheerful: { word:'cheerful', hi:["Hi hi HI! Isn't today the best day?","I love it here already! Can I tell you a secret? I love it everywhere.","You have the nicest island I've seen all week. And I've seen 4!"],
     loves:['kind:fruit','candy','jam','sunbell'], hates:['saltfish'], invite:"Really?! I'd LOVE to live here! I'll build a cottage right away!" },
   sleepy:   { word:'sleepy', hi:["Mm... oh, hello. I was resting my eyes. For a while.","Your island has a very good napping breeze.","Do you ever just... lie in the grass? Best thing there is."],
     loves:['tea','soup','kind:heirloom','lunamoth'], hates:['coffee'], invite:"Stay here? Forever? That sounds... so cozy. Yes. Yes, please." },

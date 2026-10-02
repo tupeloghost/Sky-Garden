@@ -50,7 +50,7 @@ add('zeno', 'Walk halfway to a door. Then halfway again. There is always a bit l
   svg(330, 104, 'A diagram of a bar cut in half, then the rest cut in half again and again, into smaller and smaller pieces that get closer and closer to the end',
     '<rect x="20" y="34" width="290" height="38" fill="#fff6e6"/>' + segs + '<rect x="20" y="34" width="290" height="38" fill="none" stroke="#3b2f4a" stroke-width="2"/>'
     + txt(20, 24, 'start', 11, INK, 'start') + txt(310, 24, 'finish', 11, INK, 'end') + txt(165, 94, '1/2 + 1/4 + 1/8 + 1/16 + ... = 1', 13, INK)),
-  'Each colored block is one step: half the way, then half of what was left. The steps shrink so fast that all of them together make the whole way.')
+  'Each colored block is one step: 1/2 the way, then 1/2 of what was left. The steps shrink so fast that all of them together make the whole way.')
 
 # ---- cave ----
 add('cave', 'What if everything you have ever seen was only a shadow?',
@@ -86,7 +86,7 @@ add('floating', 'No sight, no sound, no touch. Would you still know you are ther
   'Ibn Sina asked you to picture it. You float in still air with your eyes closed. Your arms and legs are spread so nothing touches anything.')
 
 # ---- stoic ----
-add('stoic', 'Sort every worry into two piles.',
+add('stoic', 'Sort every worry into 2 piles.',
   svg(330, 118, 'A diagram of two circles. One is labeled up to you, with your choices, your effort, and your words inside. The other is labeled not up to you, with the weather, the past, and other people inside',
     '<circle cx="92" cy="62" r="52" fill="#dff5e3" stroke="#5fae6b" stroke-width="3"/><circle cx="238" cy="62" r="52" fill="#eee9f7" stroke="#9a8fc0" stroke-width="3" stroke-dasharray="6 5"/>'
     + txt(92, 34, 'UP TO YOU', 12, '#2f7a45') + txt(92, 56, 'your choices', 12, INK) + txt(92, 73, 'your effort', 12, INK) + txt(92, 90, 'your words', 12, INK)

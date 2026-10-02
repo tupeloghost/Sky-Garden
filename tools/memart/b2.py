@@ -10,14 +10,14 @@ add('sundial', 'A stick, a shadow, and a long walk measured the whole Earth.',
     '<rect x="232" y="56" width="12" height="20" fill="#3b2f4a"/><path d="M228 56 h20" stroke="#7a6452" stroke-width="3"/>'
     '<path d="M92 79 L78 49" stroke="#7a5236" stroke-width="4" stroke-linecap="round"/><path d="M92 79 L74 85" stroke="#3b2f4a" stroke-width="3" stroke-linecap="round" opacity=".7"/>'
     + txt(60, 110, 'Alexandria: a shadow', 11, INK) + txt(246, 110, 'Syene: no shadow', 11, INK) + txt(165, 14, 'sunlight', 11, '#c98a1f')),
-  'At noon on the longest day, the sun shone straight down a well in Syene. In Alexandria, a stick still had a short shadow. The shadow showed the two cities were 1/50 of the way around the Earth apart. So he multiplied their distance by 50.')
+  'At noon on the longest day, the sun shone straight down a well in Syene. In Alexandria, a stick still had a short shadow. The shadow showed the 2 cities were 1/50 of the way around the Earth apart. So he multiplied their distance by 50.')
 
 # ---- bell (string lengths) ----
 def string(y, frac, label, note):
     L = 250 * frac
     return (f'<path d="M30 {y} H{30+L:.0f}" stroke="#b98a3e" stroke-width="2.4"/><circle cx="30" cy="{y}" r="4" fill="#7a5236"/><circle cx="{30+L:.0f}" cy="{y}" r="4" fill="#7a5236"/>'
             f'<path d="M{30+L:.0f} {y} H280" stroke="#d9c7ad" stroke-width="1.2" stroke-dasharray="3 3"/>' + txt(292, y + 4, label, 13, INK, 'start') + txt(30, y - 8, note, 10.5, SUB, 'start'))
-add('bell', 'Shorten a string to half. You get the same note, but higher.',
+add('bell', 'Shorten a string to 1/2. You get the same note, but higher.',
   svg(330, 120, 'A diagram of four strings: a full one, one half as long, one two thirds as long, and one three quarters as long',
     string(22, 1, '1', 'the whole string') + string(52, .5, '1/2', 'the same note, higher') + string(82, 2/3, '2/3', 'sounds sweet with the whole string') + string(112, .75, '3/4', 'also sounds sweet')),
   'Musicians call the jump to the higher note an octave. Strings 2/3 and 3/4 as long sound sweet with the whole string too.')
@@ -95,7 +95,7 @@ moons = ''.join(moon(24 + i * 40.3, i / 8) + txt(24 + i * 40.3, 72, names[i], 9.
 add('moon', 'The moon is always a ball. What changes is how much of its sunny side we can see.',
   svg(330, 104, 'A row of eight moons going from dark, to a thin crescent, to half, to full, and back again',
     '<rect width="330" height="84" rx="10" fill="#16203f"/>' + moons + txt(165, 100, 'about 29.5 days from one new moon to the next', 11)),
-  'The sun always lights half of the moon. As the moon goes around Earth, we see that lit half from a different side each night. This is how it looks from north of the equator. South of it, the picture is flipped.')
+  'The sun always lights 1/2 of the moon. As the moon goes around Earth, we see that lit half from a different side each night. This is how it looks from north of the equator. South of it, the picture is flipped.')
 
 # ---- optics (camera obscura) ----
 def tree(x, y, s, flip=1):

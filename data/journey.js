@@ -14,7 +14,7 @@ const DILEMMAS = [
     text:"Hmm. Did I pay you twice for your last crate? My books are a mess this week. Eh, I'm sure it's fine. Coins come and go!",
     a:{ label:"It's fine, don't worry about it", now:{ coins:40 }, kind:-2, story:'You kept extra coins Pip paid you by mistake.' },
     b:{ label:"Let's check your books together", kind:3, story:"You helped Pip find a mistake in his books, even though it cost you.",
-        later:{ days:3, from:'Pip', letter:"I checked everything twice, like you showed me. Found three more mistakes! You are the most honest customer I have. From now on, my daily orders pay you extra.",
+        later:{ days:3, from:'Pip', letter:"I checked everything twice, like you showed me. Found 3 more mistakes! You are the most honest customer I have. From now on, my daily orders pay you extra.",
           give:{ perk:'pipBonus', coins:60 }, quote:'"The noble person thinks of what is right. The small person thinks of what will pay." (Confucius, Analects 4.16)' } } },
   { id:'berries', who:'nana',
     text:"The wild cloudberry bushes behind my place are heavy with fruit this year. Take as many as you like, dear. The birds get whatever is left.",

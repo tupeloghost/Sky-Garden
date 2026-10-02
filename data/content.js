@@ -147,7 +147,7 @@ const AHA = {
   loom: { kicker:'NANA\'S STORY', title:'Holes, No Holes: The First Programs',
     did:'You finished a weaving pattern made of holes and no holes.',
     real:'In 1804, Joseph Marie Jacquard built a loom controlled by punched cards. Later, Charles Babbage planned to use punched cards in a calculating machine he designed. In 1843, Ada Lovelace wrote what is often called the first computer program for it.',
-    today:'Every computer still runs on two choices: 1 or 0. Hole or no hole.' },
+    today:'Every computer still runs on 2 choices: 1 or 0. Hole or no hole.' },
   migration: { kicker:'PIP\'S STORY', title:'How Birds Find Their Way',
     did:'You helped Pip figure out how birds cross whole oceans without getting lost.',
     real:'Many migrating birds use more than one compass. They use the sun by day, the stars at night, and Earth\'s magnetic field.',
@@ -216,7 +216,7 @@ Object.assign(AHA, {
     today:'Look at the holes in your next slice of bread.' },
   fibonacci: { kicker:"MOSS & FERN'S SECRET", title:"The Sunflower's Secret Spiral",
     did:'You found the next number in the pattern the twins counted in a sunflower.',
-    real:'1, 1, 2, 3, 5, 8, 13, 21, 34: each number is the sum of the two before it. Sunflowers, pinecones, and pineapples often grow their spirals in these numbers. It is named after Fibonacci, who wrote about it in 1202. Mathematicians in India described it centuries earlier.',
+    real:'1, 1, 2, 3, 5, 8, 13, 21, 34: each number is the sum of the 2 before it. Sunflowers, pinecones, and pineapples often grow their spirals in these numbers. It is named after Fibonacci, who wrote about it in 1202. Mathematicians in India described it centuries earlier.',
     today:'Next time you hold a pinecone, count its spirals.' },
   stoic: { kicker:"PIP'S BIG QUESTION", title:'Only Worry About What You Control',
     did:'You helped Pip decide what to do about rain he cannot stop.',
@@ -233,7 +233,7 @@ AHA.rosetta = { kicker:'MEMORY FOUND', title:'The Stone That Unlocked a Language
   today:'Translation apps still learn the same way: by comparing the same words in different languages.' };
 const RECALL = {
   bell:  { title:'Harmony, Remembered', text:'Remember tuning Grandma\'s Wind Bell? Simple lengths like 1/2 and 2/3 sounded sweet then, and they sound sweet now. The same numbers work on guitar strings and flutes.' },
-  rope:  { title:'The Rope Trick, Doubled', text:'Remember the 3-4-5 rope on Captain Drizzle\'s ship? You just used it again. 6, 8, 10 is the same triangle, twice as big. The same math works at any size.' },
+  rope:  { title:'The Rope Trick, Doubled', text:'Remember the 3-4-5 rope on Captain Drizzle\'s ship? You just used it again. 6, 8, 10 is the same triangle, 2 times as big. The same math works at any size.' },
   stars: { title:'Your Own Star Map', text:'Remember the star that stays? Sailors used it to hold a steady course at night. You just used it the same way, to find a hidden fishing spot no one else knows about.' },
   lever: { title:'Archimedes Again', text:'Remember the millstone at the windmill? This boulder is heavier and your push is stronger. The rule has not changed: put the pivot close to the weight.' },
 };
@@ -321,8 +321,8 @@ const QUEST5 = [
   "Tap an empty building site at the Old Heart to rebuild the village.",
 ];
 Object.assign(RECALL, {
-  lever2: { aha:'lever', title:'The Biggest Lift Yet', text:'The great bell is twice as heavy as the boulder. Same rule as the windmill: the log goes close to the weight, and a small push lifts almost anything.' },
-  rope2:  { aha:'rope',  title:'3-4-5, Three Times Bigger', text:'This rope has 36 knots. Sides of 9, 12, and 15 make the square corner. It is the same triangle as on Drizzle\'s ship, just three times bigger.' },
+  lever2: { aha:'lever', title:'The Biggest Lift Yet', text:'The great bell is 2 times as heavy as the boulder. Same rule as the windmill: the log goes close to the weight, and a small push lifts almost anything.' },
+  rope2:  { aha:'rope',  title:'3-4-5, 3 Times Bigger', text:'This rope has 36 knots. Sides of 9, 12, and 15 make the square corner. It is the same triangle as on Drizzle\'s ship, just 3 times bigger.' },
   gears:  { aha:'gears', title:'Gears, Remembered', text:'This time the small gear has to spin 4 times for each big turn. Same idea as the windmill: fewer teeth on the small gear means more spins.' },
   sundial:{ aha:'sundial', title:'Noon, the Old Way', text:'You knew noon was the moment of the shortest shadow. That is how people told the time for thousands of years, long before clocks.' },
 });
@@ -360,8 +360,8 @@ const HOWTO = {
   ],
   c3: [
     "Earn 300 coins by selling crops, fruit, and fish. Then walk to the sign at the top edge of Orchard Isle and tap it.",
-    "The mole twins are the two brown moles. Tap them to talk.",
-    "Try the small gears one at a time. Watch the two counters: the small gear must spin 3 times each time the big gear spins once. Then tap Fit this gear.",
+    "The mole twins are the 2 brown moles. Tap them to talk.",
+    "Try the small gears one at a time. Watch the 2 counters: the small gear must spin 3 times each time the big gear spins once. Then tap Fit this gear.",
     "Use the arrow buttons to move the log under the plank, then tap Push down. If the stone won't lift, move the log and try again.",
     "One tap grinds wheat into a bag of flour for you.",
     "Walk back to your home island and tap Nana Gale. She turns the flour into bread.",

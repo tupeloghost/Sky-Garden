@@ -43,7 +43,7 @@ const MODES = [
   { id:'explorer', name:"Explorer's Isle", blurb:'Seeing everything.',
     perks:['Walk 25% faster', 'Bridges cost 30% less'] },
   { id:'cozy',     name:'Cozy Isle', blurb:'Taking your time.',
-    perks:['Days last twice as long', 'Crops never wilt when the season changes'] },
+    perks:['Days last 2 times as long', 'Crops never wilt when the season changes'] },
 ];
 
 export { EYE_COLORS, EYE_STYLES, BROWS, FACE_EXTRAS, TOPS, SHOES, SHOE_COLORS, FOUNDER_HATS, SKIN, HAIR_STYLES, HAIR_COLORS, SHIRTS, BOTTOMS, BOTTOM_COLORS, HATS, HAT_COLORS, DEFAULT_LOOK, MODES };

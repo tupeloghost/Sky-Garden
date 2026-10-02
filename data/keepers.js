@@ -21,7 +21,7 @@ const TRIALS = [
   { id:'voice', level:2, name:'The Trial of the Voice',
     intro:"Keepers have a voice in what the sky becomes. After you vote, listen to a story about what power is for.",
     task:"Vote in the Keepers' Council at the Town Hall.",
-    wisdom:'Roman tradition says that in 458 BC, Rome was in danger, and the leaders gave a farmer named Cincinnatus total power to save the city. He won. After about two weeks, he gave all that power back and went home to plow his fields. People have admired him for over 2,000 years because he let go.',
+    wisdom:'Roman tradition says that in 458 BC, Rome was in danger, and the leaders gave a farmer named Cincinnatus total power to save the city. He won. After about 2 weeks, he gave all that power back and went home to plow his fields. People have admired him for over 2,000 years because he let go.',
     reflect:'What would you do with power you did not ask for? How would you know when to give it back?' },
   { id:'unseen', level:3, name:'The Trial of the Unseen',
     intro:"The last trial is the quietest. Your neighbors will never know the gifts came from you. That is the point.",

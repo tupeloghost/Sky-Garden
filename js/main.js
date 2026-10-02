@@ -337,7 +337,7 @@ const HOME_STYLES = {
 };
 const HOME_SIZES = [null, { name:'hut' },
   { name:'cottage', needs:{ log:30, stone:20, fiber:12 }, coins:300, adds:'A cottage is taller. It has a loft upstairs with 6 more spots for furniture.' },
-  { name:'house', needs:{ log:60, stone:40, fiber:20 }, coins:1500, adds:'A house has two full floors and a balcony. It has a study next to the loft with 6 more spots for furniture.' }];
+  { name:'house', needs:{ log:60, stone:40, fiber:20 }, coins:1500, adds:'A house has 2 full floors and a balcony. It has a study next to the loft with 6 more spots for furniture.' }];
 const homeStyle = () => HOME_STYLES[S.homeStyle] ? S.homeStyle : 'daub', homeSize = () => (S.home || 0) < 3 ? 1 : Math.min(3, S.homeSize || 1), homeName = () => HOME_SIZES[homeSize()].name;
 roofMat.map = tx('straw', 4, 1); wallMat.map = tx('plaster', 2, 2);
 const ridgeMat = mat(0xff8fa3, { map:tx('straw', 4, 1) }), lampMat = new THREE.MeshStandardMaterial({ color:0xffe9b8, emissive:0xffc46b, emissiveIntensity:.15, roughness:.5 }); lampMat.userData.outlineParameters = NO_OUTLINE;
@@ -1459,7 +1459,7 @@ function exitRoom() { const R = ROOMS[S.room];
   thing(g, furn, -2.7, 1.2, 1.9, 1.6, 1.1, () => furnShop(), 'Furniture: tap to buy');
   // the sign he keeps repainting
   const easel = G(mesh(new THREE.BoxGeometry(1.2,.6,.05), mat(0xfff6e6), 0, 1.25, 0), mesh(new THREE.BoxGeometry(.5,.08,.02), mat(0xff8fa3), -.2, 1.33, .03), mesh(new THREE.BoxGeometry(.3,.08,.02), mat(0x7ec8e3), .25, 1.15, .03)); [-.45,.45].forEach(x => easel.add(mesh(new THREE.BoxGeometry(.06,1.5,.06), dark, x, .75, -.06)));
-  easel.rotation.y = -.5; thing(g, easel, 2.7, .6, 1.3, 1.7, .8, () => toast('Pip is painting his shop sign. So far he has spelled SHOP three different ways.'), "Pip's sign: tap to look");
+  easel.rotation.y = -.5; thing(g, easel, 2.7, .6, 1.3, 1.7, .8, () => toast('Pip is painting his shop sign. So far he has spelled SHOP 3 different ways.'), "Pip's sign: tap to look");
   // his first coin
   const jar = G(mesh(new THREE.BoxGeometry(.5,.5,.3), dark, 0, 1.75, 0), mesh(new THREE.CylinderGeometry(.11,.11,.03,16), mat(0xffc857, { metalness:.5 }), 0, 1.75, .17).rotateX(Math.PI/2));
   thing(g, jar, -2.9, -3.1, .7, 2.2, .4, () => toast('The first coin Pip ever earned, in a frame. Lots of shopkeepers keep theirs.'), 'Framed coin: tap to look');
@@ -1529,10 +1529,10 @@ function exitRoom() { const R = ROOMS[S.room];
   thing(g, lant, .4, -2.7, 1.6, 1.4, .8, () => HELP.lumen.run(), 'Three lanterns: tap to help Lumen mix light');
   // her moon paintings
   const moons = G(); [-.75,0,.75].forEach((x, i) => { moons.add(mesh(new THREE.BoxGeometry(.6,.6,.05), mat(0xc9b6ff), x, 2.05, 0)); moons.add(mesh(new THREE.BoxGeometry(.5,.5,.02), mat(0x16203f), x, 2.05, .03)); moons.add(mesh(new THREE.CircleGeometry(.16, 20, 0, [Math.PI, Math.PI * 2, Math.PI][i]), glow(0xfdf6dc), x, 2.05, .045).rotateZ([-Math.PI/2, 0, Math.PI/2][i])); });
-  thing(g, moons, 2.3, -3.16, 2.2, 3, .3, () => S.aha.includes('moon') ? showCard(ahaHtml('moon'), 'Close') : toast('Three paintings of the moon: half, full, and half again. Lumen paints it every single night.'), 'Moon paintings: tap to look');
+  thing(g, moons, 2.3, -3.16, 2.2, 3, .3, () => S.aha.includes('moon') ? showCard(ahaHtml('moon'), 'Close') : toast('3 paintings of the moon: half, full, and half again. Lumen paints it every single night.'), 'Moon paintings: tap to look');
   // a telescope at the window
   const scope = G(mesh(new THREE.CylinderGeometry(.03,.03,1.1,6), dark, -.2, .55, .12).rotateZ(.25), mesh(new THREE.CylinderGeometry(.03,.03,1.1,6), dark, .2, .55, .12).rotateZ(-.25), mesh(new THREE.CylinderGeometry(.03,.03,1.1,6), dark, 0, .55, -.18).rotateX(.3)); const tube = mesh(new THREE.CylinderGeometry(.09,.06,1,12), mat(0xd9a441, { metalness:.5 }), 0, 1.3, -.1); tube.rotation.x = -1.0; scope.add(tube);
-  thing(g, scope, -1.7, -2.5, .8, 1.9, .9, () => toast('In 1610, Galileo aimed a small telescope like this at Jupiter. He saw four moons circling it.'), 'Telescope: tap to learn');
+  thing(g, scope, -1.7, -2.5, .8, 1.9, .9, () => toast('In 1610, Galileo aimed a small telescope like this at Jupiter. He saw 4 moons circling it.'), 'Telescope: tap to learn');
   // the easel
   const eas = G(mesh(new THREE.BoxGeometry(1.1,1.3,.06), cream, 0, 1.45, 0), mesh(new THREE.CircleGeometry(.3, 24), glow(0xfdf6dc), .1, 1.6, .04), mesh(new THREE.BoxGeometry(1.0,.3,.02), mat(0x16203f), 0, .98, .035)); [-.45,.45].forEach(x => eas.add(mesh(new THREE.BoxGeometry(.06,2.1,.06), wood, x, 1.05, -.06))); eas.add(mesh(new THREE.BoxGeometry(.06,1.9,.06), wood, 0, .95, -.45).rotateX(.35));
   eas.rotation.y = -.55; thing(g, eas, 2.7, .2, 1.3, 2.2, 1, () => { const L = NEIGHBORS.lumen.heartLines; openDialog('Lumen', L[Math.floor(Math.random() * L.length)], [], S.hearts.lumen); }, 'Easel: tap to hear Lumen');
@@ -2163,7 +2163,7 @@ const PLAY = (() => { const pc = (k, t, body) => showCard(`<div class="kicker">$
   // ---- library books ----
   press(done) { const T = { a:['SKY', false], b:['SKY', true], c:['YKS', true] }; const tried = {}; let cur = null;
     const tray = (k, flip) => `<span style="display:inline-flex;gap:3px${flip ? ';transform:scaleX(-1)' : ''}">${[...T[k][0]].map(ch => `<b style="display:inline-block;width:30px;height:36px;line-height:36px;text-align:center;background:${flip ? '#fff6e6' : '#8a8f96'};color:${flip ? '#3b2f4a' : '#fff'};border-radius:5px;font-size:22px${T[k][1] ? ';transform:scaleX(-1)' : ''}">${ch}</b>`).join('')}</span>`;
-    const draw = (msg) => { pc(L, 'Set the type', `<p>${msg || 'You want to print the word <b>SKY</b>. Here are three trays of metal letters. <b>Tap a tray to ink it and press it on paper.</b>'}</p>
+    const draw = (msg) => { pc(L, 'Set the type', `<p>${msg || 'You want to print the word <b>SKY</b>. Here are 3 trays of metal letters. <b>Tap a tray to ink it and press it on paper.</b>'}</p>
       <div class="jlist">${['a', 'b', 'c'].map(k => `<button data-ty="${k}" style="display:flex;align-items:center;justify-content:space-between;gap:10px">${tray(k)}<span class="sub">${tried[k] ? 'prints: ' : 'tap to print'}</span>${tried[k] ? tray(k, true) : ''}</button>`).join('')}</div>${tried.c ? nx('So that is how') : ''}`);
       each('[data-ty]', b => { const k = b.dataset.ty; tried[k] = 1; sfx(k === 'c' ? 'pick' : 'click'); draw(k === 'c' ? '<b>It prints SKY.</b> Every letter is backwards, and the word runs right to left. Paper flips it all the right way round.' : k === 'a' ? '<b>It prints a mess.</b> Normal letters come out backwards on paper.' : '<b>The letters are right, but it says YKS.</b> The word has to run backwards too.'); }); on(done); };
     draw(); },
@@ -2171,7 +2171,7 @@ const PLAY = (() => { const pc = (k, t, body) => showCard(`<div class="kicker">$
     const draw = (msg, won) => { pc(L, 'Read the knots', `<p>${msg || 'The Inca kept numbers on cords. <b>Knots near the top are hundreds. Knots in the middle are tens. Knots at the bottom are ones.</b>'}</p>
       <div style="display:flex;gap:18px;justify-content:center;align-items:flex-end;margin-top:8px"><div style="text-align:center">${cord(1, 4, 2)}<div><b>142</b></div><div class="sub">an example</div></div><div style="text-align:center">${cord(3, 2, 5)}<div><b>${won ? '325' : '?'}</b></div><div class="sub">your cord</div></div></div>
       ${won ? nx() : '<h4>What number is on your cord?</h4><div class="chips"><button data-kn="10">10</button><button data-kn="523">523</button><button data-kn="325">325</button></div>'}`);
-      each('[data-kn]', b => { const v = b.dataset.kn; if (v === '325') { chime(988); return draw('<b>325.</b> Three hundreds, two tens, five ones. You just read a 500-year-old record.', true); } sfx('click'); draw(v === '10' ? 'That is how many knots there are. <b>Where each knot sits matters too.</b>' : 'Close. <b>Read from the top down:</b> hundreds first.'); }); on(done); };
+      each('[data-kn]', b => { const v = b.dataset.kn; if (v === '325') { chime(988); return draw('<b>325.</b> 3 hundreds, 2 tens, 5 ones. You just read a 500-year-old record.', true); } sfx('click'); draw(v === '10' ? 'That is how many knots there are. <b>Where each knot sits matters too.</b>' : 'Close. <b>Read from the top down:</b> hundreds first.'); }); on(done); };
     draw(); },
   drift(done) { let v = 0, snapped = false; const B = 'L150 20 L158 40 L146 58 L164 78 L170 100 L152 118 L160 140';
     const draw = () => { pc(L, 'Slide the continents', `<p>${snapped ? '<b>They fit.</b> The stripes of rock line up. So do the bones of a small reptile that lived in fresh water and could never have swum an ocean.' : 'South America is on the left. Africa is on the right. <b>Drag the slider to push them together.</b>'}</p>
@@ -2183,7 +2183,7 @@ const PLAY = (() => { const pc = (k, t, body) => showCard(`<div class="kicker">$
   zero(done) { const col = (l, n) => `<div style="flex:1;text-align:center;background:#fff6e6;border-radius:12px;padding:8px 4px;min-height:84px"><div class="sub">${l}</div><div style="font-size:18px;letter-spacing:2px;margin-top:6px">${n ? '●'.repeat(n) : '&nbsp;'}</div></div>`;
     const draw = (msg, won) => { pc(L, 'The empty column', `<p>${msg || 'A counting board has a column for hundreds, tens, and ones. <b>Read the dots.</b>'}</p><div style="display:flex;gap:6px;margin-top:8px">${col('hundreds', 2)}${col('tens', 0)}${col('ones', 5)}</div>
       ${won ? nx() : '<h4>Write it down without the board</h4><div class="chips"><button data-zr="25">2 5</button><button data-zr="205">2 0 5</button><button data-zr="250">2 5 0</button></div>'}`);
-      each('[data-zr]', b => { const v = b.dataset.zr; if (v === '205') { chime(988); return draw('<b>205.</b> The 0 means: nothing in this column. Without a mark for nothing, 25, 205, and 250 would all look the same.', true); } sfx('click'); draw(v === '25' ? 'That reads as twenty-five. <b>The empty column got lost.</b>' : 'That puts the 5 in the tens column. <b>Look where the empty one is.</b>'); }); on(done); };
+      each('[data-zr]', b => { const v = b.dataset.zr; if (v === '205') { chime(988); return draw('<b>205.</b> The 0 means: nothing in this column. Without a mark for nothing, 25, 205, and 250 would all look the same.', true); } sfx('click'); draw(v === '25' ? 'That reads as 25. <b>The empty column got lost.</b>' : 'That puts the 5 in the tens column. <b>Look where the empty one is.</b>'); }); on(done); };
     draw(); },
   photosynthesis(done) { const tried = {}; let cur = null;
     const draw = () => { const sun = cur === 'sun'; pc(L, 'A plant under water', `<p>${cur ? (sun ? '<b>In the sun, little bubbles stream off the leaves.</b>' : '<b>In the dark, nothing. Not one bubble.</b>') : 'A leafy plant sits in a jar of water. <b>Try it in the sun, then in the dark.</b>'}</p>
@@ -2193,7 +2193,7 @@ const PLAY = (() => { const pc = (k, t, body) => showCard(`<div class="kicker">$
     draw(); },
   // ---- recipes ----
   jam(done) { const R = { fruit:['Just fruit', 'It boils down to a thin, runny sauce.'], sugar:['Fruit and sugar', 'Thick and sweet, but it never quite sets. It slides off the spoon.'], lemon:['Fruit, sugar, and a squeeze of lemon', 'It wrinkles when you push it. <b>It has set into jam.</b>'] }, tried = {};
-    const draw = (k) => { if (k) tried[k] = 1; pc(K, 'Three pots of berries', `<p>${k ? R[k][1] : 'Mabel has three pots on the stove. <b>Cook each one and see what you get.</b>'}</p><div class="chips">${Object.entries(R).map(([id, r]) => `<button data-jm="${id}" class="${tried[id] ? 'ghost' : ''}">${r[0]}</button>`).join('')}</div>${tried.lemon ? nx('Why did that one set?') : ''}`); each('[data-jm]', b => { sfx(b.dataset.jm === 'lemon' ? 'pick' : 'click'); draw(b.dataset.jm); }); on(done); };
+    const draw = (k) => { if (k) tried[k] = 1; pc(K, 'Three pots of berries', `<p>${k ? R[k][1] : 'Mabel has 3 pots on the stove. <b>Cook each one and see what you get.</b>'}</p><div class="chips">${Object.entries(R).map(([id, r]) => `<button data-jm="${id}" class="${tried[id] ? 'ghost' : ''}">${r[0]}</button>`).join('')}</div>${tried.lemon ? nx('Why did that one set?') : ''}`); each('[data-jm]', b => { sfx(b.dataset.jm === 'lemon' ? 'pick' : 'click'); draw(b.dataset.jm); }); on(done); };
     draw(); },
   crisp(done) { const R = { low:['Low: 100 degrees', 'Soft and cooked through, but pale. It smells like warm apple, and that is all.'], mid:['Hot: 180 degrees', '<b>Golden brown.</b> The whole bakery smells of toast and caramel.'], high:['Very hot: 300 degrees', 'Black on top, raw underneath. Mabel: "Gerald, NO."'] }, tried = {};
     const draw = (k) => { if (k) tried[k] = 1; pc(K, 'How hot should Gerald be?', `<p>${k ? R[k][1] : 'The apples are in the dish, with the topping on. <b>Pick how hot to make the oven.</b>'}</p><div class="chips">${Object.entries(R).map(([id, r]) => `<button data-cr="${id}" class="${tried[id] ? 'ghost' : ''}">${r[0]}</button>`).join('')}</div>${tried.mid ? nx('Where does the brown come from?') : ''}`); each('[data-cr]', b => { sfx(b.dataset.cr === 'mid' ? 'pick' : 'click'); draw(b.dataset.cr); }); on(done); };
@@ -2223,12 +2223,12 @@ const PLAY = (() => { const pc = (k, t, body) => showCard(`<div class="kicker">$
       each('[data-cn]', b => { const i = +b.dataset.cn; if (lit[i]) return; if (i !== 4 && !lit[4]) { sfx('click'); return draw('That one will not catch. <b>Light the tall middle candle first.</b> It lights all the others.'); } lit[i] = true; chime(i === 4 ? 523 : 600 + i * 40); draw(i === 4 ? '<b>The helper candle is lit.</b> Now use it to light the other eight.' : `<b>${lit.filter(Boolean).length - 1} of 8.</b>`); }); on(done); };
     draw(); },
   diwali(done) { const lit = Array(7).fill(false);
-    const draw = () => { const n = lit.filter(Boolean).length, all = n === 7; pc('DIWALI', 'Light the lamps', `<p>${all ? '<b>Every lamp is burning.</b> The whole doorstep glows.' : n ? `<b>${n} of 7.</b> It gets a little brighter with each one.` : 'It is the darkest night of the month. Seven small clay lamps sit along the doorstep. <b>Tap each one to light it.</b>'}</p>
+    const draw = () => { const n = lit.filter(Boolean).length, all = n === 7; pc('DIWALI', 'Light the lamps', `<p>${all ? '<b>Every lamp is burning.</b> The whole doorstep glows.' : n ? `<b>${n} of 7.</b> It gets a little brighter with each one.` : 'It is the darkest night of the month. 7 small clay lamps sit along the doorstep. <b>Tap each one to light it.</b>'}</p>
       <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;border-radius:14px;padding:22px 6px 12px;background:rgb(${29 + n * 14},${23 + n * 9},${48 - n * 2})">${lit.map((on2, i) => `<button data-dy="${i}" aria-label="Lamp ${i + 1}" style="margin:0;padding:0;width:34px;height:44px;background:none;box-shadow:none;position:relative"><i style="position:absolute;left:3px;bottom:0;width:28px;height:13px;background:#b5622f;border-radius:0 0 14px 14px"></i>${on2 ? '<i style="position:absolute;left:11px;bottom:13px;width:12px;height:18px;background:#ffc857;border-radius:50% 50% 50% 50% / 70% 70% 30% 30%;box-shadow:0 0 14px #ffc857"></i>' : ''}</button>`).join('')}</div>${all ? nx() : ''}`);
       each('[data-dy]', b => { const i = +b.dataset.dy; if (lit[i]) return; lit[i] = true; chime(520 + i * 60); draw(); }); on(done); };
     draw(); },
   nowruz(done) { const IT = [['🌱', 'Sprouts', 'sabzeh', 1], ['🪞', 'A mirror', 'ayneh', 0], ['🍎', 'An apple', 'sib', 1], ['🧄', 'Garlic', 'sir', 1], ['🐟', 'A goldfish', 'mahi', 0], ['🫙', 'Vinegar', 'serkeh', 1], ['🌶️', 'Sumac spice', 'somaq', 1], ['🕯️', 'A candle', 'sham', 0], ['🍮', 'Sweet pudding', 'samanu', 1], ['🫒', 'Dried oleaster fruit', 'senjed', 1]], pick = new Set();
-    const draw = (msg) => { const good = IT.every((x, i) => !!x[3] === pick.has(i)); pc('NOWRUZ', 'Set the table', `<p>${msg || 'Nana\'s table has ten things on it. The custom is called Haft-sin: seven things whose Persian names start with the letter S. <b>Tap the seven.</b>'}</p>
+    const draw = (msg) => { const good = IT.every((x, i) => !!x[3] === pick.has(i)); pc('NOWRUZ', 'Set the table', `<p>${msg || 'Nana\'s table has 10 things on it. The custom is called Haft-sin: 7 things whose Persian names start with the letter S. <b>Tap the seven.</b>'}</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">${IT.map((x, i) => `<button data-nz="${i}" class="${pick.has(i) ? '' : 'ghost'}" style="margin:0;text-align:left">${x[0]} ${x[1]}<br><span class="sub"><i>${x[2]}</i></span></button>`).join('')}</div>${good ? nx() : `<p class="sub" style="margin-top:6px">${pick.size > 7 ? `${pick.size} picked. That is too many. Take ${pick.size - 7} off.` : `${pick.size} of 7 picked.`}</p>`}`);
       each('[data-nz]', b => { const i = +b.dataset.nz; if (pick.has(i)) { pick.delete(i); return draw(); } pick.add(i); sfx('click'); draw(IT[i][3] ? null : `<b>${IT[i][2][0].toUpperCase() + IT[i][2].slice(1)}</b> is on many tables too, but it ${IT[i][2] === 'sham' ? 'starts with the sound "sh", which is a different letter' : `starts with ${IT[i][2][0].toUpperCase()}`}. Tap it again to take it off.`); }); on(done); };
     draw(); },
@@ -2307,7 +2307,7 @@ function allCats() {
     { name:'Dishes', ids:RECIPES.map(r => r.id), has:k => S.cooked.includes(k), label:k => RECIPES.find(r => r.id === k).name, open:k => () => showCard(lessonHtml(RECIPES.find(r => r.id === k).aha), 'Back', () => openCategory('Dishes')), how:'Cook the rest at the Bakery.', hint:k => `Needs ${Object.entries(RECIPES.find(r => r.id === k).needs).map(([i,n]) => `${n} ${ITEMS[i].name}`).join(' and ')}.` },
     { name:'Star Chart', ids:CONSTELLATIONS.map(c => c.id), has:k => S.charted.includes(k), label:k => CONSTELLATIONS.find(c => c.id === k).name, open:k => () => showCard(starHtml(CONSTELLATIONS.find(c => c.id === k)), 'Back', () => openCategory('Star Chart')), how:'Chart the rest at the Observatory after 8 PM. Each one is in the sky only in the months shown.', hint:k => `${CONSTELLATIONS.find(c => c.id === k).months.map(month).join(', ')}.` },
     { name:'Library Books', ids:BOOKS.map(b => b.id), has:k => S.read.includes(k), label:k => BOOKS.find(b => b.id === k).title, open:k => () => showCard(lessonHtml({ kicker:'THE LIBRARY', ...BOOKS.find(b => b.id === k) }), 'Back', () => openCategory('Library Books')), hint:() => 'Build the Library. A new book arrives every week.' },
-    { name:'Songs', ids:[...SONGS.map(x => x.id), 'penta'], has:k => k === 'penta' ? S.penta : S.songs.includes(k), label:k => k === 'penta' ? 'The Five-Note Scale' : SONGS.find(x => x.id === k).name, open:k => () => showCard(lessonHtml(k === 'penta' ? PENTA_AHA : SONGS.find(x => x.id === k).aha), 'Back', () => openCategory('Songs')), hint:() => 'Build the Music Hall and play the xylophone.' },
+    { name:'Songs', ids:[...SONGS.map(x => x.id), 'penta'], has:k => k === 'penta' ? S.penta : S.songs.includes(k), label:k => k === 'penta' ? 'The 5-Note Scale' : SONGS.find(x => x.id === k).name, open:k => () => showCard(lessonHtml(k === 'penta' ? PENTA_AHA : SONGS.find(x => x.id === k).aha), 'Back', () => openCategory('Songs')), hint:() => 'Build the Music Hall and play the xylophone.' },
     { name:'Know-how', ids:KNOWHOW.map(x => x.id), has:k => (S.know || []).includes(k), label:k => { const x = KNOWHOW.find(y => y.id === k); return `${x.icon} ${x.title}`; }, open:k => () => showCard(knowHtml(KNOWHOW.find(y => y.id === k)), 'Back', () => openCategory('Know-how')), hint:() => 'You pick these up by doing things, not by looking for them.' },
     { name:'Sayings', ids:SAYINGS.map(x => x.id), has:k => S.sayings.includes(k), label:k => SAYINGS.find(x => x.id === k).text.slice(0, 44) + '...', open:k => () => showCard(sayingHtml(SAYINGS.find(x => x.id === k)), 'Back', () => openCategory('Sayings')), hint:() => 'Build the Temple Garden. Sage shares a new saying each day.' },
   ];
@@ -2398,7 +2398,7 @@ function openJournalOld() {
   const extra = [
     S.built.includes('bakery') && [`Recipes <span class="sub">${S.cooked.length} of ${RECIPES.length}</span>`, () => collectionList('Recipes', "MABEL'S KITCHEN", RECIPES, S.cooked, r => showCard(lessonHtml(r.aha), 'Back', openJournal))],
     S.built.includes('library') && [`Library books <span class="sub">${S.read.length} of ${BOOKS.length}</span>`, () => collectionList('Library books', 'THE LIBRARY', BOOKS, S.read, bk => showCard(lessonHtml({ kicker:'THE LIBRARY', ...bk }), 'Back', openJournal))],
-    S.built.includes('musichall') && [`Songs <span class="sub">${S.songs.length + (S.penta ? 1 : 0)} of ${SONGS.length + 1}</span>`, () => collectionList('Songs', "ALLEGRA'S SONGBOOK", [...SONGS, { id:'penta', name:'The Five-Note Scale', aha:PENTA_AHA }], [...S.songs, ...(S.penta ? ['penta'] : [])], so => showCard(lessonHtml(so.aha), 'Back', openJournal))],
+    S.built.includes('musichall') && [`Songs <span class="sub">${S.songs.length + (S.penta ? 1 : 0)} of ${SONGS.length + 1}</span>`, () => collectionList('Songs', "ALLEGRA'S SONGBOOK", [...SONGS, { id:'penta', name:'The 5-Note Scale', aha:PENTA_AHA }], [...S.songs, ...(S.penta ? ['penta'] : [])], so => showCard(lessonHtml(so.aha), 'Back', openJournal))],
     S.built.includes('temple') && [`Sayings <span class="sub">${S.sayings.length} of ${SAYINGS.length}</span>`, () => collectionList('Sayings', 'TEMPLE GARDEN', SAYINGS.map(x => ({ ...x, name:x.text.slice(0, 42) + (x.text.length > 42 ? '...' : '') })), S.sayings, sy => showCard(sayingHtml(sy), 'Back', openJournal))],
   ].filter(Boolean);
   const list = $('card').querySelector('.jlist');
@@ -2566,7 +2566,7 @@ const HELP = {
       if (!squash && (corn || beans)) out.push('The bare soil dries out fast in the sun.');
       return out.join('<br>'); };
     const draw = () => { const all = on.corn && on.beans && on.squash;
-      showCard(`<div class="kicker">HELP NANA</div><h2>🌱 Grandma's old seeds</h2><p>"Your grandmother planted these three in one mound. I never asked her why. Try them and see what happens."</p>
+      showCard(`<div class="kicker">HELP NANA</div><h2>🌱 Grandma's old seeds</h2><p>"Your grandmother planted these 3 in 1 mound. I never asked her why. Try them and see what happens."</p>
         <div class="chips">${[['corn', '🌽 Corn'], ['beans', '🫘 Beans'], ['squash', '🎃 Squash']].map(([k, l]) => `<button data-sd="${k}" class="${on[k] ? '' : 'ghost'}">${on[k] ? '✓ ' : ''}${l}</button>`).join('')}</div>
         <p class="itinfo">${tell()}</p>${all ? '<button id="hpDone">Tell Nana it worked</button>' : ''}`, 'Later');
       document.querySelectorAll('[data-sd]').forEach(b => b.onclick = () => { on[b.dataset.sd] = !on[b.dataset.sd]; sfx('plant'); draw(); });
@@ -2588,13 +2588,13 @@ const HELP = {
   lumen: { label:'Help mix the light', run() { const on = { r:false, g:false, b:false }; let step = 0;
     const draw = () => { const { r, g, b } = on, col = `rgb(${r ? 255 : 30},${g ? 255 : 30},${b ? 255 : 30})`, want = step === 0 ? 'yellow' : 'white', hit = step === 0 ? (r && g && !b) : (r && g && b);
       const name = r && g && b ? 'white' : r && g ? 'yellow' : r && b ? 'pink-purple (magenta)' : g && b ? 'blue-green (cyan)' : r ? 'red' : g ? 'green' : b ? 'blue' : 'dark';
-      showCard(`<div class="kicker">HELP LUMEN</div><h2>💡 Painting with light</h2><p>"I have three lanterns: red, green, and blue. I need <b>${want}</b> light for my painting. Can you make it?"</p>
+      showCard(`<div class="kicker">HELP LUMEN</div><h2>💡 Painting with light</h2><p>"I have 3 lanterns: red, green, and blue. I need <b>${want}</b> light for my painting. Can you make it?"</p>
         <div style="height:110px;border-radius:18px;background:#1f2552;display:grid;place-items:center;margin-top:8px"><div style="width:84px;height:84px;border-radius:50%;background:${col};box-shadow:0 0 34px ${col}"></div></div>
         <p style="text-align:center;font-weight:700;margin-top:6px">The light is ${name}.</p>
         <div class="chips" style="justify-content:center">${[['r', '🔴 Red'], ['g', '🟢 Green'], ['b', '🔵 Blue']].map(([k, l]) => `<button data-lt="${k}" class="${on[k] ? '' : 'ghost'}">${l}: ${on[k] ? 'on' : 'off'}</button>`).join('')}</div>
         ${hit ? `<button id="hpDone">${step === 0 ? 'Next: make white light' : 'Show Lumen'}</button>` : ''}`, 'Later');
       document.querySelectorAll('[data-lt]').forEach(x => x.onclick = () => { on[x.dataset.lt] = !on[x.dataset.lt]; chime(on[x.dataset.lt] ? 880 : 660); draw(); });
-      if ($('hpDone')) $('hpDone').onclick = () => { if (step === 0) { step = 1; return draw(); } helpDone('lumen', 'light', 'Red and green made yellow. All three made white. Light is strange and lovely.'); }; };
+      if ($('hpDone')) $('hpDone').onclick = () => { if (step === 0) { step = 1; return draw(); } helpDone('lumen', 'light', 'Red and green made yellow. All 3 made white. Light is strange and lovely.'); }; };
     draw(); } },
   twins: { label:'Help dig a tunnel that holds', run() { const tried = {};
     const pic = k => `<svg viewBox="0 0 200 90" style="display:block;width:100%;max-width:260px;margin:8px auto 0" aria-hidden="true"><rect width="200" height="90" rx="12" fill="#8a6a44"/><path d="${{ flat:'M50 86 V40 H150 V86Z', point:'M50 86 V52 L100 20 L150 52 V86Z', arch:'M50 86 V52 Q50 20 100 20 Q150 20 150 52 V86Z' }[k]}" fill="#2a1c12"/><circle cx="88" cy="74" r="8" fill="#b98a63"/><circle cx="112" cy="74" r="8" fill="#9b7b5a"/></svg>`;
@@ -2607,9 +2607,9 @@ const HELP = {
       if ($('hpDone')) $('hpDone').onclick = () => helpDone('twins', 'arch', 'Moss: Round! Fern: Like a worm. Moss: The worms knew all along. Fern: We owe the worms an apology.'); };
     draw(); } },
   mabel: { label:'Help the dough rise', run() { const tried = {};
-    const out = { cold:'An hour later, the dough has barely moved. It looks sleepy. <b>Too cold.</b>', warm:'An hour later, the dough is twice as big, soft, and full of bubbles. <b>Just right.</b>', hot:'The dough puffed up fast, then stopped. The bottom is cooked hard. <b>Too hot.</b> Mabel: "Gerald, no!"' };
+    const out = { cold:'An hour later, the dough has barely moved. It looks sleepy. <b>Too cold.</b>', warm:'An hour later, the dough is 2 times as big, soft, and full of bubbles. <b>Just right.</b>', hot:'The dough puffed up fast, then stopped. The bottom is cooked hard. <b>Too hot.</b> Mabel: "Gerald, no!"' };
     const draw = (k) => { if (k) tried[k] = 1;
-      showCard(`<div class="kicker">HELP MABEL</div><h2>🍞 The dough that will not rise</h2><p>${k ? out[k] : '"My dough needs to rest for an hour before I bake it. But where? I have three balls of dough. Try a spot with each."'}</p>
+      showCard(`<div class="kicker">HELP MABEL</div><h2>🍞 The dough that will not rise</h2><p>${k ? out[k] : '"My dough needs to rest for an hour before I bake it. But where? I have 3 balls of dough. Try a spot with each."'}</p>
         <h4>Where should the dough rest?</h4><div class="chips">${[['cold', '❄️ By the open window'], ['warm', '☀️ On the shelf near the oven'], ['hot', '🔥 On top of the hot oven']].map(([id, l]) => `<button data-dg="${id}" class="${tried[id] ? 'ghost' : ''}">${l}</button>`).join('')}</div>
         ${tried.warm ? '<button id="hpDone">Tell Mabel: the warm shelf</button>' : '<p class="sub" style="margin-top:8px">Try a spot and see what happens.</p>'}`, 'Later');
       document.querySelectorAll('[data-dg]').forEach(b => b.onclick = () => { sfx(b.dataset.dg === 'warm' ? 'pick' : 'click'); draw(b.dataset.dg); });
@@ -2625,12 +2625,12 @@ const HELP = {
         if (n === target) { found = true; sfx('pick'); return draw(tries <= 4 ? `<b>Book ${n}. That is the one!</b> Found in ${tries} ${tries === 1 ? 'try' : 'tries'}.` : `<b>Book ${n}. That is the one!</b> It took ${tries} tries. Hoot: "Hoo. Next time, try opening the middle one first."`); }
         sfx('click'); if (n < target) lo = n + 1; else hi = n - 1; draw(`Book ${n} is not it. Hoot: "The lost book is <b>${n < target ? 'later' : 'earlier'}</b> than that one."`); });
       if ($('hpAgain')) $('hpAgain').onclick = () => HELP.hoot.run();
-      if ($('hpDone')) $('hpDone').onclick = () => helpDone('hoot', 'halving', tries <= 4 ? `${tries} ${tries === 1 ? 'try' : 'tries'}! You opened the middle and threw away half the shelf each time. I have been checking one by one for 40 years.` : 'Found! Here is my trick: open the middle one, and half the shelf is ruled out at once.'); };
+      if ($('hpDone')) $('hpDone').onclick = () => helpDone('hoot', 'halving', tries <= 4 ? `${tries} ${tries === 1 ? 'try' : 'tries'}! You opened the middle and threw away 1/2 the shelf each time. I have been checking one by one for 40 years.` : 'Found! Here is my trick: open the middle one, and 1/2 the shelf is ruled out at once.'); };
     draw(); } },
   allegra: { label:'Help tune the water glasses', run() { const G = [['Full', 1, 330, 'a low note'], ['3/4 full', .75, 392, 'a fairly low note'], ['1/2 full', .5, 494, 'a fairly high note'], ['A little water', .2, 659, 'a high note']];
     const order = [2, 0, 3, 1], heard = {}; let seq = [];
     const glass = (g, k) => `<button data-gl="${k}" aria-label="${G[g][0]} glass" style="padding:8px 4px;border-radius:14px;background:none;border:2px solid ${seq.includes(k) ? '#e8a33d' : '#eadfd0'};box-shadow:none"><svg viewBox="0 0 40 60" style="display:block;width:44px;margin:0 auto" aria-hidden="true"><path d="M6 4 L10 56 H30 L34 4Z" fill="#eef7fb" stroke="#9fc7da" stroke-width="2"/><path d="M${7.6 + (1 - G[g][1]) * 3.2} ${10 + (1 - G[g][1]) * 44} L10.8 55 H29.2 L${32.4 - (1 - G[g][1]) * 3.2} ${10 + (1 - G[g][1]) * 44}Z" fill="#7ec8e3"/></svg><span style="display:block;font-size:12px;font-weight:700;margin-top:2px">${seq.includes(k) ? seq.indexOf(k) + 1 : '&nbsp;'}</span><span class="sub" style="display:block;font-size:11px;line-height:1.2;min-height:27px">${heard[k] ? G[g][3] : ''}</span></button>`;
-    const draw = (msg = '"I filled four glasses with water to make a tiny xylophone. Tap a glass to hear it. Then help me: <b>tap all four in order, from the lowest note to the highest.</b>"', won) => {
+    const draw = (msg = '"I filled 4 glasses with water to make a tiny xylophone. Tap a glass to hear it. Then help me: <b>tap all 4 in order, from the lowest note to the highest.</b>"', won) => {
       showCard(`<div class="kicker">HELP ALLEGRA</div><h2>🥛 The singing glasses</h2><p>${msg}</p>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">${order.map((g, k) => glass(g, k)).join('')}</div>
         ${won ? '<button id="hpDone">Play it for Allegra</button>' : `<p class="sub" style="margin-top:8px">${seq.length ? `You have tapped ${seq.length} of 4.` : 'Each tap plays the glass and counts as your next pick.'} <button id="glReset" class="ghost" style="padding:2px 10px">Start over</button></p>`}`, 'Later');
@@ -2647,8 +2647,8 @@ const HELP = {
   sage: { label:'Help stack the garden stones', run() { const ST = [['big', 'Big flat stone', 46], ['mid', 'Middle stone', 32], ['small', 'Small round stone', 20]]; let stack = [];
     const pile = () => { let y = 84, h = ''; stack.forEach(k => { const w = ST.find(x => x[0] === k)[2], hh = w * .42; y -= hh; h += `<ellipse cx="100" cy="${y + hh / 2}" rx="${w}" ry="${hh / 2}" fill="${{ big:'#8a8f96', mid:'#a3a8ae', small:'#bcc1c6' }[k]}"/>`; });
       return `<svg viewBox="0 0 200 90" style="display:block;width:100%;max-width:240px;margin:8px auto 0" aria-hidden="true"><path d="M10 84 H190" stroke="#8fbf7a" stroke-width="4" stroke-linecap="round"/>${h}</svg>`; };
-    const draw = (msg = '"The wind knocked down these three path stones. Stack them so they stand. There is no hurry."', won) => {
-      showCard(`<div class="kicker">HELP SAGE</div><h2>🪨 Three stones</h2><p>${msg}</p>${pile()}
+    const draw = (msg = '"The wind knocked down these 3 path stones. Stack them so they stand. There is no hurry."', won) => {
+      showCard(`<div class="kicker">HELP SAGE</div><h2>🪨 3 stones</h2><p>${msg}</p>${pile()}
         ${won ? '<button id="hpDone">Show Sage</button>' : `<h4>${stack.length ? 'Which stone goes on next?' : 'Which stone goes on the bottom?'}</h4><div class="chips">${ST.filter(x => !stack.includes(x[0])).map(x => `<button data-sn="${x[0]}">${x[1]}</button>`).join('')}</div>`}`, 'Later');
       document.querySelectorAll('[data-sn]').forEach(b => b.onclick = () => { stack.push(b.dataset.sn); sfx('click');
         if (stack.length < 3) return draw('It sits there. So far, so good.');
@@ -2659,11 +2659,11 @@ const HELP = {
 };
 // the old stone: crack its symbols by comparing names you know, the way the real Rosetta Stone was read
 function readStone() { const sym = { N:'◆', A:'●', P:'▲', I:'■' }, w = t => [...t].map(c => sym[c]).join(' ');
-  const ask = (msg = '') => { showCard(`<div class="kicker">THE OLD STONE</div><h2>Can you read it?</h2><p>The stone says the same thing twice: once in letters you know, once in old symbols.</p>
+  const ask = (msg = '') => { showCard(`<div class="kicker">THE OLD STONE</div><h2>Can you read it?</h2><p>The stone says the same thing 2 times: once in letters you know, once in old symbols.</p>
       <p class="itinfo" style="font-size:20px;line-height:1.8">N A N A &nbsp;=&nbsp; ${w('NANA')}<br>P I P &nbsp;=&nbsp; ${w('PIP')}</p>
       <p style="margin-top:10px">Further down, one word is only in symbols:</p><p style="font-size:30px;text-align:center;letter-spacing:6px">${w('PAN')}</p><h4>What does it say?</h4>
       <div class="chips">${['NAP', 'PIN', 'PAN', 'NIP'].map(x => `<button data-st="${x}">${x}</button>`).join('')}</div><p style="font-weight:700;min-height:22px;margin-top:8px">${msg}</p>`, 'Later');
-    document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { if (b.dataset.st !== 'PAN') { sfx('click'); return ask(`Not ${b.dataset.st}. Match each symbol to a letter in the two names above.`); }
+    document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { if (b.dataset.st !== 'PAN') { sfx('click'); return ask(`Not ${b.dataset.st}. Match each symbol to a letter in the 2 names above.`); }
       const first = !S.stoneRead; S.stoneRead = true; if (first) S.coins += 40; save(); drawHud(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
       showCard(`<p style="font-size:18px"><b>PAN!</b> You just read a language nobody taught you.${first ? ' <b>+40 coins.</b>' : ''}</p>` + ahaHtml('rosetta'), 'Huh. Neat.'); }); };
   ask(); }
@@ -3017,7 +3017,7 @@ function talk(id) {
 }
 function neighborButtons(id) {
   const b = [];
-  if (id === 'nana' && S.tut === 9 && !VISIT && !founderOn() && (S.hq || 0) < 4) b.push({ label:!S.hq ? 'Ask about the two trees' : S.hq === 1 && have('fiber') >= 8 ? 'Give Nana 8 grass' : 'About the hammock', fn:() => { closeDialog(); hammockTalk(); } });
+  if (id === 'nana' && S.tut === 9 && !VISIT && !founderOn() && (S.hq || 0) < 4) b.push({ label:!S.hq ? 'Ask about the 2 trees' : S.hq === 1 && have('fiber') >= 8 ? 'Give Nana 8 grass' : 'About the hammock', fn:() => { closeDialog(); hammockTalk(); } });
   if (HELP[id] && S.tut === 9 && !VISIT && !(S.helped || []).includes(id)) b.push({ label:HELP[id].label, fn:() => { closeDialog(); HELP[id].run(); } });
   if (id === 'pip') {
     b.push({ label:'Buy seeds', fn:seedShop }, { label:'Buy furniture', fn:furnShop });
@@ -3217,7 +3217,7 @@ const SCENES = {
   pip3() {
     sfx('heart');
     openDialog('Pip', "Can I tell you something? I get lost. A lot. How do real birds fly across whole oceans without getting lost?", [
-      ...['The sun','The stars','Something invisible'].map(a => ({ label:a, fn:() => openDialog('Pip', "All three?! Birds are so much cooler than me.", [{ label:'How do they do it?', fn:() => { closeDialog(); showAha('migration'); } }], S.hearts.pip) })),
+      ...['The sun','The stars','Something invisible'].map(a => ({ label:a, fn:() => openDialog('Pip', "All 3?! Birds are so much cooler than me.", [{ label:'How do they do it?', fn:() => { closeDialog(); showAha('migration'); } }], S.hearts.pip) })),
     ], S.hearts.pip);
   },
   pip6() {
@@ -3246,7 +3246,7 @@ const SCENES = {
     openDialog('Moss & Fern', "Fern: Want to know a secret? Moss: We counted the spirals in a sunflower. Fern: 1, 1, 2, 3, 5, 8, 13, 21... Moss: What comes next?", [
       ...[29, 34, 42].map(n => ({ label:String(n), fn:() => n === 34
         ? (closeDialog(), showAha('fibonacci', () => openDialog('Moss & Fern', "Moss: 21 spirals one way. Fern: 34 the other. Moss: Every time!", [], S.hearts.twins)))
-        : openDialog('Moss & Fern', "Fern: Close! Moss: Hint: add the last two numbers together.", [{ label:'Try again', fn:SCENES.twins3 }]) })),
+        : openDialog('Moss & Fern', "Fern: Close! Moss: Hint: add the last 2 numbers together.", [{ label:'Try again', fn:SCENES.twins3 }]) })),
     ], S.hearts.twins);
   },
   twins6() {
@@ -3275,8 +3275,8 @@ function nanaQuest() {
     S.quest = 1; if (S.tut === 1) tutAfterGreeting(); else spawnDigs(); drawHud(); save();
     openDialog('Nana Gale', `Oh! You must be ${S.name || 'the new Keeper'}. You have her eyes. See that gold sparkle by your garden? Something of hers is buried there. Tap it to dig.`, [], h);
   } else if (S.quest === 1) openDialog('Nana Gale', `Tap the gold sparkles to dig, dear. New sparkles show up each morning.`, neighborButtons('nana'), h);
-  else if (S.quest === 2) openDialog('Nana Gale', "Three memories! Now, the old stone dial by your garden. Tap it when its shadow is the very shortest. Do not ask me why. Your grandmother always did.", neighborButtons('nana'), h);
-  else if (S.quest === 3) openDialog('Nana Gale', "This is her Wind Bell frame. The big pipe survived, but the small ones are all mixed up. Hang the three that sound sweetest with the big one.", [{ label:'Tune the bell', fn:() => { closeDialog(); openBell(); } }, ...neighborButtons('nana')], h);
+  else if (S.quest === 2) openDialog('Nana Gale', "3 memories! Now, the old stone dial by your garden. Tap it when its shadow is the very shortest. Do not ask me why. Your grandmother always did.", neighborButtons('nana'), h);
+  else if (S.quest === 3) openDialog('Nana Gale', "This is her Wind Bell frame. The big pipe survived, but the small ones are all mixed up. Hang the 3 that sound sweetest with the big one.", [{ label:'Tune the bell', fn:() => { closeDialog(); openBell(); } }, ...neighborButtons('nana')], h);
   save();
 }
 function pipQuestion() {
@@ -3513,7 +3513,7 @@ function gearPuzzle(o = {}) {
   let teeth = 24, spin = 0, raf;
   const draw = (msg='') => {
     showCard(`<div class="kicker">${o.kicker || 'THE WINDMILL'}</div><h2>Fix the gears</h2>
-      <p>The big gear turns with the wind. ${o.what || 'The millstone needs its small gear'} to spin exactly ${target} times for every 1 turn of the big gear.</p><p style="font-size:14px;opacity:.75;margin-top:6px">Tap a small gear below to try it. Watch the two counters at the top. When the counters match, tap Fit this gear.</p>
+      <p>The big gear turns with the wind. ${o.what || 'The millstone needs its small gear'} to spin exactly ${target} times for every 1 turn of the big gear.</p><p style="font-size:14px;opacity:.75;margin-top:6px">Tap a small gear below to try it. Watch the 2 counters at the top. When the counters match, tap Fit this gear.</p>
       <canvas class="rope" id="gearC" width="520" height="280"></canvas>
       <div class="steppers">${[6,8,12,16].map(n => `<button data-t="${n}" class="${n===teeth?'':'ghost'}">${n} teeth</button>`).join('')}</div>
       <p id="gearMsg" style="margin-top:8px;font-weight:700;text-align:center;min-height:22px">${msg}</p>
@@ -3581,7 +3581,7 @@ function leverPuzzle(o = {}) {
 function useStakes() {
   if (S.bigGarden) { toast('Your garden is already bigger.'); return; }
   if (!S.aha.includes('rope')) { toast('Fence stakes and a long rope. You cannot use them yet. First learn to make a square corner on Orchard Isle.'); return; }
-  ropePuzzle({ kicker:'A BIGGER GARDEN', total:24, text:'This rope is twice as long: 24 spaces between the knots. Split it into 3 sides and make the bottom left corner a perfect square corner.', fail:'Not square yet. The fence would lean.',
+  ropePuzzle({ kicker:'A BIGGER GARDEN', total:24, text:'This rope is 2 times as long: 24 spaces between the knots. Split it into 3 sides and make the bottom left corner a perfect square corner.', fail:'Not square yet. The fence would lean.',
     done:() => { S.bigGarden = true; for (let i=0;i<3;i++){ S.tiles.push({ s:0 }); addTileGroup(S.tiles.length-1); }
       stakes.visible = false; save(); sfx('pick'); burst(new THREE.Vector3(2.45,0,2.75), 0x8fdc8a, 20); showRecall('rope', () => toast('Your garden grew by 3 squares!')); } });
 }
@@ -3723,7 +3723,7 @@ function ringGreatBell() {
   setTimeout(() => showCard(`<div class="kicker">CHAPTER 5: THE OLD HEART</div><h2>The Sky Remembers</h2>
     <p>The great bell rings out across the sky. From every island, a small bell answers: Grandma's Wind Bell, Drizzle's ship bell, the windmill, Lumen's crystals. Far away, islands you have never seen begin to drift closer.</p>
     <h4>Tucked inside the bell, a letter</h4><p class="letter">${GRANDMA_LETTER2}</p>`, 'Next',
-    () => showCard(`<div class="kicker">CHAPTER 5: THE OLD HEART</div><h2>Five building sites opened</h2><p>Tap a building site here at the Old Heart to rebuild it. You got 300 coins.</p>`, 'Rebuild the village')), 4200);
+    () => showCard(`<div class="kicker">CHAPTER 5: THE OLD HEART</div><h2>5 building sites opened</h2><p>Tap a building site here at the Old Heart to rebuild it. You got 300 coins.</p>`, 'Rebuild the village')), 4200);
 }
 function useSite(i) {
   const b = BUILDINGS[i];
@@ -4503,7 +4503,7 @@ const PIECES = [
   { id:'walls', grp:'walls',   name:'Stone Wall',     cost:{ stone:3 } },
   { id:'lamp', grp:'lights',    name:'Lamp Post',      cost:{ log:1, stone:1 } },
   { id:'bench', grp:'lights',   name:'Bench',          cost:{ log:2 } },
-  { id:'hammock', grp:'lights', name:'Hammock',        cost:{ fiber:8 } }, // hangs between two trees
+  { id:'hammock', grp:'lights', name:'Hammock',        cost:{ fiber:8 } }, // hangs between 2 trees
   { id:'planter', grp:'garden', name:'Flower Planter', cost:{ log:1, fiber:1 } },
   { id:'arch', grp:'garden',    name:'Garden Arch',    cost:{ log:3, fiber:2 } },
   { id:'bpath', grp:'ground',   name:'Brick Path',     cost:{ brick:2 }, age:'kiln' },
@@ -4727,16 +4727,16 @@ const onPath = () => S.where === 'home' && (S.builds || []).some(b => (b.p === '
 // a nap in the hammock skips ahead a few hours, never past 11 PM
 const hammockOpen = () => founderOn() || S.hq >= 4;
 // Nana's hammock: a short story mission. Each step says why you are doing it.
-// hq: 0 not started, 1 gather 8 grass, 3 hang it between the two trees, 4 done
+// hq: 0 not started, 1 gather 8 grass, 3 hang it between the 2 trees, 4 done
 const HQ_SPOT = [6.25, -3.25];
-function hammockStep() { return S.hq === 1 ? `Cut bushes for grass, then bring it to Nana. ${icon('fiber')} ${Math.min(8, have('fiber'))}/8` : S.hq === 3 ? 'Hang the hammock between the two trees behind your garden. Tap the glowing spot between them.' : ''; }
+function hammockStep() { return S.hq === 1 ? `Cut bushes for grass, then bring it to Nana. ${icon('fiber')} ${Math.min(8, have('fiber'))}/8` : S.hq === 3 ? 'Hang the hammock between the 2 trees behind your garden. Tap the glowing spot between them.' : ''; }
 function hammockTalk() {
-  if (!S.hq) return openDialog('Nana Gale', "See those two trees behind your garden? Your grandmother kept a hammock there. She said her best ideas came to her half asleep in it. The Great Gust took it.", [{ label:'Can we make a new one?', fn:() => { S.hq = 1; save(); drawHud();
+  if (!S.hq) return openDialog('Nana Gale', "See those 2 trees behind your garden? Your grandmother kept a hammock there. She said her best ideas came to her half asleep in it. The Great Gust took it.", [{ label:'Can we make a new one?', fn:() => { S.hq = 1; save(); drawHud();
       openDialog('Nana Gale', "We can. A hammock is only rope and knots, and rope is only grass. Bring me 8 grass. Bushes have plenty.", [], S.hearts.nana); } }], S.hearts.nana);
   if (S.hq === 1 && have('fiber') < 8) return openDialog('Nana Gale', `Grass ${have('fiber')}/8, dear. Cut a few more bushes.`, [], S.hearts.nana);
   if (S.hq === 1) { bagAdd('fiber', -8); S.hq = 3; save(); drawHud(); drawHammockSpot(); sfx('swish');
-    return openDialog('Nana Gale', "Watch. One blade of grass snaps in your fingers. Twist many together and each one holds the others. That is all rope is. Now go hang it. Tap the glowing spot between the two trees behind your garden.", [], S.hearts.nana); }
-  if (S.hq === 3) return openDialog('Nana Gale', 'It is ready. Hang it between the two trees behind your garden. Tap the glowing spot.', [], S.hearts.nana); }
+    return openDialog('Nana Gale', "Watch. One blade of grass snaps in your fingers. Twist many together and each one holds the others. That is all rope is. Now go hang it. Tap the glowing spot between the 2 trees behind your garden.", [], S.hearts.nana); }
+  if (S.hq === 3) return openDialog('Nana Gale', 'It is ready. Hang it between the 2 trees behind your garden. Tap the glowing spot.', [], S.hearts.nana); }
 var hammockSpot = null;
 function drawHammockSpot() { if (!hammockSpot) { hammockSpot = new THREE.Group(); hammockSpot.position.set(HQ_SPOT[0], 0, HQ_SPOT[1]); const ring = new THREE.Mesh(new THREE.RingGeometry(.45, .6, 32), new THREE.MeshBasicMaterial({ color:0xffe07a, transparent:true, opacity:.8, side:THREE.DoubleSide })); ring.rotation.x = -Math.PI/2; ring.position.y = .04; hammockSpot.add(ring);
     const h = halo(0xffe07a, 1.6, .6); h.position.y = .5; hammockSpot.add(h); const hb = hitBox(1.4, 1.4, 1.4); hb.position.y = .7; hammockSpot.add(hb); deco(hb, hangHammock).userData.label = 'Glowing spot: tap to hang the hammock'; scene.add(hammockSpot); lateClicks.push(hammockSpot); }
@@ -4867,11 +4867,11 @@ function buildTap(e) {
   let idx = S.builds.findIndex(b => b.x === c.x && b.z === c.z);
   if (idx < 0) idx = S.builds.findIndex(b => b.len && Math.hypot(b.x - c.x, b.z - c.z) < 1.3); // a hammock hangs between squares
   if (moving && !held && idx >= 0 && S.builds[idx].len) { toast('A hammock is tied to its trees. Use Remove, then hang it somewhere else.'); return; }
-  if (!moving && !removing && buildSel === 'hammock') { // it hangs between two trees that stand close together
+  if (!moving && !removing && buildSel === 'hammock') { // it hangs between 2 trees that stand close together
     const p = PIECES.find(x => x.id === 'hammock'), wp = t => t.getWorldPosition(new THREE.Vector3()), ts = trees.filter(t => { let v = true; for (let a = t; a; a = a.parent) if (!a.visible) v = false; return v && Math.abs(wp(t).y) < .3; }).map(wp); let best = null;
     for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++) { const len = Math.hypot(ts[i].x - ts[j].x, ts[i].z - ts[j].z), mx = (ts[i].x + ts[j].x) / 2, mz = (ts[i].z + ts[j].z) / 2, d = Math.hypot(mx - c.x, mz - c.z);
       if (len >= 1.8 && len <= 4.6 && d < 2.2 && (!best || d < best.d)) best = { d, len, x:mx, z:mz, a:-Math.atan2(ts[j].z - ts[i].z, ts[j].x - ts[i].x) }; }
-    if (!best) { toast('A hammock hangs between two trees. Tap the ground between two trees that stand close together.'); return; }
+    if (!best) { toast('A hammock hangs between 2 trees. Tap the ground between 2 trees that stand close together.'); return; }
     if (S.builds.some(b => b.len && Math.hypot(b.x - best.x, b.z - best.z) < .5)) { toast('A hammock already hangs between these trees.'); return; }
     if (!enough(p.cost)) { toast('A hammock needs 8 grass. Cut bushes to get grass.'); return; }
     Object.entries(p.cost).forEach(([k, n]) => bagAdd(k, -n)); S.builds.push({ p:'hammock', x:best.x, z:best.z, a:best.a, len:best.len }); lean('maker');
@@ -5623,7 +5623,7 @@ function voyage() {
     const first = S.voyages === 1, done = S.voyages === 3;
     showCard(`<div class="kicker">VOYAGE ${S.voyages}</div><h2>${rare ? 'A rare catch!' : 'Land ho!'}</h2><p>You came home with ${got.join(', ')}.</p>
       ${first ? `<h4>In real life</h4><p>${WAYFINDING}</p>` : ''}
-      ${done ? `<h4>Drizzle is proud</h4><p>"Three voyages, three safe returns. You are a real navigator now. Take my old Star Globe. It showed me the way for forty years."</p><p><b>You got the Star Globe! Place it inside your home.</b></p>` : ''}`, 'Okay');
+      ${done ? `<h4>Drizzle is proud</h4><p>"3 voyages, 3 safe returns. You are a real navigator now. Take my old Star Globe. It showed me the way for 40 years."</p><p><b>You got the Star Globe! Place it inside your home.</b></p>` : ''}`, 'Okay');
     if (done) { S.furn.globe = (S.furn.globe || 0) + 1; save(); } });
 }
 function marketDay() {
@@ -5638,7 +5638,7 @@ function marketDay() {
     const first = S.marketFilled === 1, done = S.marketFilled === 6;
     if (done) { S.perks = [...new Set([...(S.perks || []), 'marketRep'])]; S.coins += 300; save(); drawHud(); }
     if (first || done) return showCard(`<div class="kicker">THE FLOATING MARKET</div><h2>${first ? 'Your first sale on the water' : 'The market is famous!'}</h2>
-      ${first ? `<h4>In real life</h4><p>${FLOATING}</p>` : `<p>"Six orders filled! Word is spreading, sailor. Shoppers trust us now." Drizzle hands you 300 coins from the market's savings, and from now on your crate pays 10% more.</p>`}`, 'Okay', marketDay);
+      ${first ? `<h4>In real life</h4><p>${FLOATING}</p>` : `<p>"6 orders filled! Word is spreading, sailor. Shoppers trust us now." Drizzle hands you 300 coins from the market's savings, and from now on your crate pays 10% more.</p>`}`, 'Okay', marketDay);
     marketDay(); });
 }
 // --- Founding Gardeners: tester codes, gifts, missions, quick reactions, and the thank-you wall ---
@@ -5690,13 +5690,13 @@ function founderDrip() { if (!founderOn() || VISIT || TESTSLOT || PREVIEW) retur
   const busy = !S.setupDone || S.tut !== 9 || !quiet(); if (busy) { if (S.tut === 9) setTimeout(founderDrip, 4000); return; }
   const d = fDay(), give = (keys, head, body, then) => { S.fGot = [...(S.fGot || []), ...keys]; save(); showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>${head}</h2><p>${body}</p>`, 'Open it', () => openPresents(keys.filter(k => F_GIFTS[k]).map(k => F_GIFTS[k]), () => { const tip = () => { if (!S.giftTipSeen) { S.giftTipSeen = true; save(); toast('See all your founder gifts anytime: tap Bag, then Founder gifts.'); } }; then ? then(tip) : tip(); })); };
   if (!fGot('pet')) return give(['pet'], 'Welcome, founder!', 'You were invited in before anyone else. Very few people have walked this island yet. We wrapped something for you, and more is on the way.', tip => choosePet(tip));
-  if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', 'Two founder gifts for your second day.', tip => { drawHud(); tip(); });
+  if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', '2 founder gifts for your second day.', tip => { drawHud(); tip(); });
   if (BALLOON_ON && d >= 3 && !fGot('balloon')) return give(['balloon'], 'A present for day 3!', 'This one is big.', tip => { S.founderBalloon = true; save(); drawBalloon(); drawHud(); tip(); });
   if (d >= 4 && (S.home || 0) >= 3 && !fGot('lantern')) return give(['lantern'], 'A present for your new home', 'Your hut is rebuilt. Here is something to light it up.', tip => { drawHud(); tip(); });
   if (!S.giftsSeen && (S.fGot || []).length > 1 && !(mythOn() && !mp().revealed)) { S.giftsSeen = true; save(); openFounderGifts(); } // once: founders who already opened gifts see what they have and how to use each
 }
 addEventListener('sg-playing', () => setTimeout(founderDrip, 4000));
-// testers can nap from the start: a hammock already hangs between the two trees behind the garden
+// testers can nap from the start: a hammock already hangs between the 2 trees behind the garden
 addEventListener('sg-playing', () => { if (!founderOn() || S.fHammock || VISIT || TESTSLOT) return; S.fHammock = true;
   if (!(S.builds || []).some(b => b.len)) { S.builds = [...(S.builds || []), { p:'hammock', x:6.25, z:-3.25, a:-Math.atan2(3, 1.5), len:3.354 }]; drawBuilds(); }
   S.fGot = [...new Set([...(S.fGot || []), 'hammock'])]; save(); });
@@ -5731,7 +5731,7 @@ function openMissions() {
 const GIFT_HOW = [
   ['pet', '🐾', 'Your companion', 'It follows you everywhere. Tap it to give it a pat.'],
   ['missions', '✦', 'Tester missions', 'Tap ✦ Missions at the top of your screen. Each one pays 50 coins.'],
-  ['hammock', '😴', 'A hammock', 'It hangs between the two trees behind your garden. Tap it to take a nap and skip ahead in the day.'],
+  ['hammock', '😴', 'A hammock', 'It hangs between the 2 trees behind your garden. Tap it to take a nap and skip ahead in the day.'],
   ['outfit', '🧥', 'The Sky Pioneer outfit', 'Tap Bag, then Settings, then Change my look, then Clothes.'],
   ['lantern', '🏮', "The Founder's Lantern", 'Tap Build, pick Founder\'s Lantern, and tap a square. Fireflies gather around it at night.'],
 ];

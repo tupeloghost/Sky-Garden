@@ -71,7 +71,7 @@ def lines(y0, y1, n, kind):
             elif kind == 'd': L = r.uniform(4, 10); out += f'<path d="M{x:.1f} {y:.1f} q{L/2:.1f} {r.uniform(-1.6,1.6):.1f} {L:.1f} 0" fill="none" stroke-width=".8"/>'; x += L + r.uniform(1, 2.5)
             else: L = r.uniform(1.2, 2); out += f'<rect x="{x:.1f}" y="{y-.9:.1f}" width="{L:.1f}" height="1.8"/>'; x += L + r.uniform(.9, 1.6)
     return out
-add('rosetta', 'One message, written three ways.',
+add('rosetta', 'One message, written 3 ways.',
   svg(330, 128, 'A drawing of a dark grey stone slab with a broken top, carved with three bands of writing',
     f'<clipPath id="rs"><path d="{stone}"/></clipPath><path d="{stone}" fill="#4a4a50"/><g clip-path="url(#rs)"><path d="M150 0 L230 0 L230 128 L176 128Z" fill="#3a3a40" opacity=".5"/>'
     f'<g fill="#c9c6bd" stroke="#c9c6bd" opacity=".9">{lines(22, 40, 5, "h")}{lines(50, 76, 9, "d")}{lines(85, 116, 13, "g")}</g>'
@@ -104,7 +104,7 @@ add('temple', 'People carved these giant stone pillars before anyone had a farm.
   svg(330, 130, 'A drawing of a tall T-shaped stone pillar carved with arms, hands, a belt, and a fox, with a person beside it for size',
     f'<path d="M20 122 H310" stroke="#c9ab88" stroke-width="2"/><clipPath id="gt"><path d="{pil}"/></clipPath><path d="{pil}" fill="#d9cfb9"/><g clip-path="url(#gt)">{speck}<path d="M176 0 H230 V130 H182Z" fill="#b7ab92" opacity=".55"/></g>{arms}{fox}'
     + person(96, 122, 36) + txt(258, 60, '5.5 meters', 12) + '<path d="M228 10 V122 M223 10 h10 M223 122 h10" stroke="#9a7f66" stroke-width="1.6" fill="none"/>'),
-  'A drawing of one of the two tallest pillars at Gobekli Tepe in Turkey, 5.5 meters tall. The T shape is a person: arms on the sides, hands in front, and a belt.')
+  'A drawing of one of the 2 tallest pillars at Gobekli Tepe in Turkey, 5.5 meters tall. The T shape is a person: arms on the sides, hands in front, and a belt.')
 
 # ---- pottery (Xianrendong): rough broken pieces ----
 r = R(4)

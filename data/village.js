@@ -89,7 +89,7 @@ const BOOKS = [
     today:'Once books were cheap to copy, ideas could spread faster than ever before.' },
   { id:'handwashing', title:'Wash Your Hands',
     real:'In 1847, the doctor Ignaz Semmelweis noticed something. Far fewer new mothers died when doctors washed their hands in a chlorine mix before helping them. Many doctors refused to believe him. Years later, Louis Pasteur and Robert Koch showed that tiny germs cause many diseases.',
-    today:'Twenty seconds of soap still saves lives every day.' },
+    today:'20 seconds of soap still saves lives every day.' },
   { id:'drift', title:'The Drifting Continents',
     real:'People had long seen that the coasts of South America and Africa fit together like puzzle pieces. In 1912, Alfred Wegener said the continents had drifted apart. Most scientists laughed. In the 1960s, new evidence from the ocean floor proved the continents do move. They move a few centimeters each year.',
     today:'The ground under you is drifting right now, about as fast as your fingernails grow.' },
@@ -122,17 +122,17 @@ const SONGS = [
     aha:{ kicker:"ALLEGRA'S SONGBOOK", title:'A Tune Older Than Its Words',
       did:'You learned Twinkle, Twinkle, Little Star on the xylophone.',
       real:'The tune is an old French folk song, "Ah, vous dirai-je, maman," from the 1700s. Mozart wrote his own playful versions of it. The same melody is used for the Alphabet Song and Baa, Baa, Black Sheep.',
-      today:'Three songs, one tune. Music gets reused all the time.' } },
+      today:'3 songs, 1 tune. Music gets reused all the time.' } },
   { id:'ode', name:'Ode to Joy', notes:[2,2,3,4,4,3,2,1,0,0,1,2,2,1,1],
     aha:{ kicker:"ALLEGRA'S SONGBOOK", title:'A Deaf Composer\'s Joy',
       did:'You played the opening of Ode to Joy.',
       real:'Ludwig van Beethoven finished his Ninth Symphony in 1824, with Ode to Joy as its last part. By then he was almost completely deaf. He wrote it by hearing the music in his head.',
       today:'It is now the anthem of the European Union.' } },
 ];
-const PENTA_AHA = { kicker:"ALLEGRA'S SONGBOOK", title:'The Five-Note Scale',
-  did:'You played only the five colored bars, and every note you played sounded nice together.',
+const PENTA_AHA = { kicker:"ALLEGRA'S SONGBOOK", title:'The 5-Note Scale',
+  did:'You played only the 5 colored bars, and every note you played sounded nice together.',
   real:'Those 5 notes make a 5-note scale, called pentatonic. Scales like it show up in music all over the world. You can hear them in Chinese folk songs, Scottish tunes, West African music, Indonesian gamelan music, and American blues. With no clashing notes next to each other, it is hard to play a "wrong" note.',
-  today:'Play only the black keys on a piano. That is a five-note scale too.' };
+  today:'Play only the black keys on a piano. That is a 5-note scale too.' };
 
 // Temple Garden: one saying each day, from many traditions. Sources are well documented.
 const SAYINGS = [
