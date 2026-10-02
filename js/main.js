@@ -2128,7 +2128,7 @@ function knowHtml(x) { return `<div class="kicker">${x.term}</div><h2>${x.icon} 
 function helpDone(id, know, thanks) { const first = !(S.helped || []).includes(id); if (first) { S.helped = [...(S.helped || []), id]; S.hearts[id] = Math.min(10, (S.hearts[id] || 0) + 1); }
   const x = KNOWHOW.find(k => k.id === know), isNew = !(S.know || []).includes(know); if (isNew) { S.know = [...(S.know || []), know]; S.coins += 40; }
   save(); drawHud(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
-  showCard(`<p style="font-size:18px"><b>${NEIGHBORS[id].name}:</b> "${thanks}"</p>` + knowHtml(x) + (isNew ? '<p style="margin-top:10px"><b>+40 coins.</b> Saved in Collections, under Know-how.</p>' : ''), 'Huh. Neat.'); }
+  showCard(`<p style="font-size:18px"><b>${NEIGHBORS[id].name}:</b> "${thanks}"</p>` + knowHtml(x) + (isNew ? '<p style="margin-top:10px"><b>+40 coins.</b> Saved in Collections, under Know-how.</p>' : ''), 'Huh. Neat.', () => { if (id === 'pip' && S.meetPip) { delete S.meetPip; save(); drawHud(); if ((S.home || 0) < 3) setTimeout(() => openDialog('Pip', "You are the new Keeper! Nana says you have no roof. That is rough. I slept in my hat for a year. Go gather sticks and stones, and make an axe at the old tree stump by your garden.", [], S.hearts.pip), 500); } }); }
 const HELP = {
   pip: { label:'Help price the lemonade', run() { const tried = {}; let best = null;
     const draw = (msg = '"I made 10 cups of lemonade. Each cup cost me 2 coins to make. What should I charge?"') => { const n = Object.keys(tried).length;
@@ -2383,7 +2383,7 @@ function tutAfterGreeting() {
 function tutAfterFirstMemory() {
   const c = Object.keys(CROPS).find(k => CROPS[k].seasons.includes(season()) && !CROPS[k].locked);
   S.tut = 3; S.tiles[0] = { s:0 }; S.seeds[c] = (S.seeds[c] || 0) + 2; S.sel = c; drawTile(0); save(); drawHud();
-  openDialog('Nana Gale', "You found your first memory! Your grandmother would be proud. Now, you'll need coins to fix bridges and rebuild. Let me show you her garden. Here are 2 seeds that grow this season. Tap the square the arrow points at.", [], S.hearts.nana);
+  openDialog('Nana Gale', "Your first memory! She would be proud. Now, her garden. Here are 2 seeds. Tap the square the arrow points at.", [], S.hearts.nana);
 }
 function tutTile(i) {
   if (!tutActive() || i !== 0) return;
@@ -2401,7 +2401,8 @@ function tutSold() {
   if (S.tut !== 6) return;
   S.tut = 9; save(); drawHud(); openSquare(); setTimeout(founderDrip, 9000); // the Town Square first, then any founder surprise
   setTimeout(() => {
-    openDialog('Nana Gale', (S.home || 0) < 3 ? "Your first coins! Now, the important part. You need a roof over your head, and no, the sky is not a roof, whatever Pip tells you. See the sticks and stones lying about? Gather some and make yourself a stone axe at that old tree stump." : "Your first coins! That is how it works up here: grow things, sell them, and use the coins to rebuild. Now, there are more memories buried out there. New sparkles appear every morning. Off you go, dear!", [], S.hearts.nana);
+    S.meetPip = true; save(); drawHud();
+    openDialog('Nana Gale', (S.home || 0) < 3 ? "Your first coins! The neighbors just mended the little bridge at the back of the island. Go and meet Pip on the Town Square. He is selling lemonade, and it is not going well." : "Your first coins! That is how it works up here: grow things, sell them, and use the coins to rebuild. Now, there are more memories buried out there. New sparkles appear every morning. Off you go, dear!", [], S.hearts.nana);
     spawnDigs(); nanaWalk = { to: NANA_HOME.clone(), back:true };
     const fb = $('fbBtn'); fb.classList.add('pulse'); setTimeout(() => fb.classList.remove('pulse'), 4000);
     setTimeout(() => toast('Tell us what you think anytime with the pink Feedback button.'), 5500);
@@ -2410,6 +2411,7 @@ function tutSold() {
 function questTarget() {
   if (VISIT) return ownerNpc;
   if (S.tut === 1) return null;
+  if (meetingPip()) return npcs.pip;
   if (S.tut >= 9 && (S.home || 0) < 3) return homeStep().target;
   if (S.tut === 2) return digGroups[0] || null;
   if (S.tut >= 3 && S.tut <= 5) return tileGroups[0];
@@ -2422,8 +2424,10 @@ function questTarget() {
   const nextSite = BUILDINGS.findIndex(b => !S.built.includes(b.id)); return nextSite >= 0 ? siteGroups[nextSite] : null;
 }
 const MARK_H = { npc:2.4, ship:4.2, windmill:5.6, greatbell:2.2, bellframe:1.4, house:3.8 };
+function meetingPip() { return !VISIT && S.tut >= 9 && !!S.meetPip && !(S.helped || []).includes('pip'); }
 function currentHowto() {
   if (TUT[S.tut]) return TUT[S.tut].help;
+  if (meetingPip()) return 'Walk to the back of your island and cross the little bridge to the Town Square. The gold arrow points the way. Pip is the bird by the cart. Tap him, then tap Help price the lemonade.';
   if (S.tut >= 9 && (S.home || 0) < 3) return 'Your hut blew away. Build a new one in 3 steps. 1: Pick up sticks, stones, and grass. 2: Make an axe and a pickaxe at the tree stump workbench. 3: Chop trees, break rocks, and cut bushes, then tap the old stones where your hut stood. Until then, you sleep by the campfire.';
   if (S.quest < 5) return HOWTO.c1[S.quest];
   if (S.q2 < 5) return HOWTO.c2[S.q2];
@@ -2433,6 +2437,7 @@ function currentHowto() {
 }
 $('quest').onclick = () => { if (VISIT) return goHome(); sfx('click'); showCard(`<div class="kicker">WHAT TO DO</div><h2>${$('quest').querySelector('.qt').textContent}</h2><p>${currentHowto()}</p><h4>Tip</h4><p>A gold arrow floats over the next thing to tap.</p>`, 'Got it'); };
 function drawQuest() {
+  if (meetingPip()) { $('quest').innerHTML = `<i>Tap for help</i><b>MEET PIP</b><span class="qt">Cross the little bridge at the back of your island. Help Pip with his lemonade.</span>`; return; }
   if (!VISIT && S.tut >= 9 && (S.home || 0) < 3) { $('quest').innerHTML = `<i>Tap for help</i><b>BUILD YOUR HUT</b><span class="qt">${homeStep().text}</span>`; return; }
   if (VISIT) { $('quest').innerHTML = `<i>Tap to go home</i><b>VISITING ${VISIT.name.toUpperCase()}'S ISLAND</b><span class="qt">Say hi, water their garden, or leave a gift.</span>`; return; }
   if (S.tut === 1 || tutActive()) { $('quest').innerHTML = `<i>Tap for help</i><b>GETTING STARTED</b><span class="qt">${S.tut === 1 ? 'Nana Gale is coming to say hello.' : TUT[S.tut].text}</span>`; return; }
@@ -2838,7 +2843,7 @@ function nanaQuest() {
   const h = S.hearts.nana;
   if (S.quest === 0) {
     S.quest = 1; if (S.tut === 1) tutAfterGreeting(); else spawnDigs(); drawHud(); save();
-    openDialog('Nana Gale', `Oh! You must be ${S.name || 'the new Keeper'}. You have her eyes. Your grandmother was our Keeper of Memory: she kept the village's old stories safe. When the Great Gust hit, the village's memories fell into the ground like seeds. See that sparkle, right by your garden? Tap it a few times to dig it up.`, [], h);
+    openDialog('Nana Gale', `Oh! You must be ${S.name || 'the new Keeper'}. You have her eyes. See that gold sparkle by your garden? Something of hers is buried there. Tap it to dig.`, [], h);
   } else if (S.quest === 1) openDialog('Nana Gale', `Keep digging, dear. ${S.relics} of 3 memories found. New sparkles show up each morning.`, neighborButtons('nana'), h);
   else if (S.quest === 2) openDialog('Nana Gale', "Three memories! Now, the old stone dial by your garden. Tap it when its shadow is the very shortest. Do not ask me why. Your grandmother always did.", neighborButtons('nana'), h);
   else if (S.quest === 3) openDialog('Nana Gale', "This is her Wind Bell frame. The big pipe survived, but the small ones are all mixed up. Hang the three that sound sweetest with the big one.", [{ label:'Tune the bell', fn:() => { closeDialog(); openBell(); } }, ...neighborButtons('nana')], h);
@@ -4807,13 +4812,13 @@ function lookPicker(title, done, withName) {
 function modePicker(done, o = {}) {
   let pick = o.switching ? S.mode : null;
   const draw = () => {
-    showCard(`<div class="kicker">${o.returning ? 'WELCOME BACK' : o.switching ? 'YOUR ISLAND' : 'NEW GAME'}</div><h2>Choose your island</h2><p>${o.returning || o.switching ? 'Each island gives you something extra. Your progress, coins, and collections stay exactly as they are. The perks are added on top.' : 'Each island has its own perks. You pick once, at the start.'}</p>
+    showCard(`<div class="kicker">${o.late || o.switching ? 'YOUR ISLAND' : o.returning ? 'WELCOME BACK' : 'NEW GAME'}</div><h2>${o.late ? 'What is your island good at?' : 'Choose your island'}</h2><p>${o.late ? 'Now that you know your way around, pick one. Each gives you something extra, and everything you have stays.' : o.returning || o.switching ? 'Each island gives you something extra. Your progress, coins, and collections stay exactly as they are. The perks are added on top.' : 'Each island has its own perks. You pick once, at the start.'}</p>
       <div class="jlist">${MODES.map(m => `<button data-md="${m.id}" style="${pick === m.id ? 'background:#ffc857' : ''}">${pick === m.id ? '✓ ' : ''}${m.name} <span class="sub">${m.blurb}</span><span class="sub" style="display:block;margin-top:2px">${m.perks.map(x => '• ' + x).join('<br>')}</span></button>`).join('')}</div>
       <p id="mdMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
-      <button id="mdGo">${o.switching ? 'Switch to this island' : o.returning ? 'Keep playing' : 'Start my adventure'}</button> <button id="mdBack" class="ghost">${o.switching ? 'Never mind' : 'Back'}</button>`, null);
+      <button id="mdGo">${o.switching ? 'Switch to this island' : o.returning ? 'Keep playing' : 'Start my adventure'}</button> <button id="mdBack" class="ghost">${o.switching ? 'Never mind' : o.late ? 'Ask me tomorrow' : 'Back'}</button>`, null);
     document.querySelectorAll('[data-md]').forEach(b => b.onclick = () => { pick = b.dataset.md; draw(); });
-    $('mdBack').onclick = () => o.switching ? (endSetup(), done()) : lookPicker(o.returning ? 'WELCOME BACK' : 'NEW GAME', () => modePicker(done, o), true);
-    $('mdGo').onclick = () => { if (!pick) { $('mdMsg').textContent = 'Pick an island first.'; return; } S.mode = pick; applyModeStart(); if (o.switching || o.returning) toast(`Welcome to ${MODES.find(m => m.id === pick).name}! Everything you had is still here.`); done(); };
+    $('mdBack').onclick = () => o.late ? (S.modeAsked = false, save(), done()) : o.switching ? (endSetup(), done()) : lookPicker(o.returning ? 'WELCOME BACK' : 'NEW GAME', () => modePicker(done, o), true);
+    $('mdGo').onclick = () => { if (!pick) { $('mdMsg').textContent = 'Pick an island first.'; return; } S.mode = pick; applyModeStart(); if (o.switching || o.returning) toast(o.late ? `Your island is now ${MODES.find(m => m.id === pick).name}.` : `Welcome to ${MODES.find(m => m.id === pick).name}! Everything you had is still here.`); done(); };
   };
   draw();
 }
@@ -4840,10 +4845,10 @@ $('start').onclick = () => { dispatchEvent(new Event('sg-playing')); $('title').
       lookPicker('WELCOME BACK', () => { endSetup(); if (!S.birthdayAsked && !S.birthday) birthdayPicker(toIsland); else toIsland(); }, true));
     return;
   }
-  if (!S.created) { lookPicker('NEW GAME', () => { endSetup(); birthdayPicker(() => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); $('start').onclick(); }); }); }, true); return; }
+  if (!S.created) { lookPicker('NEW GAME', () => { endSetup(); applyModeStart(); $('start').onclick(); }, true); return; } // straight into the island: the birthday and the island choice are asked on later days
   if (isPartyDay() && S.lastParty !== dayKey(today()) && S.letter) setTimeout(birthdayParty, 900);
   else if (S.tut === 9 && !S.birthdayAsked && !S.birthday && S.letter) setTimeout(() => birthdayPicker(null, true), 1200);
-  if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">${(S.home || 0) < 3 ? 'A LETTER UNDER A STONE' : 'A LETTER ON THE TABLE'}</div><h2>Dear ${S.name || 'little one'},</h2><p class="letter">${(S.home || 0) < 3 ? 'If you are reading this, you made it. I am sorry about the hut. The Great Gust took it, so all that is left are the stones it stood on. You will build a better one. ' : 'If you are reading this, the hut is yours now. '}The Great Gust scattered more than islands. It scattered what we knew: how to count, how to tell time, how to make music. Those memories are still out there, in the dirt and the sky. Nana Gale will show you where to start.<br><br>The sky remembers what it used to be. Help it.<br><br>Love, Grandma</p>`, 'Let\'s go!', () => { if (S.tut === 0) startTutorial(); }); } };
+  if (!S.letter) { S.letter = true; save(); showCard(`<div class="kicker">${(S.home || 0) < 3 ? 'A LETTER UNDER A STONE' : 'A LETTER ON THE TABLE'}</div><h2>Dear ${S.name || 'little one'},</h2><p class="letter">${(S.home || 0) < 3 ? 'You made it. Sorry about the hut. The Great Gust took it.' : 'You made it. The hut is yours now.'}<br><br>The wind took what we knew, too: how to count, how to tell time, how to make music. It is all still here, buried. Dig it up.<br><br>Nana Gale is on her way over.<br><br>Love, Grandma</p>`, 'Let\'s go!', () => { if (S.tut === 0) startTutorial(); }); } };
 // --- trading post and creator shops ---
 const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const ME = () => VISIT ? mine : S, saveMe = () => VISIT ? saveMine() : save();
@@ -5590,7 +5595,7 @@ function maybeNewToday() {
 }
 function newTodayCard() {
   const d = playDays(), fresh = ROLLOUT.filter(r => r.day === d && featureOn(r.id)), next = ROLLOUT.find(r => r.day > d && FEATURES.find(f => f.id === r.id)?.live !== false);
-  if (!fresh.length) return;
+  if (!fresh.length) { if (!S.mode && !S.modeAsked && S.tut >= 9 && d >= 3) { S.modeAsked = true; save(); setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => endSetup(), { returning:true, late:true }); } return; }
   drawHud(); drawStations(); drawTradePlants(); drawStall(); spawnBugs(); drawPeople(); drawTownHall(); drawHelperTree(); drawWall(); chime(784); setTimeout(() => chime(1047), 140);
   showCard(`<div class="kicker">NEW TODAY: DAY ${d}</div>${fresh.map(r => `<h2>${r.title}</h2><p>${r.text}</p>`).join('')}${next ? `<p style="opacity:.75;margin-top:10px">${next.day === d + 1 ? 'Something new unlocks tomorrow. See you then!' : 'More unlocks soon. Keep playing each day!'}</p>` : ''}`);
 }
