@@ -1,5 +1,5 @@
-// Travelers who camp on your island for a couple of days (like Animal Crossing).
-// Become good friends and you can invite them to stay as permanent neighbors.
+// Travelers who camp on your island for 2 or 3 days (like Animal Crossing).
+// At 3 hearts you can invite them to stay as permanent neighbors.
 const SPECIES = [
   { id:'rabbit',   name:'rabbit',   look:{ earType:'bunny' },  colors:[[0xf6f1ea,0xffffff],[0xc9a27e,0xf3e2c4],[0x9a8f8a,0xe8e0d0]] },
   { id:'mouse',    name:'mouse',    look:{ earType:'mouse' },  colors:[[0xb3aabb,0xf3eef6],[0xd9bfa6,0xfff1d6]] },

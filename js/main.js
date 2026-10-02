@@ -1344,7 +1344,7 @@ function makeRoom(id, n, o) { const c = new THREE.Vector3(ROOM.x + 24 * n, 0, RO
 // put a thing in a room and make all of it tappable
 const thing = (g, obj, x, z, w, h, d, fn, label) => { obj.position.set(x, 0, z); g.add(obj); const hb = hitBox(w, h, d); hb.position.set(x, h / 2, z); g.add(hb); deco(hb, fn); hb.userData.label = label; return obj; };
 const G = (...kids) => { const g = new THREE.Group(); kids.forEach(k => g.add(k)); return g; };
-function enterRoom(id) { const R = ROOMS[id]; if (!R) return; if (id === 'museum') { drawMuseum(); if (!S.museumSeen) { S.museumSeen = true; setTimeout(() => showCard(`<div class="kicker">THE MUSEUM</div><h2>It is empty. That is your job.</h2><p>Give the museum one of each fish, bug, and crop. Each one goes on show for good.</p><p>You get 25 coins for each one, and a sign that says who gave it.</p>`, 'Okay'), 700); } } S.where = 'hut'; S.room = id; player.position.set(R.c.x, 0, R.c.z + 2.2); roomLight.position.set(R.c.x, 3, R.c.z + .5); target = null; pending = null; snapCam(); sfx('door'); drawHud(); save(); toast(R.name); }
+function enterRoom(id) { const R = ROOMS[id]; if (!R) return; const firstMuseum = id === 'museum' && !S.museumSeen; if (id === 'museum') { drawMuseum(); if (!S.museumSeen) { S.museumSeen = true; setTimeout(() => showCard(`<div class="kicker">THE MUSEUM</div><h2>It is empty. That is your job.</h2><p>Give the museum one of each fish, bug, and crop. Each one goes on show for good.</p><p>You get 25 coins for each one, and a sign that says who gave it.</p>`, 'Okay'), 700); } } S.where = 'hut'; S.room = id; player.position.set(R.c.x, 0, R.c.z + 2.2); roomLight.position.set(R.c.x, 3, R.c.z + .5); target = null; pending = null; snapCam(); sfx('door'); drawHud(); save(); if (!firstMuseum) toast(R.name); }
 function exitRoom() { const R = ROOMS[S.room];
   if (R && R.back === 'loft') return enterRoom('loft'); // the study opens onto the loft
   if (R && R.back === 'hut') { enterHut(); player.position.set(ROOM.x - 2.3, 0, ROOM.z + 2.3); snapCam(); return; } // down the ladder
@@ -1580,9 +1580,10 @@ function museumRelics() { const got = RELICS.filter(r => S.aha.includes(r.id));
     ${got.length ? '<p>Tap one to read its sign.</p>' : ''}<div class="jlist">${got.map(r => `<button data-mr="${r.id}">${AHA[r.id].title}</button>`).join('')}</div>${got.length < RELICS.length ? `<p class="sub" style="margin-top:8px">${RELICS.length - got.length} still buried. Dig up gold sparkles on your island.</p>` : ''}`, 'Close');
   document.querySelectorAll('[data-mr]').forEach(b => b.onclick = () => showCard(ahaHtml(b.dataset.mr), 'Back', museumRelics)); }
 function museumDesk() { S.museum = S.museum || {}; const total = Object.values(MUSEUM).reduce((a, w) => a + w.ids.length, 0), n = Object.keys(S.museum).length;
-  showCard(`<div class="kicker">THE MUSEUM</div><h2>${n} of ${total} on show</h2><p>Tap the fish tank, the bug wall, or the harvest stand to give things. Everything on show is something you found.</p>
-    <div class="jlist">${Object.values(MUSEUM).map(w => `<button>${w.name} <span class="sub">${w.ids.filter(k => S.museum[k]).length} of ${w.ids.length}</span></button>`).join('')}</div>
-    <h4>In real life</h4><p>The British Museum in London opened in 1759. It was the first national museum open to everyone, free. It is still free today.</p>`, 'Close'); }
+  showCard(`<div class="kicker">THE MUSEUM</div><h2>${n} of ${total} on show</h2><p>Tap a row to give things. Everything on show is something you found.</p>
+    <div class="jlist">${Object.entries(MUSEUM).map(([id, w]) => `<button data-mw="${id}">${w.name} <span class="sub">${w.ids.filter(k => S.museum[k]).length} of ${w.ids.length}</span></button>`).join('')}<button id="mdReal">In real life <span class="sub">The first museum free for everyone</span></button></div>`, 'Close');
+  document.querySelectorAll('[data-mw]').forEach(b => b.onclick = () => museumWing(b.dataset.mw));
+  $('mdReal').onclick = () => showCard(`<div class="kicker">THE MUSEUM</div><h2>The first museum free for everyone</h2><h4>In real life</h4><p>The British Museum in London opened in 1759. It was the first national museum open to everyone, free. It is still free today.</p>`, 'Back', museumDesk); }
 { const g = makeRoom('museum', 11, { name:'The Museum', floor:0xf1ece2, line:0xddd5c6, wall:0xfff6e6, wall2:0xf3e9d6, trim:0xd9a441, mat:0xd6332e, winX:-2.8, out:() => new THREE.Vector3(ORCH_POS.x - .6, ORCH_POS.y, ORCH_POS.z - 2.2) });
   const stone = mat(0xd9d2c4), wood = mat(0x7a5236), brass = mat(0xd9a441, { metalness:.5 });
   // the fish tank
@@ -2038,12 +2039,13 @@ const RELIC_PLAY = {
     draw(); },
   // share out loaves: 60 splits nearly any way, 10 does not
   tablet(done) { const tried = { 60:{}, 10:{} };
-    const draw = (msg) => { const n = Object.keys(tried[60]).length + Object.keys(tried[10]).length;
+    const draw = (msg) => { const n60 = Object.keys(tried[60]).length, n = n60 + Object.keys(tried[10]).length;
       const row = t => `<h4>${t} loaves, shared between...</h4><div class="chips">${[2, 3, 4, 5, 6].map(p => { const ok = t % p === 0, d = tried[t][p]; return `<button data-sh="${t}:${p}" class="${d ? '' : 'ghost'}" style="${d ? `background:${ok ? '#8fdc8a' : '#ffb3b3'}` : ''}">${p} people${d ? (ok ? `: ${t / p} each` : `: ${t % p} left over`) : ''}</button>`; }).join('')}</div>`;
-      showCard(`<div class="kicker">YOU DUG THIS UP</div><h2>A clay tablet of wedge marks</h2><p>${msg || 'The marks are numbers. The people who wrote them counted in 60s, not 10s. <b>Try sharing out 60 loaves, then 10 loaves, and see why.</b>'}</p>${row(60)}${row(10)}
-        ${n >= 6 ? '<button id="rpNext">So that is why</button>' : `<p class="sub" style="margin-top:8px">Tap ${6 - n} more to see why.</p>`}`, null);
-      document.querySelectorAll('[data-sh]').forEach(b => b.onclick = () => { const [t, p] = b.dataset.sh.split(':').map(Number); tried[t][p] = 1; const ok = t % p === 0; sfx(ok ? 'pick' : 'click');
-        draw(ok ? `<b>${t} loaves between ${p}: ${t / p} each, none left.</b>` : `<b>${t} loaves between ${p}: ${t % p} left over.</b> Somebody is going to argue.`); });
+      showCard(`<div class="kicker">YOU DUG THIS UP</div><h2>A clay tablet of wedge marks</h2><p>${msg || 'The marks are numbers. The people who wrote them counted in 60s, not 10s. <b>Share out 60 loaves to see why.</b>'}</p>${row(60)}${n60 >= 3 ? row(10) : ''}
+        ${n >= 6 ? '<button id="rpNext">So that is why</button>' : `<p class="sub" style="margin-top:8px">${n60 < 3 ? `Tap ${3 - n60} more to see the 10 loaves.` : `Tap ${6 - n} more to see why.`}</p>`}`, null);
+      document.querySelectorAll('[data-sh]').forEach(b => b.onclick = () => { const [t, p] = b.dataset.sh.split(':').map(Number); const fresh = !tried[t][p]; tried[t][p] = 1; const ok = t % p === 0; sfx(ok ? 'pick' : 'click');
+        const now10 = fresh && t === 60 && Object.keys(tried[60]).length === 3 && !Object.keys(tried[10]).length;
+        draw((ok ? `<b>${t} loaves between ${p}: ${t / p} each, none left.</b>` : `<b>${t} loaves between ${p}: ${t % p} left over.</b> Somebody is going to argue.`) + (now10 ? ' <b>Now share out 10 loaves.</b>' : '')); });
       if ($('rpNext')) $('rpNext').onclick = () => { hideCard(); done(); }; };
     draw(); },
 };
@@ -2073,7 +2075,7 @@ const PLAY = (() => { const pc = (k, t, body) => showCard(`<div class="kicker">$
       if ($('plSl')) $('plSl').oninput = () => { v = +$('plSl').value; $('plSA').setAttribute('transform', `translate(${-70 + v * .7} 0)`); if (v >= 97) { v = 100; snapped = true; chime(784); draw(); } }; on(done); };
     draw(); },
   zero(done) { const col = (l, n) => `<div style="flex:1;text-align:center;background:#fff6e6;border-radius:12px;padding:8px 4px;min-height:84px"><div class="sub">${l}</div><div style="font-size:18px;letter-spacing:2px;margin-top:6px">${n ? '●'.repeat(n) : '&nbsp;'}</div></div>`;
-    const draw = (msg, won) => { pc(L, 'The empty column', `<p>${msg || 'A counting board has a column for hundreds, tens, and ones. <b>What number is this?</b>'}</p><div style="display:flex;gap:6px;margin-top:8px">${col('hundreds', 2)}${col('tens', 0)}${col('ones', 5)}</div>
+    const draw = (msg, won) => { pc(L, 'The empty column', `<p>${msg || 'A counting board has a column for hundreds, tens, and ones. <b>Read the dots.</b>'}</p><div style="display:flex;gap:6px;margin-top:8px">${col('hundreds', 2)}${col('tens', 0)}${col('ones', 5)}</div>
       ${won ? nx() : '<h4>Write it down without the board</h4><div class="chips"><button data-zr="25">2 5</button><button data-zr="205">2 0 5</button><button data-zr="250">2 5 0</button></div>'}`);
       each('[data-zr]', b => { const v = b.dataset.zr; if (v === '205') { chime(988); return draw('<b>205.</b> The 0 means: nothing in this column. Without a mark for nothing, 25, 205, and 250 would all look the same.', true); } sfx('click'); draw(v === '25' ? 'That reads as twenty-five. <b>The empty column got lost.</b>' : 'That puts the 5 in the tens column. <b>Look where the empty one is.</b>'); }); on(done); };
     draw(); },
@@ -2147,9 +2149,10 @@ const PLAY = (() => { const pc = (k, t, body) => showCard(`<div class="kicker">$
   }; })();
 function showAha(id, onClose) {
   lean('scholar', 2);
-  if (!S.aha.includes(id)) { S.aha.push(id); if (S.mode === 'scholar') { S.coins += 30; setTimeout(() => toast('Scholar bonus: +30 coins for a new memory!'), 600); } }
+  let bonus = false;
+  if (!S.aha.includes(id)) { S.aha.push(id); if (S.mode === 'scholar') { S.coins += 30; bonus = true; } }
   [523,659,784].forEach((f,i)=>setTimeout(()=>chime(f),i*140));
-  showCard(ahaHtml(id), 'Save to Collections', onClose); drawRoom(); drawHud(); save();
+  showCard(ahaHtml(id) + (bonus ? '<p class="sub" style="margin-top:10px"><b>+30 coins.</b> Scholar bonus.</p>' : ''), 'Save to Collections', onClose); drawRoom(); drawHud(); save();
 }
 function showRecall(id, onClose) {
   const r = RECALL[id], a = r.aha || id;
@@ -2260,19 +2263,24 @@ function birthdayParty() {
   const review = { aha:S.aha.length - ys.aha, found:(S.found || []).length - ys.found, built:S.built.length - ys.built };
   S.yearStats = { aha:S.aha.length, found:(S.found || []).length, built:S.built.length }; save(); drawHud();
   [523,659,784,1047,784,1047,1319].forEach((f,i) => setTimeout(() => chime(f), i*170)); burst(house.position, 0xff8fa3, 30);
+  const yearCard = () => showCard(`<div class="kicker">YEAR ${yr} BEGINS TODAY</div><h2>Your year ${yr - 1} in review</h2>
+    <div class="jlist"><button>${review.aha} memories brought back</button><button>${review.found} new things found</button><button>${review.built} buildings rebuilt</button></div>
+    <p style="margin-top:10px">The cake is in your Bag. Place it inside your home.</p>`, 'Thank you!');
   showCard(`<div class="kicker">YEAR ${yr} BEGINS TODAY</div><h2>${S.birthday ? `Happy birthday, ${S.name || 'friend'}!` : `Happy Island Day, ${S.name || 'friend'}!`}</h2>
     <p>${S.birthday ? 'The whole sky came to celebrate you.' : 'One more year on your island. The whole sky came to celebrate.'}</p>
     <h4>Presents</h4><div class="jlist">
       ${giftsFrom.length ? `<button>${coins} coins from ${giftsFrom.join(', ')}</button>` : `<button>${coins} coins from the sky</button>`}
-      <button>A Birthday Cake for your home</button><button>A party hat. To wear it, tap Bag, then Settings, then Change my look</button></div>
-    <h4>Your year ${yr - 1} in review</h4><div class="jlist"><button>${review.aha} memories brought back</button><button>${review.found} new things found</button><button>${review.built} buildings rebuilt</button></div>`, 'Thank you!');
+      <button>A Birthday Cake for your home</button><button id="bdHat">A party hat <span class="sub">Tap to wear it. Pick Hat, then Party hat.</span></button></div>`, 'Next', yearCard);
+  $('bdHat').onclick = () => openLookEditor(yearCard);
 }
 function openJournal() {
   const cats = collectionCats(), tot = cats.reduce((a, c) => a + c.ids.length, 0), got = cats.reduce((a, c) => a + c.ids.filter(c.has).length, 0);
+  // the list is drawn under a few labels; a group not named here lands under the last label, so none can go missing
+  const groups = [['Things you grow and catch', ['Crops', 'Fruit', 'Fish', 'Specialties', 'Heirlooms', 'Bugs']], ['Home and kitchen', ['Furniture', 'Dishes']], ['Sky and music', ['Star Chart', 'Songs']], ['Things you learn', null]], grouped = groups.flatMap(g => g[1] || []);
   showCard(`<div class="kicker">COLLECTIONS: YEAR ${islandYear()} ON YOUR ISLAND</div><h2>${got} of ${tot} found</h2><p>Everything you have discovered in the sky. Tap a group to see what you have and what is still out there.</p>
     <div style="height:10px;border-radius:99px;background:#eadfd0;margin-top:10px;overflow:hidden"><div style="height:100%;width:${Math.round(got/tot*100)}%;background:#ffc857"></div></div>
     <button id="friendsBtn" class="ghost" style="margin-top:10px">What your neighbors like</button> ${featureOn('journey') ? '<button id="storyBtn" class="ghost" style="margin-top:10px">Your story</button>' : ''}
-    <div class="jlist">${cats.map(c => { const n = c.ids.filter(c.has).length; return `<button data-cat="${c.name}">${c.name} <span class="sub">${n === c.ids.length ? `all ${n} found` : `${n} of ${c.ids.length} found`}</span></button>`; }).join('')}</div>`, 'Close');
+    <div class="jlist">${groups.map(([label, names]) => { const rows = cats.filter(c => names ? names.includes(c.name) : !grouped.includes(c.name)); return rows.length ? `<h4>${label}</h4>` + rows.map(c => { const n = c.ids.filter(c.has).length; return `<button data-cat="${c.name}">${c.name} <span class="sub">${n === c.ids.length ? `all ${n} found` : `${n} of ${c.ids.length} found`}</span></button>`; }).join('') : ''; }).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => openCategory(b.dataset.cat));
   if ($('storyBtn')) $('storyBtn').onclick = openStory;
   $('friendsBtn').onclick = openFriends;
@@ -2513,20 +2521,20 @@ const HELP = {
       if ($('hpDone')) $('hpDone').onclick = () => helpDone('hoot', 'halving', tries <= 4 ? `${tries} ${tries === 1 ? 'try' : 'tries'}! You opened the middle and threw away half the shelf each time. I have been checking one by one for 40 years.` : 'Found! Here is my trick: open the middle one, and half the shelf is ruled out at once.'); };
     draw(); } },
   allegra: { label:'Help tune the water glasses', run() { const G = [['Full', 1, 330, 'a low note'], ['Three quarters full', .75, 392, 'a fairly low note'], ['Half full', .5, 494, 'a fairly high note'], ['A little water', .2, 659, 'a high note']];
-    const order = [2, 0, 3, 1]; let seq = [];
-    const glass = (g, k) => `<button data-gl="${k}" aria-label="${G[g][0]} glass" style="padding:8px 4px;border-radius:14px;background:none;border:2px solid ${seq.includes(k) ? '#e8a33d' : '#eadfd0'};box-shadow:none"><svg viewBox="0 0 40 60" style="display:block;width:44px;margin:0 auto" aria-hidden="true"><path d="M6 4 L10 56 H30 L34 4Z" fill="#eef7fb" stroke="#9fc7da" stroke-width="2"/><path d="M${7.6 + (1 - G[g][1]) * 3.2} ${10 + (1 - G[g][1]) * 44} L10.8 55 H29.2 L${32.4 - (1 - G[g][1]) * 3.2} ${10 + (1 - G[g][1]) * 44}Z" fill="#7ec8e3"/></svg><span style="display:block;font-size:12px;font-weight:700;margin-top:2px">${seq.includes(k) ? seq.indexOf(k) + 1 : '&nbsp;'}</span></button>`;
+    const order = [2, 0, 3, 1], heard = {}; let seq = [];
+    const glass = (g, k) => `<button data-gl="${k}" aria-label="${G[g][0]} glass" style="padding:8px 4px;border-radius:14px;background:none;border:2px solid ${seq.includes(k) ? '#e8a33d' : '#eadfd0'};box-shadow:none"><svg viewBox="0 0 40 60" style="display:block;width:44px;margin:0 auto" aria-hidden="true"><path d="M6 4 L10 56 H30 L34 4Z" fill="#eef7fb" stroke="#9fc7da" stroke-width="2"/><path d="M${7.6 + (1 - G[g][1]) * 3.2} ${10 + (1 - G[g][1]) * 44} L10.8 55 H29.2 L${32.4 - (1 - G[g][1]) * 3.2} ${10 + (1 - G[g][1]) * 44}Z" fill="#7ec8e3"/></svg><span style="display:block;font-size:12px;font-weight:700;margin-top:2px">${seq.includes(k) ? seq.indexOf(k) + 1 : '&nbsp;'}</span><span class="sub" style="display:block;font-size:11px;line-height:1.2;min-height:27px">${heard[k] ? G[g][3] : ''}</span></button>`;
     const draw = (msg = '"I filled four glasses with water to make a tiny xylophone. Tap a glass to hear it. Then help me: <b>tap all four in order, from the lowest note to the highest.</b>"', won) => {
       showCard(`<div class="kicker">HELP ALLEGRA</div><h2>🥛 The singing glasses</h2><p>${msg}</p>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">${order.map((g, k) => glass(g, k)).join('')}</div>
         ${won ? '<button id="hpDone">Play it for Allegra</button>' : `<p class="sub" style="margin-top:8px">${seq.length ? `You have tapped ${seq.length} of 4.` : 'Each tap plays the glass and counts as your next pick.'} <button id="glReset" class="ghost" style="padding:2px 10px">Start over</button></p>`}`, 'Later');
       if ($('glReset')) $('glReset').onclick = () => { seq = []; draw(); };
-      document.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { const k = +b.dataset.gl, g = order[k]; if (won) return chime(G[g][2]); chime(G[g][2]); if (muted && !G.told) { G.told = 1; toast('Sound is off, so the words will tell you each note.'); }
+      document.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { const k = +b.dataset.gl, g = order[k]; if (won) return chime(G[g][2]); chime(G[g][2]); heard[k] = 1; if (muted && !G.told) { G.told = 1; toast('Sound is off, so the words will tell you each note.'); }
         if (seq.includes(k)) return draw(`${G[g][0]}: <b>${G[g][3]}.</b>`);
         seq.push(k);
         if (seq.length < 4) return draw(`${G[g][0]}: <b>${G[g][3]}.</b>`);
         const ok = seq.every((kk, n) => n === 0 || G[order[kk]][2] > G[order[seq[n - 1]]][2]);
         if (ok) { [330, 392, 494, 659].forEach((f, n) => setTimeout(() => chime(f), 300 + n * 220)); return draw('<b>Low to high. That is a scale!</b> Did you notice which glass was the lowest?', true); }
-        seq = []; draw('Not quite in order. Tap each glass and listen again. <b>Hint: the emptiest glass is not the lowest.</b>'); });
+        seq = []; draw('Not quite in order. Each glass now shows its note. <b>Tap them again, from the lowest note to the highest.</b>'); });
       if ($('hpDone')) $('hpDone').onclick = () => helpDone('allegra', 'pitch', 'The fullest glass sings the lowest! I had them backwards for a week. My neighbors were very patient.'); };
     draw(); } },
   sage: { label:'Help stack the garden stones', run() { const ST = [['big', 'Big flat stone', 46], ['mid', 'Middle stone', 32], ['small', 'Small round stone', 20]]; let stack = [];
@@ -3161,8 +3169,8 @@ function pipQuestion() {
   const q = QUESTIONS[S.qi % QUESTIONS.length];
   openDialog("Pip's Big Question", q.q, [
     ...q.a.map((a, i) => ({ label:a, fn:() => {
-      S.asked = S.day; S.qi++; closeDialog(); toast(`Pip: ${q.r[i]}`); save();
-      setTimeout(() => showAha(q.id), 900);
+      S.asked = S.day; S.qi++; save();
+      openDialog('Pip', q.r[i], [{ label:'Tell me more', fn:() => { closeDialog(); showAha(q.id); } }], S.hearts.pip, 'pip'); $('dBtns').lastChild.remove(); // his reply first, then one button opens the card
     }})),
     { label:'Not today', fn:() => { S.asked = S.day; save(); talk('pip'); } },
   ], S.hearts.pip, 'pip');
@@ -3174,8 +3182,7 @@ function dig(i) {
   const r = RELICS[S.relics];
   S.relics++; S.digs.splice(i, 1); goal('dig');
   if (S.relics >= RELICS.length) { S.quest = Math.max(S.quest, 2); S.digs = []; }
-  drawDigs(); drawHud(); save();
-  toast(`${LAYERS[2]} You found ${r.name}!`);
+  drawDigs(); drawHud(); save(); // no message here: the card that opens next says what you dug up
   const after = () => showAha(r.id, () => { if (S.tut === 2) return tutAfterFirstMemory(); });
   if (RELIC_PLAY[r.id] && !S.aha.includes(r.id)) { S.aha.push(r.id); save(); } // kept even if the game is closed halfway through
   setTimeout(() => RELIC_PLAY[r.id] ? RELIC_PLAY[r.id](after) : after(), 700);
@@ -3601,8 +3608,8 @@ function ringGreatBell() {
   crack.visible = false;
   setTimeout(() => showCard(`<div class="kicker">CHAPTER 5: THE OLD HEART</div><h2>The Sky Remembers</h2>
     <p>The great bell rings out across the sky. From every island, a small bell answers: Grandma's Wind Bell, Drizzle's ship bell, the windmill, Lumen's crystals. Far away, islands you have never seen begin to drift closer.</p>
-    <h4>Tucked inside the bell, a letter</h4><p class="letter">${GRANDMA_LETTER2}</p>
-    <h4>What's next</h4><p>Five building sites have opened here at the Old Heart. Rebuild the village, one building at a time. You also got 300 coins.</p>`, 'Rebuild the village'), 4200);
+    <h4>Tucked inside the bell, a letter</h4><p class="letter">${GRANDMA_LETTER2}</p>`, 'Next',
+    () => showCard(`<div class="kicker">CHAPTER 5: THE OLD HEART</div><h2>Five building sites opened</h2><p>Tap a building site here at the Old Heart to rebuild it. You got 300 coins.</p>`, 'Rebuild the village')), 4200);
 }
 function useSite(i) {
   const b = BUILDINGS[i];
@@ -3614,8 +3621,8 @@ function useSite(i) {
   const have = Object.entries(b.items).map(([k,n]) => ({ k, n, got:countOf(k), label: k.startsWith('kind:') ? kindName[k.slice(5)] : ITEMS[k].name }));
   const can = S.coins >= b.coins && have.every(x => x.got >= x.n);
   showCard(`<div class="kicker">REBUILD THE VILLAGE</div><h2>${b.name}</h2><p>${b.about}</p><h4>To build it</h4>
-    <div class="jlist"><button>${b.coins} coins <span class="sub">you have ${S.coins}</span></button>${have.map(x => `<button>${x.got >= x.n ? '✓ ' : ''}${x.n} ${x.label} <span class="sub">you have ${x.got}</span></button>`).join('')}</div>
-    ${can ? '<button id="build">Build it</button> ' : '<p style="margin-top:10px;font-weight:700">Not enough yet. Keep farming and fishing.</p>'}`, 'Later');
+    <div class="jlist"><button>${S.coins >= b.coins ? '✓ ' : ''}${b.coins} coins <span class="sub">you have ${S.coins}${S.coins >= b.coins ? '' : `, ${b.coins - S.coins} more to go`}</span></button>${have.map(x => `<button>${x.got >= x.n ? '✓ ' : ''}${x.n} ${x.label} <span class="sub">you have ${x.got}${x.got >= x.n ? '' : `, ${x.n - x.got} more to go`}</span></button>`).join('')}</div>
+    ${can ? '<button id="build">Build it</button> ' : `<p style="margin-top:10px;font-weight:700">${S.coins < b.coins ? `You still need ${b.coins - S.coins} more coins.` : (x => `You still need ${x.n - x.got} more ${x.label}.`)(have.find(x => x.got < x.n))}</p>`}`, 'Later');
   if (can) $('build').onclick = () => {
     S.coins -= b.coins;
     Object.entries(b.items).forEach(([k,n]) => { if (!k.startsWith('kind:')) return bagAdd(k, -n);
@@ -3625,16 +3632,19 @@ function useSite(i) {
     toast(b.villager ? `The ${b.name} is built! ${NEIGHBORS[b.villager].name} is moving in. Go say hello.` : `The ${b.name} is built! Come back after 8 PM to chart the stars.`);
   };
 }
-function useBakery() {
-  showCard(`<div class="kicker">MABEL'S BAKERY</div><h2>What should we cook?</h2><p>Tap a recipe to cook it. Faded recipes need more ingredients. Dishes sell for more than their ingredients.</p>
-    <div class="jlist">${RECIPES.map(r => { const ok = Object.entries(r.needs).every(([k,n]) => (S.bag[k]||0) >= n);
-      return `<button data-r="${r.id}" ${ok ? '' : 'style="opacity:.6"'}>${S.cooked.includes(r.id) ? '✓ ' : ''}${r.name} <span class="sub">needs ${Object.entries(r.needs).map(([k,n]) => `${n} ${ITEMS[k].name} (you have ${S.bag[k]||0})`).join(', ')}. Sells for ${r.sell} coins.</span></button>`; }).join('')}</div>`, 'Close');
+function useBakery(made) {
+  const ready = r => Object.entries(r.needs).every(([k,n]) => (S.bag[k]||0) >= n);
+  // recipes you can cook right now come first; the rest are plain rows that say what is still missing
+  showCard(`<div class="kicker">MABEL'S BAKERY</div><h2>What should we cook?</h2>${typeof made === 'string' ? `<p style="font-weight:700">${made}</p>` : ''}<p>Tap a recipe to cook it. Dishes sell for more than their ingredients.</p>
+    <div class="jlist">${[...RECIPES.filter(ready), ...RECIPES.filter(r => !ready(r))].map(r => { const tick = S.cooked.includes(r.id) ? '✓ ' : '';
+      return ready(r) ? `<button data-r="${r.id}">${tick}${r.name} <span class="sub">Ready to cook</span></button>`
+        : `<button class="locked">${tick}${r.name} <span class="sub">needs ${Object.entries(r.needs).filter(([k,n]) => (S.bag[k]||0) < n).map(([k,n]) => `${n - (S.bag[k]||0)} more ${ITEMS[k].name}`).join(', ')}</span></button>`; }).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => {
-    const r = RECIPES.find(x => x.id === b.dataset.r), miss = Object.entries(r.needs).find(([k,n]) => (S.bag[k]||0) < n);
-    if (miss) { toast(`You need ${miss[1]} ${ITEMS[miss[0]].name} for this. You have ${S.bag[miss[0]]||0}.`); return; }
+    const r = RECIPES.find(x => x.id === b.dataset.r);
+    if (!ready(r)) return;
     Object.entries(r.needs).forEach(([k,n]) => bagAdd(k, -n)); bagAdd(r.id); sfx('pick'); burst(npcs.mabel.position, 0xffc857, 16);
     const first = !S.cooked.includes(r.id); if (first) S.cooked.push(r.id); save(); drawHud();
-    if (first) playFirst(r.id, () => showCard(lessonHtml(r.aha), 'Add to my recipes', useBakery)); else { toast(`You made ${r.name}! It is in your bag.`); useBakery(); }
+    if (first) playFirst(r.id, () => showCard(lessonHtml(r.aha), 'Add to my recipes', useBakery)); else useBakery(`You made ${r.name}! It sells for ${r.sell} coins.`);
   });
 }
 function booksOpen() { const since = S.builtDay.library || Date.now(); return Math.min(BOOKS.length, 1 + Math.floor((Date.now() - since) / (7 * 86400000))); }
@@ -3682,8 +3692,9 @@ function useTemple() {
   if (!S.sayings.includes(sy.id)) { S.sayings.push(sy.id); save(); }
   const y = d.getFullYear(), start = new Date(y, d.getMonth(), d.getDate());
   const upcoming = FESTIVALS.flatMap(f => [y, y+1].map(yy => ({ f, w:festivalWindow(f, yy) }))).filter(x => x.w && x.w.end > start).sort((a,b) => a.w.start - b.w.start).slice(0, 6);
-  showCard(`${sayingHtml(sy)}<h4>Coming up in the village</h4><div class="jlist">${upcoming.map(x => `<button>${x.f.name} <span class="sub">${x.w.start <= start ? 'happening now' : dateLabel(x.w.start)}</span></button>`).join('')}</div>
-    <p style="margin-top:10px">Sage shares a new saying every day. You have heard ${S.sayings.length} of ${SAYINGS.length}.</p>`, 'Thank you, Sage');
+  showCard(`${sayingHtml(sy)}<p class="sub" style="margin-top:10px">Sage shares a new saying every day. You have heard ${S.sayings.length} of ${SAYINGS.length}.</p>
+    ${upcoming.length ? '<button id="tFest" class="ghost">Coming up in the village</button> ' : ''}`, 'Thank you, Sage');
+  if (upcoming.length) $('tFest').onclick = () => showCard(`<div class="kicker">TEMPLE GARDEN</div><h2>Coming up in the village</h2><div class="jlist">${upcoming.map(x => `<button>${x.f.name} <span class="sub">${x.w.start <= start ? 'happening now' : dateLabel(x.w.start)}</span></button>`).join('')}</div>`, 'Back', useTemple);
 }
 function useObservatory() {
   if (hour() < 20) { toast('The stars come out after 8 PM. Come back tonight.'); return; }
@@ -3944,7 +3955,7 @@ function fishing3D(d = dock, o = {}) {
     const fits = canCarry(f.id), keepable = fits;
     setTimeout(() => { if (!fish3) return;
       $('fhReel').hidden = true;
-      msg(''); $('fhMsg').innerHTML = `<b style="font-size:20px">You caught a ${ITEMS[f.id].name}!</b> ${size} cm ${isNew ? '<span class="tagnew">NEW!</span>' : ''}${isRecord ? '<span class="tagrec">New record!</span>' : ''}<br>${isNew ? `<i>In real life:</i> ${FINDS[f.id].fact}` : `Sells for ${Math.round(sellPrice(f.id))} coins. Your biggest: ${Math.max(rec.best, size)} cm.`}${fits ? '' : '<br><b>Your bag is full.</b>'}`;
+      msg(''); $('fhMsg').innerHTML = `<b style="font-size:20px">You caught a ${ITEMS[f.id].name}!</b> ${size} cm ${isNew ? '<span class="tagnew">NEW!</span>' : ''}${isRecord ? '<span class="tagrec">New record!</span>' : ''}<br>${!fits ? '<b>Your bag is full, so you can only let it go.</b>' : isNew ? `<i>In real life:</i> ${FINDS[f.id].fact}` : `Sells for ${Math.round(sellPrice(f.id))} coins.`}`;
       act.style.display = 'none';
       const btns = hud.querySelector('.fhbtns'), keepB = document.createElement('button'), relB = document.createElement('button');
       keepB.textContent = 'Keep it'; relB.textContent = 'Let it go'; relB.className = 'ghost'; if (!keepable) keepB.style.display = 'none'; btns.prepend(relB); btns.prepend(keepB);
@@ -4189,7 +4200,7 @@ function kilnGame(what) {
 function useFurnace() {
   const needs = { copper:2, tin:1, log:2 };
   if (!S.bronzeKnown) return bronzePuzzle();
-  showCard(`<div class="kicker">THE FURNACE</div><h2>Smelt bronze</h2><p>You know the recipe: about 9 parts copper to 1 part tin.</p><div class="jlist"><button id="smelt">Bronze ingot <span class="sub">needs ${needText(needs)}</span></button></div>
+  showCard(`<div class="kicker">THE FURNACE</div><h2>Smelt bronze</h2><p>Tap Bronze ingot to make one.</p><div class="jlist"><button id="smelt">Bronze ingot <span class="sub">needs ${needText(needs)}</span></button></div>
     <p style="margin-top:8px">No tin? Buy it from Pip.</p>`, 'Close');
   $('smelt').onclick = () => { if (!enough(needs)) { toast(`Not enough yet. Needs ${needText(needs)}.`); return; }
     Object.entries(needs).forEach(([k,n]) => bagAdd(k, -n)); bagAdd('bronze'); save(); drawHud(); sfx('pick'); burst(furnace.position.clone(), 0xd9a441, 18); hideCard(); toast('You made a bronze ingot!'); };
@@ -4219,8 +4230,10 @@ function useBuildSite() {
   const st = S.home || 0; if (st >= 3) return useHouse();
   if (st === 1 && !S.homeStyle) return wallsPicker();
   const stage = HOME_STAGES[st], needs = stageNeeds(st), ok = enough(needs);
+  const howTo = { log:'Tap a tree with no fruit to chop logs with a stone axe.', stone:'Tap a rock to break off stone with a stone pickaxe.', fiber:'Tap a bush to cut grass fiber.' };
+  const how = Object.entries(needs).filter(([k,n]) => have(k) < n).map(([k]) => howTo[k]).filter(Boolean).join(' '); // only what you are still short of
   showCard(`<div class="kicker">YOUR HOME</div><h2>Build ${stage.name}</h2><p>Grandma's hut blew away in the Great Gust. Build a new one, one step at a time. Step ${st + 1} of 3.</p>
-    ${st === 1 ? `<h4>${HOME_STYLES[homeStyle()].name}</h4><p>${HOME_STYLES[homeStyle()].what}</p>` : ''}<h4>You need</h4><p>${needText(needs)}</p><h4>How to get them</h4><p>Chop trees with a stone axe to get logs. Break rocks with a stone pickaxe to get stone. Tap bushes to cut grass fiber.</p>
+    ${st === 1 ? `<h4>${HOME_STYLES[homeStyle()].name}</h4><p>${HOME_STYLES[homeStyle()].what}</p>` : ''}<h4>You need</h4><p>${needText(needs)}</p>${how ? `<p>${how}</p>` : ''}
     ${ok ? '<button id="buildHome">Build it</button>' : ''}${st === 1 ? ' <button id="otherWalls" class="ghost">Pick other walls</button>' : ''}`, ok ? 'Later' : 'Got it');
   if (st === 1) $('otherWalls').onclick = wallsPicker;
   if (ok) $('buildHome').onclick = () => {
@@ -4287,9 +4300,10 @@ function sleep(passedOut, where) {
   raining = Math.random() < .25;
   if (raining || S.sprinklers) S.tiles.forEach(t => { if (t.s >= 1) t.w = true; });
   let msg = passedOut ? (where === 'outside' ? 'New day!' : 'You were so tired you fell asleep. New day!') : raining ? (season() === 3 ? 'Good morning! Snow watered your crops.' : 'Good morning! Rain watered your crops.') : 'Good morning!';
+  // one morning message only, the most important line: festival, then season change, then yesterday's wish, then rain or sprinkler
+  if (S.sprinklers && !raining && !passedOut) msg = 'Good morning! Your sprinkler watered the garden.';
+  const wishMsg = wishMorning(); if (wishMsg) msg = wishMsg; // yesterday's fountain wish
   const turned = seasonCheck(); if (turned) msg = turned;
-  else if (S.sprinklers && !raining) msg += ' Your sprinkler watered the garden.';
-  { const wm = wishMorning(); if (wm) msg += ' ' + wm; } // yesterday's fountain wish
   const fz = festival(); if (fz && !S.fests[fz.id + fz.year]) msg = `Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`;
   S.tiles.forEach((_, i) => drawTile(i));
   { const dm = dream(); S.dayDid = {}; setTimeout(() => { if (!screenBusy() && !toastQ.length && !S.newDay) toast(dm); }, 9000); } // after the good-morning message
@@ -4298,7 +4312,7 @@ function sleep(passedOut, where) {
   if (where === 'outside') { if (S.where === 'hut') S.where = 'home'; } // you wake up right where you slept
   else if ((S.home || 0) < 3) { S.where = 'home'; player.position.set(campfire.position.x + .8, 0, campfire.position.z + .6); } else { S.where = 'hut'; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); }
   target = null; pending = null; if (!cine) snapCam();
-  toast(msg); drawRoom(); drawHud(); save(); cloudPush(true);
+  toast(msg); if (wishMsg && msg !== wishMsg) toast(wishMsg); drawRoom(); drawHud(); save(); cloudPush(true); // a wish that came true is always told, after the main line
 }
 
 // --- going to sleep and waking up, as little film scenes ---
@@ -4569,7 +4583,7 @@ function napMenu(o) { const max = Math.floor(23 - hour()); if (max < 1) return t
       <p style="text-align:center;margin-top:8px">You will wake up at <b>${clock(hour() + n)}</b>.</p><button id="npGo">Nap</button>`, 'Not now');
     $('npMinus').onclick = () => { n = Math.max(1, n - 1); sfx('click'); draw(); }; $('npPlus').onclick = () => { n = Math.min(max, n + 1); sfx('click'); draw(); };
     $('npGo').onclick = async () => { hideCard(); target = null; pending = null; fadeTo(true, true); await wait(900);
-      S.t = Math.min((23 - 6) / 18, S.t + n / 18); S.napped = true; did('nap'); save(); drawHud(); await wait(500); fadeTo(false); sfx('heart'); toast(`You napped for ${n} ${n === 1 ? 'hour' : 'hours'}. It is ${clock(hour())}.`); const dm = dream(); setTimeout(() => toast(dm), 3200); }; };
+      S.t = Math.min((23 - 6) / 18, S.t + n / 18); S.napped = true; did('nap'); save(); drawHud(); await wait(500); fadeTo(false); sfx('heart'); toast(dream()); }; };
   draw(); }
 function usePiece(o) {
   const b = o.userData.b, p = PIECES.find(x => x.id === b.p);
@@ -4652,7 +4666,7 @@ function drawBuildBar() {
   bar.querySelectorAll('[data-bg]').forEach(b => b.onclick = () => { buildGrp = b.dataset.bg; drawBuildBar(); });
   ghostPiece();
   $('bRot').onclick = () => { if (held) { held.r = ((held.r || 0) + 1) % 4; ghostPiece(); toast('Turned the piece you are holding.'); return; }
-    buildRot = (buildRot + 1) % 4; toast('Turned. Pieces you place now face the new way.'); };
+    buildRot = (buildRot + 1) % 4; ghostPiece(); toast('Turned. Pieces you place now face the new way.'); };
   $('bMove').onclick = () => { dropHeld(); moving = !moving; removing = false; drawBuildBar(); };
   $('bRem').onclick = () => { dropHeld(); removing = !removing; moving = false; drawBuildBar(); };
   $('bTidy').onclick = () => { let got = 0, left = 0;
@@ -4665,9 +4679,9 @@ function drawBuildBar() {
 function dropHeld() { if (!held) return; held.x = held.from.x; held.z = held.from.z; delete held.from; S.builds.push(held); held = null; drawBuilds(); save(); }
 // a see-through copy of the piece you are holding, shown on the ghost square
 let ghostModel = null;
-function ghostPiece() { if (ghostModel) { ghost.remove(ghostModel); ghostModel = null; } if (!held) return;
-  ghostModel = pieceModel(held.p); ghostModel.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = .6; } });
-  ghostModel.rotation.set(Math.PI/2, 0, 0); ghostModel.rotateY((held.r || 0) * Math.PI/2); ghost.add(ghostModel); }
+function ghostPiece() { if (ghostModel) { ghost.remove(ghostModel); ghostModel = null; } const gp = held ? held.p : buildMode && !moving && !removing && buildSel !== 'hammock' && PIECES.some(x => x.id === buildSel) ? buildSel : null; if (!gp) return; // nothing held: show the piece you picked, so Rotate visibly turns it
+  ghostModel = pieceModel(gp); ghostModel.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = .6; } });
+  ghostModel.rotation.set(Math.PI/2, 0, 0); ghostModel.rotateY((held ? held.r || 0 : buildRot) * Math.PI/2); ghost.add(ghostModel); }
 function setBuildMode(on) {
   if (!on) dropHeld();
   if (on && ((S.home || 0) < 3 || S.where !== 'home' || VISIT)) { toast((S.home || 0) < 3 ? 'Finish building your hut first.' : 'You can only build on your home island.'); return; }
@@ -5144,7 +5158,7 @@ function modePicker(done, o = {}) {
   let pick = o.switching ? S.mode : null;
   const draw = () => {
     showCard(`<div class="kicker">${o.late ? 'A BONUS' : o.switching ? 'YOUR ISLAND' : o.returning ? 'WELCOME BACK' : 'NEW GAME'}</div><h2>${o.late ? 'Pick a bonus for your island' : 'Choose your island'}</h2><p>${o.late ? 'Pick the one that fits how you play. You get both of its extras.' : o.returning || o.switching ? 'Each island gives you something extra. You keep your progress, coins, and collections.' : 'Each island has its own perks. You pick once, at the start.'}</p>
-      <p class="sub">Each island is for people who love:</p><div class="jlist">${MODES.map(m => `<button data-md="${m.id}" style="${pick === m.id ? 'background:#ffc857' : ''}">${pick === m.id ? '✓ ' : ''}${m.name} <span class="sub">${m.blurb}</span><span class="sub" style="display:block;margin-top:2px">${m.perks.map(x => '• ' + x).join('<br>')}</span></button>`).join('')}</div>
+      <p class="sub">Tap an island to see what it gives you. Each island is for people who love:</p><div class="jlist">${MODES.map(m => `<button data-md="${m.id}" style="${pick === m.id ? 'background:#ffc857' : ''}">${pick === m.id ? '✓ ' : ''}${m.name} <span class="sub">${m.blurb}</span>${pick === m.id ? `<span class="sub" style="display:block;margin-top:2px">${m.perks.map(x => '• ' + x).join('<br>')}</span>` : ''}</button>`).join('')}</div>
       <p id="mdMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
       <button id="mdGo">${o.switching ? 'Switch to this island' : o.late ? 'Take this bonus' : o.returning ? 'Keep playing' : 'Start my adventure'}</button> <button id="mdBack" class="ghost">${o.switching ? 'Never mind' : o.late ? 'Ask me tomorrow' : 'Back'}</button>`, null);
     document.querySelectorAll('[data-md]').forEach(b => b.onclick = () => { pick = b.dataset.md; draw(); });
@@ -5215,17 +5229,18 @@ async function openMarket(tab = 'market') {
   const res = VISIT ? await api(`/shop?code=${VISIT_CODE}`) : await api('/market');
   if (!res.ok) { $('card').querySelector('p').textContent = 'Could not reach the market. Check your internet and try again.'; wireTabs(); return; }
   const rows = (res.listings || []).map(l => { const lab = listingLabel(l); if (!lab) return ''; const mineL = l.code === myCode;
-    return `<div class="mrow">${l.logo ? logoSvg(l.logo, 40) : '<span class="nologo">🏪</span>'}<div class="minfo"><small>${esc(l.shop || 'A shop')}${l.founder ? ' <span class="fstar">✦</span>' : ''} · island ${l.code}</small><div>${lab}</div><div class="mask">${askText(l)}</div></div>
-      <div class="mbtns">${mineL ? '<small>Yours</small>' : `<button data-buy="${l.id}">${l.price ? 'Buy' : 'Trade'}</button>`}${!VISIT && !mineL ? `<button class="ghost" data-shop="${l.code}">Shop</button>` : ''}${!mineL ? `<button class="ghost rep" data-rep="${l.code}" data-rl="${l.id}">Report</button>` : ''}</div></div>`; }).join('');
+    return `<div class="mrow">${l.logo ? logoSvg(l.logo, 40) : '<span class="nologo">🏪</span>'}<div class="minfo"><small>${esc(l.shop || 'A shop')}${l.founder ? ' <span class="fstar">✦</span>' : ''}</small><div>${lab}</div><div class="mask">${askText(l)}</div></div>
+      <div class="mbtns">${mineL ? '<small>Yours</small>' : `<button data-buy="${l.id}">${l.price ? 'Buy' : 'Trade'}</button>`}${!VISIT && !mineL ? `<button class="ghost" data-shop="${l.code}">Shop</button>` : ''}</div></div>`; }).join('');
   showCard(`<div class="kicker">TRADING POST</div><h2>${VISIT ? `${esc(res.brand?.shop || VISIT.name + "'s shop")}` : 'The market'}</h2>${marketTabs('market')}
     ${VISIT && res.brand ? `<div class="brandhead">${logoSvg(res.brand.logo, 56)}<p>Everything here was made or grown on this island.</p></div>` : ''}
     ${rows || `<p>${VISIT ? 'Nothing for sale here right now.' : 'Nothing for sale yet. Be the first! Tap Sell.'}</p>`}
+    ${VISIT && VISIT_CODE !== myCode ? '<button id="repShop" class="ghost rep">Report this shop</button>' : ''}
     ${!VISIT && !S.brand ? '<p class="itinfo">Want to sell your own things? Talk to Pip about a maker\'s mark first. That is your logo and shop name.</p>' : ''}`, 'Close');
   wireTabs();
   const byId = Object.fromEntries((res.listings || []).map(l => [l.id, l]));
   document.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyListing(byId[b.dataset.buy]));
   document.querySelectorAll('[data-shop]').forEach(b => b.onclick = () => openShop(b.dataset.shop));
-  document.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => reportShop(b.dataset.rep, +b.dataset.rl, () => openMarket()));
+  if ($('repShop')) $('repShop').onclick = () => reportShop(VISIT_CODE, null, () => openMarket());
 }
 async function openShop(code) {
   const res = await api(`/shop?code=${code}`); if (!res.ok) { toast('Could not load that shop.'); return; }
@@ -5387,16 +5402,16 @@ function openProduct(p, back) {
 // --- Chapter 2's fork: explorer's ship or floating market ---
 function shipChoice() {
   const again = !!S.shipPath; if (again) { S.shipAsked = islandYear(); save(); }
+  const opts = Object.entries(SHIP_PATHS);
   openDialog('Captain Drizzle', again ? `A new year, sailor! Last year she was ${SHIP_PATHS[S.shipPath].name.toLowerCase()}. Want to keep her that way, or try the other road?`
-    : "Now, what should the Puddle Jumper be, day to day? Some captains chase the horizon. Some bring the whole world to their deck. It is your call, sailor.", [], S.hearts.drizzle);
-  const opts = Object.entries(SHIP_PATHS).filter(([k]) => !again || true);
-  showCard(`<div class="kicker">CAPTAIN DRIZZLE ASKS</div><h2>What should the ship become?</h2>
+    : "Now, what should the Puddle Jumper be, day to day? Some captains chase the horizon. Some bring the whole world to their deck. It is your call, sailor.", [{ label:'Let me think', fn:ask }], S.hearts.drizzle);
+  function ask() { closeDialog(); showCard(`<div class="kicker">CAPTAIN DRIZZLE ASKS</div><h2>What should the ship become?</h2>
     ${opts.map(([k, p]) => `<button data-sp2="${k}" class="${S.shipPath === k ? '' : 'ghost'}" style="display:block;width:100%;text-align:left;margin-top:8px"><b>${p.name}</b>${S.shipPath === k ? ' (this year)' : ''}<br><span class="sub">${p.short}</span></button>`).join('')}
     <p style="font-size:13px;opacity:.7;margin-top:8px">Either way, the ship can still fly you anywhere. You can change your mind when the next island year starts.</p>`, again ? 'Keep it as is' : null, () => closeDialog());
   document.querySelectorAll('[data-sp2]').forEach(b => b.onclick = () => { const k = b.dataset.sp2, changed = k !== S.shipPath; S.shipPath = k; S.shipYear = islandYear();
     lean(k === 'explore' ? 'explorer' : 'trader', 3); if (changed) S.bigChoices = [...(S.bigChoices || []), k === 'explore' ? 'You made the Puddle Jumper an explorer\'s ship.' : 'You made the Puddle Jumper a floating market.'];
     save(); drawShip(); hideCard(); closeDialog(); burst(ship.position, 0xffc857, 22); [523,659,784].forEach((f,i) => setTimeout(() => chime(f), i*150));
-    openDialog('Captain Drizzle', k === 'explore' ? "An explorer! I knew it. I put up a crow's nest and dug out my old charts. Tap the ship once a day and we sail." : "A market! I will stack the crates. Folks from every island will shout their orders. Tap the ship each day to see what they want.", [], S.hearts.drizzle); });
+    openDialog('Captain Drizzle', k === 'explore' ? "An explorer! I knew it. I put up a crow's nest and dug out my old charts. Tap the ship once a day and we sail." : "A market! I will stack the crates. Folks from every island will shout their orders. Tap the ship each day to see what they want.", [], S.hearts.drizzle); }); }
 }
 function voyage() {
   if (S.voyageDay === S.day) { toast('The crew is resting. You can sail again tomorrow.'); return; }
@@ -5410,7 +5425,7 @@ function voyage() {
     const first = S.voyages === 1, done = S.voyages === 3;
     showCard(`<div class="kicker">VOYAGE ${S.voyages}</div><h2>${rare ? 'A rare catch!' : 'Land ho!'}</h2><p>You came home with ${got.join(', ')}.</p>
       ${first ? `<h4>In real life</h4><p>${WAYFINDING}</p>` : ''}
-      ${done ? `<h4>Drizzle is proud</h4><p>"Three voyages, three safe returns. You are a real navigator now. Take my old Star Globe. It showed me the way for forty years."</p>` : ''}`, 'Okay');
+      ${done ? `<h4>Drizzle is proud</h4><p>"Three voyages, three safe returns. You are a real navigator now. Take my old Star Globe. It showed me the way for forty years."</p><p><b>You got the Star Globe! Place it inside your home.</b></p>` : ''}`, 'Okay');
     if (done) { S.furn.globe = (S.furn.globe || 0) + 1; save(); } });
 }
 function marketDay() {
@@ -5475,11 +5490,11 @@ function fGot(k) { if (S.founder && !S.fGot && S.founderBalloon) S.fGot = ['pet'
 function fDay() { return S.founder ? playDays() - (S.founder.day0 != null ? S.founder.day0 : playDays() - 1) + 1 : 0; }
 function founderDrip() { if (!founderOn() || VISIT || TESTSLOT || PREVIEW) return;
   const busy = !S.setupDone || S.tut !== 9 || !quiet(); if (busy) { if (S.tut === 9) setTimeout(founderDrip, 4000); return; }
-  const d = fDay(), give = (keys, head, body, then) => { S.fGot = [...(S.fGot || []), ...keys]; save(); showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>${head}</h2><p>${body}</p>`, 'Open it', () => openPresents(keys.filter(k => F_GIFTS[k]).map(k => F_GIFTS[k]), () => { then && then(); if (!S.giftTipSeen) { S.giftTipSeen = true; save(); setTimeout(() => toast('See all your founder gifts anytime: tap Bag, then Founder gifts.'), 2500); } })); };
-  if (!fGot('pet')) return give(['pet'], 'Welcome, founder!', 'You were invited in before anyone else. Very few people have walked this island yet. We wrapped something for you, and more is on the way.', () => choosePet(() => {}));
-  if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', 'Two founder gifts for your second day.', () => drawHud());
-  if (BALLOON_ON && d >= 3 && !fGot('balloon')) return give(['balloon'], 'A present for day 3!', 'This one is big.', () => { S.founderBalloon = true; save(); drawBalloon(); drawHud(); });
-  if (d >= 4 && (S.home || 0) >= 3 && !fGot('lantern')) return give(['lantern'], 'A present for your new home', 'Your hut is rebuilt. Here is something to light it up.', () => drawHud());
+  const d = fDay(), give = (keys, head, body, then) => { S.fGot = [...(S.fGot || []), ...keys]; save(); showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>${head}</h2><p>${body}</p>`, 'Open it', () => openPresents(keys.filter(k => F_GIFTS[k]).map(k => F_GIFTS[k]), () => { const tip = () => { if (!S.giftTipSeen) { S.giftTipSeen = true; save(); toast('See all your founder gifts anytime: tap Bag, then Founder gifts.'); } }; then ? then(tip) : tip(); })); };
+  if (!fGot('pet')) return give(['pet'], 'Welcome, founder!', 'You were invited in before anyone else. Very few people have walked this island yet. We wrapped something for you, and more is on the way.', tip => choosePet(tip));
+  if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', 'Two founder gifts for your second day.', tip => { drawHud(); tip(); });
+  if (BALLOON_ON && d >= 3 && !fGot('balloon')) return give(['balloon'], 'A present for day 3!', 'This one is big.', tip => { S.founderBalloon = true; save(); drawBalloon(); drawHud(); tip(); });
+  if (d >= 4 && (S.home || 0) >= 3 && !fGot('lantern')) return give(['lantern'], 'A present for your new home', 'Your hut is rebuilt. Here is something to light it up.', tip => { drawHud(); tip(); });
   if (!S.giftsSeen && (S.fGot || []).length > 1 && !(mythOn() && !mp().revealed)) { S.giftsSeen = true; save(); openFounderGifts(); } // once: founders who already opened gifts see what they have and how to use each
 }
 addEventListener('sg-playing', () => setTimeout(founderDrip, 4000));
@@ -5685,7 +5700,7 @@ async function balloonTo(where) {
   player.position.copy(dest).add(V(1.1, 0, .6)); if (pet) { pet.visible = true; pet.position.copy(dest).add(V(.8, 0, -.6)); petHappy(); } burst(dest.clone().setY(dest.y + .6), 0xffe07a, 18); chime(784); chime(1047);
   t0 = performance.now(); const away = () => { const k = (performance.now() - t0) / 2500; fly.position.y = dest.y + k * 12; fly.position.x += .01; if (k < 1) requestAnimationFrame(away); else scene.remove(fly); }; away();
   cine = null; document.body.classList.remove('in-cine'); snapCam();
-  if (where === 'heart' && S.q5 === 1) { S.q5 = 2; save(); drawHud(); setTimeout(() => toast('The Old Heart. The great bell lies fallen in the middle.'), 700); }
+  if (where === 'heart' && S.q5 === 1) { S.q5 = 2; save(); drawHud(); setTimeout(() => toast('The Old Heart. Tap the fallen bell in the middle.'), 700); }
   if (!S.balloonFact) { S.balloonFact = true; save(); setTimeout(() => showCard(`<div class="kicker">FIRST FLIGHT</div><h2>People first flew in a balloon</h2><h4>In real life</h4><p>${BALLOON_FACT}</p>`), 900); }
 }
 // --- the Test island: a sandbox for testers, with tester tools ---
@@ -5780,13 +5795,12 @@ function drawKeepers() {
     keeperGroup.add(g); });
 }
 function reflectCard(t, after) {
-  showCard(`<div class="kicker">${t.name.toUpperCase()}</div><h2>Wisdom</h2><p>${t.wisdom}</p>
-    <h4>A question to sit with</h4><p><i>${t.reflect}</i></p>
+  showCard(`<div class="kicker">${t.name.toUpperCase()}</div><h2>Wisdom</h2><p>${t.wisdom}</p>`, 'Next', () => { showCard(`<div class="kicker">${t.name.toUpperCase()}</div><h2>A question to sit with</h2><p><i>${t.reflect}</i></p>
     <textarea id="rfText" rows="3" maxlength="800" placeholder="Write your answer here, just for you (optional)" style="width:100%;margin-top:8px;font:16px inherit;border-radius:12px;border:2px solid var(--line);padding:8px"></textarea>
     <label style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:14px"><input type="checkbox" id="rfShare"> Share my answer with the person who made Sky Garden</label>
     <button id="rfDone">Keep it in my journal</button>`, null);
   $('rfDone').onclick = () => { const text = $('rfText').value.trim(); S.reflections = S.reflections || {}; if (text) S.reflections[t.id] = { text, day:S.day };
-    if (text && $('rfShare').checked) logKeeper('reflection', `${t.name}: ${text}`); save(); hideCard(); after && after(); };
+    if (text && $('rfShare').checked) logKeeper('reflection', `${t.name}: ${text}`); save(); hideCard(); after && after(); }; });
 }
 function finishTrial(t) { const k = kp(); if (k.done.includes(t.id)) return; k.done.push(t.id); save(); logKeeper('trial', `Finished ${t.name}`);
   [392,523,659,784,1047].forEach((f,i) => setTimeout(() => chime(f), i*160)); burst(wren.position.clone().setY(1.5), 0xfff3a0, 30);
@@ -5799,7 +5813,7 @@ function openKeeper() {
     ${Object.keys(S.reflections || {}).length ? '<button id="rfJournal" class="ghost">My reflections</button>' : ''}`, 'Okay'); if ($('rfJournal')) $('rfJournal').onclick = keeperJournal; return; }
   const ready = t.id === 'map' ? k.stones.length >= 4 : t.id === 'seeds' ? k.planted.filter(p => p != null).length >= 3 : t.id === 'voice' ? !!k.voted : t.id === 'unseen' ? k.secret >= 3 : false;
   const progress = t.id === 'map' ? `${k.stones.length} of 4 stones charted` : t.id === 'seeds' ? `${k.planted.filter(p => p != null).length} of 3 saplings planted` : t.id === 'voice' ? (k.voted ? 'You voted' : 'Not voted yet') : t.id === 'unseen' ? `${k.secret} of 3 secret gifts given` : '';
-  showCard(`<div class="kicker">${MENTOR.name.toUpperCase()}, ${MENTOR.title.toUpperCase()}</div><h2>${t.name}</h2><p>"${t.intro}"</p><h4>Your task</h4><p>${t.task}</p>${progress ? `<p><b>${progress}</b></p>` : ''}
+  showCard(`<div class="kicker">${MENTOR.name.toUpperCase()}, ${MENTOR.title.toUpperCase()}</div><h2>${t.name}</h2><h4>Your task</h4><p>${t.task}</p>${progress ? `<p><b>${progress}</b></p>` : ''}<p>"${t.intro}"</p>
     <div id="kpAct"></div>${Object.keys(S.reflections || {}).length ? '<button id="rfJournal" class="ghost">My reflections</button>' : ''}`, 'Later');
   if ($('rfJournal')) $('rfJournal').onclick = keeperJournal;
   const act = $('kpAct');
@@ -6241,14 +6255,13 @@ function ensureAsks() { if (S.asks && S.asks.day === S.day) return S.asks;
   S.asks = { day:S.day, list }; save(); return S.asks; }
 function openNotice() { const fz = festival(), rows = [], asks = ensureAsks().list;
   asks.forEach((a, i) => { const nm = NEIGHBORS[a.id].name, it = ITEMS[a.k].name, h = have(a.k);
-    rows.push(`<button data-ask="${i}" class="${a.done ? 'mdone' : ''}">${a.done ? '✓ ' : '🧺 '}${nm} would love ${a.n} ${it} ${a.why}.<span class="sub"><br>${a.done ? 'Delivered.' : `Pays ${a.pay} coins. ${h >= a.n ? `<b>You have ${h}.</b>` : `You have ${h} of ${a.n}.`}`}</span></button>`); });
+    rows.push(`<button ${!a.done && h >= a.n ? `data-ask="${i}"` : ''} class="${a.done ? 'mdone' : ''}">${a.done ? '✓ ' : '🧺 '}${nm} would love ${a.n} ${it} ${a.why}.<span class="sub"><br>${a.done ? `Delivered. +${a.pay} coins.` : `Pays ${a.pay} coins. ${h >= a.n ? `<b>You have ${h}.</b>` : `You have ${h} of ${a.n}.`}`}</span></button>`); });
   rows.push(`<button id="nbG">✅ Today's goals</button>`);
   if (founderOn() && fGot('missions') && !paused('missions')) rows.push(`<button id="nbM">✦ Missions</button>`);
   if (featureOn('townhall')) rows.push(`<button id="nbT">🗳 Town Hall votes</button>`);
   showCard(`<div class="kicker">NOTICE BOARD</div><h2>What's happening</h2><p><b>${dateLabel ? dateLabel(today()) : ''}</b>${fz ? `<br>🎉 Today is <b>${fz.name}</b>. Talk to ${NEIGHBORS[fz.host].name}.` : ''}</p>${asks.length ? '<h4>Neighbors are asking. Tap one to bring it.</h4>' : ''}<div class="jlist">${rows.join('')}</div>`, 'Close');
-  document.querySelectorAll('[data-ask]').forEach(b => b.onclick = () => { const a = asks[+b.dataset.ask]; if (a.done) return; const nm = NEIGHBORS[a.id].name;
-    if (have(a.k) < a.n) return toast(`${nm} asked for ${a.n} ${ITEMS[a.k].name}. You have ${have(a.k)}.`);
-    bagAdd(a.k, -a.n); a.done = true; S.coins += a.pay; S.hearts[a.id] = Math.min(10, (S.hearts[a.id] || 0) + 1); goal('ask'); save(); drawHud(); sfx('coin'); chime(698); toast(`${nm} is delighted. +${a.pay} coins, and you two are better friends.`); openNotice(); });
+  document.querySelectorAll('[data-ask]').forEach(b => b.onclick = () => { const a = asks[+b.dataset.ask]; if (a.done || have(a.k) < a.n) return;
+    bagAdd(a.k, -a.n); a.done = true; S.coins += a.pay; S.hearts[a.id] = Math.min(10, (S.hearts[a.id] || 0) + 1); goal('ask'); save(); drawHud(); sfx('coin'); chime(698); openNotice(); });
   if ($('nbG')) $('nbG').onclick = () => { hideCard(); openGoals(); }; if ($('nbM')) $('nbM').onclick = () => { hideCard(); openMissions(); }; if ($('nbT')) $('nbT').onclick = () => { hideCard(); openTownHall(); }; }
 function squareTick(dt, now) { if (!squareBits) return;
   squareBits.drops.forEach(d => { const k = (now * .6 + d.userData.ph) % 1, a = d.userData.ph * Math.PI * 2; d.position.set(Math.cos(a) * (.1 + k * .95), 1.55 + k * .5 - k * k * 1.4, Math.sin(a) * (.1 + k * .95)); });
@@ -6334,18 +6347,17 @@ function mythMenu() { if (!mythOn()) return; const F = mythF(), P = mythDaily(),
   const cm = T.missions || [];
   showCard(`<div class="kicker">✦ ${F.path.toUpperCase()} ✦</div><h2>${F.name}</h2>
     <p><b>${glowName(P.light || 0)}</b> <span class="sub">(you go up a level with every legend task)</span>${T.seen ? `<br>Players have tapped you ${T.seen} time${T.seen === 1 ? '' : 's'} as ${a} ${short}.` : ''}</p>
-    <div class="chips"><button id="myForm">${form ? 'Back to your everyday self' : `Become ${F.name.replace('The ', 'the ')}`}</button><button id="myPow" class="${P.power === S.day ? 'ghost' : ''}">${F.power.name}${P.power === S.day ? ': used today' : ''}</button>
-    <button id="myApp" class="${P.appear === S.day ? 'ghost' : ''}">Fly over another island${P.appear === S.day ? ': done today' : ''}</button><button id="myLeg" class="ghost">The legend</button>${P.journal && P.journal.length ? '<button id="myJr" class="ghost">Journal</button>' : ''}</div>
-    <p class="sub"><b>${F.power.name}:</b> ${F.power.text}</p>
-    ${form ? '<p class="sub"><b>To fly:</b> press and hold anywhere on the island. You follow your finger. Let go to land. On a keyboard, hold Space.</p>' : ''}
-    <p class="sub">Once a day, you can fly over a random player's island as ${a} ${short}. If they tap it, they get a gift. They never find out it was you.</p>
+    <div class="chips"><button id="myForm">${form ? 'Back to your everyday self' : `Become ${F.name.replace('The ', 'the ')}`}</button>${P.power === S.day ? '' : `<button id="myPow">${F.power.name}</button>`}
+    ${P.appear === S.day ? '' : '<button id="myApp">Fly over another island</button>'}<button id="myLeg" class="ghost">The legend</button>${P.journal && P.journal.length ? '<button id="myJr" class="ghost">Journal</button>' : ''}</div>
+    ${P.power === S.day || P.appear === S.day ? `<p class="sub">${P.power === S.day ? `${F.power.name}: used today.` : ''} ${P.appear === S.day ? 'Fly over another island: done today.' : ''}</p>` : ''}
     <h4>Today's legend tasks: finish any 3 of these 5</h4>${P.list.map(row).join('')}
+    ${form ? '<p class="sub"><b>To fly:</b> press and hold anywhere on the island. You follow your finger. Let go to land. On a keyboard, hold Space.</p>' : ''}
     ${cm.length ? `<h4>From the game's maker</h4>${cm.map(m => `<p>✧ <b>${esc(m.title)}</b>${m.how ? `<br><span class="sub">${esc(m.how)}</span>` : ''} <button class="ghost" data-cm="${m.id}" style="padding:2px 10px">I did it: get ${m.reward} coins</button></p>`).join('')}` : ''}
     ${mythExtras.map(x => x.html()).join('')}`, 'Close');
   $('myForm').onclick = () => { S.mythForm = !form; save(); dressPlayer(); hideCard(); burst(player.position.clone().setY(1), F.colors[0], 30); chime(form ? 660 : 988); toast(form ? 'You are back to your everyday self.' : `You became ${F.name.replace('The ', 'the ')}. Press and hold anywhere to fly. Let go to land.`); };
-  $('myPow').onclick = () => P.power === S.day ? toast('You already used your power today. Try again tomorrow.') : mythPower();
-  $('myApp').onclick = () => P.appear === S.day ? toast('You already flew over an island today. Try again tomorrow.') : mythAppear();
-  $('myLeg').onclick = () => showCard(`<div class="kicker">IN LEGEND</div><h2>${F.name}</h2>${F.legend.map(l => `<p>${l}</p>`).join('')}<h4>In Sky Garden: ${F.power.name}</h4><p>${F.power.text}</p>`, 'Back', mythMenu);
+  if ($('myPow')) $('myPow').onclick = () => mythPower();
+  if ($('myApp')) $('myApp').onclick = () => mythAppear();
+  $('myLeg').onclick = () => showCard(`<div class="kicker">IN LEGEND</div><h2>${F.name}</h2>${F.legend.map(l => `<p>${l}</p>`).join('')}<h4>In Sky Garden: ${F.power.name}</h4><p>${F.power.text}</p><h4>In Sky Garden: fly over another island</h4><p>Once a day, you can fly over a random player's island as ${a} ${short}. If they tap it, they get a gift. They never find out it was you.</p>`, 'Back', mythMenu);
   if ($('myJr')) $('myJr').onclick = () => showCard(`<div class="kicker">JUST FOR YOU</div><h2>Your journal</h2>${P.journal.slice(-12).reverse().map(j => `<p><i>${esc(j.q)}</i><br>${esc(j.a)}</p>`).join('')}`, 'Back', mythMenu);
   document.querySelectorAll('[data-mt]').forEach(b => b.onclick = () => { const t = b.dataset.mt;
     if (t === 'reflect') return mythReflect(); if (t === 'learn') return mythLearn(); if (mythAct(t)) return mythAct(t).run();
@@ -6421,10 +6433,10 @@ function mythReveal() { if (!mythOn() || mp().revealed) return; const F = mythF(
   mp().revealed = S.day; save(); [392, 523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 220));
   const perks = () => showCard(`<div class="kicker">✦ YOUR LEGEND ✦</div><h2>What you can do now</h2>
     <div class="jlist">
-      <button>🪽 <b>Become ${F.name.replace('The ', 'the ')}</b><span class="sub"><br>Then press and hold anywhere to fly. You follow your finger to any island you have opened. Let go to land.</span></button>
-      <button>✨ <b>${F.power.name}</b>, once a day<span class="sub"><br>${F.power.text}</span></button>
-      <button>🌍 <b>Fly over someone's island</b>, once a day<span class="sub"><br>They'll see ${a} ${short} pass overhead. If they tap it, they get a gift. They'll never know it was you.</span></button>
-      <button>✦ <b>Legend tasks every day</b><span class="sub"><br>${F.path}: 5 new tasks each day. Finish any 3. Each one pays 40 coins and takes you up a level.</span></button>
+      <button>🪽 <b>Become ${F.name.replace('The ', 'the ')}</b><span class="sub"><br>Then press and hold anywhere to fly.</span></button>
+      <button>✨ <b>${F.power.name}</b>, once a day</button>
+      <button>🌍 <b>Fly over someone's island</b>, once a day<span class="sub"><br>If they tap it, they get a gift.</span></button>
+      <button>✦ <b>Legend tasks every day</b><span class="sub"><br>Finish any 3 of the 5. Each one pays 40 coins.</span></button>
     </div><p style="margin-top:10px">Tap the 🪽 button at the bottom of your screen to find all of this.</p>`, `Become ${F.name.replace('The ', 'the ')}`, () => { S.mythForm = true; save(); dressPlayer(); burst(player.position.clone().setY(1), F.colors[0], 40); drawHud(); });
   const secret = () => showCard(`<div class="kicker">✦ A SECRET ✦</div><h2>Where legends come from</h2>
     <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">🌍</span><span>People all over the world tell stories of giant birds in the sky: the Garuda, the Thunderbird, the Roc from Sinbad's voyages. And ${F.name.replace('The ', 'the ')}.</span></p>
@@ -6621,7 +6633,7 @@ try { const hr = KIT.hr, ringOf = (g, r, y, n, c1 = 0xd8cfc0, c2 = 0xbfb6a8, h =
   if (squareBits && squareBits.fnt) { squareBits.water.userData.keep = true; squareBits.drops.forEach(d => d.userData.keep = true); bake(squareBits.fnt); }
   [workbench, kiln, furnace, sundial, darkroom].forEach(o => { if (o === kiln) kilnMouth.userData.keep = kilnDome.userData.keep = true; if (o === furnace) furnaceGlow.userData.keep = true; if (o === sundial) gnomon.userData.keep = true; bake(o); }); if (lighthouse) { lighthouse.userData.pivot.userData.keep = true; bake(lighthouse); }
 } catch (e) { console.warn('detail', e); }
-window.__sg = { VERSION, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { VERSION, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }

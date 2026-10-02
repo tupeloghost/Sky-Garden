@@ -103,7 +103,7 @@ const FESTIVAL_AHA = {
     real:'Passover is a Jewish holiday remembering the Exodus, when the Israelites escaped slavery in Egypt. They left in such a hurry that their bread had no time to rise. So during Passover people eat matzah, starting with a special meal called a seder.',
     today:'Remember that bread is alive? Matzah is bread with no yeast at all.' },
   easter: { kicker:'FESTIVAL', title:'A Holiday Set by the Sky',
-    did:'You went looking for Pip\'s painted eggs on Easter.',
+    did:'You celebrated Easter with Pip and his painted eggs.',
     real:'Easter is the Christian celebration of Jesus rising from the dead. It is the first Sunday after the first full moon of spring, so it moves between late March and late April. Orthodox churches use an older calendar, so their Easter is often later.',
     today:'Many holidays are set by watching the sky.' },
   eid: { kicker:'FESTIVAL', title:'Watching for the New Moon',

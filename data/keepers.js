@@ -4,7 +4,7 @@
 const MENTOR = { name:'Wren', title:'the Lighthouse Keeper' };
 const TRIALS = [
   { id:'map', level:2, name:'The Trial of the Map',
-    intro:"Before you can keep a place, you have to know it. Four old marker stones sit at the edges of your island, glowing faintly. Everyone who ever walks in the village square will know it by the name you give it.",
+    intro:"Before you can keep a place, you have to know it.",
     task:'Visit the 4 glowing marker stones at the edges of your island, then name the village square.',
     wisdom:'Mapmakers have always named places for people who come after them. A good name helps a stranger feel at home. The oldest map of the world we know of, the Babylonian Map of the World, is a clay tablet about 2,600 years old.',
     reflect:'Think of a place that felt like home the first time you saw it. What made it feel that way?' },

@@ -212,7 +212,7 @@ Object.assign(AHA, {
     today:'Scissors, seesaws, bottle openers, and wheelbarrows are all levers.' },
   bread: { kicker:'MEMORY FOUND', title:'Bread Is Alive',
     did:'You ground wheat into flour, and Nana turned it into bread that puffed up while it rested.',
-    real:'People in ancient Egypt were baking risen bread thousands of years ago. Bread also matters in faiths around the world: challah on the Jewish Sabbath, bread at Christian communion, and the free meals of Sikh langar kitchens, where anyone can sit and eat.',
+    real:'People in ancient Egypt were baking risen bread thousands of years ago.',
     today:'Look at the holes in your next slice of bread.' },
   fibonacci: { kicker:"MOSS & FERN'S SECRET", title:"The Sunflower's Secret Spiral",
     did:'You found the next number in the pattern the twins counted in a sunflower.',
