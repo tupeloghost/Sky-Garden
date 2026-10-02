@@ -10,7 +10,7 @@ add('sundial', 'A stick, a shadow, and a long walk measured the whole Earth.',
     '<rect x="232" y="56" width="12" height="20" fill="#3b2f4a"/><path d="M228 56 h20" stroke="#7a6452" stroke-width="3"/>'
     '<path d="M92 79 L78 49" stroke="#7a5236" stroke-width="4" stroke-linecap="round"/><path d="M92 79 L74 85" stroke="#3b2f4a" stroke-width="3" stroke-linecap="round" opacity=".7"/>'
     + txt(60, 110, 'Alexandria: a shadow', 11, INK) + txt(246, 110, 'Syene: no shadow', 11, INK) + txt(165, 14, 'sunlight', 11, '#c98a1f')),
-  'At noon on the longest day, the sun shone straight down a well in Syene. In Alexandria, a stick still had a short shadow. The shadow showed the cities were one fiftieth of the way around the Earth apart, so he multiplied their distance by 50.')
+  'At noon on the longest day, the sun shone straight down a well in Syene. In Alexandria, a stick still had a short shadow. The shadow showed the two cities were one fiftieth of the way around the Earth apart. So he multiplied their distance by 50.')
 
 # ---- bell (string lengths) ----
 def string(y, frac, label, note):
@@ -129,7 +129,7 @@ add('fibonacci', 'One simple rule makes every spiral in a sunflower.',
     f'<g transform="translate(0 0) scale(.92) translate(8 6)">{petals}<circle cx="110" cy="66" r="64" fill="#3f2a12"/>{seeds}</g>'
     '<g transform="translate(262 62)"><circle r="30" fill="none" stroke="#c9ab88" stroke-width="1.5"/><path d="M0 0 L30 0 M0 0 L-22.1 20.3" stroke="#3b2f4a" stroke-width="2"/><path d="M12 0 A12 12 0 1 1 -8.800 8.100" fill="none" stroke="#c98a1f" stroke-width="2"/><circle cx="30" cy="0" r="4" fill="#5a3d1e"/><circle cx="-22.1" cy="20.3" r="4" fill="#5a3d1e"/></g>'
     + txt(262, 112, 'each seed: 137.5 degrees', 10.5, INK) + txt(262, 124, 'around from the last', 10.5, INK)),
-  'Each new seed grows a little more than a third of a turn around from the one before. That single rule packs the seeds as tightly as they can go, and the spirals appear by themselves.')
+  'A sunflower grows one seed at a time. Each seed sits 137.5 degrees around from the last one. That is a bit more than a third of a circle. Repeat that turn, and the spirals show up.')
 
 # ---- migration (European robin) ----
 add('migration', 'This small bird knows which way to fly, even with no sun or stars to see.',

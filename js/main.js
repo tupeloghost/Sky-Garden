@@ -2118,7 +2118,7 @@ function showCard(html, btn='Okay', onClose) {
 }
 function ahaHtml(id) {
   const a = AHA[id];
-  return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2>${a.hook ? `<p class="memhook">${a.hook}</p>` : ''}${a.art ? `<div class="memart">${a.art}${a.cap ? `<span>${a.cap}</span>` : ''}</div>` : ''}<p class="gap">${a.did}</p><p class="gap">${a.real}</p><p class="gap">${a.today}</p>`;
+  return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2>${a.hook ? `<p class="memhook">${a.hook}</p>` : ''}${a.art ? `<div class="memart">${a.art}${a.cap ? a.cap.split(/(?<=[.?!]) +(?=[A-Z0-9])/).map(l => `<span>${l}</span>`).join('') : ''}</div>` : ''}<p class="gap">${a.did}</p><p class="gap">${a.real}</p><p class="gap">${a.today}</p>`;
 }
 // --- the three things you dig up: you handle each one before you read about it ---
 const RELIC_PLAY = {

@@ -186,7 +186,7 @@ add('midautumn', 'A round cake for a round moon.',
     scal + '<circle cx="110" cy="60" r="43" fill="#d49a3a"/><circle cx="110" cy="60" r="34" fill="none" stroke="#9a6a22" stroke-width="1.5"/>' + petal + '<circle cx="110" cy="60" r="7" fill="none" stroke="#9a6a22" stroke-width="1.5"/>'
     '<path d="M214 96 L214 34 Q262 36 286 78Z" fill="#d49a3a"/><path d="M219 91 L219 42 Q256 44 277 78Z" fill="#6b4226"/><circle cx="236" cy="66" r="13" fill="#f2a52e"/><circle cx="232" cy="62" r="4" fill="#f8c869" opacity=".8"/>'
     + txt(292, 30, 'egg yolk,', 10.5, INK) + txt(292, 43, 'like the moon', 10.5, INK) + '<path d="M262 46 L244 58" stroke="#3b2f4a" stroke-width="1"/>'),
-  'A drawing of a mooncake, about as wide as your palm.  In this style, from southern China, the inside is a thick, sweet paste, often with a salted egg yolk in the middle that looks like a full moon.')
+  'A drawing of a mooncake, about as wide as your palm. In this style, from southern China, the inside is a thick, sweet paste. Often a salted egg yolk sits in the middle and looks like a full moon.')
 
 # ---- dia de los muertos: an ofrenda ----
 r = R(38)
@@ -200,14 +200,14 @@ add('muertos', 'An altar to welcome the people you miss.',
     '<rect x="154" y="30" width="22" height="26" fill="#f6ead8" stroke="#b98a3e" stroke-width="2.5"/><circle cx="165" cy="40" r="4.500" fill="#8a6a52"/><path d="M158 54 q7 -10 14 0Z" fill="#8a6a52"/>'
     + flowers + ''.join(f'<rect x="{x-2}" y="{y-12}" width="4" height="12" fill="#fff"/>' + flame(x, y - 12, .5) for x, y in ((116, 58), (214, 58), (94, 84), (236, 84)))
     + '<ellipse cx="140" cy="76" rx="10" ry="6" fill="#d9a55a"/><path d="M133 74 h14 M140 70 v10" stroke="#f6ead8" stroke-width="2"/><circle cx="188" cy="76" r="5.500" fill="#f08c2e"/><circle cx="198" cy="78" r="5.500" fill="#e5484d"/>'),
-  'A drawing of an ofrenda, with a photo of the person it is for. Around it go their favorite foods, candles, a sweet bread, and bright orange marigolds, whose color and smell are said to guide them home.')
+  'A drawing of an ofrenda, with a photo of the person it is for. Around it go their favorite foods, candles, a sweet bread, and bright orange marigolds. The color and smell of the marigolds are said to guide them home.')
 
 # ---- diwali: diyas ----
 def diya(x, y, s=1): return f'<path d="M{x-16*s} {y} Q{x-14*s} {y+12*s} {x} {y+12*s} Q{x+14*s} {y+12*s} {x+20*s} {y-3*s} L{x+12*s} {y}Z" fill="#b5622f"/><ellipse cx="{x-1*s}" cy="{y}" rx="{14*s}" ry="{3.5*s}" fill="#e9c15a"/>' + flame(x + 15 * s, y - 2 * s, .8 * s) + f'<circle cx="{x+15*s}" cy="{y-8*s}" r="{15*s}" fill="#f6b53a" opacity=".16"/>'
 add('diwali', 'Rows of small clay lamps, lit against the dark.',
   svg(330, 112, 'A drawing of seven small clay oil lamps, each a shallow dish with a pinched spout and a single flame, glowing on a dark floor',
     '<rect width="330" height="112" rx="10" fill="#1d1730"/>' + diya(60, 44, .8) + diya(130, 40, .8) + diya(200, 44, .8) + diya(270, 40, .8) + diya(96, 82, 1.1) + diya(170, 86, 1.1) + diya(244, 82, 1.1)),
-  'A drawing of diyas. Each one is a little dish of baked clay, filled with oil or ghee, which is clear butter, with a cotton wick resting in the spout. Families set them along doorsteps, windows, and rooftops.')
+  'A drawing of diyas. Each one is a little dish of baked clay. It is filled with oil or ghee, which is clear butter. A cotton wick rests in the spout. Families set them along doorsteps, windows, and rooftops.')
 
 # ---- hanukkah: the menorah ----
 arms = ''.join(f'<path d="M{165 - d} 36 V52 Q{165 - d} {58 + d*.42:.0f} 165 {58 + d*.42:.0f} Q{165 + d} {58 + d*.42:.0f} {165 + d} 52 V36" fill="none" stroke="#c9a23a" stroke-width="4"/>' for d in (26, 52, 78, 104))
@@ -216,7 +216,7 @@ add('hanukkah', 'Eight nights, eight lights, and one more to light them.',
   svg(330, 122, 'A drawing of a gold menorah with nine candles: four on each side at the same height, and one in the middle standing a little higher',
     arms + '<path d="M165 26 V104" stroke="#c9a23a" stroke-width="5"/><path d="M135 110 Q165 96 195 110Z" fill="#c9a23a"/><rect x="128" y="108" width="74" height="6" rx="2" fill="#a8842a"/>' + cand
     ),
-  'A drawing of a Hanukkah menorah. It holds nine candles: one for each of the eight nights, plus a helper candle that is lit first and used to light the rest. One more candle is added each night.')
+  'A drawing of a Hanukkah menorah. It holds nine candles: one for each of the eight nights, plus a helper candle. The helper is lit first and lights the rest. One more candle is added each night.')
 
 # ---- december solstice: Newgrange ----
 r = R(41)
@@ -228,7 +228,7 @@ add('decsolstice', 'For a few mornings a year, sunrise shines all the way into t
     '<rect x="155" y="68" width="20" height="22" fill="#1d1a22"/><rect x="157" y="60" width="16" height="5" fill="#1d1a22"/><rect x="151" y="64" width="28" height="4" fill="#7d8288"/>'
     '<path d="M30 80 L165 62" stroke="#f6b53a" stroke-width="2.5"/><path d="M0 90 H330 V122 H0Z" fill="#7fbf6a"/>' + person(214, 96, 12)
     + txt(110, 112, 'light comes in through the small window', 10, INK)),
-  'A drawing of Newgrange in Ireland, with a person for size. Around the shortest day, the rising sun shines through a small window above the door, down a 19-meter passage, and lights the floor of the room at the end for about 17 minutes.')
+  'A drawing of Newgrange in Ireland, with a person for size. Around the shortest day, the rising sun shines through a small window above the door. The light runs down a 19-meter passage. It lights the floor of the end room for about 17 minutes.')
 
 # ---- christmas: a decorated tree ----
 r = R(42)

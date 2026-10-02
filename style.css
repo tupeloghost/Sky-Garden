@@ -370,6 +370,7 @@ body.on-title #goalArrow, body.in-setup #goalArrow, .building #goalArrow { displ
 .memart { background:#f6ead8; border-radius:16px; padding:12px 12px 10px; margin-top:10px; }
 .memart svg { display:block; width:100%; height:auto; }
 .memart span { display:block; font-size:13.5px; line-height:1.35; color:#7a6452; margin-top:6px; }
+.memart span + span { margin-top:5px; }
 
 /* cards with no headings: a little air between paragraphs */
 .card p.gap { margin-top:10px; }
