@@ -2076,7 +2076,8 @@ function openDialog(name, text, btns=[], hearts, voice) {
   $('dName').textContent = name; typeText(text);
   $('dHearts').textContent = hearts == null ? '' : '♥'.repeat(hearts) + '♡'.repeat(10-hearts);
   $('dBtns').innerHTML = '';
-  [...btns, { label:Object.values(NEIGHBORS).some(n => n.name === name) || Object.values(S.people || {}).some(p => p.name === name) || (typeof VISIT !== 'undefined' && VISIT && VISIT.name === name) ? 'Bye' : btns.length ? 'Not now' : 'Okay', ghost:true, fn:closeDialog }] /* closing word: Bye to someone, Not now when there was something to do, Okay when there was only something to read */.forEach(b => {
+  const replyOnly = btns.length === 1 && /^\(\)\s*=>\s*\{?\s*closeDialog\(\);?\s*(toast\([^;]*\);?)?\s*\}?$/.test(String(btns[0].fn));
+  [...btns, ...(replyOnly ? [] : [0])].map(b => b || { label:Object.values(NEIGHBORS).some(n => n.name === name) || Object.values(S.people || {}).some(p => p.name === name) || (typeof VISIT !== 'undefined' && VISIT && VISIT.name === name) ? 'Bye' : btns.length ? 'Not now' : 'Okay', ghost:true, fn:closeDialog }) /* closing word: Bye to someone, Not now when there was something to do, Okay when there was only something to read */.forEach(b => {
     const el = document.createElement('button'); el.textContent = b.label; if (b.ghost) el.className = 'ghost';
     el.onclick = b.fn; $('dBtns').appendChild(el);
   });
@@ -2084,9 +2085,13 @@ function openDialog(name, text, btns=[], hearts, voice) {
 }
 function closeDialog() { $('dialog').classList.remove('show'); clearInterval(typeText.iv); }
 // dialog text types out a few letters at a time; tapping the box shows it all
-function typeText(text) { const el = $('dText'); clearInterval(typeText.iv); let i = 0; el.textContent = ''; el.dataset.full = text;
-  typeText.iv = setInterval(() => { i = Math.min(text.length, i + 2); el.textContent = text.slice(0, i); if (i >= text.length) clearInterval(typeText.iv); }, 16); }
-$('dialog').addEventListener('pointerdown', e => { if (e.target.tagName !== 'BUTTON') { clearInterval(typeText.iv); $('dText').textContent = $('dText').dataset.full || $('dText').textContent; } });
+// what someone says, easy to take in: one sentence to a line, and when two people talk (Moss and Fern) each gets a line with their name in bold
+function sayLines(text) { const safe = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;'), who = safe.split(/(?=(?:Moss|Fern): )/).map(p => p.trim()).filter(Boolean);
+  if (who.length > 1) return who.map(p => p.replace(/^(Moss|Fern): /, '<b>$1:</b> '));
+  return safe.length < 90 ? [safe] : safe.split(/(?<=[.!?]["”]?) (?=[A-Z0-9"“])/); }
+function typeText(text) { const el = $('dText'), lines = sayLines(text), all = lines.join('<span class="brk"></span>'); clearInterval(typeText.iv); let i = 1; el.dataset.full = all;
+  el.innerHTML = lines[0]; if (lines.length > 1) typeText.iv = setInterval(() => { i++; el.innerHTML = lines.slice(0, i).join('<span class="brk"></span>'); if (i >= lines.length) clearInterval(typeText.iv); }, 420); } // lines arrive one at a time; a tap shows them all
+$('dialog').addEventListener('pointerdown', e => { if (e.target.tagName !== 'BUTTON') { clearInterval(typeText.iv); if ($('dText').dataset.full) $('dText').innerHTML = $('dText').dataset.full; } });
 let cardClose = null, cardCleanup = null;
 function hideCard() { $('veil').classList.remove('show'); if (cardCleanup) { cardCleanup(); cardCleanup = null; } }
 function showCard(html, btn='Okay', onClose) {
@@ -3238,7 +3243,7 @@ const SCENES = {
   },
   twins6() {
     S.furn.mushroom = (S.furn.mushroom||0) + 1; sfx('heart'); save();
-    openDialog('Moss & Fern', "Moss: We grow these deep in our tunnels. Fern: They glow in the dark. Moss: So you never feel lost. Fern: Take one for your hut!", [
+    openDialog('Moss & Fern', "Moss: We grow these deep in our tunnels. Fern: They glow in the dark. Moss: So you never feel lost. Fern: Take one for your home!", [
       { label:'Thank you both', fn:() => { closeDialog(); toast('You got a Glow Mushroom Lamp! Place it inside your home.'); } }], S.hearts.twins);
   },
   drizzle6() {

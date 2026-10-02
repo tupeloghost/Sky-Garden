@@ -392,3 +392,5 @@ body.on-title #goalArrow, body.in-setup #goalArrow, .building #goalArrow { displ
 .jlist button.craft .needs, .needs { display:flex; flex-wrap:wrap; gap:5px; }
 .needs em { font-style:normal; font-size:13px; font-weight:800; padding:1px 8px; border-radius:999px; }
 .needs em.ok { background:#dff5dc; color:#1f7a3f; } .needs em.no { background:#fbe3dc; color:#b5482f; }
+
+.dialog p .brk { display:block; height:7px; }
