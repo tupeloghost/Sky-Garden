@@ -4921,7 +4921,7 @@ function modePicker(done, o = {}) {
   let pick = o.switching ? S.mode : null;
   const draw = () => {
     showCard(`<div class="kicker">${o.late ? 'A BONUS' : o.switching ? 'YOUR ISLAND' : o.returning ? 'WELCOME BACK' : 'NEW GAME'}</div><h2>${o.late ? 'Pick a bonus for your island' : 'Choose your island'}</h2><p>${o.late ? 'Pick the one that fits how you play. You get both of its extras.' : o.returning || o.switching ? 'Each island gives you something extra. You keep your progress, coins, and collections.' : 'Each island has its own perks. You pick once, at the start.'}</p>
-      <div class="jlist">${MODES.map(m => `<button data-md="${m.id}" style="${pick === m.id ? 'background:#ffc857' : ''}">${pick === m.id ? '✓ ' : ''}${m.name} <span class="sub">${m.blurb}</span><span class="sub" style="display:block;margin-top:2px">${m.perks.map(x => '• ' + x).join('<br>')}</span></button>`).join('')}</div>
+      <p class="sub">Each island is for people who love:</p><div class="jlist">${MODES.map(m => `<button data-md="${m.id}" style="${pick === m.id ? 'background:#ffc857' : ''}">${pick === m.id ? '✓ ' : ''}${m.name} <span class="sub">${m.blurb}</span><span class="sub" style="display:block;margin-top:2px">${m.perks.map(x => '• ' + x).join('<br>')}</span></button>`).join('')}</div>
       <p id="mdMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
       <button id="mdGo">${o.switching ? 'Switch to this island' : o.late ? 'Take this bonus' : o.returning ? 'Keep playing' : 'Start my adventure'}</button> <button id="mdBack" class="ghost">${o.switching ? 'Never mind' : o.late ? 'Ask me tomorrow' : 'Back'}</button>`, null);
     document.querySelectorAll('[data-md]').forEach(b => b.onclick = () => { pick = b.dataset.md; draw(); });
@@ -5691,7 +5691,7 @@ function openStory() {
   const ps = Object.entries(S.paths || {}).sort((a,b) => b[1] - a[1]).slice(0, 2).filter(([,n]) => n >= 3), kk = S.karma || {};
   showCard(`<div class="kicker">YOUR STORY</div><h2>${S.name ? S.name + "'s" : 'Your'} journey</h2>
     <p style="font-style:italic">${islandFeel(kk.kind || 0, kk.harmony || 0)}</p>
-    <h4>Who you are becoming</h4>${ps.length ? ps.map(([k]) => `<p><b>${PATHS[k][0]}.</b> ${PATHS[k][1]}</p>`).join('') : '<p>Keep playing. Your path will show here.</p>'}
+    <h4>Who you are becoming</h4>${ps.length ? '<p class="sub">You love to:</p>' + ps.map(([k]) => `<p><b>${PATHS[k][0]}.</b> ${PATHS[k][1]}</p>`).join('') : '<p>Keep playing. Your path will show here.</p>'}
     <h4>Choices you made</h4>${(S.bigChoices || []).map(t => `<p><b>• ${t}</b></p>`).join('')}${(S.choices || []).length ? `<div class="jlist">${S.choices.map(c => { const d = DILEMMAS.find(x => x.id === c.id); return `<p>• ${d[c.pick].story}</p>`; }).join('')}</div>` : (S.bigChoices || []).length ? '' : '<p>None yet. Neighbors sometimes ask you to decide things. There are no wrong answers.</p>'}`, 'Back', openJournal);
 }
 // --- rolling unlocks: a "New today" card the first time you play each day ---

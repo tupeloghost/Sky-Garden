@@ -54,6 +54,6 @@ function islandFeel(kind, harmony) {
   if (tired) return 'The grass looks a bit tired.';
   return 'The island is still getting to know you.';
 }
-const PATHS = { grower:['Grower','You love to grow things.'], maker:['Maker','You love to craft and build.'], explorer:['Explorer','You love to go places and fish.'],
-  scholar:['Scholar','You love to learn and discover.'], trader:['Trader','You love to sell and trade.'], friend:['Friend','You love spending time with your neighbors.'] };
+const PATHS = { grower:['Grower','Grow things.'], maker:['Maker','Craft and build.'], explorer:['Explorer','Go places and fish.'],
+  scholar:['Scholar','Learn and discover.'], trader:['Trader','Sell and trade.'], friend:['Friend','Spend time with your neighbors.'] };
 export { DILEMMAS, islandFeel, PATHS };
