@@ -6569,9 +6569,8 @@ try { const hr = KIT.hr, ringOf = (g, r, y, n, c1 = 0xd8cfc0, c2 = 0xbfb6a8, h =
     [.34, .7].forEach(r => { const rg = mesh(new THREE.TorusGeometry(r, .01, 4, 40), fine(0x8a7a6a), 0, .185, 0); rg.rotation.x = Math.PI / 2; sundial.add(rg); });
     for (let i = 0; i < 12; i += 3) { const a = i / 12 * Math.PI * 2; sundial.add(mesh(new THREE.BoxGeometry(.07,.025,.2), fine(0x6b5a4a), Math.cos(a) * .58, .195, Math.sin(a) * .58)).rotation.y = -a + Math.PI / 2; }
     [[.8,.3],[-.7,.55],[.2,-.85]].forEach(([x, z], i) => { const t = mesh(new THREE.ConeGeometry(.04,.18,4), fine(i % 2 ? 0x5fa85a : 0x8fcf7a), x, .08, z); sundial.add(t); }); }
-  { // the dark room: board walls on a stone foot, a brass plate around the tiny hole, a lantern
-    darkroom.children[0].material.map = tx('planks', 5, 1); KIT.foot(darkroom, 1.8, 1.8, 0, 21); KIT.lantern(darkroom, .1, 1.15, .96);
-    const pl = mesh(new THREE.CylinderGeometry(.12,.12,.02,16), mat(0xd9a441, { metalness:.5, roughness:.4 }), .45, .95, .915); pl.rotation.x = Math.PI / 2; darkroom.add(pl); darkroom.add(mesh(new THREE.CircleGeometry(.025, 10), fine(0x1a1420), .45, .95, .93)); }
+  { // the dark room: board walls on a stone foot, and a lantern over the door
+    darkroom.children[0].material.map = tx('planks', 5, 1); KIT.foot(darkroom, 1.8, 1.8, 0, 21); KIT.lantern(darkroom, -.45, 1.25, .96); }
   if (lighthouse) { // the lighthouse: rocks at its foot, a door, small windows, a railed walkway around the lamp
     for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2, rk = mesh(new THREE.DodecahedronGeometry(.2 + hr(i) * .14), mat(i % 2 ? 0x9a93a8 : 0xb3aabb, { map:tx('stone', 1, 1) }), Math.cos(a) * .8, .1, Math.sin(a) * .8); rk.rotation.set(i, i * 2, 0); lighthouse.add(rk); }
     KIT.door(lighthouse, 0, 0, .65, { w:.4, h:.72, color:0x8a5a3b }); [1.5, 2.4].forEach((y, i) => KIT.win(lighthouse, 0, y, .58 - i * .09, { w:.2, round:true, frame:0x3b2f4a, bars:false }));
