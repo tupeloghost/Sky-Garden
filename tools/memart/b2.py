@@ -10,7 +10,7 @@ add('sundial', 'A stick, a shadow, and a long walk measured the whole Earth.',
     '<rect x="232" y="56" width="12" height="20" fill="#3b2f4a"/><path d="M228 56 h20" stroke="#7a6452" stroke-width="3"/>'
     '<path d="M92 79 L78 49" stroke="#7a5236" stroke-width="4" stroke-linecap="round"/><path d="M92 79 L74 85" stroke="#3b2f4a" stroke-width="3" stroke-linecap="round" opacity=".7"/>'
     + txt(60, 110, 'Alexandria: a shadow', 11, INK) + txt(246, 110, 'Syene: no shadow', 11, INK) + txt(165, 14, 'sunlight', 11, '#c98a1f')),
-  'At noon on the longest day of the year, the sun shone straight down a well in Syene. In Alexandria, at the same moment, a stick still had a short shadow. The shadow showed that Alexandria was one fiftieth of the way around the Earth from Syene. So he took the distance between the two cities and multiplied by 50.')
+  'At noon on the longest day, the sun shone straight down a well in Syene. In Alexandria, a stick still had a short shadow. The shadow showed the cities were one fiftieth of the way around the Earth apart, so he multiplied their distance by 50.')
 
 # ---- bell (string lengths) ----
 def string(y, frac, label, note):
@@ -20,7 +20,7 @@ def string(y, frac, label, note):
 add('bell', 'Shorten a string to half. You get the same note, but higher.',
   svg(330, 120, 'A diagram of four strings: a full one, one half as long, one two thirds as long, and one three quarters as long',
     string(22, 1, '1', 'the whole string') + string(52, .5, '1/2', 'the same note, higher') + string(82, 2/3, '2/3', 'sounds sweet with the whole string') + string(112, .75, '3/4', 'also sounds sweet')),
-  'Musicians call the jump to the higher note an octave. Strings 2/3 and 3/4 as long sound sweet with the whole string too. These fractions show up in music all over the world.')
+  'Musicians call the jump to the higher note an octave. Strings 2/3 and 3/4 as long sound sweet with the whole string too.')
 
 # ---- still (solar still) ----
 drops = ''.join(f'<circle cx="{x}" cy="{y}" r="2.2" fill="#7ec8e3"/>' for x, y in ((120, 44), (140, 51), (158, 57), (182, 56), (200, 50), (220, 43)))
@@ -33,7 +33,7 @@ add('still', 'The sun can pull fresh water out of salt water.',
     '<path d="M86 40 Q170 78 254 40" fill="none" stroke="#9fd3ff" stroke-width="3"/><circle cx="170" cy="56" r="5" fill="#8a7a66"/>' + drops +
     '<g stroke="#7ec8e3" stroke-width="1.4" stroke-dasharray="2 4" fill="none"><path d="M118 82 V56 M222 82 V54"/></g><circle cx="170" cy="70" r="2.4" fill="#7ec8e3"/>'
     + txt(292, 92, 'salt water', 11, INK) + txt(292, 60, 'clear cover', 11, INK) + txt(170, 122, 'cup of fresh water', 11, INK)),
-  'The sun turns some of the water into a gas you cannot see, like steam. The salt stays behind. The gas turns back into drops on the cover, runs to the lowest point, and drips into the cup. A small stone on the cover makes that low point.')
+  'The sun turns some of the water into a gas you cannot see, and the salt stays behind. The gas turns back into drops on the cover and drips into the cup.')
 
 # ---- rope (3-4-5) ----
 A = (60, 100); B = (220, 100); C = (60, -20)
@@ -58,7 +58,7 @@ add('stars', 'Leave a camera open all night, and the stars draw circles.',
   svg(330, 120, 'A drawing of a night sky photo where every star has left a curved streak, all circling one bright point above dark hills',
     f'<clipPath id="st"><rect width="330" height="120" rx="10"/></clipPath><g clip-path="url(#st)"><rect width="330" height="120" fill="#16203f"/><g fill="none" stroke-linecap="round">{arcs}</g>'
     f'<circle cx="{cx}" cy="{cy}" r="2.4" fill="#fff"/><path d="M0 120 V100 Q50 82 96 98 Q150 76 204 100 Q262 84 330 102 V120Z" fill="#0b1124"/></g>' + txt(cx + 34, cy - 6, 'Polaris', 11, '#ffe9c4')),
-  'A drawing of a real kind of photo, taken over several hours. Earth is turning, so every star smears into a curved line. Polaris sits almost exactly over the North Pole, so it hardly moves at all.')
+  'A drawing of a photo taken over several hours. Earth is turning, so every star smears into a curved line, but Polaris hardly moves at all.')
 
 # ---- lever ----
 add('lever', 'Rest the beam close to the stone, and a small push lifts it.',
@@ -69,7 +69,7 @@ add('lever', 'Rest the beam close to the stone, and a small push lifts it.',
     + person(292, 108, 44) + '<path d="M292 36 v20 m-5 -6 l5 6 l5 -6" stroke="#ff6b6b" stroke-width="2.4" fill="none" stroke-linecap="round"/>'
     '<path d="M48 124 m0 -8 H96 M96 116 H292" stroke="#9a7f66" stroke-width="1.4"/><path d="M48 112 v8 M96 112 v8 M292 112 v8" stroke="#9a7f66" stroke-width="1.4"/>'
     + txt(72, 113, '1', 11, INK) + txt(196, 113, '4', 11, INK) + txt(48, 54, '100 kg', 12, INK) + txt(260, 30, 'a push of 25 kg', 12, INK)),
-  'The beam rests on one point, called the pivot. The push is 4 times farther from the pivot than the stone is. So it only needs to be 1/4 as strong. The far end has to move 4 times as far, though. You trade distance for strength.')
+  'The beam rests on one point, called the pivot. The push is 4 times farther from the pivot than the stone is, so it only needs to be 1/4 as strong.')
 
 # ---- bread ----
 r = R(12)
@@ -79,7 +79,7 @@ add('bread', 'Every hole is a bubble blown up by something alive.',
   svg(330, 116, 'A drawing of a slice of bread with a brown crust and a pale inside full of holes of different sizes',
     f'<clipPath id="br"><path d="{loaf}"/></clipPath><path d="{loaf}" fill="#f3e2bd" stroke="#a8713a" stroke-width="6" stroke-linejoin="round"/><g clip-path="url(#br)">{holes}</g>'
     f'<path d="{loaf}" fill="none" stroke="#a8713a" stroke-width="6" stroke-linejoin="round"/>'),
-  'Yeast is alive. It is a relative of mushrooms, too small to see. It eats sugar in the dough and breathes out gas. The gas swells tiny air bubbles in the stretchy dough, and baking sets each bubble in place.')
+  'Yeast is alive and too small to see. It eats sugar in the dough and breathes out gas, and baking sets each bubble in place.')
 
 # ---- moon phases ----
 def moon(cx, f):  # f: 0 new .. .5 full .. 1 new; lit side on the right while growing (seen from north of the equator)
@@ -106,7 +106,7 @@ add('optics', 'Light travels in straight lines, so the picture lands upside down
     + tree(54, 96, 1.6) + tree(274, 34, 1, -1) +
     '<g stroke="#f2b84b" stroke-width="1.4" fill="none"><path d="M54 36 L150 62 L274 94"/><path d="M54 96 L150 62 L274 34"/></g>'
     + txt(110, 116, 'one tiny hole', 11, INK) + txt(230, 104, 'dark room', 11, '#cfc4dd')),
-  'Light from the top of the tree goes straight through the hole and lands low on the wall. Light from the bottom lands high. A smaller hole gives a sharper picture, but a dimmer one. Your eye and a camera flip the picture the same way, but they use a lens to let in more light.')
+  'Light from the top of the tree goes straight through the hole and lands low on the wall. Light from the bottom lands high.')
 
 # ---- prism ----
 cols = ['#e5484d', '#f08c2e', '#f6d32d', '#4cb86a', '#3d8fe0', '#5a55c9', '#8e44ad']
@@ -129,7 +129,7 @@ add('fibonacci', 'One simple rule makes every spiral in a sunflower.',
     f'<g transform="translate(0 0) scale(.92) translate(8 6)">{petals}<circle cx="110" cy="66" r="64" fill="#3f2a12"/>{seeds}</g>'
     '<g transform="translate(262 62)"><circle r="30" fill="none" stroke="#c9ab88" stroke-width="1.5"/><path d="M0 0 L30 0 M0 0 L-22.1 20.3" stroke="#3b2f4a" stroke-width="2"/><path d="M12 0 A12 12 0 1 1 -8.800 8.100" fill="none" stroke="#c98a1f" stroke-width="2"/><circle cx="30" cy="0" r="4" fill="#5a3d1e"/><circle cx="-22.1" cy="20.3" r="4" fill="#5a3d1e"/></g>'
     + txt(262, 112, 'each seed: 137.5 degrees', 10.5, INK) + txt(262, 124, 'around from the last', 10.5, INK)),
-  'Each new seed grows a little more than a third of a turn around from the one before (137.5 degrees). That single rule packs the seeds as tightly as they can go, and the spirals appear by themselves. Count the spirals one way, then the other. You usually get two numbers from this list: 21, 34, 55, 89.')
+  'Each new seed grows a little more than a third of a turn around from the one before. That single rule packs the seeds as tightly as they can go, and the spirals appear by themselves.')
 
 # ---- migration (European robin) ----
 add('migration', 'This small bird knows which way to fly, even with no sun or stars to see.',
@@ -142,7 +142,7 @@ add('migration', 'This small bird knows which way to fly, even with no sun or st
     '<circle cx="134" cy="40" r="4.5" fill="#1d1a22"/><circle cx="135.300" cy="38.700" r="1.3" fill="#fff"/><path d="M112 44 L98 47 L112 51Z" fill="#3b3438"/>'
     '<path d="M166 96 v10 M178 97 v9" stroke="#7a5a46" stroke-width="2.2"/>'
     + txt(282, 30, 'European robin', 11, INK) + txt(282, 44, 'about 14 cm long', 10.5, SUB)),
-  'A drawing of a European robin. In tests in closed rooms, robins still faced the way they fly each season. Earth has an invisible pull, called its magnetic field, that moves a compass needle. When scientists turned that pull, the birds turned too. Scientists think tiny light-sensing parts in the birds\' eyes may react to it. They are still working out how.')
+  'A drawing of a European robin. In tests in closed rooms, robins still faced the way they fly each season. When scientists turned the magnetic pull, the birds turned too.')
 
 # ---- roads (Roman road section) ----
 r = R(14)
@@ -155,7 +155,7 @@ add('roads', 'The part of a Roman road you walk on is only the top layer.',
     '<rect x="52" y="62" width="226" height="24" fill="#d9cbb0"/>' + grav + big + pave
     + txt(308, 84, 'ditch', 10.5, INK) + txt(165, 30, 'paving stones, higher in the middle', 11, INK) + txt(165, 118, 'big stones at the bottom', 10.5, '#fff6e6') + txt(22, 56, 'gravel', 10.5, INK)
     + '<path d="M30 60 L58 74" stroke="#3b2f4a" stroke-width="1"/>'),
-  'For their best roads, the Romans dug down to firm ground and built the road up in layers, higher than the land beside it. Rain runs off the curved top into the ditches. Most Roman roads had packed gravel on top, not paving stones.')
+  'The Romans built their best roads up in layers. Rain runs off the curved top into the ditches.')
 
 # ---- thatch ----
 r = R(15)
@@ -168,4 +168,4 @@ add('thatch', 'A roof made of dried reeds can last 40 years.',
     f'<g clip-path="url(#th)">{straw}<path d="M40 72 Q150 60 260 72 V62 Q150 50 40 62Z" fill="#6b5630" opacity=".45"/></g><path d="M100 22 Q150 10 200 22 Q150 18 100 22Z" fill="#7a6234" stroke="#7a6234" stroke-width="5" stroke-linejoin="round"/>'
     '<rect x="206" y="6" width="14" height="18" fill="#b0705a"/><path d="M20 110 H300" stroke="#c9ab88" stroke-width="2"/>'
     + '<g transform="translate(286 56)"><path d="M-20 -22 L20 6 M-20 -14 L20 14 M-20 -6 L20 22" stroke="#b8975a" stroke-width="3" stroke-linecap="round"/><path d="M-8 -30 v10 M4 -30 v16" stroke="#3d8fe0" stroke-width="2" stroke-dasharray="3 3"/><path d="M-8 -18 L18 0" stroke="#3d8fe0" stroke-width="1.6"/></g>' + txt(286, 96, 'rain runs down', 10, INK) + txt(286, 108, 'the stems', 10, INK)),
-  'The stems are packed tight and laid on a steep slope. A raindrop hits a stem, runs down it to the next one, and so on to the edge. Only the top few centimeters get wet.')
+  'The tight-packed stems lie on a steep slope, so rain runs down them to the edge. Only the top few centimeters get wet.')

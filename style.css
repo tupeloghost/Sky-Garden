@@ -377,3 +377,5 @@ body.on-title #goalArrow, body.in-setup #goalArrow, .building #goalArrow { displ
 .card .memart + p { margin-top:10px; }
 
 .card p .brk { display:block; height:7px; }
+
+.toast.show { pointer-events:auto; cursor:pointer; }

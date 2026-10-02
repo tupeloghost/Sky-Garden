@@ -69,7 +69,7 @@ const RECIPES = [
   { id:'candy', name:'Sunflower Seed Brittle', needs:{ sunbell:2 }, sell:220,
     aha:{ kicker:"MABEL'S KITCHEN", title:'Sugar Glass',
       did:'You cooked sugar with sunflower seeds and let it cool into crunchy, see-through brittle.',
-      real:'When sugar syrup cools slowly, the sugar lines up into neat crystals. That is how rock candy grows. When it cools fast, the sugar freezes in a jumble before it can line up. That makes a clear, glassy candy. Real glass is made the same way: melted sand that cools too fast to form crystals.',
+      real:'When sugar syrup cools slowly, the sugar lines up into neat crystals. When it cools fast, the sugar freezes in a jumble before it can line up. That makes a clear, glassy candy.',
       today:'Stunt glass in old movies was made of sugar, so it broke safely. Today stunt glass is mostly a brittle plastic.' } },
 ];
 

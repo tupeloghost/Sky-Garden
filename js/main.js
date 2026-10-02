@@ -1343,7 +1343,7 @@ function exitRoom() { const R = ROOMS[S.room];
   thing(g, cab, 2.3, -2.9, 2, 1.8, .7, () => HELP.nana.run(), 'Seed cabinet: tap to help Nana');
   // herbs hung up to dry
   const herbs = G(mesh(new THREE.CylinderGeometry(.02,.02,2.2,6), dark, 0, 2.75, 0).rotateZ(Math.PI/2)); [-.8,-.4,0,.4,.8].forEach((x, i) => { const b = mesh(new THREE.ConeGeometry(.12,.45,7), mat([0x7fb86a,0xc9b6ff,0x8fdc8a,0xd9c06a,0x7fb86a][i]), x, 2.45, 0); b.rotation.x = Math.PI; herbs.add(b); });
-  thing(g, herbs, .9, -3.0, 2.2, 3, .5, () => toast('Herbs hung upside down to dry. With the water gone, they keep for months. It is one of the oldest ways to store food.'), 'Drying herbs: tap to learn');
+  thing(g, herbs, .9, -3.0, 2.2, 3, .5, () => toast('Herbs hung up to dry. With the water gone, they keep for months.'), 'Drying herbs: tap to learn');
   // kettle on a little stove
   const stove = G(mesh(new THREE.BoxGeometry(.9,.8,.7), mat(0x5a5560), 0, .4, 0), mesh(new THREE.CylinderGeometry(.2,.24,.26,14), mat(0x7ec8e3), 0, .93, 0), mesh(new THREE.TorusGeometry(.14,.025,6,14,Math.PI), mat(0x3b2f4a), 0, 1.06, 0), mesh(new THREE.CylinderGeometry(.03,.05,.22,8), mat(0x7ec8e3), .24, .98, 0).rotateZ(-.9));
   thing(g, stove, -3.0, -2.6, 1, 1.3, .9, () => { sfx('water'); toast('Nana pours you a cup of mint tea. In Morocco, serving mint tea to a guest is a sign of welcome.'); }, 'Kettle: tap for tea');
@@ -1370,7 +1370,7 @@ function exitRoom() { const R = ROOMS[S.room];
   thing(g, lem, .65, -1.35, .5, 1.6, .6, () => HELP.pip.run(), 'Lemonade: tap to help Pip');
   // a balance scale
   const scale = G(mesh(new THREE.CylinderGeometry(.03,.05,.5,8), mat(0xd9a441, { metalness:.5 }), 0, 1.23, 0), mesh(new THREE.BoxGeometry(.7,.03,.03), mat(0xd9a441, { metalness:.5 }), 0, 1.48, 0)); [-.33,.33].forEach(x => scale.add(mesh(new THREE.CylinderGeometry(.13,.1,.04,12), mat(0xd9a441, { metalness:.5 }), x, 1.32, 0)));
-  thing(g, scale, 1.25, -1.4, .8, 1.7, .6, () => toast('A balance scale. Put the same weight on both sides and it sits level. Traders have used scales like this for more than 4,000 years.'), 'Scale: tap to learn');
+  thing(g, scale, 1.25, -1.4, .8, 1.7, .6, () => toast('A balance scale. Put the same weight on both sides and it sits level.'), 'Scale: tap to learn');
   // furniture for sale
   const furn = G(mesh(new THREE.BoxGeometry(.7,.4,.7), mat(0xff8fa3), 0, .3, 0), mesh(new THREE.BoxGeometry(.7,.7,.14), mat(0xff8fa3), 0, .65, -.3), mesh(new THREE.CylinderGeometry(.03,.05,1.3,8), dark, .9, .65, -.2), mesh(new THREE.ConeGeometry(.28,.3,12,1,true), mat(0xfff3a0), .9, 1.4, -.2));
   thing(g, furn, -2.7, 1.2, 1.9, 1.6, 1.1, () => furnShop(), 'Furniture: tap to buy');
@@ -1392,21 +1392,21 @@ function exitRoom() { const R = ROOMS[S.room];
   thing(g, wheel, -2.3, -3.12, 1.4, 2.6, .4, () => HELP.drizzle.run(), "Ship's wheel: tap to help Drizzle sail");
   // rope and knots on the wall
   const knots = G(mesh(new THREE.BoxGeometry(1.3,.9,.05), mat(0xf1e6cf), 0, 1.85, 0)); [[-.4,2.05],[0,2.05],[.4,2.05],[-.2,1.65],[.2,1.65]].forEach(([x, y]) => { knots.add(mesh(new THREE.TorusGeometry(.1,.03,6,14), rope, x, y, .04)); knots.add(mesh(new THREE.TorusGeometry(.06,.03,6,12), rope, x + .07, y - .03, .05)); });
-  thing(g, knots, 2.2, -3.15, 1.4, 2.6, .3, () => toast("Drizzle's knot board. A ship's speed is still measured in knots. Sailors once let out a rope with a knot tied every 14 meters, and counted how many slid through their fingers in half a minute."), 'Knot board: tap to learn');
+  thing(g, knots, 2.2, -3.15, 1.4, 2.6, .3, () => toast("A ship's speed is measured in knots. Sailors once counted the knots on a rope as it slid through their fingers."), 'Knot board: tap to learn');
   // a compass on a stand
   const comp = G(mesh(new THREE.CylinderGeometry(.06,.1,.9,8), dark, 0, .45, 0), mesh(new THREE.CylinderGeometry(.2,.2,.08,18), brass, 0, .94, 0), mesh(new THREE.BoxGeometry(.28,.02,.04), mat(0xd6332e), 0, .99, 0));
-  thing(g, comp, 1.2, -2.6, .6, 1.3, .6, () => toast('A compass. The needle is a tiny magnet, and Earth is a giant one. The needle swings until it lines up with Earth, so one end always points north.'), 'Compass: tap to learn');
+  thing(g, comp, 1.2, -2.6, .6, 1.3, .6, () => toast('A compass. The needle is a tiny magnet, and Earth is a giant one. So one end always points north.'), 'Compass: tap to learn');
   // the hammock
   const ham = G(mesh(new THREE.CylinderGeometry(.06,.06,1.5,8), dark, -.95, .75, 0), mesh(new THREE.CylinderGeometry(.06,.06,1.5,8), dark, .95, .75, 0));
   [[-.5,1.12,.2],[0,1.0,0],[.5,1.12,-.2]].forEach(([x, y, r]) => { const sl = mesh(new THREE.BoxGeometry(.58,.06,.62), mat(0xfff1d6), x, y, 0); sl.rotation.z = r; ham.add(sl); const st = mesh(new THREE.BoxGeometry(.58,.065,.1), mat(0x3f86c9), x, y, 0); st.rotation.z = r; ham.add(st); });
   [[-.87,1.3,.5],[.87,1.3,-.5]].forEach(([x, y, r]) => { const rp = mesh(new THREE.BoxGeometry(.3,.03,.03), mat(0xe0c98f), x, y, 0); rp.rotation.z = r; ham.add(rp); });
-  ham.rotation.y = Math.PI/2; thing(g, ham, 3.0, -.9, .9, 1.5, 2.1, () => toast('A sailor\'s hammock. When the ship rolls, the hammock swings and stays level, so nobody gets tipped out of bed. Navies used them for hundreds of years.'), 'Hammock: tap to learn');
+  ham.rotation.y = Math.PI/2; thing(g, ham, 3.0, -.9, .9, 1.5, 2.1, () => toast('A sailor\'s hammock. When the ship rolls, it swings and stays level, so nobody gets tipped out of bed.'), 'Hammock: tap to learn');
   // the chart table, with your grandmother's map
   const chart = G(mesh(new THREE.BoxGeometry(1.5,.08,.9), wood, 0, .8, 0), mesh(new THREE.BoxGeometry(1.1,.02,.65), mat(0xf1e6cf), 0, .85, 0), mesh(new THREE.BoxGeometry(.5,.021,.03), mat(0xd6332e), -.1, .86, .05), mesh(sph(.05), mat(0x3f86c9), .3, .88, -.15)); [[-.65,-.35],[.65,-.35],[-.65,.35],[.65,.35]].forEach(([x, z]) => chart.add(mesh(new THREE.BoxGeometry(.08,.8,.08), dark, x, .4, z)));
   thing(g, chart, -2.6, .2, 1.6, 1.2, 1, () => { const L = NEIGHBORS.drizzle.heartLines; openDialog('Captain Drizzle', L[Math.floor(Math.random() * L.length)], [], S.hearts.drizzle); }, 'Chart table: tap to hear Drizzle');
   // a barrel of ship's biscuit
   const barrel = G(mesh(new THREE.CylinderGeometry(.36,.32,.8,16), wood, 0, .4, 0), mesh(new THREE.TorusGeometry(.355,.025,6,20), mat(0x5a5560), 0, .62, 0).rotateX(Math.PI/2), mesh(new THREE.TorusGeometry(.345,.025,6,20), mat(0x5a5560), 0, .2, 0).rotateX(Math.PI/2), mesh(new THREE.CylinderGeometry(.13,.13,.05,12), mat(0xe6cf9c), .08, .83, .05));
-  thing(g, barrel, 2.9, 1.5, .9, 1.1, .9, () => toast('Ship\'s biscuit. It is flour and water, baked until it is hard as a brick, so it keeps for years at sea. Drizzle says it also makes a good doorstop.'), "Ship's biscuit: tap to learn");
+  thing(g, barrel, 2.9, 1.5, .9, 1.1, .9, () => toast('Ship\'s biscuit. It is flour and water, baked hard as a brick, so it keeps for years at sea.'), "Ship's biscuit: tap to learn");
   // today's catch
   const bucket = G(mesh(new THREE.CylinderGeometry(.28,.22,.42,14), mat(0x8fa3b3, { metalness:.3 }), 0, .21, 0), mesh(new THREE.CylinderGeometry(.25,.25,.02,14), mat(0x7ec8e3), 0, .4, 0), mesh(sph(.09), mat(0x9fb6c8), .05, .45, 0));
   thing(g, bucket, -3.0, 2.0, .8, .9, .8, () => { if (!daily('drizzleBucket')) return toast('You already took today\'s fish. Drizzle fills the bucket again tomorrow.'); if (!gain('minnow', 1, player.position.clone().setY(1))) return bagFull(); toast('Drizzle: "Take one, sailor. I always catch one more than I need."'); }, "Drizzle's bucket: tap for a fish");
@@ -1420,19 +1420,19 @@ function exitRoom() { const R = ROOMS[S.room];
   thing(g, bench, -.9, -2.7, 2, 1.5, .9, () => HELP.twins.run(), 'Workbench: tap to help the twins');
   // spare gears from the windmill
   const gears = G(); [[-.35,2.0,.42,0xd9a441],[.3,1.75,.3,0xc98f58],[.05,2.35,.22,0x8a8f96]].forEach(([x, y, r, c]) => { gears.add(mesh(new THREE.CylinderGeometry(r,r,.07,16), mat(c, { metalness:.4 }), x, y, 0).rotateX(Math.PI/2)); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; gears.add(mesh(new THREE.BoxGeometry(.1,.1,.07), mat(c, { metalness:.4 }), x + Math.cos(a) * r, y + Math.sin(a) * r, 0)); } });
-  thing(g, gears, -2.7, -3.15, 1.4, 3, .3, () => toast('Spare windmill gears. When a big gear turns a small one, the small one spins faster. Count the teeth on each to know how much faster.'), 'Gears: tap to learn');
+  thing(g, gears, -2.7, -3.15, 1.4, 3, .3, () => toast('Spare windmill gears. When a big gear turns a small one, the small one spins faster.'), 'Gears: tap to learn');
   // shovels
   const rack = G(mesh(new THREE.BoxGeometry(1.3,.08,.08), dark, 0, 1.9, 0)); [-.45,0,.45].forEach((x, i) => { rack.add(mesh(new THREE.CylinderGeometry(.03,.03,1.3,6), wood, x, 1.25, .06)); rack.add(mesh(new THREE.BoxGeometry(.24,.3,.04), iron, x, .5, .06)); if (i === 2) rack.add(mesh(new THREE.BoxGeometry(.26,.03,.05), mat(0xd6332e), x, 1.0, .08)); });
   thing(g, rack, .9, -3.12, 1.4, 2.2, .4, () => toast("Moss's shovel. Fern's shovel. And a third one, taped in the middle, that nobody will admit to breaking."), 'Shovels: tap to look');
   // the worm jars
   const jars = G(mesh(new THREE.BoxGeometry(1.2,.06,.35), wood, 0, 1.25, 0)); [-.38,0,.38].forEach(x => { jars.add(mesh(new THREE.CylinderGeometry(.15,.15,.34,12), new THREE.MeshStandardMaterial({ color:0xdff3ff, transparent:true, opacity:.5 }), x, 1.46, 0)); jars.add(mesh(new THREE.CylinderGeometry(.14,.14,.2,12), mat(0x5f4630), x, 1.39, 0)); jars.add(mesh(new THREE.TorusGeometry(.05,.02,6,10,4), mat(0xe58a8a), x, 1.5, .04)); });
-  thing(g, jars, 2.4, -3.05, 1.3, 2, .5, () => toast('The twins\' worms. Fern: "Worm tunnels let air and water down into the soil, so roots can drink and breathe." Moss: "Also, they are great listeners."'), 'Worm jars: tap to learn');
+  thing(g, jars, 2.4, -3.05, 1.3, 2, .5, () => toast('Fern: "Worm tunnels let air and water down into the soil, so roots can drink and breathe."'), 'Worm jars: tap to learn');
   // bunk beds
   const bunk = G(); [.35, 1.25].forEach((y, i) => { bunk.add(mesh(new THREE.BoxGeometry(1.7,.14,.8), wood, 0, y, 0)); bunk.add(mesh(new THREE.BoxGeometry(1.6,.12,.7), mat(i ? 0x8fdc8a : 0xffc857), 0, y + .12, 0)); bunk.add(mesh(new THREE.BoxGeometry(.4,.1,.5), mat(0xfff6e6), -.55, y + .22, 0)); }); [[-.85,-.4],[.85,-.4],[-.85,.4],[.85,.4]].forEach(([x, z]) => bunk.add(mesh(new THREE.BoxGeometry(.1,1.6,.1), dark, x, .8, z)));
   bunk.rotation.y = Math.PI/2; thing(g, bunk, -3.1, .3, 1, 1.7, 1.9, () => toast('Bunk beds. Moss sleeps on top. Fern sleeps on the bottom. They swap every night, and argue about it every night.'), 'Bunk beds: tap to look');
   // mushroom lamps
   const lamps = G(); [[0,.5,.16],[.3,.34,.12],[-.28,.28,.1]].forEach(([x, h, r]) => { lamps.add(mesh(new THREE.CylinderGeometry(.04,.05,h,8), mat(0xf1e6cf), x, h/2, 0)); lamps.add(mesh(new THREE.SphereGeometry(r,16,10,0,Math.PI*2,0,Math.PI/2), glow(0x9fe7e0), x, h, 0)); }); const lh = halo(0x9fe7e0, 1.6, .5); lh.position.y = .5; lamps.add(lh);
-  thing(g, lamps, 3.0, 1.2, .9, 1, .9, () => toast('The twins grow these for light. More than 100 kinds of real mushrooms glow in the dark. People once called the glow foxfire.'), 'Glowing mushrooms: tap to learn');
+  thing(g, lamps, 3.0, 1.2, .9, 1, .9, () => toast('The twins grow these for light. More than 100 kinds of real mushrooms glow in the dark.'), 'Glowing mushrooms: tap to learn');
   // today's diggings
   const pile = G(mesh(sph(.22), mat(0xb3aabb), 0, .16, 0), mesh(sph(.17), mat(0x9a93a8), .26, .12, .1), mesh(sph(.15), mat(0xc4bccb), -.2, .1, .16), mesh(sph(.13), mat(0xa39cb0), .05, .34, .05));
   thing(g, pile, 2.9, -1.3, .9, .7, .9, () => { if (!daily('twinsPile')) return toast('You already took a stone today. The twins dig up more by tomorrow.'); if (!gain('stone', 1, player.position.clone().setY(1))) return bagFull(); toast('Fern: "Take one. We have so many." Moss: "We have ALL of them."'); }, 'Dug-up stones: tap to take one');
@@ -1449,13 +1449,13 @@ function exitRoom() { const R = ROOMS[S.room];
   thing(g, moons, 2.3, -3.16, 2.2, 3, .3, () => S.aha.includes('moon') ? showCard(ahaHtml('moon'), 'Close') : toast('Three paintings of the moon: half, full, and half again. Lumen paints it every single night.'), 'Moon paintings: tap to look');
   // a telescope at the window
   const scope = G(mesh(new THREE.CylinderGeometry(.03,.03,1.1,6), dark, -.2, .55, .12).rotateZ(.25), mesh(new THREE.CylinderGeometry(.03,.03,1.1,6), dark, .2, .55, .12).rotateZ(-.25), mesh(new THREE.CylinderGeometry(.03,.03,1.1,6), dark, 0, .55, -.18).rotateX(.3)); const tube = mesh(new THREE.CylinderGeometry(.09,.06,1,12), mat(0xd9a441, { metalness:.5 }), 0, 1.3, -.1); tube.rotation.x = -1.0; scope.add(tube);
-  thing(g, scope, -1.7, -2.5, .8, 1.9, .9, () => toast('Lumen\'s telescope. In January 1610, Galileo aimed a small telescope like this at Jupiter and saw four moons circling it. It was the first proof that not everything goes around the Earth.'), 'Telescope: tap to learn');
+  thing(g, scope, -1.7, -2.5, .8, 1.9, .9, () => toast('In 1610, Galileo aimed a small telescope like this at Jupiter. He saw four moons circling it.'), 'Telescope: tap to learn');
   // the easel
   const eas = G(mesh(new THREE.BoxGeometry(1.1,1.3,.06), cream, 0, 1.45, 0), mesh(new THREE.CircleGeometry(.3, 24), glow(0xfdf6dc), .1, 1.6, .04), mesh(new THREE.BoxGeometry(1.0,.3,.02), mat(0x16203f), 0, .98, .035)); [-.45,.45].forEach(x => eas.add(mesh(new THREE.BoxGeometry(.06,2.1,.06), wood, x, 1.05, -.06))); eas.add(mesh(new THREE.BoxGeometry(.06,1.9,.06), wood, 0, .95, -.45).rotateX(.35));
   eas.rotation.y = -.55; thing(g, eas, 2.7, .2, 1.3, 2.2, 1, () => { const L = NEIGHBORS.lumen.heartLines; openDialog('Lumen', L[Math.floor(Math.random() * L.length)], [], S.hearts.lumen); }, 'Easel: tap to hear Lumen');
   // paint pots
   const pots = G(mesh(new THREE.BoxGeometry(1.3,.06,.35), wood, 0, 1.1, 0)); [0x2b4fd6,0xf6c531,0xd6332e,0xfff6e6].forEach((c, i) => { pots.add(mesh(new THREE.CylinderGeometry(.11,.09,.2,10), mat(0xdfe6ea), -.45 + i*.3, 1.23, 0)); pots.add(mesh(new THREE.CylinderGeometry(.09,.09,.02,10), mat(c), -.45 + i*.3, 1.33, 0)); }); [-.55,.55].forEach(x => pots.add(mesh(new THREE.BoxGeometry(.06,1.1,.3), dark, x, .55, 0)));
-  pots.rotation.y = Math.PI/2; thing(g, pots, -3.3, -.6, .6, 1.5, 1.4, () => toast('Lumen\'s paints. The best blue paint was once made by grinding up a blue stone, lapis lazuli, carried all the way from Afghanistan. In the 1400s it could cost as much as gold.'), 'Paint pots: tap to learn');
+  pots.rotation.y = Math.PI/2; thing(g, pots, -3.3, -.6, .6, 1.5, 1.4, () => toast('The best blue paint was once made by grinding up a blue stone. In the 1400s it could cost as much as gold.'), 'Paint pots: tap to learn');
   // a jar of moonflower seeds
   const jar = G(mesh(new THREE.CylinderGeometry(.2,.2,.4,14), new THREE.MeshStandardMaterial({ color:0xdff3ff, transparent:true, opacity:.45 }), 0, .7, 0), mesh(new THREE.CylinderGeometry(.21,.21,.05,14), dark, 0, .93, 0), mesh(sph(.1), glow(0xfdfcf0), 0, .62, 0), mesh(new THREE.CylinderGeometry(.26,.3,.5,10), wood, 0, .25, 0)); const jh = halo(0xfdfcf0, .9, .4); jh.position.y = .65; jar.add(jh);
   thing(g, jar, -2.9, 1.8, .8, 1.1, .8, () => { if (!daily('lumenJar')) return toast('You already took a seed today. Lumen saves more by tomorrow night.'); S.seeds.starbloom = (S.seeds.starbloom || 0) + 1; sfx('plant'); floatText(`+1 ${icon('starbloom')} moonflower seed`, player.position.clone()); save(); drawHud(); toast('Lumen: "Take a moonflower seed. They open at night. I like things that wait for the dark."'); }, 'Seed jar: tap for a moonflower seed');
@@ -1472,9 +1472,9 @@ const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIG
   const bowl = G(mesh(new THREE.BoxGeometry(1.5,.08,.8), wood, 0, .85, 0), mesh(new THREE.SphereGeometry(.3,16,10,0,Math.PI*2,Math.PI/2,Math.PI/2), mat(0xdfe6ea), -.3, 1.19, 0), mesh(sph(.24), mat(0xf3e2bd), -.3, 1.08, 0), mesh(new THREE.CylinderGeometry(.04,.04,.6,8), wood, .35, .92, .1).rotateZ(Math.PI/2)); [[-.65,-.3],[.65,-.3],[-.65,.3],[.65,.3]].forEach(([x, z]) => bowl.add(mesh(new THREE.BoxGeometry(.08,.85,.08), dark, x, .42, z)));
   thing(g, bowl, 1.4, -.9, 1.6, 1.5, .9, () => HELP.mabel.run(), 'Dough bowl: tap to help Mabel');
   const jar = G(mesh(new THREE.BoxGeometry(.9,.06,.3), wood, 0, 1.3, 0), mesh(new THREE.CylinderGeometry(.16,.16,.36,12), new THREE.MeshStandardMaterial({ color:0xdff3ff, transparent:true, opacity:.5 }), 0, 1.52, 0), mesh(new THREE.CylinderGeometry(.15,.15,.22,12), mat(0xf3e2bd), 0, 1.45, 0), mesh(new THREE.BoxGeometry(.3,.02,.3), mat(0xff8fa3), 0, 1.71, 0));
-  thing(g, jar, 2.3, -3.0, 1, 2.1, .5, () => toast('Mabel\'s sourdough starter: a jar of flour and water, alive with wild yeast. She feeds it every day. Some bakeries have kept the same starter going for more than 100 years. Hers is named Doughlores.'), 'Starter jar: tap to learn');
+  thing(g, jar, 2.3, -3.0, 1, 2.1, .5, () => toast('Mabel\'s sourdough starter: a jar of flour and water, alive with wild yeast. She feeds it every day.'), 'Starter jar: tap to learn');
   const tray = G(mesh(new THREE.BoxGeometry(1.2,.06,.6), dark, 0, .9, 0)); for (let i = 0; i < 13; i++) tray.add(mesh(sph(.085), mat(0xd9a55a), -.48 + (i % 7) * .16, .97, i < 7 ? -.12 : .12)); [[-.5,-.22],[.5,-.22],[-.5,.22],[.5,.22]].forEach(([x, z]) => tray.add(mesh(new THREE.BoxGeometry(.06,.9,.06), dark, x, .45, z)));
-  thing(g, tray, -3.0, -.6, .8, 1.3, 1.3, () => toast('Count the rolls: 13. That is a baker\'s dozen. In England about 750 years ago, a baker could be punished for selling bread that was too light. So bakers threw in an extra one, to be safe.'), "A baker's dozen: tap to learn"); tray.rotation.y = Math.PI/2;
+  thing(g, tray, -3.0, -.6, .8, 1.3, 1.3, () => toast('Count the rolls: 13. That is a baker\'s dozen. Bakers once got punished for bread that was too light, so they threw in an extra one.'), "A baker's dozen: tap to learn"); tray.rotation.y = Math.PI/2;
   const sacks = G(); [[0,0],[.5,.1],[.22,-.05]].forEach(([x, z], i) => { const sk = mesh(sph(.3), mat(0xf1e6cf), x, i === 2 ? .7 : .26, z); sk.scale.set(1, .85, .8); sacks.add(sk); });
   thing(g, sacks, 3.0, 1.4, 1.2, 1.1, .9, hearts('mabel'), 'Flour sacks: tap to hear Mabel');
   g.add(mesh(new THREE.CylinderGeometry(1.2,1.2,.03,28), mat(0xff8fa3), 0, .02, .6));
@@ -1488,7 +1488,7 @@ const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIG
   const cart = G(mesh(new THREE.BoxGeometry(1,.06,.5), wood, 0, .7, 0), mesh(new THREE.BoxGeometry(1,.06,.5), wood, 0, .3, 0)); [0,1,2,3,4].forEach(i => cart.add(mesh(new THREE.BoxGeometry(.14,.4,.3), mat(cols[i]), -.32 + i * .16 + (i === 3 ? .02 : 0), .93, 0))); [[-.45,-.2],[.45,-.2],[-.45,.2],[.45,.2]].forEach(([x, z]) => { cart.add(mesh(new THREE.BoxGeometry(.05,.75,.05), dark, x, .38, z)); cart.add(mesh(sph(.06), mat(0x3b2f4a), x, .06, z)); });
   thing(g, cart, 1.5, -.6, 1.1, 1.3, .7, () => HELP.hoot.run(), 'Book cart: tap to help Hoot');
   const cat = G(mesh(new THREE.BoxGeometry(1.1,1.1,.5), wood, 0, .55, 0)); for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) { cat.add(mesh(new THREE.BoxGeometry(.22,.26,.04), mat(0xc98f58), -.39 + c * .26, .22 + r * .33, .26)); cat.add(mesh(sph(.025), mat(0xffc857), -.39 + c * .26, .22 + r * .33, .29)); }
-  thing(g, cat, -3.1, -.4, .7, 1.2, 1.2, () => toast('The card drawers. Every book has a number, so it has exactly one home on the shelf. Melvil Dewey came up with a number system for libraries in 1876, and many still use it. Hoot knows all the numbers by heart. He will tell you so.'), 'Card drawers: tap to learn'); cat.rotation.y = Math.PI/2;
+  thing(g, cat, -3.1, -.4, .7, 1.2, 1.2, () => toast('The card drawers. Every book has a number, so it has exactly one home on the shelf.'), 'Card drawers: tap to learn'); cat.rotation.y = Math.PI/2;
   const chair = G(mesh(new THREE.BoxGeometry(.8,.4,.8), mat(0x4cb86a), 0, .35, 0), mesh(new THREE.BoxGeometry(.8,.8,.16), mat(0x4cb86a), 0, .75, -.34), mesh(new THREE.CylinderGeometry(.03,.05,1.4,8), dark, .75, .7, -.2), mesh(new THREE.ConeGeometry(.26,.28,12,1,true), glow(0xfff3a0), .75, 1.5, -.2));
   chair.rotation.y = .6; thing(g, chair, -2.6, 1.5, 1.6, 1.6, 1.1, hearts('hoot'), 'Reading chair: tap to hear Hoot');
   const sign = G(mesh(new THREE.BoxGeometry(.9,.4,.04), mat(0xfff6e6), 0, 1.9, 0), mesh(new THREE.BoxGeometry(.6,.06,.02), mat(0x3b2f4a), 0, 1.95, .03), mesh(new THREE.BoxGeometry(.4,.06,.02), mat(0x3b2f4a), 0, 1.83, .03));
@@ -1504,11 +1504,11 @@ const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIG
   const gl = G(mesh(new THREE.BoxGeometry(1.2,.06,.4), wood, 0, .85, 0)); [.9,.65,.4,.2].forEach((f, i) => { gl.add(mesh(new THREE.CylinderGeometry(.09,.07,.3,10), new THREE.MeshStandardMaterial({ color:0xeef7fb, transparent:true, opacity:.45 }), -.42 + i * .28, 1.03, 0)); gl.add(mesh(new THREE.CylinderGeometry(.075,.065,.28 * f,10), mat(0x7ec8e3), -.42 + i * .28, .89 + .14 * f, 0)); }); [-.5,.5].forEach(x => gl.add(mesh(new THREE.BoxGeometry(.06,.85,.3), wood, x, .42, 0)));
   thing(g, gl, 2.9, .3, .6, 1.4, 1.3, () => HELP.allegra.run(), 'Water glasses: tap to help Allegra'); gl.rotation.y = Math.PI/2;
   const piano = G(mesh(new THREE.BoxGeometry(1.5,1.1,.5), dark, 0, .55, 0), mesh(new THREE.BoxGeometry(1.4,.06,.3), mat(0xfff6e6), 0, .72, .38), mesh(new THREE.BoxGeometry(1.5,.08,.34), dark, 0, .66, .38)); for (let i = 0; i < 9; i++) if (i % 7 !== 2 && i % 7 !== 6) piano.add(mesh(new THREE.BoxGeometry(.07,.04,.17), dark, -.56 + i * .14, .77, .32));
-  thing(g, piano, 1.4, -2.75, 1.6, 1.5, .9, () => toast('A piano has 88 keys: 52 white and 36 black. The black keys by themselves make a five-note scale. Play only those, and nothing you play sounds wrong.'), 'Piano: tap to learn');
+  thing(g, piano, 1.4, -2.75, 1.6, 1.5, .9, () => toast('A piano has 88 keys: 52 white and 36 black. Play only the black keys, and nothing you play sounds wrong.'), 'Piano: tap to learn');
   const met = G(mesh(new THREE.BoxGeometry(.5,.9,.4), wood, 0, .45, 0), mesh(new THREE.ConeGeometry(.2,.5,4), mat(0x9b6b4a), 0, 1.15, 0).rotateY(Math.PI/4), mesh(new THREE.BoxGeometry(.02,.42,.02), mat(0xd9a441, { metalness:.5 }), .05, 1.12, .15).rotateZ(-.25), mesh(new THREE.BoxGeometry(.06,.06,.03), mat(0xd9a441, { metalness:.5 }), .08, 1.2, .15));
-  thing(g, met, -1.6, -2.6, .7, 1.5, .6, () => { [0, 1, 2, 3].forEach(i => setTimeout(() => tone(i ? 880 : 1175, { dur:.06, vol:.05 }), i * 500)); toast('Tick. Tick. Tick. A metronome keeps a steady beat so musicians stay together. Johann Maelzel patented this kind in 1815. Allegra says it is the only one in the band who is never late.'); }, 'Metronome: tap to hear it');
+  thing(g, met, -1.6, -2.6, .7, 1.5, .6, () => { [0, 1, 2, 3].forEach(i => setTimeout(() => tone(i ? 880 : 1175, { dur:.06, vol:.05 }), i * 500)); toast('Tick. Tick. Tick. A metronome keeps a steady beat so musicians stay together.'); }, 'Metronome: tap to hear it');
   const fork = G(mesh(new THREE.BoxGeometry(.5,.9,.3), wood, 0, .45, 0), mesh(new THREE.CylinderGeometry(.02,.02,.2,6), mat(0xcfd6dc, { metalness:.6 }), 0, 1, 0), mesh(new THREE.BoxGeometry(.02,.32,.02), mat(0xcfd6dc, { metalness:.6 }), -.05, 1.26, 0), mesh(new THREE.BoxGeometry(.02,.32,.02), mat(0xcfd6dc, { metalness:.6 }), .05, 1.26, 0), mesh(new THREE.BoxGeometry(.12,.02,.02), mat(0xcfd6dc, { metalness:.6 }), 0, 1.1, 0));
-  thing(g, fork, -3.1, -.4, .6, 1.5, .7, () => { tone(440, { dur:1.6, vol:.05 }); toast('A tuning fork. Hit it and it rings one pure note. This one is the note A: it shakes the air 440 times every second. Orchestras all over the world tune to it.'); }, 'Tuning fork: tap to hear it');
+  thing(g, fork, -3.1, -.4, .6, 1.5, .7, () => { tone(440, { dur:1.6, vol:.05 }); toast('A tuning fork. Hit it and it rings one pure note. Orchestras all over the world tune to this one.'); }, 'Tuning fork: tap to hear it');
   const stool = G(mesh(new THREE.CylinderGeometry(.3,.3,.1,14), mat(0xd6332e), 0, .55, 0), mesh(new THREE.CylinderGeometry(.05,.05,.5,8), dark, 0, .25, 0));
   thing(g, stool, -2.6, 1.6, .8, .8, .8, hearts('allegra'), "Allegra's stool: tap to hear her");
 }
@@ -1518,9 +1518,9 @@ const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIG
   const say = G(mesh(new THREE.BoxGeometry(1,1.5,.3), stone, 0, .75, 0), mesh(new THREE.BoxGeometry(.7,.06,.02), mat(0x3b2f4a), 0, 1.1, .16), mesh(new THREE.BoxGeometry(.6,.06,.02), mat(0x3b2f4a), 0, .92, .16), mesh(new THREE.BoxGeometry(.66,.06,.02), mat(0x3b2f4a), 0, .74, .16), mesh(new THREE.BoxGeometry(1.2,.12,.5), stone, 0, .06, 0));
   thing(g, say, -.6, -2.8, 1.2, 1.7, .6, () => useTemple(), "Saying stone: tap for today's saying");
   const pond = G(mesh(new THREE.CylinderGeometry(1.1,1.1,.08,28), stone, 0, .04, 0), mesh(new THREE.CylinderGeometry(.95,.95,.09,28), mat(0x5fb4dc), 0, .045, 0)); [[-.3,.2,0xff7a45],[.35,-.25,0xffffff],[.1,.45,0xffc857]].forEach(([x, z, c]) => { const k = mesh(sph(.1), mat(c), x, .1, z); k.scale.set(1.7, .4, .8); pond.add(k); }); pond.add(mesh(new THREE.CylinderGeometry(.16,.16,.02,12), mat(0x4f9a5c), -.5, .1, -.35));
-  thing(g, pond, 2.4, .6, 2.2, .5, 2.2, () => { sfx('water'); toast('Three koi. Koi are carp that rice farmers in Japan bred for color about 200 years ago. Sage has named them Patience, Patience Two, and Gary.'); }, 'Koi pond: tap to look');
+  thing(g, pond, 2.4, .6, 2.2, .5, 2.2, () => { sfx('water'); toast('Three koi. Sage has named them Patience, Patience Two, and Gary.'); }, 'Koi pond: tap to look');
   const sand = G(mesh(new THREE.BoxGeometry(2,.06,1.4), mat(0xeadfc8), 0, .03, 0)); for (let i = 0; i < 6; i++) sand.add(mesh(new THREE.BoxGeometry(1.9,.015,.03), mat(0xd6c9ab), 0, .065, -.55 + i * .22)); [[-.5,-.2,.16],[.4,.2,.12],[.1,-.35,.09]].forEach(([x, z, r]) => sand.add(mesh(sph(r), stone, x, r * .7, z)));
-  thing(g, sand, -2.5, .7, 2.1, .5, 1.5, () => toast('A raked sand garden. In Japan, the raked lines stand for water and the stones for islands. The most famous one, in Kyoto, has 15 stones. They are placed so that from any spot, you can only ever see 14.'), 'Sand garden: tap to learn');
+  thing(g, sand, -2.5, .7, 2.1, .5, 1.5, () => toast('A raked sand garden. In Japan, the raked lines stand for water and the stones for islands.'), 'Sand garden: tap to learn');
   const st3 = G(mesh(sph(.34), stone, -.4, .2, 0), mesh(sph(.24), mat(0xa3a8ae), .2, .15, .1), mesh(sph(.15), mat(0xbcc1c6), .55, .1, -.1)); st3.children.forEach(c => c.scale.y = .6);
   thing(g, st3, 1.9, -2.3, 1.5, .6, 1, () => HELP.sage.run(), 'Three stones: tap to help Sage');
   const bench = G(mesh(new THREE.BoxGeometry(1.5,.1,.45), wood, 0, .45, 0)); [-.6,.6].forEach(x => bench.add(mesh(new THREE.BoxGeometry(.1,.45,.4), stone, x, .22, 0)));
@@ -1536,9 +1536,9 @@ const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIG
   const chart = G(mesh(new THREE.BoxGeometry(1.7,1.2,.05), mat(0x16203f), 0, 1.9, 0)); [[-.6,2.2],[-.3,1.9],[0,2.1],[.3,1.75],[.6,2.0],[.1,1.55],[-.5,1.6]].forEach(([x, y]) => chart.add(mesh(sph(.035), glow(0xfff3a0), x, y, .04)));
   thing(g, chart, 2.2, -3.16, 1.8, 3, .3, () => openStarList(), 'Star chart: tap to see what you have charted');
   const orr = G(mesh(new THREE.CylinderGeometry(.3,.4,.8,12), wood, 0, .4, 0), mesh(sph(.16), glow(0xffc857), 0, 1.15, 0)); [[.34,.05,0x9a93a8],[.5,.07,0xe2a15a],[.68,.075,0x5fb4dc],[.86,.06,0xd6553a]].forEach(([r, sz, c], i) => { const a = i * 1.7; orr.add(mesh(new THREE.TorusGeometry(r,.008,4,36), brass, 0, 1.15, 0).rotateX(Math.PI/2)); orr.add(mesh(sph(sz), mat(c), Math.cos(a) * r, 1.15, Math.sin(a) * r)); }); g.userData.orr = orr;
-  thing(g, orr, -2.6, .3, 1.9, 1.5, 1.9, () => toast('A model of the planets going around the sun. It is called an orrery, after the Earl of Orrery, who had one made about 300 years ago. Third from the sun, the blue one: that is us.'), 'Planet model: tap to learn');
+  thing(g, orr, -2.6, .3, 1.9, 1.5, 1.9, () => toast('A model of the planets going around the sun. Third from the sun, the blue one: that is us.'), 'Planet model: tap to learn');
   const rock = G(mesh(new THREE.CylinderGeometry(.22,.3,.9,10), wood, 0, .45, 0), mesh(new THREE.DodecahedronGeometry(.2), mat(0x3b3438, { metalness:.3 }), 0, 1.08, 0));
-  thing(g, rock, 2.7, .4, .8, 1.4, .8, () => toast('A meteorite: a rock that fell from space. Most are about 4.56 billion years old. The oldest rock ever found on Earth is about 4 billion years old. You are looking at something older than the ground you stand on.'), 'Meteorite: tap to learn');
+  thing(g, rock, 2.7, .4, .8, 1.4, .8, () => toast('A meteorite: a rock that fell from space. It is older than the ground you stand on.'), 'Meteorite: tap to learn');
   const desk = G(mesh(new THREE.BoxGeometry(1.2,.08,.6), wood, 0, .8, 0), mesh(new THREE.BoxGeometry(.5,.04,.36), mat(0xfff6e6), -.1, .86, 0), mesh(new THREE.BoxGeometry(.02,.045,.36), mat(0xd6332e), -.1, .862, 0), mesh(new THREE.CylinderGeometry(.02,.02,.3,6), mat(0xffc857), .35, .87, .1).rotateZ(1.3)); [[-.5,-.22],[.5,-.22],[-.5,.22],[.5,.22]].forEach(([x, z]) => desk.add(mesh(new THREE.BoxGeometry(.07,.8,.07), dark, x, .4, z)));
   thing(g, desk, -2.4, -2.6, 1.3, 1.2, .8, () => showCard(`<div class="kicker">ON THE DESK</div><h2>Your grandmother's star notebook</h2><p>"Monday: clear sky. Counted stars. Lost count at 412."</p><p>"Tuesday: started again. Lost count at 388. A moth landed on my nose."</p><p>"Wednesday: stopped counting. Just looked. Much better."</p>`, 'Close'), 'Notebook: tap to read');
   g.add(mesh(new THREE.CylinderGeometry(1.3,1.3,.03,28), mat(0x232a52), 0, .02, .7)); g.add(mesh(new THREE.CylinderGeometry(.5,.5,.035,5), glow(0xfff3a0), 0, .02, .7));
@@ -1550,7 +1550,7 @@ function drawMuseum() { S.museum = S.museum || {}; Object.entries(museumBits).fo
 function museumFact(k) { const b = INSECTS.find(x => x.id === k); return b ? `<p>${b.fact}</p>` : FINDS[k] ? `<p>${FINDS[k].fact}</p>${FINDS[k].see ? `<h4>See it for yourself</h4><p>${FINDS[k].see}</p>` : ''}` : ''; }
 function museumWing(kind, msg) { S.museum = S.museum || {}; const W = MUSEUM[kind], n = W.ids.filter(k => S.museum[k]).length;
   const known = k => S.found.includes(k) || (S.bugs || []).includes(k), hidden = W.ids.filter(k => !S.museum[k] && !known(k)).length;
-  showCard(`<div class="kicker">THE MUSEUM</div><h2>${W.name}: ${n} of ${W.ids.length}</h2><p>${msg || `Give the museum one of each. Each one goes on show for good, and you get 25 coins. To give one, carry it here in your bag.${n ? ' Tap one on show to read its sign.' : ''}`}</p>
+  showCard(`<div class="kicker">THE MUSEUM</div><h2>${W.name}: ${n} of ${W.ids.length}</h2><p>${msg || `Bring one of each here in your bag, then tap it below. You get 25 coins and it goes on show for good.${n ? ' Tap one on show to read its sign.' : ''}`}</p>
     <div class="jlist">${W.ids.filter(k => S.museum[k] || known(k)).map(k => S.museum[k] ? `<button data-mx="${k}">${icon(k, kind)} ${ITEMS[k].name} <span class="sub">On show</span></button>`
       : (S.bag[k] || 0) > 0 ? `<button data-mg="${k}">${icon(k, kind)} ${ITEMS[k].name} <span class="sub">Tap to give 1 of your ${S.bag[k]}</span></button>`
       : `<button class="locked">${icon(k, kind)} ${ITEMS[k].name}</button>`).join('')}</div>${hidden ? `<p class="sub" style="margin-top:8px">${hidden} more you have not found yet.</p>` : ''}`, 'Close');
@@ -1566,9 +1566,9 @@ function museumRelics() { const got = RELICS.filter(r => S.aha.includes(r.id));
     ${got.length ? '<p>Tap one to read its sign.</p>' : ''}<div class="jlist">${got.map(r => `<button data-mr="${r.id}">${AHA[r.id].title}</button>`).join('')}</div>${got.length < RELICS.length ? `<p class="sub" style="margin-top:8px">${RELICS.length - got.length} still buried. Dig up gold sparkles on your island.</p>` : ''}`, 'Close');
   document.querySelectorAll('[data-mr]').forEach(b => b.onclick = () => showCard(ahaHtml(b.dataset.mr), 'Back', museumRelics)); }
 function museumDesk() { S.museum = S.museum || {}; const total = Object.values(MUSEUM).reduce((a, w) => a + w.ids.length, 0), n = Object.keys(S.museum).length;
-  showCard(`<div class="kicker">THE MUSEUM</div><h2>${n} of ${total} on show</h2><p>This museum starts empty. Everything in it is something you found and gave. Tap the tank, the bug wall, or the harvest stand to give things.</p>
+  showCard(`<div class="kicker">THE MUSEUM</div><h2>${n} of ${total} on show</h2><p>Tap the fish tank, the bug wall, or the harvest stand to give things. Everything on show is something you found.</p>
     <div class="jlist">${Object.values(MUSEUM).map(w => `<button>${w.name} <span class="sub">${w.ids.filter(k => S.museum[k]).length} of ${w.ids.length}</span></button>`).join('')}</div>
-    <h4>In real life</h4><p>The British Museum in London opened in 1759. It was the first national museum open to everyone, free, for "all studious and curious persons." It is still free today.</p>`, 'Close'); }
+    <h4>In real life</h4><p>The British Museum in London opened in 1759. It was the first national museum open to everyone, free. It is still free today.</p>`, 'Close'); }
 { const g = makeRoom('museum', 11, { name:'The Museum', floor:0xf1ece2, line:0xddd5c6, wall:0xfff6e6, wall2:0xf3e9d6, trim:0xd9a441, mat:0xd6332e, winX:-2.8, out:() => new THREE.Vector3(ORCH_POS.x - .6, ORCH_POS.y, ORCH_POS.z - 2.2) });
   const stone = mat(0xd9d2c4), wood = mat(0x7a5236), brass = mat(0xd9a441, { metalness:.5 });
   // the fish tank
@@ -1908,7 +1908,12 @@ muteBtn.onclick = () => { muted = !muted; try { localStorage.setItem(MUTE_KEY, m
 // ============ UI ============
 const $ = id => document.getElementById(id);
 let toastT;
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+// messages at the bottom of the screen: each stays long enough to read, they take turns instead of replacing each other, and a tap closes one early
+const toastQ = []; let toastOn = false;
+function toast(msg) { msg = String(msg); if (toastOn && ($('toast').textContent === msg || toastQ.includes(msg))) return; if (toastOn) { if (toastQ.length < 3) toastQ.push(msg); return; }
+  const t = $('toast'); t.textContent = msg; t.classList.add('show'); toastOn = true; clearTimeout(toastT); toastT = setTimeout(toastNext, Math.min(9000, Math.max(2600, 1300 + msg.length * 60))); }
+function toastNext() { clearTimeout(toastT); $('toast').classList.remove('show'); toastOn = false; if (toastQ.length) { const m = toastQ.shift(); setTimeout(() => toast(m), 280); } }
+$('toast').addEventListener('click', toastNext);
 const hex = c => '#' + c.toString(16).padStart(6,'0');
 const ICON = {
   coin:'<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#ffc857" stroke="#d99a2b" stroke-width="2"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="#d99a2b" stroke-width="1.6"/></svg>',
@@ -2017,7 +2022,7 @@ const RELIC_PLAY = {
     const draw = (msg) => { const n = Object.keys(tried[60]).length + Object.keys(tried[10]).length;
       const row = t => `<h4>${t} loaves, shared between...</h4><div class="chips">${[2, 3, 4, 5, 6].map(p => { const ok = t % p === 0, d = tried[t][p]; return `<button data-sh="${t}:${p}" class="${d ? '' : 'ghost'}" style="${d ? `background:${ok ? '#8fdc8a' : '#ffb3b3'}` : ''}">${p} people${d ? (ok ? `: ${t / p} each` : `: ${t % p} left over`) : ''}</button>`; }).join('')}</div>`;
       showCard(`<div class="kicker">YOU DUG THIS UP</div><h2>A clay tablet of wedge marks</h2><p>${msg || 'The marks are numbers. The people who wrote them counted in 60s, not 10s. <b>Try sharing out 60 loaves, then 10 loaves, and see why.</b>'}</p>${row(60)}${row(10)}
-        ${n >= 6 ? '<button id="rpNext">So that is why</button>' : `<p class="sub" style="margin-top:8px">Try a few of each.</p>`}`, null);
+        ${n >= 6 ? '<button id="rpNext">So that is why</button>' : `<p class="sub" style="margin-top:8px">Tap ${6 - n} more to see why.</p>`}`, null);
       document.querySelectorAll('[data-sh]').forEach(b => b.onclick = () => { const [t, p] = b.dataset.sh.split(':').map(Number); tried[t][p] = 1; const ok = t % p === 0; sfx(ok ? 'pick' : 'click');
         draw(ok ? `<b>${t} loaves between ${p}: ${t / p} each, none left.</b>` : `<b>${t} loaves between ${p}: ${t % p} left over.</b> Somebody is going to argue.`); });
       if ($('rpNext')) $('rpNext').onclick = () => { hideCard(); done(); }; };
@@ -2097,7 +2102,7 @@ const PLAY = (() => { const pc = (k, t, body) => showCard(`<div class="kicker">$
     draw(); },
   nowruz(done) { const IT = [['🌱', 'Sprouts', 'sabzeh', 1], ['🪞', 'A mirror', 'ayneh', 0], ['🍎', 'An apple', 'sib', 1], ['🧄', 'Garlic', 'sir', 1], ['🐟', 'A goldfish', 'mahi', 0], ['🫙', 'Vinegar', 'serkeh', 1], ['🌶️', 'Sumac spice', 'somaq', 1], ['🕯️', 'A candle', 'sham', 0], ['🍮', 'Sweet pudding', 'samanu', 1], ['🫒', 'Dried oleaster fruit', 'senjed', 1]], pick = new Set();
     const draw = (msg) => { const good = IT.every((x, i) => !!x[3] === pick.has(i)); pc('NOWRUZ', 'Set the table', `<p>${msg || 'Nana\'s table has ten things on it. The custom is called Haft-sin: seven things whose Persian names start with the letter S. <b>Tap the seven.</b>'}</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">${IT.map((x, i) => `<button data-nz="${i}" class="${pick.has(i) ? '' : 'ghost'}" style="margin:0;text-align:left">${x[0]} ${x[1]}<br><span class="sub"><i>${x[2]}</i></span></button>`).join('')}</div>${good ? nx() : `<p class="sub" style="margin-top:6px">${pick.size} picked.</p>`}`);
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">${IT.map((x, i) => `<button data-nz="${i}" class="${pick.has(i) ? '' : 'ghost'}" style="margin:0;text-align:left">${x[0]} ${x[1]}<br><span class="sub"><i>${x[2]}</i></span></button>`).join('')}</div>${good ? nx() : `<p class="sub" style="margin-top:6px">${pick.size > 7 ? `${pick.size} picked. That is too many. Take ${pick.size - 7} off.` : `${pick.size} of 7 picked.`}</p>`}`);
       each('[data-nz]', b => { const i = +b.dataset.nz; if (pick.has(i)) { pick.delete(i); return draw(); } pick.add(i); sfx('click'); draw(IT[i][3] ? null : `<b>${IT[i][2][0].toUpperCase() + IT[i][2].slice(1)}</b> is on many tables too, but it ${IT[i][2] === 'sham' ? 'starts with the sound "sh", which is a different letter' : `starts with ${IT[i][2][0].toUpperCase()}`}. Tap it again to take it off.`); }); on(done); };
     draw(); },
   muertos(done) { const IT = [['🖼️', 'Her photo', 'So everyone knows who this is for.'], ['🌼', 'Marigolds', 'Bright orange, with a strong smell, to guide her home.'], ['🕯️', 'Candles', 'One small light for each person remembered.'], ['🍞', 'Sweet bread', 'Baked for this day, with a pattern like bones on top.'], ['🍵', 'Her favorite tea', 'Whatever she loved most. For your grandmother, it was mint tea.']], put = [];
@@ -2215,7 +2220,7 @@ function birthdayPicker(done, fromNana) {
       if (!y) return draw('Pick the year too.');
       if (d > new Date(2024, m, 0).getDate()) return draw(`${MONTH_LONG[m-1]} only has ${new Date(2024, m, 0).getDate()} days.`);
       S.birthday = { m, d, y }; S.ageBand = ageBand(); S.birthdayAsked = true; save(); hideCard(); toast(`Birthday saved: ${MONTH_LONG[m-1]} ${d}.`); done && done(); };
-    $('bdSkip').onclick = () => { S.birthdayAsked = true; save(); hideCard(); S.ageBand = 'kid'; save(); toast('Your island will celebrate the day you started instead. To add your birthday later, tap Bag, then Settings.'); done && done(); };
+    $('bdSkip').onclick = () => { S.birthdayAsked = true; save(); hideCard(); S.ageBand = 'kid'; save(); toast('Skipped. To add your birthday later, tap Bag, then Settings.'); done && done(); };
   };
   draw();
 }
@@ -2291,7 +2296,7 @@ async function openMoveGame(back) {
     <h4>Your sync key</h4>
     <p style="font:700 20px monospace;letter-spacing:.05em;margin-top:4px;word-break:break-all" id="myKey">${prettyKey(S.syncKey)}</p>
     <button id="copyKey">Copy sync key</button>
-    <p style="margin-top:8px">On another phone or computer, open Sky Garden, tap <b>Sync my game</b>, and enter this key. After that, both devices stay in sync. Keep your key private: anyone who has it can load your garden.</p>
+    <p style="margin-top:8px">On your other device, open Sky Garden. Tap <b>Bag</b>, then <b>Settings</b>, then <b>Sync my game to another device</b>. Enter this key there. Keep your key private: anyone who has it can load your garden.</p>
     <h4>Have a sync key from another device?</h4>
     <input id="theirKey" placeholder="Type or paste a sync key" autocomplete="off" style="width:100%;margin-top:8px;font:16px monospace;border-radius:12px;border:2px solid #eadfd0;padding:10px">
     <button id="loadKey">Load from cloud</button>
@@ -2406,7 +2411,7 @@ function helpDone(id, know, thanks) { const first = !(S.helped || []).includes(i
   save(); drawHud(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
   // one thing at a time: first what the neighbor says, then the idea on its own card
   const said = id === 'twins' ? thanks.split(/(?=Moss: |Fern: )/).map(l => l.replace(/^(Moss|Fern): /, '<b>$1:</b> ')).join('<br>') : `"${thanks}"`;
-  showCard(`<div class="kicker">${NEIGHBORS[id].name.toUpperCase()}</div><p style="font-size:18px;line-height:1.5">${said}</p>`, 'Next', () => showCard(knowHtml(x) + (isNew ? '<p style="margin-top:10px"><b>+40 coins.</b> Saved in Collections, under Know-how.</p>' : ''), 'Huh. Neat.', () => { if (id === 'pip' && S.meetPip) { delete S.meetPip; save(); drawHud(); if ((S.home || 0) < 3) setTimeout(() => openDialog('Pip', "You are the new Keeper! Nana says you have no roof. That is rough. I slept in my hat for a year. Go gather sticks and stones, and make an axe at the old tree stump by your garden.", [], S.hearts.pip), 500); } })); }
+  showCard(`<div class="kicker">${NEIGHBORS[id].name.toUpperCase()}</div><p style="font-size:18px;line-height:1.5">${said}</p>`, 'Next', () => showCard(knowHtml(x) + (isNew ? '<p style="margin-top:10px"><b>+40 coins.</b> Saved in Collections, under Know-how.</p>' : ''), 'Huh. Neat.', () => { if (id === 'pip' && S.meetPip) { delete S.meetPip; save(); drawHud(); if ((S.home || 0) < 3) setTimeout(() => openDialog('Pip', "You are the new Keeper! Nana says you have no roof. I slept in my hat for a year. First, gather sticks and stones. Then make an axe at the old tree stump by your garden.", [], S.hearts.pip), 500); } })); }
 const HELP = {
   pip: { label:'Help price the lemonade', run() { const tried = {}; let best = null;
     const draw = (msg = '"I made 10 cups of lemonade. Each cup cost me 2 coins to make. What should I charge?"') => { const n = Object.keys(tried).length;
@@ -2468,14 +2473,14 @@ const HELP = {
   mabel: { label:'Help the dough rise', run() { const tried = {};
     const out = { cold:'An hour later, the dough has barely moved. It looks sleepy. <b>Too cold.</b>', warm:'An hour later, the dough is twice as big, soft, and full of bubbles. <b>Just right.</b>', hot:'The dough puffed up fast, then stopped. The bottom is cooked hard. <b>Too hot.</b> Mabel: "Gerald, no!"' };
     const draw = (k) => { if (k) tried[k] = 1;
-      showCard(`<div class="kicker">HELP MABEL</div><h2>🍞 The dough that will not rise</h2><p>${k ? out[k] : '"My dough needs to rest for an hour before I bake it. But where? Somewhere in this kitchen is the right spot. I have three balls of dough. Try them."'}</p>
+      showCard(`<div class="kicker">HELP MABEL</div><h2>🍞 The dough that will not rise</h2><p>${k ? out[k] : '"My dough needs to rest for an hour before I bake it. But where? I have three balls of dough. Try a spot with each."'}</p>
         <h4>Where should the dough rest?</h4><div class="chips">${[['cold', '❄️ By the open window'], ['warm', '☀️ On the shelf near the oven'], ['hot', '🔥 On top of the hot oven']].map(([id, l]) => `<button data-dg="${id}" class="${tried[id] ? 'ghost' : ''}">${l}</button>`).join('')}</div>
         ${tried.warm ? '<button id="hpDone">Tell Mabel: the warm shelf</button>' : '<p class="sub" style="margin-top:8px">Try a spot and see what happens.</p>'}`, 'Later');
       document.querySelectorAll('[data-dg]').forEach(b => b.onclick = () => { sfx(b.dataset.dg === 'warm' ? 'pick' : 'click'); draw(b.dataset.dg); });
       if ($('hpDone')) $('hpDone').onclick = () => helpDone('mabel', 'warm', 'Warm, not hot. Like a good bath. I will tell Gerald to keep his distance.'); };
     draw(); } },
   hoot: { label:'Help find the lost book', run() { const target = 1 + Math.floor(Math.random() * 16); let lo = 1, hi = 16, tries = 0, found = false;
-    const draw = (msg = '"Hoo. Someone put a book back in the wrong place. The shelf has 16 books, in order from 1 to 16. Open one and I will tell you if the lost book is earlier or later. I get tired, so use as few tries as you can."') => {
+    const draw = (msg = '"Hoo. Someone put a book back in the wrong place. <b>Tap a book to open it.</b> I will tell you if the lost book is earlier or later. Use as few tries as you can."') => {
       showCard(`<div class="kicker">HELP PROFESSOR HOOT</div><h2>📚 The lost book</h2><p>${msg}</p>
         <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px">${Array.from({ length:16 }, (_, k) => k + 1).map(n => `<button data-bk="${n}" class="${n < lo || n > hi ? 'ghost' : ''}" ${found || n < lo || n > hi ? 'disabled' : ''} style="padding:10px 0;${n < lo || n > hi ? 'opacity:.35' : ''}${found && n === target ? ';background:#8fdc8a' : ''}">${n}</button>`).join('')}</div>
         <p class="sub" style="margin-top:8px">Tries so far: <b>${tries}</b>${found ? '' : `. The book is somewhere from ${lo} to ${hi}.`}</p>
@@ -2494,7 +2499,7 @@ const HELP = {
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">${order.map((g, k) => glass(g, k)).join('')}</div>
         ${won ? '<button id="hpDone">Play it for Allegra</button>' : `<p class="sub" style="margin-top:8px">${seq.length ? `You have tapped ${seq.length} of 4.` : 'Each tap plays the glass and counts as your next pick.'} <button id="glReset" class="ghost" style="padding:2px 10px">Start over</button></p>`}`, 'Later');
       if ($('glReset')) $('glReset').onclick = () => { seq = []; draw(); };
-      document.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { const k = +b.dataset.gl, g = order[k]; if (won) return chime(G[g][2]); chime(G[g][2]); if (muted) toast('Sound is off, so the words will tell you each note.');
+      document.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { const k = +b.dataset.gl, g = order[k]; if (won) return chime(G[g][2]); chime(G[g][2]); if (muted && !G.told) { G.told = 1; toast('Sound is off, so the words will tell you each note.'); }
         if (seq.includes(k)) return draw(`${G[g][0]}: <b>${G[g][3]}.</b>`);
         seq.push(k);
         if (seq.length < 4) return draw(`${G[g][0]}: <b>${G[g][3]}.</b>`);
@@ -2506,7 +2511,7 @@ const HELP = {
   sage: { label:'Help stack the garden stones', run() { const ST = [['big', 'Big flat stone', 46], ['mid', 'Middle stone', 32], ['small', 'Small round stone', 20]]; let stack = [];
     const pile = () => { let y = 84, h = ''; stack.forEach(k => { const w = ST.find(x => x[0] === k)[2], hh = w * .42; y -= hh; h += `<ellipse cx="100" cy="${y + hh / 2}" rx="${w}" ry="${hh / 2}" fill="${{ big:'#8a8f96', mid:'#a3a8ae', small:'#bcc1c6' }[k]}"/>`; });
       return `<svg viewBox="0 0 200 90" style="display:block;width:100%;max-width:240px;margin:8px auto 0" aria-hidden="true"><path d="M10 84 H190" stroke="#8fbf7a" stroke-width="4" stroke-linecap="round"/>${h}</svg>`; };
-    const draw = (msg = '"These three stones marked the garden path. The wind knocked them down. Stack them so they stand. There is no hurry. Tap the stone that should go on the bottom first."', won) => {
+    const draw = (msg = '"The wind knocked down these three path stones. Stack them so they stand. There is no hurry."', won) => {
       showCard(`<div class="kicker">HELP SAGE</div><h2>🪨 Three stones</h2><p>${msg}</p>${pile()}
         ${won ? '<button id="hpDone">Show Sage</button>' : `<h4>${stack.length ? 'Which stone goes on next?' : 'Which stone goes on the bottom?'}</h4><div class="chips">${ST.filter(x => !stack.includes(x[0])).map(x => `<button data-sn="${x[0]}">${x[1]}</button>`).join('')}</div>`}`, 'Later');
       document.querySelectorAll('[data-sn]').forEach(b => b.onclick = () => { stack.push(b.dataset.sn); sfx('click');
@@ -2560,8 +2565,9 @@ function goal(t, n=1) {
   ensureGoals();
   const g = S.goals.list.find(x => x.t === t && x.have < x.need); if (!g) return;
   g.have = Math.min(g.need, g.have + n);
-  if (g.have >= g.need) { S.coins += 20; setTimeout(() => { toast(`Goal done: ${GOAL_TYPES[t](g.need)}! +20 coins`); sfx('coin'); }, 700); }
-  if (!S.goals.bonus && S.goals.list.every(x => x.have >= x.need)) { S.goals.bonus = true; S.coins += 30; did('goals'); setTimeout(() => { toast('All 3 goals done today! +30 bonus coins'); sfx('heart'); }, 2400); }
+  const allDone = !S.goals.bonus && S.goals.list.every(x => x.have >= x.need);
+  if (g.have >= g.need) { S.coins += 20; if (!allDone) setTimeout(() => { toast(`Goal done: ${GOAL_TYPES[t](g.need)}! +20 coins`); sfx('coin'); }, 700); }
+  if (allDone) { S.goals.bonus = true; S.coins += 30; did('goals'); setTimeout(() => { toast('All 3 goals done today! +20 coins, and +30 bonus coins'); sfx('heart'); }, 700); }
   drawHud(); save();
 }
 function communityGoal() {
@@ -2711,7 +2717,7 @@ function currentHowto() {
   if (S.q4 < 5) return HOWTO.c4[S.q4];
   return HOWTO.c5[S.q5];
 }
-$('quest').onclick = () => { if (VISIT) return goHome(); sfx('click'); showCard(`<div class="kicker">WHAT TO DO</div><h2>${$('quest').querySelector('.qt').textContent}</h2><p>${currentHowto()}</p>${hutLine() ? `<h4>Your hut</h4><p>${homeStep().text}</p><p>Build it in 3 steps. 1: Pick up sticks, stones, and grass. 2: Make an axe and a pickaxe at the tree stump workbench. 3: Chop trees, break rocks, and cut bushes, then tap the spot where your hut stood. Until then, you sleep by the campfire.</p>` : ''}<h4>Tip</h4><p>A gold arrow floats over the next thing to tap.</p>`, 'Got it'); };
+$('quest').onclick = () => { if (VISIT) return goHome(); sfx('click'); showCard(`<div class="kicker">WHAT TO DO</div><h2>${$('quest').querySelector('.qt').textContent}</h2><p>${currentHowto()}</p>${hutLine() ? `<h4>Your hut: step ${(S.home || 0) + 1} of 3</h4><p>${homeStep().text}</p>` : ''}<h4>Tip</h4><p>A gold arrow floats over the next thing to tap.</p>`, 'Got it'); };
 const hutLine = () => !VISIT && S.tut >= 9 && !meetingPip() && (S.home || 0) < 3 ? `<span class="q2"><b>YOUR HUT: STEP ${(S.home || 0) + 1} OF 3</b>${homeStep().text}</span>` : '';
 function drawQuest() { drawQuestMain(); const h = hutLine(); if (h) $('quest').insertAdjacentHTML('beforeend', h); }
 function drawQuestMain() {
@@ -2741,7 +2747,7 @@ function useTile(i) {
     if (!c.seasons.includes(season()) || S.seeds[S.sel] <= 0) { const k2 = Object.keys(CROPS).find(k => S.seeds[k] > 0 && CROPS[k].seasons.includes(season()));
       if (k2) { S.sel = k2; c = CROPS[k2]; drawHud(); toast(`Planting ${c.name}. To plant something else, tap a seed in the bar at the bottom first.`); } }
     if (!c.seasons.includes(season())) { toast(`${c.name} only grows in ${c.seasons.map(s => SEASONS[s]).join(' and ')}. Pick another seed from the bar below.`); return; }
-    if (S.seeds[S.sel] <= 0) { toast('You have no seeds that grow this season. Pip sells seeds at his cart on the Town Square.'); return; }
+    if (S.seeds[S.sel] <= 0) { toast('No seeds for this season. Buy some from Pip on the Town Square.'); return; }
     S.seeds[S.sel]--; Object.assign(t, { s:2, c:S.sel, d:0 }); goal('plant'); sfx('plant'); if (tutActive()) toast(`Planted ${c.name}. Tap to water.`); else fx(`🌱 ${c.name}`);
   } else {
     const c = CROPS[t.c];
@@ -2803,7 +2809,7 @@ function drawShop() { const st = (S.shop && S.shop.stage) || 0; shopBits.forEach
 function shopEarn(total, sold) { const d = shopData(); d.earn += total; Object.entries(sold).forEach(([k, c]) => { if (c) d.by[k] = (d.by[k] || 0) + c; });
   let up = d.stage; SHOP_STAGES.forEach((st, i) => { if (d.earn >= st.at) up = Math.max(up, i); });
   if (up > d.stage) { d.stage = up; drawShop(); const st = SHOP_STAGES[up]; setTimeout(() => { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => chime(f), i * 120)); burst(crate.position.clone().setY(1.4), 0xffc857, 30);
-      showCard(`<div class="kicker">${st.term}</div><h2>Your ${SHOP_STAGES[up - 1].name.toLowerCase()} is now a ${st.name.toLowerCase()}</h2><p><b>${st.title}.</b></p><p class="gap">${st.real}</p><p class="gap">${st.today}</p><p class="gap"><b>New:</b> ${st.perk}</p>`, 'See my shop', () => shopCard()); }, 900); } }
+      showCard(`<div class="kicker">MY SHOP</div><h2>Your ${SHOP_STAGES[up - 1].name.toLowerCase()} is now a ${st.name.toLowerCase()}</h2><p><b>New:</b> ${st.perk}</p>`, 'Next', () => showCard(`<div class="kicker">${st.term}</div><h2>${st.title}</h2><p>${st.real}</p><p class="gap">${st.today}</p>`, 'See my shop', () => shopCard())); }, 900); } }
 function shopCard() { const d = shopData(), st = d.stage, next = SHOP_STAGES[st + 1];
   const top = Object.entries(d.by).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const perDay = Object.entries(CROPS).map(([k, c]) => [k, Math.round((c.sell * shopBonus(k) - c.seed) / c.days)]).sort((a, b) => b[1] - a[1]);
@@ -2828,7 +2834,7 @@ function useCrate() {
       <div class="igrid">${list.map(([k,n]) => `<button class="itile ${qty[k] ? 'sel' : 'off'}" data-sl="${k}" ${cur === k ? 'style="outline:3px solid #ff8fa3"' : ''}><span class="ic">${icon(k, ITEMS[k].kind)}</span><b>${qty[k]} of ${n}</b><small>${esc(ITEMS[k].name)}<br>${Math.round(qty[k] * sellPrice(k))} coins</small>${qty[k] ? '<i class="chk">✓</i>' : ''}</button>`).join('')}</div>
       ${cur ? `<div class="steppers" style="margin-top:10px"><div>${esc(ITEMS[cur].name)}: sell <button id="slMinus" class="ghost">−</button> <b>${qty[cur]}</b> of ${cn} <button id="slPlus" class="ghost">+</button> <button id="slOne" class="ghost">Just 1</button> <button id="slMax" class="ghost">All</button></div></div>` : ''}
       <div style="margin-top:10px"><button id="slAll" class="ghost">Sell everything</button> <button id="slNone" class="ghost">Clear my picks</button>${tutActive() ? '' : ' <button id="slShop" class="ghost">My shop</button>'}</div>
-      <button id="slGo" ${total ? '' : 'style="opacity:.5"'}>${total ? `Sell for ${total} coins` : 'Pick something to sell'}</button>`, 'Not now');
+      <button id="slGo" ${total ? '' : 'disabled style="opacity:.5"'}>${total ? `Sell for ${total} coins` : 'Pick something to sell'}</button>`, 'Not now');
     document.querySelectorAll('[data-sl]').forEach(b => b.onclick = () => { const k = b.dataset.sl; if (cur === k) qty[k] = qty[k] ? 0 : S.bag[k]; else { cur = k; if (!qty[k]) qty[k] = S.bag[k]; } sfx('click'); draw(); });
     if (cur) { $('slMinus').onclick = () => { qty[cur] = Math.max(0, qty[cur] - 1); draw(); }; $('slPlus').onclick = () => { qty[cur] = Math.min(cn, qty[cur] + 1); draw(); }; $('slOne').onclick = () => { qty[cur] = 1; draw(); }; $('slMax').onclick = () => { qty[cur] = cn; draw(); }; }
     if ($('slShop')) $('slShop').onclick = () => shopCard();
@@ -2895,7 +2901,7 @@ function seedShop() {
   closeDialog();
   const s = season(), o = pipOrder();
   const crops = Object.entries(CROPS).filter(([,c]) => c.seasons.includes(s) && (!c.locked || S.q4 >= 5));
-  const draw = () => showCard(`<div class="kicker">PIP'S SEEDS</div><h2>${SEASONS[s]} seeds</h2><p>You have ${S.coins} coins.</p>${o && !o.done ? `<p class="itinfo">Pip wants to buy 1 ${CROPS[o.crop].name} from you today. He will pay ${o.pay} coins. That is more than the wooden crate pays. ${S.bag[o.crop] ? 'You have one: talk to Pip and tap Give Pip the ' + CROPS[o.crop].name + '.' : 'Grow one and bring it to him.'}</p>` : ''}
+  const draw = () => showCard(`<div class="kicker">PIP'S SEEDS</div><h2>${SEASONS[s]} seeds</h2><p>You have ${S.coins} coins.</p>${o && !o.done ? `<p class="itinfo">Today Pip will pay ${o.pay} coins for 1 ${CROPS[o.crop].name}. That is more than the wooden crate pays. ${S.bag[o.crop] ? 'You have one: talk to Pip and tap Give Pip the ' + CROPS[o.crop].name + '.' : 'Grow one and bring it to him.'}</p>` : ''}
     <div class="jlist">${crops.map(([k,c]) => {
       return `<div class="seedrow"><span class="ic">${icon(k)}</span><div class="si"><b>${c.name}</b> <small>${c.seed} coins each. Grows in ${c.days} days. Sells for ${c.sell} coins. You have ${S.seeds[k] || 0}.</small></div>
         <div class="sb">${[1,5,10].map(n => `<button data-sb="${k}:${n}" class="${S.coins >= c.seed * n ? '' : 'ghost'}">Buy ${n}</button>`).join('')}</div></div>`; }).join('')}</div>
@@ -2904,7 +2910,7 @@ function seedShop() {
     document.querySelectorAll('[data-sb]').forEach(b => b.onclick = () => { const [k, n] = b.dataset.sb.split(':'), c = CROPS[k], cost = c.seed * +n;
       if (S.coins < cost) { toast(`Not enough coins. ${n} ${c.name} seeds cost ${cost}.`); return; }
       S.coins -= cost; S.seeds[k] = (S.seeds[k] || 0) + +n; S.sel = k; sfx('coin'); drawHud(); save(); wire(); });
-    if ($('buyTin')) $('buyTin').onclick = () => { if (S.coins < 15) { toast('Not enough coins.'); return; } S.coins -= 15; bagAdd('tin'); sfx('coin'); save(); drawHud(); toast('Pip: Imported! From very far away. Do not ask how far. I do not know.'); wire(); };
+    if ($('buyTin')) $('buyTin').onclick = () => { if (S.coins < 15) { toast('Not enough coins.'); return; } S.coins -= 15; bagAdd('tin'); sfx('coin'); save(); drawHud(); toast('+1 tin. Pip: Imported! Do not ask from how far.'); wire(); };
   };
   wire();
 }
@@ -3063,7 +3069,7 @@ const SCENES = {
   pip3() {
     sfx('heart');
     openDialog('Pip', "Can I tell you something? I get lost. A lot. How do real birds fly across whole oceans without getting lost?", [
-      ...['The sun','The stars','Something invisible'].map(a => ({ label:a, fn:() => { closeDialog(); toast('Pip: All three?! Birds are so much cooler than me.'); setTimeout(() => showAha('migration'), 800); } })),
+      ...['The sun','The stars','Something invisible'].map(a => ({ label:a, fn:() => openDialog('Pip', "All three?! Birds are so much cooler than me.", [{ label:'How do they do it?', fn:() => { closeDialog(); showAha('migration'); } }], S.hearts.pip) })),
     ], S.hearts.pip);
   },
   pip6() {
@@ -3120,7 +3126,7 @@ function nanaQuest() {
   if (S.quest === 0) {
     S.quest = 1; if (S.tut === 1) tutAfterGreeting(); else spawnDigs(); drawHud(); save();
     openDialog('Nana Gale', `Oh! You must be ${S.name || 'the new Keeper'}. You have her eyes. See that gold sparkle by your garden? Something of hers is buried there. Tap it to dig.`, [], h);
-  } else if (S.quest === 1) openDialog('Nana Gale', `Keep digging, dear. New sparkles show up each morning.`, neighborButtons('nana'), h);
+  } else if (S.quest === 1) openDialog('Nana Gale', `Tap the gold sparkles to dig, dear. New sparkles show up each morning.`, neighborButtons('nana'), h);
   else if (S.quest === 2) openDialog('Nana Gale', "Three memories! Now, the old stone dial by your garden. Tap it when its shadow is the very shortest. Do not ask me why. Your grandmother always did.", neighborButtons('nana'), h);
   else if (S.quest === 3) openDialog('Nana Gale', "This is her Wind Bell frame. The big pipe survived, but the small ones are all mixed up. Hang the three that sound sweetest with the big one.", [{ label:'Tune the bell', fn:() => { closeDialog(); openBell(); } }, ...neighborButtons('nana')], h);
   save();
@@ -3160,7 +3166,7 @@ function openBell() {
   const picked = new Set();
   const draw = (msg='') => {
     showCard(`<div class="kicker">THE WIND BELL</div><h2>Tune the pipes</h2>
-      <p>The Wind Bell sings when wind blows across its pipes, like a flute. Each pipe is a fraction as long as the big pipe. <b>Simple fractions with small numbers sound sweet. Messy fractions with big numbers clash.</b> Tap a pipe to hear it with the big pipe. Pick the 3 simplest, then tap Ring the bell.</p>
+      <p>Tap a pipe to hear it with the big pipe. Pick the 3 simplest fractions, then tap Ring the bell. Each pipe is a fraction as long as the big pipe. <b>Simple fractions with small numbers sound sweet. Messy fractions with big numbers clash.</b></p>
       <div class="jlist">${CHIMES.map((c,i)=>`<button data-i="${i}" style="${picked.has(i)?'background:#ffc857':''}">${picked.has(i)?'✓ ':''}Pipe ${i+1}: ${c.label}</button>`).join('')}</div>
       <p style="margin-top:10px;min-height:22px;font-weight:700">${msg}</p>
       <button id="ring">Ring the bell</button> <button id="deaf" class="ghost">Give me a hint</button> <button id="later" class="ghost">Later</button>`, null);
@@ -3199,8 +3205,8 @@ function drizzleQuest() {
   if (S.quest < 4) { openDialog('Captain Drizzle', "Ahoy there! Word is your island has a broken bell. Tune it and ring it, then come find me. I will be listening.", nb, h); return; }
   if (S.q2 === 0) {
     S.q2 = 1; if (S.quest < 5) S.quest = 5; save(); drawHud();
-    openDialog('Captain Drizzle', "Ahoy! So YOU rang that bell. I am Captain Drizzle, and that is my cloud ship, the Puddle Jumper. She has not flown since the Great Gust. Help me fix her, and I will take you anywhere. First, we need fresh water. The cloud-sea water out here is salty. Use the pot by my ship.", [], h);
-  } else if (S.q2 === 1) openDialog('Captain Drizzle', "The pot, sailor! Fill it with cloud-sea water, put the little cup in the middle, lid on top, and leave it in the sun until tomorrow. Trust the captain.", nb, h);
+    openDialog('Captain Drizzle', "Ahoy! So YOU rang that bell. I am Captain Drizzle, and that is my cloud ship, the Puddle Jumper. Help me fix her, and I will take you anywhere. First, we need fresh water. The cloud-sea water out here is salty. Tap the pot by my ship.", [], h);
+  } else if (S.q2 === 1) openDialog('Captain Drizzle', "Tap the pot by my ship, sailor! That fills it and puts the cup and lid in place. Then leave it in the sun until tomorrow. Trust the captain.", nb, h);
   else if (S.q2 === 2) openDialog('Captain Drizzle', "Fresh water, check! Now the sail. The mast needs a perfect square corner or she flies in circles. Tap the ship and use my knotted rope.", nb, h);
   else if (S.q2 === 3) {
     if (hour() >= 20) openDialog('Captain Drizzle', "Good, the stars are out. A captain needs a star that never moves. Look up and find it for me. I would do it myself, but looking up makes me dizzy.", [{ label:'Look at the stars', fn:() => { closeDialog(); starPuzzle(); } }, ...nb], h);
@@ -3226,7 +3232,7 @@ function flyTo(where) {
     if (where === 'heart') player.position.set(OH.x + 7.2, OH.y, OH.z + .8); else player.position.set(ORCH_POS.x + 1, ORCH_POS.y, ORCH_POS.z + 1.5);
     S.where = 'home'; target = null; pending = null; snapCam(); S.pos = [player.position.x, player.position.y, player.position.z]; save();
     f.style.opacity = 0;
-    if (where === 'heart' && S.q5 === 1) { S.q5 = 2; save(); drawHud(); setTimeout(() => toast('The Old Heart. The great bell lies fallen in the middle.'), 700); }
+    if (where === 'heart' && S.q5 === 1) { S.q5 = 2; save(); drawHud(); setTimeout(() => toast('The Old Heart. Tap the fallen bell in the middle.'), 700); }
   }, 700);
 }
 function useShip() {
@@ -3316,14 +3322,14 @@ function starPuzzle(o = {}) {
 function drizzleFinale() {
   S.q2 = 5; S.coins += 100; ship.userData.lift = 1.4; save(); drawHud();
   [392,523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*180)); burst(ship.position, 0xffc857, 24);
-  openDialog('Captain Drizzle', "She flies! Well. She hovers. That is a start! Listen, sailor: when you rang that bell, I heard one more answer. Far off, past the old Windmill. Someone else is waiting. Here, 100 coins for the best crew I ever had.", featureOn('journey') ? [{ label:'What happens to her now?', fn:() => { closeDialog(); shipChoice(); } }] : [], S.hearts.drizzle);
+  openDialog('Captain Drizzle', "She flies! Well. She hovers. That is a start! Listen, sailor: when you rang that bell, I heard one more answer. Far off, past the old Windmill. Someone else is waiting. Go to Windmill Isle and find them. Here, 100 coins for the best crew I ever had.", featureOn('journey') ? [{ label:'What happens to her now?', fn:() => { closeDialog(); shipChoice(); } }] : [], S.hearts.drizzle);
 }
 function useSign2() {
   if (S.bridge2) { toast('The bridge to Windmill Isle. Walk across!'); return; }
   openDialog('Broken Bridge', `This bridge goes to Windmill Isle. Cost: ${bridgeCost(BRIDGE2_COST)} coins. You have ${S.coins}.${S.coins < bridgeCost(BRIDGE2_COST) ? ` You need ${bridgeCost(BRIDGE2_COST) - S.coins} more.` : ''}`, S.coins < bridgeCost(BRIDGE2_COST) ? [] : [{ label:'Fix the bridge', fn:() => {
     S.coins -= bridgeCost(BRIDGE2_COST); S.bridge2 = true; if (S.q3 === 0) S.q3 = 1; buildBridge(); save(); drawHud();
     [523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*160)); burst(sign2.position, 0xffc857, 20);
-    openDialog('Bridge fixed!', 'You can hear something creaking up on Windmill Isle.');
+    openDialog('Bridge fixed!', 'Walk across to Windmill Isle. Something is creaking up there.');
   }}]);
 }
 function twinsQuest() {
@@ -3336,7 +3342,7 @@ function twinsQuest() {
   else if (S.q3 === 5) openDialog('Moss & Fern', "Moss: Take the flour to Nana Gale. Fern: She makes the best bread in the sky.", nb, h);
   else if (S.q3 === 6) {
     S.q3 = 7; S.sprinklers = true; sprinkler.visible = true; save(); drawHud(); sfx('heart'); burst(npcs.twins.position, 0x9fe7e0, 20);
-    openDialog('Moss & Fern', "Fern: Bread from OUR flour? Moss: We are so proud. Fern: Here, we built you a sprinkler that runs on wind power. Moss: It waters your whole garden every morning. Fern: Also... Moss: ...we felt the ground hum last night. Fern: From the dark island. Moss: Where the lights only come out at night.", [], h);
+    openDialog('Moss & Fern', "Fern: Bread from OUR flour? Moss: We are so proud. Fern: Here, we built you a sprinkler that runs on wind power. Moss: It waters your whole garden every morning. Fern: Also... Moss: ...we felt the ground hum last night. Fern: From the dark island. Moss: Where the lights only come out at night. Fern: Go and look after 8 PM!", [], h);
   }
   save();
 }
@@ -3427,14 +3433,14 @@ function leverPuzzle(o = {}) {
 }
 function useStakes() {
   if (S.bigGarden) { toast('Your garden is already bigger.'); return; }
-  if (!S.aha.includes('rope')) { toast('Fence stakes and a long rope. A bigger garden needs a perfect square corner. Maybe someone on another island knows how.'); return; }
+  if (!S.aha.includes('rope')) { toast('Fence stakes and a long rope. You cannot use them yet. First learn to make a square corner on Orchard Isle.'); return; }
   ropePuzzle({ kicker:'A BIGGER GARDEN', total:24, text:'This rope is twice as long: 24 spaces between the knots. Split it into 3 sides and make the bottom left corner a perfect square corner.', fail:'Not square yet. The fence would lean.',
     done:() => { S.bigGarden = true; for (let i=0;i<3;i++){ S.tiles.push({ s:0 }); addTileGroup(S.tiles.length-1); }
       stakes.visible = false; save(); sfx('pick'); burst(new THREE.Vector3(2.45,0,2.75), 0x8fdc8a, 20); showRecall('rope', () => toast('Your garden grew by 3 squares!')); } });
 }
 function useBoulder() {
   if (S.boulder) return readStone();
-  if (!S.aha.includes('lever')) { toast('A huge boulder. Something is carved underneath, but it will not budge.'); return; }
+  if (!S.aha.includes('lever')) { toast('A huge boulder. It will not budge yet. Come back after you lift the millstone on Windmill Isle.'); return; }
   leverPuzzle({ kicker:'THE BOULDER', title:'Move the boulder', heavy:80, push:20, text:'Something is carved under this boulder. It is heavier than the millstone, but you are stronger now. Move the log, then push.',
     done:() => { S.boulder = true; rock.visible = false; rosettaStone.visible = true; save(); sfx('dig'); burst(boulder.position, 0x9a93a8, 20);
       showRecall('lever', () => showAha('rosetta')); } });
@@ -3447,10 +3453,10 @@ function lumenQuest() {
     openDialog('Lumen', "Oh. Hello. I am Lumen. I paint at night. Nobody visits, so... sorry, I am nervous. I paint the moon every night, but the wind knocked my paintings over and now they are all mixed up. Could you help me put them back in order? They are on my easel.", [], h);
   } else if (S.q4 === 1) openDialog('Lumen', "My moon paintings are on the easel. Start with the darkest one.", nb, h);
   else if (S.q4 === 2) openDialog('Lumen', "Try my dark room. It is the little black house. There is a tiny window in it.", nb, h);
-  else if (S.q4 === 3) openDialog('Lumen', "The crystals in my garden used to sing. Now they sound wrong. Could you listen to them?", nb, h);
+  else if (S.q4 === 3) openDialog('Lumen', "The crystals in my garden used to sing. Now they sound wrong. Tap the crystals and listen.", nb, h);
   else if (S.q4 === 4) {
     S.q4 = 5; S.seeds.starbloom = (S.seeds.starbloom||0) + 3; S.coins += 100; save(); drawHud(); sfx('heart'); burst(npcs.lumen.position, 0xfff3a0, 24);
-    openDialog('Lumen', "Now I can show you my best painting. This is the Old Heart, before the Great Gust. See the giant bell in the middle? Every island had a small bell, and they all rang together with the big one. Then one night the big bell cracked. Without its song, the islands drifted apart. Your grandmother tried to fix it. She never finished. I think you are supposed to. Here: 3 moonflower seeds. Moonflowers are real, they open at night! In my garden they bloom in any season.", [], h);
+    openDialog('Lumen', "Now I can show you my best painting. This is the Old Heart, before the Great Gust. Every island had a small bell. They all rang together with the giant bell in the middle. Then one night the big bell cracked. Without its song, the islands drifted apart.", [{ label:'What happened next?', fn:() => openDialog('Lumen', "Your grandmother tried to fix the bell. She never finished. I think you are supposed to. Go tell Captain Drizzle.", [{ label:'I will', fn:() => openDialog('Lumen', "Here: 3 moonflower seeds and 100 coins. Moonflowers are real, they open at night! In my garden they bloom in any season.", [], h) }], h) }], h);
   }
   save();
 }
@@ -3474,7 +3480,7 @@ function moonPuzzle() {
   const order = [0,1,2,3,4,5,6,7].sort(() => Math.random() - .5), picked = [];
   const draw = (msg='') => {
     showCard(`<div class="kicker">LUMEN'S EASEL</div><h2>Put the moons in order</h2>
-      <p>Lumen painted the moon on 8 nights in a row. Tap all 8 paintings in order, starting with the darkest moon. Night by night the lit part grows until the moon is full, then it shrinks.</p>
+      <p>Tap all 8 paintings in order, starting with the darkest moon. Lumen painted the moon on 8 nights in a row. Each night the lit part grows until the moon is full. Then it shrinks.</p>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px">${order.map(p => `<canvas data-m="${p}" width="120" height="120" style="width:100%;border-radius:12px;cursor:pointer;${picked.includes(p) ? 'opacity:.25' : ''}"></canvas>`).join('')}</div>
       <p style="margin-top:10px;font-weight:700;text-align:center;min-height:22px">${msg || `${picked.length} of 8 in order`}</p>
       <button id="later" class="ghost">Later</button>`, null);
@@ -3545,7 +3551,7 @@ function useGreatBell() {
   if (S.q5 === 2) return leverPuzzle({ kicker:'THE GREAT BELL', title:'Lift the great bell', heavy:120, push:30,
     text:'The great bell is the heaviest thing in the sky. You have a very long plank and a log. Move the log, then push down on your end.',
     done:() => { S.q5 = 3; save(); drawHud(); sfx('dig'); burst(greatBell.position, 0xd9a441, 24); showRecall('lever2', () => toast('The bell is upright! Now tap the pile of wooden beams next to it to build a frame.')); } });
-  if (S.q5 < 5) { toast('The bell is upright, but it needs a frame to hang from.'); return; }
+  if (S.q5 < 5) { toast('The bell is not ready to ring yet. Tap the pile of wooden beams next to it.'); return; }
   if (S.q5 === 5) {
     const h = hour();
     if (h >= 11.5 && h <= 12.5) return showRecall('sundial', ringGreatBell);
@@ -3594,7 +3600,7 @@ function useSite(i) {
   };
 }
 function useBakery() {
-  showCard(`<div class="kicker">MABEL'S BAKERY</div><h2>What should we cook?</h2><p>Pick a recipe. If you have everything it needs, tap Cook. Dishes sell for more than their ingredients, and make great gifts.</p>
+  showCard(`<div class="kicker">MABEL'S BAKERY</div><h2>What should we cook?</h2><p>Tap a recipe to cook it. Faded recipes need more ingredients. Dishes sell for more than their ingredients.</p>
     <div class="jlist">${RECIPES.map(r => { const ok = Object.entries(r.needs).every(([k,n]) => (S.bag[k]||0) >= n);
       return `<button data-r="${r.id}" ${ok ? '' : 'style="opacity:.6"'}>${S.cooked.includes(r.id) ? '✓ ' : ''}${r.name} <span class="sub">needs ${Object.entries(r.needs).map(([k,n]) => `${n} ${ITEMS[k].name} (you have ${S.bag[k]||0})`).join(', ')}. Sells for ${r.sell} coins.</span></button>`; }).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => {
@@ -3706,7 +3712,7 @@ function traceStars(c) {
 function useFruitTree(t) {
   const i = t.userData.i;
   if (season() === 3) { toast('The fruit trees are resting for winter.'); return; }
-  if (S.fruit[i] === S.day) { toast('You picked this tree today. More fruit grows by tomorrow. Fruit trees only give fruit. For wood, tap a tree that has no fruit.'); return; }
+  if (S.fruit[i] === S.day) { toast('You picked this tree today. Come back tomorrow for more fruit.'); return; }
   if (!canCarry(t.userData.fruitKind)) return bagFull();
   S.fruit[i] = S.day; bagAdd(t.userData.fruitKind); goal('fruit'); communityAdd('fruit'); t.userData.fruits.visible = false; sfx('pick');
   const wp = new THREE.Vector3(); t.getWorldPosition(wp); burst(wp.setY(wp.y + 1), t.userData.fruitKind === 'apple' ? 0xff6b6b : 0xffb36b);
@@ -3893,7 +3899,7 @@ function fishing3D(d = dock, o = {}) {
     m.userData = { f, size, vx:(Math.random()-.5)*.6, vz:(Math.random()-.5)*.6 }; pool.add(m); return m; };
   let shadows = table.length ? [newShadow(), newShadow(), newShadow()] : [];
   // the on-screen controls
-  const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="fhMsg">${secret ? 'The secret spot. The big ones live here.' : 'Watch the shadows. A big shadow means a big fish. Tap Cast.'}</p>
+  const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="fhMsg">${secret ? 'The secret spot. The big ones live here.' : 'Tap Cast. A big shadow means a big fish.'}</p>
     <div id="fhReel" class="fhreel" hidden><div class="fhmeter"><b id="fhM"></b></div><div class="fhbar"><i id="fhZ"></i><span id="fhF">🐟</span></div></div>
     <div class="fhbtns"><button id="fhAct">Cast</button>${night && !secret ? '<button id="fhSecret" class="ghost">Find the secret spot</button>' : ''}<button id="fhDone" class="ghost">Done</button></div>`;
   document.body.appendChild(hud);
@@ -4109,7 +4115,7 @@ function useWorkbench() {
     if (c.id === 'axe' && !S.aha.includes('tools')) return showAha('tools', () => toast('Now tap a tree to chop logs.'));
     hideCard();
     if (c.station) { [523,659,784].forEach((f,i) => setTimeout(() => chime(f), i*150)); toast(c.id === 'kiln' ? 'You built a kiln! The Pottery Age begins. Tap it to fire clay.' : 'You built a furnace! The Bronze Age begins. Tap it to melt metal.'); }
-    else toast(`You made a ${c.name}!`);
+    else toast(`You made a ${c.name}!${c.id === 'pick' ? ' Now tap a rock to break it for stone.' : ''}`);
   });
 }
 function gatherNode(n) {
@@ -4158,7 +4164,7 @@ function useFurnace() {
   const needs = { copper:2, tin:1, log:2 };
   if (!S.bronzeKnown) return bronzePuzzle();
   showCard(`<div class="kicker">THE FURNACE</div><h2>Smelt bronze</h2><p>You know the recipe: about 9 parts copper to 1 part tin.</p><div class="jlist"><button id="smelt">Bronze ingot <span class="sub">needs ${needText(needs)}</span></button></div>
-    <p style="margin-top:8px">No tin? Pip imports it. He will not say from where.</p>`, 'Close');
+    <p style="margin-top:8px">No tin? Buy it from Pip.</p>`, 'Close');
   $('smelt').onclick = () => { if (!enough(needs)) { toast(`Not enough yet. Needs ${needText(needs)}.`); return; }
     Object.entries(needs).forEach(([k,n]) => bagAdd(k, -n)); bagAdd('bronze'); save(); drawHud(); sfx('pick'); burst(furnace.position.clone(), 0xd9a441, 18); hideCard(); toast('You made a bronze ingot!'); };
 }
@@ -4222,7 +4228,7 @@ function homeStep() { // what the home-building goal says right now
   const tg = short === 'log' ? woodTrees.find(t => S.chopped[t.userData.key] !== S.day && t.parent === scene) : short === 'stone' ? rocks.find(r => S.chopped[r.userData.key] !== S.day) : bushes.find(b => S.chopped[b.userData.key] !== S.day);
   return { text:`To build ${stage.name}, gather ${needText(needs)}.`, target: tg || buildSite };
 }
-function hintToast() { const h = homeHint(); if (h) toast(h); } // the floating +2 shows what you got; only speak up with a hint
+let lastHint = ''; function hintToast() { const h = homeHint(), k = h.replace(/\d+/g, ''); if (h && k !== lastHint) toast(h); lastHint = k; } // the floating +2 shows what you got; only speak up with a hint
 function homeHint() { return (S.home || 0) < 3 ? homeStep().text : ''; }
 function useCampfire() { openDialog('Campfire', (S.home || 0) < 3 ? 'Until your home is built, you sleep out here under the stars. Sleep until morning?' : 'A cozy fire. Sleep out here tonight, under the stars?', [{ label:'Sleep', fn:() => { closeDialog(); player.position.set(campfire.position.x + .9, 0, campfire.position.z + .9); player.rotation.y = -2.4; goSleep('outside'); } }]); }
 function useHouse() {
@@ -4515,13 +4521,13 @@ const hammockOpen = () => founderOn() || S.hq >= 4;
 // Nana's hammock: a short story mission. Each step says why you are doing it.
 // hq: 0 not started, 1 gather 8 grass, 3 hang it between the two trees, 4 done
 const HQ_SPOT = [6.25, -3.25];
-function hammockStep() { return S.hq === 1 ? `Cut bushes until you have 8 grass, then bring it to Nana. She twists grass into rope. (You have ${Math.min(8, have('fiber'))} of 8.)` : S.hq === 3 ? 'Hang the hammock between the two trees behind your garden. Tap the glowing spot between them.' : ''; }
+function hammockStep() { return S.hq === 1 ? `Cut bushes for grass, then bring it to Nana. You have ${Math.min(8, have('fiber'))} of 8.` : S.hq === 3 ? 'Hang the hammock between the two trees behind your garden. Tap the glowing spot between them.' : ''; }
 function hammockTalk() {
   if (!S.hq) return openDialog('Nana Gale', "See those two trees behind your garden? Your grandmother kept a hammock there. She said her best ideas came to her half asleep in it. The Great Gust took it.", [{ label:'Can we make a new one?', fn:() => { S.hq = 1; save(); drawHud();
       openDialog('Nana Gale', "We can. A hammock is only rope and knots, and rope is only grass. Bring me 8 grass. Bushes have plenty.", [], S.hearts.nana); } }], S.hearts.nana);
   if (S.hq === 1 && have('fiber') < 8) return openDialog('Nana Gale', `I need 8 grass for the rope, dear. You have ${have('fiber')}. Cut a few more bushes.`, [], S.hearts.nana);
   if (S.hq === 1) { bagAdd('fiber', -8); S.hq = 3; save(); drawHud(); drawHammockSpot(); sfx('swish');
-    return openDialog('Nana Gale', "Watch. One blade of grass snaps in your fingers. Twist many together and each one holds the others. That is all rope is. There. Now hang it where hers used to be, between the two trees behind your garden.", [], S.hearts.nana); }
+    return openDialog('Nana Gale', "Watch. One blade of grass snaps in your fingers. Twist many together and each one holds the others. That is all rope is. Now go hang it. Tap the glowing spot between the two trees behind your garden.", [], S.hearts.nana); }
   if (S.hq === 3) return openDialog('Nana Gale', 'It is ready. Hang it between the two trees behind your garden. Tap the glowing spot.', [], S.hearts.nana); }
 var hammockSpot = null;
 function drawHammockSpot() { if (!hammockSpot) { hammockSpot = new THREE.Group(); hammockSpot.position.set(HQ_SPOT[0], 0, HQ_SPOT[1]); const ring = new THREE.Mesh(new THREE.RingGeometry(.45, .6, 32), new THREE.MeshBasicMaterial({ color:0xffe07a, transparent:true, opacity:.8, side:THREE.DoubleSide })); ring.rotation.x = -Math.PI/2; ring.position.y = .04; hammockSpot.add(ring);
@@ -4529,7 +4535,7 @@ function drawHammockSpot() { if (!hammockSpot) { hammockSpot = new THREE.Group()
   hammockSpot.visible = S.hq === 3 && !VISIT; }
 function hangHammock() { if (S.hq !== 3) return; S.hq = 4; S.builds = [...(S.builds || []), { p:'hammock', x:HQ_SPOT[0], z:HQ_SPOT[1], a:-Math.atan2(3, 1.5), len:3.354 }]; drawBuilds(); drawHammockSpot(); save(); drawHud();
   burst(new THREE.Vector3(HQ_SPOT[0], 1, HQ_SPOT[1]), 0xffc857, 24); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
-  showCard(`<div class="kicker">NANA'S HAMMOCK</div><h2>It is up!</h2><p>The hammock hangs right where your grandmother's did. Tap it any time to take a nap and skip ahead in the day.</p><p style="margin-top:8px">You can hang more in Build, between any two trees that stand close together.</p>`, 'Try it'); }
+  showCard(`<div class="kicker">NANA'S HAMMOCK</div><h2>It is up!</h2><p>The hammock hangs right where your grandmother's did. Tap it any time to take a nap and skip ahead in the day.</p>`, 'Try it'); }
 function napMenu(o) { const max = Math.floor(23 - hour()); if (max < 1) return toast('It is too late for a nap. Time for bed.');
   let n = 1; const clock = h => { const hr = Math.floor(h), mn = Math.floor((h - hr) * 6) * 10; return `${((hr + 11) % 12) + 1}:${String(mn).padStart(2, '0')} ${hr < 12 ? 'AM' : 'PM'}`; };
   const draw = () => { showCard(`<div class="kicker">HAMMOCK</div><h2>How long a nap?</h2>
@@ -4547,7 +4553,7 @@ function usePiece(o) {
   if (b.p === 'lamp' || b.p === 'blamp' || b.p === 'flantern') { b.off = !b.off; drawBuilds(); save(); sfx('click'); toast(b.off ? 'Lamp off.' : 'Lamp on. It glows at night.'); return; }
   if (b.p === 'planter' || b.p === 'potplant') return pickSeeds(`pl${b.x},${b.z}`);
   if (b.p === 'hedge') { if (!canCarry('fiber')) return bagFull(); if (!daily(`hg${b.x},${b.z}`)) { toast('You already trimmed this hedge today.'); return; }
-    gain('fiber', 1, o.position.clone(), true); sfx('swish'); toast(`You trimmed the hedge. +1 grass fiber. ${TAP_FACTS.hedge}`); return; }
+    gain('fiber', 1, o.position.clone(), true); sfx('swish'); toast(`+1 grass. ${TAP_FACTS.hedge}`); return; }
   if (['fence','wallw','walls','bwall'].includes(b.p)) { b.c = PAINTS[(b.c == null ? 0 : PAINTS.indexOf(b.c)) + 1 === PAINTS.length ? 0 : (b.c == null ? 1 : PAINTS.indexOf(b.c) + 1)]; drawBuilds(); save(); sfx('click'); toast(`You painted the ${p.name.toLowerCase()}. Tap again for another color.`); return; }
   if (b.p === 'deck') { danceT = 2.4; player.position.set(b.x, 0, b.z); [523,659,784,659].forEach((f,i) => setTimeout(() => chime(f), i*280)); toast('You dance on the floor!'); return; }
   if (b.p === 'arch') return factCard('YOUR ISLAND', 'The arch', TAP_FACTS.arch, 'arch');
@@ -4568,7 +4574,7 @@ function openChest(chest) {
     ${spaceMeter(slotsIn(S.bag), packCap(), 'Backpack')}
     ${bag.length ? `<div class="igrid">${bag.map(([k,n]) => tile(k, n, 'in')).join('')}</div>` : '<p>Empty.</p>'}
     <div style="margin-top:10px"><button id="chMat" class="ghost">Put away all materials</button> <button id="chAll" class="ghost">Take everything</button></div>
-    ${canBand ? `<h4>Upgrade this chest</h4><p>Add bronze bands to make this chest hold twice as much (24 more slots). Real chests were made stronger with metal bands. Needs ${needText({ bronze:2 })}.</p><button id="chBand">Add bronze bands</button>` : chest?.band ? '<p style="margin-top:8px">This chest has bronze bands: it holds 48 slots.</p>' : ''}`);
+    ${canBand ? `<h4>Upgrade this chest</h4><p>Add bronze bands to make this chest hold twice as much (24 more slots). ${enough({ bronze:2 }) ? 'Needs' : 'Not enough yet. Needs'} ${needText({ bronze:2 })}.</p><button id="chBand"${enough({ bronze:2 }) ? '' : ' disabled style="opacity:.45"'}>Add bronze bands</button>` : chest?.band ? '<p style="margin-top:8px">This chest has bronze bands: it holds 48 slots.</p>' : ''}`);
   let short = false;
   const move = (k, into) => { const from = into ? S.bag : S.chest, to = into ? S.chest : S.bag, n = from[k] || 0; if (!n) return;
     const fit = roomFor(to, into ? storeCap() : packCap(), k, n); if (fit < n) short = true; if (!fit) return;
@@ -4676,7 +4682,7 @@ function buildTap(e) {
   if (idx >= 0) { toast('Something is already built there. Use Remove first.'); return; }
   const p = PIECES.find(x => x.id === buildSel);
   if (p.founder && (!S.founder || S.builds.some(b => b.p === p.id))) { toast('You already placed your Founder\'s Lantern. Use Move to put it somewhere else.'); return; }
-  if (!enough(p.cost)) { toast(`Not enough materials for a ${p.name.toLowerCase()}. Chop trees, break rocks, and cut bushes.`); return; }
+  if (!enough(p.cost)) { toast(`Not enough for a ${p.name.toLowerCase()}. It needs ${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}.`); return; }
   Object.entries(p.cost).forEach(([k,n]) => bagAdd(k, -n)); S.builds.push({ p:p.id, x:c.x, z:c.z, r:buildRot }); lean('maker');
   sfx(p.cost.stone || p.cost.brick ? 'stone' : p.cost.bronze ? 'ting' : p.cost.log ? 'chop' : 'swish'); burst(new THREE.Vector3(c.x, 0, c.z), 0xffc857, 10); drawBuilds(); save(); drawBuildBar(); drawHud();
   if (p.id === 'path' && !S.aha.includes('roads')) showAha('roads');
@@ -4860,7 +4866,7 @@ function tickFrame() {
     if (!menuOpen) S.t += dt * (window.__sgSpeed || 1) * (sitting ? 3 : 1) / (DAY_LEN * (S.mode === 'cozy' ? 2 : 1)); // the clock stops while any menu or conversation is open
     { const hr = hour(), w = S.lateWarn && S.lateWarn.day === S.day ? S.lateWarn.n : 0, home3 = (S.home || 0) >= 3; // two gentle warnings before the day ends at midnight
       if (!cine && hr >= 22 && w < 1) { S.lateWarn = { day:S.day, n:1 }; chime(523); toast(`It is 10 PM. ${home3 ? 'Tap your bed' : 'Tap the campfire'} to sleep.`); }
-      else if (!cine && hr >= 23.5 && w < 2) { S.lateWarn = { day:S.day, n:2 }; chime(440); toast('Your eyes are closing. You will fall asleep in a few moments.'); } }
+      else if (!cine && hr >= 23.5 && w < 2) { S.lateWarn = { day:S.day, n:2 }; chime(440); toast('It is 11:30 PM. You will fall asleep at midnight.'); } }
     if (S.t >= 1 && !cine) { if (S.room) exitRoom(); goSleep(S.where === 'hut' ? 'bed' : 'outside', true); }
     if ((hudTick += dt) > .5) { hudTick = 0; drawHud(); ambience(); cloudPush(); }
     playMusic(dt);
@@ -5137,7 +5143,7 @@ $('start').onclick = () => { dispatchEvent(new Event('sg-playing')); $('title').
   { const fz = festival(); if (fz && S.letter && !S.fests[fz.id + fz.year]) setTimeout(() => toast(`Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`), 800); }
   if (S.created && S.letter && !S.setupDone && !VISIT) {
     const toIsland = () => { setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => { endSetup(); $('start').onclick(); }, { returning:true }); };
-    showCard(`<div class="kicker">WELCOME BACK</div><h2>New in Sky Garden!</h2><p>You can now make your own character, add your birthday, and choose an island that gives you something extra.</p><h4>Your progress is safe</h4><p>Your coins, collections, memories, story progress, garden, and hut all stay exactly as they are.</p>`, "Let's set it up", () =>
+    showCard(`<div class="kicker">WELCOME BACK</div><h2>New in Sky Garden!</h2><p>You can now make your own character, add your birthday, and choose an island that gives you something extra.</p><h4>Your progress is safe</h4><p>Everything you have stays exactly as it is.</p>`, "Let's set it up", () =>
       lookPicker('WELCOME BACK', () => { endSetup(); if (!S.birthdayAsked && !S.birthday) birthdayPicker(toIsland); else toIsland(); }, true));
     return;
   }
@@ -5202,7 +5208,7 @@ async function openShop(code) {
 }
 async function buyListing(l) {
   const T = ME(); T.bag = T.bag || {};
-  if (l.price && (T.coins || 0) < l.price) { toast(`You need ${l.price} coins.`); return; }
+  if (l.price && (T.coins || 0) < l.price) { toast(`You need ${l.price} coins. You have ${T.coins || 0}.`); return; }
   if (!l.price && (T.bag[l.wantItem] || 0) < l.wantQty) { toast(`You need ${l.wantQty} ${ITEMS[l.wantItem]?.name.toLowerCase()} to trade.`); return; }
   if (!VISIT && !l.product && !canCarry(l.item, l.qty)) return bagFull();
   if (l.price) T.coins -= l.price; else { T.bag[l.wantItem] -= l.wantQty; if (T.bag[l.wantItem] <= 0) delete T.bag[l.wantItem]; }
@@ -5231,8 +5237,9 @@ function sellTab() {
       ${max > 1 ? `<p>How many? <input id="sQty" type="number" min="1" max="${max}" value="1" class="numin"> of ${max}</p>` : ''}
       <div class="steppers" style="justify-content:flex-start"><button id="sCoins">For coins</button><button id="sTrade" class="ghost">For a trade</button></div>
       <p id="sAsk">Price: <input id="sPrice" type="number" min="1" max="99999" value="${value}" class="numin"> coins</p>
-      <p class="itinfo">Tip: it sells for about ${value} coins at your crate. Price it too high and no one buys. Too low and you lose out. Real sellers look at what similar things sell for.</p>
+      <p class="itinfo">Tip: it sells for about ${value} coins at your crate. Price it too high and no one buys. Too low and you lose out.</p>
       <button id="sPost">Put it up for sale</button>`;
+    try { $('sellForm').scrollIntoView({ behavior:'smooth', block:'nearest' }); } catch {}
     let trade = false;
     $('sCoins').onclick = () => { trade = false; $('sCoins').className = ''; $('sTrade').className = 'ghost'; $('sAsk').innerHTML = `Price: <input id="sPrice" type="number" min="1" max="99999" value="${value}" class="numin"> coins`; };
     $('sTrade').onclick = () => { trade = true; $('sTrade').className = ''; $('sCoins').className = 'ghost';
@@ -5294,7 +5301,7 @@ function brandEditor(done) {
       const res = await api('/brand', { key:S.syncKey, shop, logo:L });
       if (!res.ok) { toast(res.error === 'not allowed' ? 'That shop name is not allowed. Please pick a kind name without links or numbers.' : 'Could not save your brand. Check your internet and try again.'); return; }
       const first = !S.brand; S.brand = { shop:res.shop || shop, logo:L }; save(); sfx('heart');
-      if (first) { S.coins += 100; save(); drawHud(); lean('maker', 2); return showCard(`<div class="kicker">MAKER'S MARK</div><h2>${esc(S.brand.shop)} is open!</h2><div class="brandhead">${logoSvg(L, 72)}</div><h4>In real life</h4><p>${MARK_LESSON}</p><p><b>Pip gave you 100 coins to get started.</b> Next, design your first product at the Trading Post.</p>`, 'Okay', () => done && done()); }
+      if (first) { S.coins += 100; save(); drawHud(); lean('maker', 2); return showCard(`<div class="kicker">MAKER'S MARK</div><h2>${esc(S.brand.shop)} is open!</h2><div class="brandhead">${logoSvg(L, 72)}</div><p><b>Pip gave you 100 coins to get started.</b></p>`, 'Okay', () => showCard(`<div class="kicker">MAKER'S MARK</div><h2>A mark tells people who made it</h2><h4>In real life</h4><p>${MARK_LESSON}</p><p>Next, design your first product at the Trading Post.</p>`, 'Okay', () => done && done())); }
       toast('Brand saved.'); done && done(); };
   };
   draw();
@@ -5308,14 +5315,14 @@ function designStudio() {
     showCard(`<div class="kicker">DESIGN STUDIO</div><h2>Make a product</h2>${marketTabs('make')}
       <div class="brandhead">${productSwatch(d, 84)}${logoSvg(S.brand.logo, 40)}<h3>${esc(nm)}</h3></div>
       <h4>What to make</h4><div class="chips">${avail.map(([k, b]) => `<button data-ba="${k}" class="${d.base === k ? '' : 'ghost'}" ${enough(b.needs) ? '' : 'style="opacity:.5"'}>${esc(b.name)}</button>`).join('')}</div>
-      <p style="font-size:14px">Needs ${needText(B.needs)}.</p>
+      <p style="font-size:14px">${enough(B.needs) ? 'Needs' : 'Not enough yet. Needs'} ${needText(B.needs)}.</p>
       <h4>Main color</h4><div class="chips">${PALETTE.map(c => `<button class="sw ${d.color === c ? 'on' : ''}" data-c1="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
       <h4>Pattern and its color</h4><div class="chips">${PATTERNS.map(p => `<button data-pa="${p}" class="${d.pattern === p ? '' : 'ghost'}">${p[0].toUpperCase() + p.slice(1)}</button>`).join('')}</div>
       <div class="chips" style="margin-top:6px">${PALETTE.map(c => `<button class="sw sm ${d.color2 === c ? 'on' : ''}" data-c2="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
       <h4>Name it</h4>${kid ? `<select id="pdAdj">${KID_ADJ.map(w => `<option ${w === d.adj ? 'selected' : ''}>${w}</option>`).join('')}</select> ${esc(B.name)}`
         : `<input id="pdName" maxlength="30" value="${esc(d.name)}" placeholder="${esc(B.name)}" class="numin" style="width:100%">`}
       <p style="font-size:13px;opacity:.7;margin-top:6px">Your logo and shop name stay on it, even after you sell it.</p>
-      <button id="dMake">Make it</button>`, 'Close');
+      <button id="dMake"${enough(B.needs) ? '' : ' disabled style="opacity:.45"'}>Make it</button>`, 'Close');
     wireTabs();
     const keep = () => { if ($('pdName')) d.name = $('pdName').value.slice(0, 30); if ($('pdAdj')) d.adj = $('pdAdj').value; };
     document.querySelectorAll('[data-ba]').forEach(x => x.onclick = () => { keep(); d.base = x.dataset.ba; draw(); });
@@ -5363,7 +5370,7 @@ function shipChoice() {
     openDialog('Captain Drizzle', k === 'explore' ? "An explorer! I knew it. I put up a crow's nest and dug out my old charts. Tap the ship once a day and we sail." : "A market! I will stack the crates. Folks from every island will shout their orders. Tap the ship each day to see what they want.", [], S.hearts.drizzle); });
 }
 function voyage() {
-  if (S.voyageDay === S.day) { toast('The crew is resting. One voyage a day, sailor.'); return; }
+  if (S.voyageDay === S.day) { toast('The crew is resting. You can sail again tomorrow.'); return; }
   showCard(`<div class="kicker">VOYAGE</div><h2>Which way, navigator?</h2><p>No map, no compass. Drizzle says: "Pick how we find our way."</p>
     <div class="jlist">${HEADINGS.map(h => `<button data-hd="${h.id}">${h.label}<span class="sub"> ${h.hint}</span></button>`).join('')}</div>`, 'Not now');
   document.querySelectorAll('[data-hd]').forEach(b => b.onclick = () => { const hd = b.dataset.hd; S.voyageDay = S.day; S.voyages = (S.voyages || 0) + 1; lean('explorer', 2);
@@ -5382,7 +5389,7 @@ function marketDay() {
   if (!S.boat || S.boat.day !== S.day) { const pool = [...Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(s) && !CROPS[k].locked), 'apple', 'peach', 'minnow', 'trout'];
     S.boat = { day:S.day, orders:[...Array(3)].map(() => { const k = pool[Math.floor(Math.random()*pool.length)], n = 1 + Math.floor(Math.random()*3); return { k, n, pay:Math.round(ITEMS[k].sell * n * 1.5), done:false }; }) }; save(); }
   showCard(`<div class="kicker">THE FLOATING MARKET</div><h2>Today's orders</h2><p>Shoppers from all over the sky call out what they want. These orders pay 50% more than selling at your crate.</p>
-    <div class="jlist">${S.boat.orders.map((o, i) => `<button data-mo="${i}" ${o.done ? 'class="locked"' : ''}>${o.done ? '✓ ' : ''}${icon(o.k)} ${o.n} ${esc(plural(o.k, o.n))} <span class="sub">${o.done ? 'Delivered' : `pays ${o.pay} coins (you have ${have(o.k)})`}</span></button>`).join('')}</div>`, 'Close');
+    <div class="jlist">${S.boat.orders.map((o, i) => `<button data-mo="${i}" ${o.done ? 'class="locked"' : ''}>${o.done ? '✓ ' : ''}${icon(o.k)} ${o.n} ${esc(plural(o.k, o.n))} <span class="sub">${o.done ? 'Delivered' : `pays ${o.pay} coins. You have ${have(o.k)} of ${o.n}.`}</span></button>`).join('')}</div>${S.boat.orders.every(o => o.done) ? '<p><b>All 3 orders are filled. New orders come tomorrow.</b></p>' : ''}`, 'Close');
   document.querySelectorAll('[data-mo]').forEach(b => b.onclick = () => { const o = S.boat.orders[+b.dataset.mo]; if (o.done) return;
     if (have(o.k) < o.n) { toast(`You need ${o.n} ${plural(o.k, o.n)}.`); return; }
     bagAdd(o.k, -o.n); S.coins += o.pay; o.done = true; S.marketFilled = (S.marketFilled || 0) + 1; lean('trader'); goal('sell', o.pay); sfx('coin'); save(); drawHud();
@@ -5433,6 +5440,7 @@ const F_GIFTS = {
   outfit:{ icon:'🧥', title:'The Sky Pioneer outfit', text:'A flight jacket, a long scarf that trails in the wind, and an aviator cap with goggles. To wear it, tap Bag, then Settings, then Change my look, then Clothes.', wrap:['#7ec8e3','#fff1d6'] },
   balloon:{ icon:'🎈', title:'Your own hot-air balloon', text:'It flies you to any island you have opened. Tap the 🎈 on your hotbar.', wrap:['#ffc857','#ff8fa3'] },
   lantern:{ icon:'🏮', title:"The Founder's Lantern", text:'A glowing lantern for your island. At night, fireflies gather around it. Tap Build to place it.', wrap:['#c9b6ff','#ffe07a'] },
+  missions:{ icon:'✦', title:'Missions', text:'Tap ✦ Missions at the top of your screen. They are things we would love you to try. Each one pays 50 coins.', wrap:['#ffe07a','#c9b6ff'] },
 };
 function fGot(k) { if (S.founder && !S.fGot && S.founderBalloon) S.fGot = ['pet','outfit','balloon','lantern','missions','testisland']; return (S.fGot || []).includes(k); } // older founder saves already had everything
 function fDay() { return S.founder ? playDays() - (S.founder.day0 != null ? S.founder.day0 : playDays() - 1) + 1 : 0; }
@@ -5440,7 +5448,7 @@ function founderDrip() { if (!founderOn() || VISIT || TESTSLOT || PREVIEW) retur
   const busy = !S.setupDone || S.tut !== 9 || $('dialog').classList.contains('show') || $('veil').classList.contains('show') || document.querySelector('.presents'); if (busy) { if (S.tut === 9) setTimeout(founderDrip, 4000); return; }
   const d = fDay(), give = (keys, head, body, then) => { S.fGot = [...(S.fGot || []), ...keys]; save(); showCard(`<div class="kicker">✦ FOUNDING GARDENER ✦</div><h2>${head}</h2><p>${body}</p>`, 'Open it', () => openPresents(keys.filter(k => F_GIFTS[k]).map(k => F_GIFTS[k]), () => { then && then(); if (!S.giftTipSeen) { S.giftTipSeen = true; save(); setTimeout(() => toast('See all your founder gifts anytime: tap Bag, then Founder gifts.'), 2500); } })); };
   if (!fGot('pet')) return give(['pet'], 'Welcome, founder!', 'You were invited in before anyone else. Very few people have walked this island yet. We wrapped something for you, and more is on the way.', () => choosePet(() => {}));
-  if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', 'A founder gift for your second day. There is also something new at the top of your screen: ✦ Missions. They are things we would love you to try, and each one pays 50 coins.', () => drawHud());
+  if (d >= 2 && !fGot('outfit')) return give(['outfit', 'missions'], 'Another present!', 'Two founder gifts for your second day.', () => drawHud());
   if (BALLOON_ON && d >= 3 && !fGot('balloon')) return give(['balloon'], 'A present for day 3!', 'This one is big.', () => { S.founderBalloon = true; save(); drawBalloon(); drawHud(); });
   if (d >= 4 && (S.home || 0) >= 3 && !fGot('lantern')) return give(['lantern'], 'A present for your new home', 'Your hut is rebuilt. Here is something to light it up.', () => drawHud());
   if (!S.giftsSeen && (S.fGot || []).length > 1 && !(mythOn() && !mp().revealed)) { S.giftsSeen = true; save(); openFounderGifts(); } // once: founders who already opened gifts see what they have and how to use each
@@ -5453,7 +5461,7 @@ addEventListener('sg-playing', () => { if (!founderOn() || S.fHammock || VISIT |
 function testerCodeCard() {
   showCard(`<div class="kicker">TESTER CODE</div><h2>Enter your code</h2><p>If Sky Garden sent you a tester code, type it here. It looks like SKY-AB12-CD34.</p>
     <input id="tcIn" maxlength="13" placeholder="SKY-XXXX-XXXX" class="numin" style="width:100%;text-transform:uppercase;font-size:18px;margin-top:8px"><p id="tcMsg" style="min-height:22px;font-weight:700;margin-top:6px"></p><button id="tcGo">Use my code</button>`, 'Cancel', openBag);
-  $('tcGo').onclick = async () => { $('tcMsg').textContent = 'Checking...'; const err = await redeemTester($('tcIn').value); if (err) $('tcMsg').textContent = err; };
+  $('tcGo').onclick = async () => { $('tcMsg').textContent = 'Checking...'; const err = await redeemTester($('tcIn').value); if (err) $('tcMsg').textContent = err; else { $('tcMsg').textContent = 'Your code worked!'; setTimeout(() => { if ($('tcMsg')) hideCard(); }, 1200); } };
 }
 { const tc = new URLSearchParams(location.search).get('tester'); if (tc && !VISIT) { history.replaceState(null, '', location.pathname); addEventListener('sg-playing', () => setTimeout(async () => { const err = await redeemTester(tc); if (err && !S.founder) toast(err); }, 1500), { once:true }); } }
 // missions: shown only to founders, checked every time the screen updates
@@ -5738,7 +5746,7 @@ function drawKeepers() {
   SAPLING_SPOTS.forEach(([x, z], i) => { const g = new THREE.Group(); g.position.set(LH.x + x, LH.y, LH.z + z); const planted = k.planted[i];
     if (planted == null) { if (!(t && t.id === 'seeds')) return; g.add(mesh(new THREE.CylinderGeometry(.35, .35, .05, 16), mat(0x7a5236), 0, .03, 0)); const h = halo(0x8fdc8a, 1.2, .5); h.position.y = .3; g.add(h);
       const hb = hitBox(.8, .8, .8); hb.position.y = .3; g.add(hb); g.userData = { kind:'deco', use:() => { k.planted[i] = playDays(); save(); sfx('plant'); burst(g.position.clone().setY(.5), 0x8fdc8a, 12); drawKeepers();
-        toast(k.planted.filter(p => p != null).length < 3 ? 'Sapling planted. It grows a little each day you come back.' : 'All 3 saplings planted! Talk to Wren.'); } }; }
+        toast(k.planted.filter(p => p != null).length < 3 ? `Sapling ${k.planted.filter(p => p != null).length} of 3 planted. Plant the next one.` : 'All 3 saplings planted! Talk to Wren.'); } }; }
     else { const age = Math.min(4, playDays() - planted), sc = .35 + age * .2; g.add(mesh(new THREE.CylinderGeometry(.05*sc, .08*sc, 1*sc, 6), mat(0x9b6b4a), 0, .5*sc, 0)); g.add(mesh(sph(.45*sc), mat(0x5fc377), 0, 1.05*sc, 0)); }
     keeperGroup.add(g); });
 }
@@ -5754,20 +5762,20 @@ function reflectCard(t, after) {
 function finishTrial(t) { const k = kp(); if (k.done.includes(t.id)) return; k.done.push(t.id); save(); logKeeper('trial', `Finished ${t.name}`);
   [392,523,659,784,1047].forEach((f,i) => setTimeout(() => chime(f), i*160)); burst(wren.position.clone().setY(1.5), 0xfff3a0, 30);
   reflectCard(t, () => { drawKeepers(); const next = currentTrial();
-    showCard(`<div class="kicker">${MENTOR.name.toUpperCase()}, ${MENTOR.title.toUpperCase()}</div><h2>${next ? 'Well done, Keeper' : 'You walked the whole path'}</h2><p>${next ? `"You are ready for the next one. Come see me when you can. ${next.name} is waiting."` : keeperLevel() >= 3 ? '"There is nothing more I can teach you. Keep the sky well, Elder."' : '"You have done all a Keeper can do, for now. The last trial is for Elders. Keep being kind. It gets noticed."'}</p>`, 'Okay'); drawHud(); });
+    showCard(`<div class="kicker">${MENTOR.name.toUpperCase()}, ${MENTOR.title.toUpperCase()}</div><h2>${next ? 'Well done, Keeper' : 'You walked the whole path'}</h2><p>${next ? `"You are ready for the next one. Tap me again to start ${next.name}."` : keeperLevel() >= 3 ? '"There is nothing more I can teach you. Keep the sky well, Elder."' : '"You have done all a Keeper can do, for now. The last trial is for Elders. Keep being kind. It gets noticed."'}</p>`, 'Okay'); drawHud(); });
 }
 function openKeeper() {
   const t = currentTrial(), k = kp();
   if (!t) { showCard(`<div class="kicker">${MENTOR.name.toUpperCase()}, ${MENTOR.title.toUpperCase()}</div><h2>The light is kept</h2><p>"The lamp stays lit because someone climbs those stairs every night. That is all keeping is."</p>
     ${Object.keys(S.reflections || {}).length ? '<button id="rfJournal" class="ghost">My reflections</button>' : ''}`, 'Okay'); if ($('rfJournal')) $('rfJournal').onclick = keeperJournal; return; }
   const ready = t.id === 'map' ? k.stones.length >= 4 : t.id === 'seeds' ? k.planted.filter(p => p != null).length >= 3 : t.id === 'voice' ? !!k.voted : t.id === 'unseen' ? k.secret >= 3 : false;
-  const progress = t.id === 'map' ? `${k.stones.length} of 4 stones charted` : t.id === 'seeds' ? `${k.planted.filter(p => p != null).length} of 3 saplings planted` : t.id === 'voice' ? (k.voted ? 'You voted' : 'Not voted yet') : t.id === 'unseen' ? `${k.secret} of 3 secret gifts left` : '';
+  const progress = t.id === 'map' ? `${k.stones.length} of 4 stones charted` : t.id === 'seeds' ? `${k.planted.filter(p => p != null).length} of 3 saplings planted` : t.id === 'voice' ? (k.voted ? 'You voted' : 'Not voted yet') : t.id === 'unseen' ? `${k.secret} of 3 secret gifts given` : '';
   showCard(`<div class="kicker">${MENTOR.name.toUpperCase()}, ${MENTOR.title.toUpperCase()}</div><h2>${t.name}</h2><p>"${t.intro}"</p><h4>Your task</h4><p>${t.task}</p>${progress ? `<p><b>${progress}</b></p>` : ''}
     <div id="kpAct"></div>${Object.keys(S.reflections || {}).length ? '<button id="rfJournal" class="ghost">My reflections</button>' : ''}`, 'Later');
   if ($('rfJournal')) $('rfJournal').onclick = keeperJournal;
   const act = $('kpAct');
   if (t.id === 'map' && ready) { act.innerHTML = `<h4>Name the village square</h4><input id="kpName" maxlength="24" placeholder="Like Lantern Square" class="numin" style="width:100%"><p id="kpMsg" style="min-height:20px;font-weight:700"></p><button id="kpSend">Send my name</button>`;
-    $('kpSend').onclick = async () => { const name = $('kpName').value.trim(); if (!name) return; $('kpMsg').textContent = 'Sending...';
+    $('kpSend').onclick = async () => { const name = $('kpName').value.trim(); if (!name) { $('kpMsg').textContent = 'Type a name first.'; return; } $('kpMsg').textContent = 'Sending...';
       const r = await api('/propose', { key:S.syncKey, kind:'placename', payload:{ name } });
       if (r.ok || devOn()) { finishTrial(t); } else $('kpMsg').textContent = r.error === 'not allowed' ? 'That name is not allowed. Try another.' : r.error === 'too many' ? 'You already have ideas waiting for approval.' : 'Could not send it. Try again.'; }; }
   if (t.id === 'gift') { let d = { type:'fountain', color:0x7ec8e3, color2:0xfff1d6 };
@@ -5784,14 +5792,14 @@ function openKeeper() {
 }
 function secretGift() {
   const who = Object.keys(NEIGHBORS).filter(id => npcs[id] && S.talked[id] != null), items = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && !['quest','material'].includes(ITEMS[k].kind));
-  if (!items.length) { toast('Bring something from your bag to give.'); return; }
+  if (!items.length) { toast('You have nothing in your bag to give yet. Get something, then tap Wren again.'); return; }
   let to = who[0];
   const draw = () => { showCard(`<div class="kicker">THE TRIAL OF THE UNSEEN</div><h2>A secret gift</h2><p>Pick a neighbor, then pick a gift from your bag. They will never know it came from you.</p>
     <div class="chips">${who.map(id => `<button data-sw="${id}" class="${to === id ? '' : 'ghost'}">${NEIGHBORS[id].name}</button>`).join('')}</div>
     <div class="igrid" style="margin-top:8px">${items.map(([k,n]) => `<button class="itile" data-sg="${k}"><span class="ic">${icon(k, ITEMS[k].kind)}</span><b>${n}</b><small>${esc(ITEMS[k].name)}</small></button>`).join('')}</div>`, 'Cancel', openKeeper);
     document.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { to = b.dataset.sw; draw(); });
     document.querySelectorAll('[data-sg]').forEach(b => b.onclick = () => { const k = b.dataset.sg; bagAdd(k, -1); kp().secret++; S.secretFor = { ...(S.secretFor || {}), [to]:k }; if (featureOn('journey')) karma('kind', 1); save(); logKeeper('secretgift', `Secret gift to ${to}`);
-      sfx('heart'); hideCard(); toast(`You left a ${ITEMS[k].name.toLowerCase()} on ${NEIGHBORS[to].name}'s doorstep. No one saw.`); }); };
+      sfx('heart'); hideCard(); toast(`You left a ${ITEMS[k].name.toLowerCase()} on ${NEIGHBORS[to].name}'s doorstep. ${kp().secret < 3 ? `That is ${kp().secret} of 3.` : 'That is all 3. Tap Wren.'}`); }); };
   draw();
 }
 function keeperJournal() { const R = S.reflections || {};
@@ -5817,7 +5825,7 @@ function expandCard() {
     <p>"When I was young, we made new land by piling earth and stone at the edge until it held. We can do it again."</p>
     <p>New land joins your island with room to build, plus new trees, rocks, and bushes.</p>
     ${ready ? `<h4>It needs</h4><p>${needText(e.cost)}, and ${e.coins} coins (you have ${S.coins}).</p>` : `<h4>Not yet</h4><p>${e.why}</p>`}
-    ${ready ? `<button id="exGo" ${ok ? '' : 'style="opacity:.55"'}>Build the ${e.name}</button>` : ''}`, 'Later');
+    ${ready ? (ok ? `<button id="exGo">Build the ${e.name}</button>` : `<p><b>You do not have enough yet. Gather the rest, then talk to Nana Gale again.</b></p>`) : ''}`, 'Later');
   if ($('exGo')) $('exGo').onclick = () => {
     if (!enough(e.cost) || S.coins < e.coins) { toast('Not enough yet.'); return; }
     Object.entries(e.cost).forEach(([k,n]) => bagAdd(k, -n)); S.coins -= e.coins; S.expand = (S.expand || 0) + 1; lean('maker', 3);
@@ -5893,7 +5901,7 @@ function newTodayCard() {
   const d = playDays(), fresh = ROLLOUT.filter(r => r.day === d && featureOn(r.id)), next = ROLLOUT.find(r => r.day > d && FEATURES.find(f => f.id === r.id)?.live !== false);
   if (!fresh.length) { if (!S.mode && !S.modeAsked && S.tut >= 9 && d >= 3) { S.modeAsked = true; save(); setupCam = true; $('veil').classList.add('setup'); document.body.classList.add('in-setup'); modePicker(() => endSetup(), { returning:true, late:true }); } return; }
   drawHud(); drawStations(); drawTradePlants(); drawStall(); spawnBugs(); drawPeople(); drawTownHall(); drawHelperTree(); drawWall(); chime(784); setTimeout(() => chime(1047), 140);
-  showCard(`<div class="kicker">NEW TODAY: DAY ${d}</div>${fresh.map(r => `<h2>${r.title}</h2><p>${r.text}</p>`).join('')}${next ? `<p style="opacity:.75;margin-top:10px">${next.day === d + 1 ? 'Something new unlocks tomorrow. See you then!' : 'More unlocks soon. Keep playing each day!'}</p>` : ''}`);
+  showCard(`<div class="kicker">NEW TODAY: DAY ${d}</div>${fresh.map(r => `<h2>${r.title}</h2><p>${r.text}</p>`).join('')}${next ? `<p style="opacity:.75;margin-top:10px">${next.day === d + 1 ? 'Something new unlocks tomorrow. See you then!' : `The next new thing unlocks after ${next.day - d} more days of play.`}</p>` : ''}`);
 }
 { const st = $('start').onclick; $('start').onclick = () => { st(); setTimeout(maybeNewToday, 1800); }; }
 // --- playtest feedback: a short form that goes to the Sky Garden cloud ---
@@ -5964,7 +5972,7 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   [75, 170, 250].forEach(deg => { const a = deg * Math.PI / 180, x = Math.cos(a) * 4.9, z = Math.sin(a) * 4.9, l = new THREE.Group(); l.position.set(x, 0, z); g.add(l);
     l.add(mesh(new THREE.CylinderGeometry(.06, .08, 1.9, 8), mat(0x3b2f4a), 0, .95, 0)); l.add(mesh(new THREE.BoxGeometry(.3, .34, .3), glow(0xffe7a8), 0, 2.02, 0)); l.add(mesh(new THREE.ConeGeometry(.26, .2, 4), mat(0x3b2f4a), 0, 2.29, 0).rotateY(Math.PI/4));
     const lh = halo(0xffc46b, 2.4, 0); lh.position.y = 2.02; l.add(lh); lampLights.push(lh);
-    const h = hitBox(.5, 2.4, .5); h.position.y = 1.2; l.add(h); deco(h, () => toast('Before electric streetlights, lamplighters walked the streets at dusk to light each lamp by hand. London still has more than 1,000 gas street lamps.')); });
+    const h = hitBox(.5, 2.4, .5); h.position.y = 1.2; l.add(h); deco(h, () => toast('Before electric streetlights, lamplighters lit each street lamp by hand at dusk.')); });
   // the notice board: goals, missions, votes, and what's happening
   const nb = new THREE.Group(); nb.position.set(-4.3, 0, -1.7); faceCenter(nb, -4.3, -1.7); g.add(nb);
   [-.6, .6].forEach(x => nb.add(mesh(new THREE.CylinderGeometry(.06, .07, 1.6, 8), mat(0x9b6b4a), x, .8, 0)));
@@ -5985,7 +5993,7 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
     const h = hitBox(.9, .8, .6); h.position.y = .4; p.add(h); deco(h, () => planterSeed(i)).userData.label = 'Planter: tap to look for seeds'; });
   // the sign at the entrance (a Keeper-approved name replaces it)
   const sg = signBoard('Town Square'); sg.position.set(...SQ_SIGN); g.add(sg); squareBits.sign = sg;
-  const sh = hitBox(1.7, 1.9, .5); sh.position.y = 1; sg.add(sh); deco(sh, () => showCard(`<div class="kicker">THE TOWN SQUARE</div><h2>Where the neighbors gather</h2><p>Towns have gathered around open squares for thousands of years. In ancient Athens it was the agora: a marketplace where people traded, talked, and argued about big ideas. In Rome it was the Forum, the center of public life.</p><p>In Sky Garden, the square is where the village comes together: markets, votes, festivals, and news.</p>`, 'Okay'));
+  const sh = hitBox(1.7, 1.9, .5); sh.position.y = 1; sg.add(sh); deco(sh, () => showCard(`<div class="kicker">THE TOWN SQUARE</div><h2>Where the neighbors gather</h2><p>Towns have gathered around open squares for thousands of years. In ancient Athens it was the agora: a marketplace where people traded, talked, and argued about big ideas.</p><p>In Sky Garden, the square is where the village comes together: markets, votes, festivals, and news.</p>`, 'Okay'));
 }
 // Nana Gale's garden cottage, at the back of the home island: mossy roof, round door, flowers everywhere
 const nanaHome = new THREE.Group(); nanaHome.position.set(-1, 0, -6); nanaHome.userData = { kind:'home', room:'nana' }; scene.add(nanaHome); lateClicks.push(nanaHome);
@@ -6193,11 +6201,11 @@ function ensureAsks() { if (S.asks && S.asks.day === S.day) return S.asks;
   S.asks = { day:S.day, list }; save(); return S.asks; }
 function openNotice() { const fz = festival(), rows = [], asks = ensureAsks().list;
   asks.forEach((a, i) => { const nm = NEIGHBORS[a.id].name, it = ITEMS[a.k].name, h = have(a.k);
-    rows.push(`<button data-ask="${i}" class="${a.done ? 'mdone' : ''}">${a.done ? '✓ ' : '🧺 '}${nm} would love ${a.n} ${it} ${a.why}.<span class="sub"><br>${a.done ? 'Delivered.' : `Pays ${a.pay} coins. ${h >= a.n ? `<b>You have ${h}.</b>` : `You have ${h}.`}`}</span></button>`); });
+    rows.push(`<button data-ask="${i}" class="${a.done ? 'mdone' : ''}">${a.done ? '✓ ' : '🧺 '}${nm} would love ${a.n} ${it} ${a.why}.<span class="sub"><br>${a.done ? 'Delivered.' : `Pays ${a.pay} coins. ${h >= a.n ? `<b>You have ${h}.</b>` : `You have ${h} of ${a.n}.`}`}</span></button>`); });
   rows.push(`<button id="nbG">✅ Today's goals</button>`);
   if (founderOn() && fGot('missions') && !paused('missions')) rows.push(`<button id="nbM">✦ Missions</button>`);
   if (featureOn('townhall')) rows.push(`<button id="nbT">🗳 Town Hall votes</button>`);
-  showCard(`<div class="kicker">NOTICE BOARD</div><h2>What's happening</h2>${asks.length ? '<h4>Neighbors are asking. Tap one to bring it.</h4>' : ''}<p><b>${dateLabel ? dateLabel(today()) : ''}</b>${fz ? `<br>🎉 Today is <b>${fz.name}</b>. Talk to ${NEIGHBORS[fz.host].name}.` : ''}</p><div class="jlist">${rows.join('')}</div>`, 'Close');
+  showCard(`<div class="kicker">NOTICE BOARD</div><h2>What's happening</h2><p><b>${dateLabel ? dateLabel(today()) : ''}</b>${fz ? `<br>🎉 Today is <b>${fz.name}</b>. Talk to ${NEIGHBORS[fz.host].name}.` : ''}</p>${asks.length ? '<h4>Neighbors are asking. Tap one to bring it.</h4>' : ''}<div class="jlist">${rows.join('')}</div>`, 'Close');
   document.querySelectorAll('[data-ask]').forEach(b => b.onclick = () => { const a = asks[+b.dataset.ask]; if (a.done) return; const nm = NEIGHBORS[a.id].name;
     if (have(a.k) < a.n) return toast(`${nm} asked for ${a.n} ${ITEMS[a.k].name}. You have ${have(a.k)}.`);
     bagAdd(a.k, -a.n); a.done = true; S.coins += a.pay; S.hearts[a.id] = Math.min(10, (S.hearts[a.id] || 0) + 1); goal('ask'); save(); drawHud(); sfx('coin'); chime(698); toast(`${nm} is delighted. +${a.pay} coins, and you two are better friends.`); openNotice(); });
@@ -6439,8 +6447,8 @@ function nearLabel(o) { const k = o.userData.kind, u = o.userData;
   if (k === 'piece') return u.b && u.b.p === 'hammock' ? 'Hammock: tap to nap' : u.b && u.b.p === 'bench' ? 'Bench: tap to sit' : null;
   if (k === 'npc') return NEIGHBORS[u.id] ? `${NEIGHBORS[u.id].name}: tap to talk` : null;
   if (k === 'home') return ROOMS[u.room] ? `${ROOMS[u.room].name}: tap to go in` : null;
-  if (k === 'tree') return S.tools.axe ? 'Tree: tap to chop' : 'Tree: you need an axe';
-  if (k === 'rock') return S.tools.pick ? 'Rock: tap to break' : 'Rock: you need a pickaxe';
+  if (k === 'tree') return S.tools.axe ? 'Tree: tap to chop' : 'Tree: make an axe at the workbench first';
+  if (k === 'rock') return S.tools.pick ? 'Rock: tap to break' : 'Rock: make a pickaxe at the workbench first';
   if (k === 'house') return `Your ${homeName()}: tap to go in`;
   if (k === 'ship') return "Captain Drizzle's ship: tap to look";
   if (k === 'mailbox') return VISIT ? 'Mailbox: tap to go home' : 'Mailbox: tap to visit friends';
