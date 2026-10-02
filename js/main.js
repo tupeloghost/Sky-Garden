@@ -46,8 +46,12 @@ const fresh = () => ({ day:1, t:0, coins:40, seeds:{ cloudberry:4, sunbell:0, sk
   bridge:false, pos:[0,0,2], where:'home', quest:0, aha:[], relics:0, digs:[], asked:-1, qi:0, letter:false,
   order:null, furn:{}, placed:Array(10).fill(null), q2:0, potDay:-1, fruit:{}, q3:0, bridge2:false, sprinklers:false, used:[], bigGarden:false, boulder:false, south:false, lastSeason:null, fests:{}, q5:0, tut:0, home:0, builds:[], stations:{}, bronzeKnown:false, tools:{}, pickups:[], chopped:{}, created:false, birthday:null, startedAt:null, lastParty:null, partyHat:false, name:'', look:null, mode:null, built:[], charted:[], cooked:[], read:[], songs:[], penta:false, sayings:[], builtDay:{}, q4:0, goals:null, paints:['0xff8fa3','0xfff1d6'], roof:'0xff8fa3', wall:'0xfff1d6' });
 // testers can switch to a separate Test island; it has its own save and never touches the cloud
-const TESTSLOT = (() => { try { return localStorage.getItem('sg.profile') === 'test'; } catch { return false; } })();
-const SLOT = TESTSLOT ? 'sg.save.test' : SAVE_KEY;
+const PROFILE = (() => { try { return localStorage.getItem('sg.profile') || 'main'; } catch { return 'main'; } })();
+const TESTSLOT = PROFILE === 'test';
+// testers can keep extra save files, like separate games. An extra file lives on this device only: it never backs up to the cloud.
+const FILE = /^f[234]$/.test(PROFILE) ? PROFILE : null;
+const SLOT = TESTSLOT ? 'sg.save.test' : FILE ? 'sg.save.' + FILE : SAVE_KEY;
+const SIDE = TESTSLOT || !!FILE; // not the first save file
 // the Creator can preview what one founder sees, on the test island only
 const PREVIEW = (() => { if (!TESTSLOT) return null; try { return JSON.parse(localStorage.getItem('sg.preview') || 'null'); } catch { return null; } })();
 if (TESTSLOT) document.body.classList.add('testisland');
@@ -105,9 +109,9 @@ if (location.hash === '#dev') { try { localStorage.setItem('sg.dev', 'true'); } 
 const devFlag = () => { try { return localStorage.getItem('sg.dev') === 'true'; } catch { return false; } };
 const devOn = () => devFlag() || (DEV_OK && !LOCALDEV && TESTSLOT); // #dev in the address turns it on; the Creator's test island has it on by itself
 // the real island's key, even while on the test island (the Creator's tools are tied to it)
-const mainKey = () => { if (!TESTSLOT) return S.syncKey; try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '{}').syncKey || S.syncKey; } catch { return S.syncKey; } };
+const mainKey = () => { if (!SIDE) return S.syncKey; try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '{}').syncKey || S.syncKey; } catch { return S.syncKey; } };
 async function cloudPush(force) {
-  if (devOn() || VISIT || TESTSLOT) return; // developer mode, visits, and the test island never touch the cloud
+  if (devOn() || VISIT || SIDE) return; // developer mode, visits, the test island and extra save files never touch the cloud
   if (!cloudDirty || (!force && Date.now() - lastPush < 60000)) return;
   lastPush = Date.now(); cloudDirty = false;
   try {
@@ -2403,7 +2407,8 @@ function openBag() {
 }
 // settings: how you look, your birthday, your island, tester code, and moving your game to another device
 function openSettings() {
-  showCard(`<div class="kicker">SETTINGS</div><h2>You and your game</h2><div class="jlist"><button id="sndBtn">Sound and music</button><button id="lookBtn" >Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" >I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" >Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" >${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" >Sync my game to another device</button><button id="gfxBtn">Graphics: ${lowGfx ? 'low (smoother on older phones)' : 'full'}</button></div>`, 'Back', openBag);
+  showCard(`<div class="kicker">SETTINGS</div><h2>You and your game</h2><div class="jlist"><button id="sndBtn">Sound and music</button><button id="lookBtn" >Change my look</button> ${S.founder || VISIT ? '' : '<button id="codeBtn" >I have a tester code</button>'} ${featureOn('switchIsle') ? `<button id="modeBtn" >Island: ${S.mode ? MODES.find(m => m.id === S.mode).name : 'Classic'}</button>` : ''} <button id="bdBtn" >${S.birthday ? `Birthday: ${MONTH_LONG[S.birthday.m-1]} ${S.birthday.d}` : 'Add my birthday'}</button> <button id="moveBtn" >Sync my game to another device</button><button id="gfxBtn">Graphics: ${lowGfx ? 'low (smoother on older phones)' : 'full'}</button>${canFiles() ? `<button id="filesBtn">Save files (File ${FILE_IDS.indexOf(fileNow) + 1})</button>` : ''}</div>`, 'Back', openBag);
+  if ($('filesBtn')) $('filesBtn').onclick = () => openFiles(openSettings);
   $('gfxBtn').onclick = () => { setLowGfx(!lowGfx); openSettings(); };
   $('sndBtn').onclick = openSound;
   $('lookBtn').onclick = () => openLookEditor(openSettings);
@@ -2654,7 +2659,7 @@ async function openMailbox(tab) {
   document.querySelectorAll('[data-fc]').forEach(b => b.onclick = () => go(b.dataset.fc));
 }
 async function checkInbox() {
-  if (devOn() || VISIT || TESTSLOT) return;
+  if (devOn() || VISIT || SIDE) return;
   let items = []; try { items = (await (await fetch(`${CLOUD}/inbox?key=${S.syncKey}`)).json()).items || []; } catch { return; }
   if (!items.length) return;
   const lines = [];
@@ -5099,7 +5104,7 @@ bell.visible = S.quest >= 4; sprinkler.visible = S.sprinklers; stakes.visible = 
 drawHud(); tick();
 $('moveTitle').onclick = () => openMoveGame();
 const localAt = S.savedAt || 0; save();
-if (!VISIT) cloudLoad(S.syncKey).then(found => {
+if (!VISIT && !SIDE) cloudLoad(S.syncKey).then(found => {
   if (found && found.updated > localAt + 5000 && !playing) {
     found.save.syncKey = S.syncKey; found.save.savedAt = found.updated;
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(found.save)); } catch {}
@@ -5209,6 +5214,8 @@ const isKid = () => ageBand() === 'kid';
 async function api(path, body) {
   if (TESTSLOT && body && !['/feedback','/bug'].includes(path.split('?')[0]) && !(DEV_OK && path.startsWith('/creator/'))) { setTimeout(() => toast('That only works on your real island. Tap Bag, then Back to my island.'), 60); return { ok:false, status:0, error:'test island' }; }
   if (TESTSLOT && body && path === '/feedback') body = { ...body, where:'[test island] ' + (body.where || '') };
+  if (FILE && body && !['/feedback','/bug'].includes(path.split('?')[0])) { setTimeout(() => toast('That only works on your first save file.'), 60); return { ok:false, status:0, error:'extra save file' }; }
+  if (FILE && body && path === '/feedback') body = { ...body, where:`[save file ${FILE.slice(1)}] ` + (body.where || '') };
   try { const r = await fetch(`${CLOUD}${path}`, body ? { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body) } : undefined);
     const j = await r.json().catch(() => ({})); return { ok:r.ok, status:r.status, ...j }; } catch { return { ok:false, status:0, error:'offline' }; }
 }
@@ -5710,6 +5717,26 @@ async function balloonTo(where) {
   if (where === 'heart' && S.q5 === 1) { S.q5 = 2; save(); drawHud(); setTimeout(() => toast('The Old Heart. Tap the fallen bell in the middle.'), 700); }
   if (!S.balloonFact) { S.balloonFact = true; save(); setTimeout(() => showCard(`<div class="kicker">FIRST FLIGHT</div><h2>People first flew in a balloon</h2><h4>In real life</h4><p>${BALLOON_FACT}</p>`), 900); }
 }
+// --- save files (testers): up to 4 separate games on this device. File 1 is the one that backs up to the cloud. ---
+const FILE_IDS = ['main', 'f2', 'f3', 'f4'], fileKey = id => id === 'main' ? SAVE_KEY : 'sg.save.' + id, fileNow = FILE || 'main';
+const readFile = id => { try { return JSON.parse(localStorage.getItem(fileKey(id)) || 'null'); } catch { return null; } };
+const canFiles = () => !VISIT && !TESTSLOT && (!!FILE || !!(readFile('main') || {}).founder);
+const fileChapter = d => !d.created ? 'Not started' : (d.tut || 0) < 9 ? 'Getting started' : (d.quest || 0) < 5 ? 'Chapter 1' : (d.q2 || 0) < 5 ? 'Chapter 2' : (d.q3 || 0) < 7 ? 'Chapter 3' : (d.q4 || 0) < 5 ? 'Chapter 4' : (d.q5 || 0) < 6 ? 'Chapter 5' : 'Rebuilding the village';
+function goFile(id) { try { if (playing) save(); localStorage.setItem('sg.profile', id); } catch {} location.reload(); }
+function openFiles(back) {
+  const rows = FILE_IDS.map((id, i) => [id, i + 1, readFile(id)]).filter(([id, , d]) => d || id === 'main'), free = FILE_IDS.find(id => id !== 'main' && !readFile(id));
+  showCard(`<div class="kicker">SAVE FILES</div><h2>Pick a game</h2><div class="jlist">${rows.map(([id, n, d]) => { d = d || {}; return `<button data-file="${id}" class="craft">File ${n}${d.name ? ': ' + esc(d.name) : ''} <span class="sub">${id === fileNow ? 'Playing now' : `Day ${d.day || 1}, ${fileChapter(d)}, ${d.coins || 0} coins`}</span></button>`; }).join('')}</div>
+    ${free ? '<button id="fileNew">Start a new game</button> ' : ''}${rows.length > 1 ? '<button id="fileDel" class="ghost">Delete a file</button>' : ''}
+    <p class="sub" style="margin-top:10px">File 1 backs up to the cloud. The other files stay on this device only.</p>`, back ? 'Back' : 'Close', back);
+  document.querySelectorAll('[data-file]').forEach(b => { if (b.dataset.file !== fileNow) b.onclick = () => goFile(b.dataset.file); });
+  if ($('fileNew')) $('fileNew').onclick = () => { const m = readFile('main') || {}; try { localStorage.setItem(fileKey(free), JSON.stringify({ founder:m.founder, trust:m.trust, south:m.south })); } catch {} goFile(free); }; // a new file starts the game from the beginning, as the same tester
+  if ($('fileDel')) $('fileDel').onclick = () => { const extra = rows.filter(([id]) => id !== 'main');
+    showCard(`<div class="kicker">SAVE FILES</div><h2>Delete which file?</h2><p>File 1 cannot be deleted here.</p><div class="jlist">${extra.map(([id, n, d]) => `<button data-del="${id}">File ${n}${d && d.name ? ': ' + esc(d.name) : ''}</button>`).join('')}</div>`, 'Back', () => openFiles(back));
+    document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const id = b.dataset.del, n = FILE_IDS.indexOf(id) + 1;
+      showCard(`<div class="kicker">SAVE FILES</div><h2>Delete File ${n}?</h2><p>That game is gone for good. This cannot be undone.</p><button id="fileSure">Yes, delete File ${n}</button>`, 'Keep it', () => openFiles(back));
+      $('fileSure').onclick = () => { try { localStorage.removeItem(fileKey(id)); } catch {} if (id === fileNow) { playing = false; try { localStorage.setItem('sg.profile', 'main'); } catch {} location.reload(); } else openFiles(back); }; }); };
+}
+{ const fb = $('filesTitle'); if (fb && canFiles()) { fb.hidden = false; fb.textContent = `Save files (File ${FILE_IDS.indexOf(fileNow) + 1})`; fb.onclick = () => openFiles(); } }
 // --- the Test island: a sandbox for testers, with tester tools ---
 function switchIsland() {
   if (TESTSLOT) { try { localStorage.setItem('sg.profile', 'main'); } catch {} location.reload(); return; }
@@ -5750,7 +5777,7 @@ function testerTools() {
 function founderOn() { return !!S.founder && !(S.trust && S.trust.revoked); }
 function paused(p) { return !!(S.trust && (S.trust.paused || []).includes(p)); }
 function keeperLevel() { if (devOn()) return 3; return founderOn() && featureOn('keepers') ? (S.trust && S.trust.level) || 1 : 0; }
-async function syncTrust() { if (VISIT || TESTSLOT || !S.syncKey) return;
+async function syncTrust() { if (VISIT || SIDE || !S.syncKey) return;
   try { const r = await (await fetch(`${CLOUD}/me?key=${S.syncKey}`)).json(); if (r && 'level' in r) { if (r.founder && r.level >= 4) { try { sessionStorage.setItem('sg.devok', '1'); } catch {} }
     if (r.founder && r.code && (!S.founder || S.founder.code !== r.code)) S.founder = { code:r.code, at:Date.now(), day0:(S.founder && S.founder.day0) ?? playDays() - 1 }; // the server knows this game is a founder's
     S.trust = { level:r.level, paused:r.paused || [], revoked:!!r.revoked, myth:r.myth || null, seen:r.seen || 0, missions:r.missions || [], mythData:r.mythData || null, link:r.link || null }; save(); dressPlayer(); drawHud(); drawKeepers(); mythReveal(); loadMods(r.mods); setTimeout(() => thanksCheck(r.thanks), 5000); } } catch {}
@@ -5765,7 +5792,7 @@ function thanksCheck(list) { list = (list || []).filter(t => !(S.thanked || []).
     S.coins += coins; S.thanked = [...(S.thanked || []), ...list.map(t => t.id)].slice(-300); save(); drawHud(); sfx('coin');
     fetch(`${CLOUD}/thanks-claim`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ key:S.syncKey, ids:list.map(t => t.id) }) }).catch(() => {});
     showCard(`<div class="kicker">THANK YOU</div><h2>What your feedback changed</h2>${list.map(t => `<p style="margin-top:12px">${t.note ? `<span class="sub">You said: “${esc(t.note)}”</span><br>` : ''}✅ <b>${esc(t.changed)}</b></p>`).join('')}<p style="margin-top:12px">Keep the feedback coming. Tap Feedback any time.</p>`, 'Close'); }); }
-function logKeeper(kind, detail) { if (!TESTSLOT && !VISIT) fetch(`${CLOUD}/event`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ key:S.syncKey, kind, detail }) }).catch(() => {}); }
+function logKeeper(kind, detail) { if (!SIDE && !VISIT) fetch(`${CLOUD}/event`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ key:S.syncKey, kind, detail }) }).catch(() => {}); }
 // Lighthouse Rock: a little island only keepers can see. Reach it by balloon.
 const LH = new THREE.Vector3(-15, -1.2, -11);
 const LHI = island(3.4, LH.x, LH.y, LH.z, { hidden:true }); LHI.g.visible = false; SEASON_ISLES.push(LHI); applySeason();
@@ -5972,7 +5999,7 @@ function openFeedback() {
     if (!mood && !text) { $('fbMsg').textContent = 'Pick how it is going, or write a note first.'; return; }
     $('fbMsg').textContent = 'Sending...';
     try {
-      const r = await fetch(`${CLOUD}/feedback`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ mood, text, where: (devOn() ? '[dev] ' : '') + (TESTSLOT ? '[test island] ' : '') + where, day:S.day, player:S.syncKey }) });
+      const r = await fetch(`${CLOUD}/feedback`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ mood, text, where: (devOn() ? '[dev] ' : '') + (TESTSLOT ? '[test island] ' : '') + (FILE ? `[save file ${FILE.slice(1)}] ` : '') + where, day:S.day, player:S.syncKey }) });
       if (!r.ok) throw new Error();
       hideCard(); toast('Thank you! Your feedback was sent.'); sfx('heart'); helperGrow();
     } catch { $('fbMsg').textContent = 'Could not send. Check your internet and try again. Your note is still here.'; }
@@ -6423,7 +6450,7 @@ function mythBless(s) { const F = MYTHS[s.form]; mythSky.visible = false; S.bles
   if (s.card) { showCard(s.card, s.cardBtn || 'Okay'); if (s.onBless) s.onBless(); }
   else showCard(`<div class="kicker">✦ A RARE SIGHTING ✦</div><h2>${F.appear.head}</h2><p>${F.appear.gift}</p><p class="sub">No one knows where they come from.</p>`, 'Awesome');
   if (s.id > 0 && !devOn()) api('/bless', { key:S.syncKey, id:s.id }); }
-async function mythLookUp() { if (!featureOn('myths') || VISIT || TESTSLOT || S.sightDay === S.day || !S.syncKey || devOn()) return;
+async function mythLookUp() { if (!featureOn('myths') || VISIT || SIDE || S.sightDay === S.day || !S.syncKey || devOn()) return;
   try { const r = await (await fetch(`${CLOUD}/sighting?key=${S.syncKey}`)).json(); S.sightDay = S.day; save(); if (r.sighting && Math.random() < .7) setTimeout(() => mythSighting(r.sighting), 20000 + Math.random() * 60000); } catch {} }
 // the first time: the reveal
 // a picture of the player's own legend (the same 3D creature that flies over islands), for the present they open
@@ -6640,7 +6667,7 @@ try { const hr = KIT.hr, ringOf = (g, r, y, n, c1 = 0xd8cfc0, c2 = 0xbfb6a8, h =
   if (squareBits && squareBits.fnt) { squareBits.water.userData.keep = true; squareBits.drops.forEach(d => d.userData.keep = true); bake(squareBits.fnt); }
   [workbench, kiln, furnace, sundial, darkroom].forEach(o => { if (o === kiln) kilnMouth.userData.keep = kilnDome.userData.keep = true; if (o === furnace) furnaceGlow.userData.keep = true; if (o === sundial) gnomon.userData.keep = true; bake(o); }); if (lighthouse) { lighthouse.userData.pivot.userData.keep = true; bake(lighthouse); }
 } catch (e) { console.warn('detail', e); }
-window.__sg = { VERSION, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { VERSION, openFiles, FILE, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
