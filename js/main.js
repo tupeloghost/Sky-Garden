@@ -6371,7 +6371,7 @@ var toyBall, ballV = new THREE.Vector3(), ballPrev = new THREE.Vector3(), toySwi
     if (ballUps > 1) { floatText(String(ballUps), toyBall.position); if (ballUps % 5 === 0) burst(toyBall.position.clone(), 0xffe07a, 14); } else if (!ballHint) { ballHint = true; toast('Tap the ball again before it lands.'); } }); hb.userData.label = 'Ball: tap to kick it up';
   scene.add(toyBall); lateClicks.push(toyBall); }
 { // dandelions gone to seed
-  const g = new THREE.Group(); g.position.set(-2.6, 0, 5.7); toyPuffs = [];
+  const g = new THREE.Group(); g.position.set(-2.6, 0, 5.7); g.scale.setScalar(1.7); toyPuffs = []; /* big enough to spot from across the meadow */
   [[0,0,.5],[.3,.12,.38],[-.22,.2,.42]].forEach(([x, z, h]) => { g.add(mesh(new THREE.CylinderGeometry(.012,.016,h,5), mat(0x6fae5a), x, h / 2, z)); const pf = new THREE.Group(); pf.position.set(x, h, z); pf.add(mesh(sph(.035), mat(0xd9cfa6))); for (let i = 0; i < 14; i++) { const a = i * 2.4, b = Math.acos(1 - 2 * (i + .5) / 14), d = mesh(sph(.022), mat(0xffffff), Math.sin(b) * Math.cos(a) * .1, Math.cos(b) * .1, Math.sin(b) * Math.sin(a) * .1); pf.add(d); } g.add(pf); toyPuffs.push(pf); });
   [[-.1,-.15],[.2,-.1]].forEach(([x, z]) => { const lf = mesh(sph(.09), mat(0x5fae6b), x, .03, z); lf.scale.set(1.6, .2, .7); g.add(lf); });
   const hb = hitBox(.9, .8, .8); hb.position.y = .4; g.add(hb); deco(hb, () => dandGame()); hb.userData.label = 'Dandelions: tap to blow';
