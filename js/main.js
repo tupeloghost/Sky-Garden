@@ -3046,7 +3046,7 @@ function talkPerson(vid) {
     save(); drawHud(); sfx('coin'); closeDialog(); openDialog(p.name, `You found them! Thank you so much. Here, ${pay} coins.`, [], p.hearts); } }); }
   if (p.status === 'visiting' && p.hearts >= 3 && Object.values(S.people).filter(x => x.status === 'resident').length < 3 && (S.home || 0) >= 3)
     b.push({ label:'Invite them to stay', fn:() => { closeDialog(); invitePerson(vid); } });
-  const extra = p.request && !p.request.done ? ' ' + pick(REQUEST_LINES).replace('{item}', plural(p.request.k, p.request.n)).replace('{n}', p.request.n) + (have(p.request.k) < p.request.n ? ` (You have ${have(p.request.k)}.)` : '') : '';
+  const extra = p.request && !p.request.done ? ' ' + pick(REQUEST_LINES).replace('{item}', plural(p.request.k, p.request.n)).replace('{n}', p.request.n) + (have(p.request.k) < p.request.n ? ` (${have(p.request.k)}/${p.request.n})` : '') : '';
   const tail = p.status === 'visiting' && p.leaves - S.day <= 1 ? ' I head out tomorrow, by the way.' : '';
   openDialog(p.name, personLine(p) + extra + tail, b, p.hearts);
 }
@@ -3225,7 +3225,7 @@ function openBell() {
 const bridgeCost = c => Math.round(c * (S.mode === 'explorer' ? .7 : 1));
 function useSign() {
   if (S.bridge) { toast('The bridge to Orchard Isle. Walk across!'); return; }
-  openDialog('Broken Bridge', `Fix this bridge to reach Orchard Isle. Cost: ${bridgeCost(BRIDGE_COST)} coins. You have ${S.coins}.${S.coins < bridgeCost(BRIDGE_COST) ? ` You need ${bridgeCost(BRIDGE_COST) - S.coins} more.` : ''}`, S.coins < bridgeCost(BRIDGE_COST) ? [] : [{ label:'Fix the bridge', fn:() => {
+  openDialog('Broken Bridge', `Fix this bridge to reach Orchard Isle. Coins: ${Math.min(S.coins, bridgeCost(BRIDGE_COST))}/${bridgeCost(BRIDGE_COST)}.`, S.coins < bridgeCost(BRIDGE_COST) ? [] : [{ label:'Fix the bridge', fn:() => {
     S.coins -= bridgeCost(BRIDGE_COST); S.bridge = true; if (S.quest >= 4) S.quest = 5; buildBridge(); save(); drawHud();
     [523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*160)); burst(sign.position, 0xffc857, 20);
     openDialog('Bridge fixed!', 'The bridge to Orchard Isle is whole again. Walk across and find out who answered the bell.');
@@ -3359,7 +3359,7 @@ function drizzleFinale() {
 }
 function useSign2() {
   if (S.bridge2) { toast('The bridge to Windmill Isle. Walk across!'); return; }
-  openDialog('Broken Bridge', `This bridge goes to Windmill Isle. Cost: ${bridgeCost(BRIDGE2_COST)} coins. You have ${S.coins}.${S.coins < bridgeCost(BRIDGE2_COST) ? ` You need ${bridgeCost(BRIDGE2_COST) - S.coins} more.` : ''}`, S.coins < bridgeCost(BRIDGE2_COST) ? [] : [{ label:'Fix the bridge', fn:() => {
+  openDialog('Broken Bridge', `This bridge goes to Windmill Isle. Coins: ${Math.min(S.coins, bridgeCost(BRIDGE2_COST))}/${bridgeCost(BRIDGE2_COST)}.`, S.coins < bridgeCost(BRIDGE2_COST) ? [] : [{ label:'Fix the bridge', fn:() => {
     S.coins -= bridgeCost(BRIDGE2_COST); S.bridge2 = true; if (S.q3 === 0) S.q3 = 1; buildBridge(); save(); drawHud();
     [523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*160)); burst(sign2.position, 0xffc857, 20);
     openDialog('Bridge fixed!', 'Walk across to Windmill Isle. Something is creaking up there.');
@@ -3621,7 +3621,7 @@ function useSite(i) {
   const have = Object.entries(b.items).map(([k,n]) => ({ k, n, got:countOf(k), label: k.startsWith('kind:') ? kindName[k.slice(5)] : ITEMS[k].name }));
   const can = S.coins >= b.coins && have.every(x => x.got >= x.n);
   showCard(`<div class="kicker">REBUILD THE VILLAGE</div><h2>${b.name}</h2><p>${b.about}</p><h4>To build it</h4>
-    <div class="jlist"><button>${S.coins >= b.coins ? '✓ ' : ''}${b.coins} coins <span class="sub">you have ${S.coins}${S.coins >= b.coins ? '' : `, ${b.coins - S.coins} more to go`}</span></button>${have.map(x => `<button>${x.got >= x.n ? '✓ ' : ''}${x.n} ${x.label} <span class="sub">you have ${x.got}${x.got >= x.n ? '' : `, ${x.n - x.got} more to go`}</span></button>`).join('')}</div>
+    <div class="nlist"><div class="nrow ${S.coins >= b.coins ? 'ok' : 'no'}"><span><i class="nco">${ICON.coin}</i> Coins</span><b>${S.coins >= b.coins ? '✓ ' : ''}${Math.min(S.coins, b.coins)}/${b.coins}</b></div>${have.map(x => `<div class="nrow ${x.got >= x.n ? 'ok' : 'no'}"><span>${x.label[0].toUpperCase() + x.label.slice(1)}</span><b>${x.got >= x.n ? '✓ ' : ''}${Math.min(x.got, x.n)}/${x.n}</b></div>`).join('')}</div>
     ${can ? '<button id="build">Build it</button> ' : `<p style="margin-top:10px;font-weight:700">${S.coins < b.coins ? `You still need ${b.coins - S.coins} more coins.` : (x => `You still need ${x.n - x.got} more ${x.label}.`)(have.find(x => x.got < x.n))}</p>`}`, 'Later');
   if (can) $('build').onclick = () => {
     S.coins -= b.coins;
@@ -4043,7 +4043,11 @@ const canCarry = (k, n = 1) => roomFor(S.bag, packCap(), k, n) >= n;
 function bagFull() { toast(`Your backpack is full (${packCap()} slots). Put things in a chest, or craft a bigger bag at the workbench.`); sfx('click'); }
 if (!LIMITS_ON && S.chest && Object.keys(S.chest).length) { Object.entries(S.chest).forEach(([k, n]) => { if (n > 0) S.bag[k] = (S.bag[k] || 0) + n; }); S.chest = {}; } // chests are off: their things go back in your bag
 const have = k => S.bag[k] || 0, enough = needs => Object.entries(needs).every(([k,n]) => have(k) >= n);
-const needText = needs => Object.entries(needs).map(([k,n]) => `${icon(k)} ${n} ${ITEMS[k].name.toLowerCase()}${n > 1 && !ITEMS[k].name.endsWith('s') && k !== 'fiber' ? 's' : ''} (you have ${have(k)})`).join(', ');
+// what something needs, shown the same way everywhere: how many you have out of how many it takes, like 0/14
+const needName = (k, n) => { const t = plural(k, n).replace('grass fiber', 'grass'); return t[0].toUpperCase() + t.slice(1); };
+const needText = needs => Object.entries(needs).map(([k,n]) => `${icon(k)} ${Math.min(have(k), n)}/${n} ${needName(k, n).toLowerCase()}`).join(', '); // in a sentence
+const needChips = needs => `<span class="needs">${Object.entries(needs).map(([k,n]) => `<em class="${have(k) >= n ? 'ok' : 'no'}">${icon(k)} ${Math.min(have(k), n)}/${n}</em>`).join('')}</span>`; // on a row
+const needList = (needs, coins) => `<div class="nlist">${Object.entries(needs).map(([k,n]) => `<div class="nrow ${have(k) >= n ? 'ok' : 'no'}"><span>${icon(k)} ${needName(k, n)}</span><b>${have(k) >= n ? '✓ ' : ''}${Math.min(have(k), n)}/${n}</b></div>`).join('')}${coins ? `<div class="nrow ${S.coins >= coins ? 'ok' : 'no'}"><span><i class="nco">${ICON.coin}</i> Coins</span><b>${S.coins >= coins ? '✓ ' : ''}${Math.min(S.coins, coins)}/${coins}</b></div>` : ''}</div>`; // on a card, one thing to a line
 const stageNeeds = st => st === 1 ? HOME_STYLES[homeStyle()].needs : HOME_STAGES[st].needs;
 function drawHome() {
   const st = S.home || 0; house.visible = st >= 3; buildSite.visible = st < 3;
@@ -4141,11 +4145,11 @@ function useWorkbench() {
     <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln && potteryOn() ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>
     <div class="jlist">${[...shown].sort((a, b) => (hasCraft(a.id) - hasCraft(b.id)) || (enough(b.needs) - enough(a.needs))).map(c => { const own = hasCraft(c.id), ok = enough(c.needs);
       return `<button data-cr="${c.id}" class="craft ${own ? 'own' : ok ? 'ready' : ''}"><span class="ct">${c.name}${own ? ' <small>You have it</small>' : ok ? ' <small class="go">Ready to make</small>' : ''}</span>
-        <span class="sub">${c.does}</span>${own ? '' : `<span class="needs">${Object.entries(c.needs).map(([k,n]) => `<em class="${have(k) >= n ? 'ok' : 'no'}">${icon(k)} ${Math.min(have(k), n)} of ${n}</em>`).join('')}</span>`}</button>`; }).join('')}</div>`, 'Close');
+        <span class="sub">${c.does}</span>${own ? '' : `<span class="needs">${Object.entries(c.needs).map(([k,n]) => `<em class="${have(k) >= n ? 'ok' : 'no'}">${icon(k)} ${Math.min(have(k), n)}/${n}</em>`).join('')}</span>`}</button>`; }).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => {
     const c = CRAFTS.find(x => x.id === b.dataset.cr);
     if (hasCraft(c.id)) { toast(`You already have a ${c.name.toLowerCase()}.`); return; }
-    if (!enough(c.needs)) { toast(`Not enough yet. Needs ${needText(c.needs)}.`); return; }
+    if (!enough(c.needs)) { toast(`Not enough yet: ${needText(c.needs)}.`); return; }
     Object.entries(c.needs).forEach(([k,n]) => bagAdd(k, -n));
     if (c.station) S.stations[c.id] = true; else S.tools[c.id] = true; lean('maker', 2);
     save(); drawHud(); drawStations(); sfx('pick'); burst((c.station ? (c.id === 'kiln' ? kiln : furnace) : workbench).position.clone(), 0xc98f58, 20);
@@ -4167,9 +4171,9 @@ function gatherNode(n) {
 // the kiln: keep the fire just right
 function useKiln() {
   showCard(`<div class="kicker">THE KILN</div><h2>Fire clay</h2><p>Pick what to make, then tend the fire. Too cool and nothing happens. Too hot and it cracks!</p>
-    <div class="jlist"><button data-fire="brick">Bricks x2 <span class="sub">needs ${needText({ clay:3, log:1 })}</span></button><button data-fire="pot">Clay pot <span class="sub">needs ${needText({ clay:2, log:1 })}</span></button></div>`, 'Close');
+    <div class="jlist"><button data-fire="brick" class="craft">Bricks x2 ${needChips({ clay:3, log:1 })}</button><button data-fire="pot" class="craft">Clay pot ${needChips({ clay:2, log:1 })}</button></div>`, 'Close');
   document.querySelectorAll('[data-fire]').forEach(b => b.onclick = () => { const what = b.dataset.fire, needs = what === 'brick' ? { clay:3, log:1 } : { clay:2, log:1 };
-    if (!enough(needs)) { toast(`Not enough yet. Needs ${needText(needs)}.`); return; } Object.entries(needs).forEach(([k,n]) => bagAdd(k, -n)); save(); kilnGame(what); });
+    if (!enough(needs)) { toast(`Not enough yet: ${needText(needs)}.`); return; } Object.entries(needs).forEach(([k,n]) => bagAdd(k, -n)); save(); kilnGame(what); });
 }
 function kilnGame(what) {
   showCard(`<div class="kicker">THE KILN</div><h2>Keep it just right</h2><p>Tap Add wood when the heat drops. Keep the needle in the green zone until the bar fills.</p>
@@ -4200,9 +4204,9 @@ function kilnGame(what) {
 function useFurnace() {
   const needs = { copper:2, tin:1, log:2 };
   if (!S.bronzeKnown) return bronzePuzzle();
-  showCard(`<div class="kicker">THE FURNACE</div><h2>Smelt bronze</h2><p>Tap Bronze ingot to make one.</p><div class="jlist"><button id="smelt">Bronze ingot <span class="sub">needs ${needText(needs)}</span></button></div>
+  showCard(`<div class="kicker">THE FURNACE</div><h2>Smelt bronze</h2><p>Tap Bronze ingot to make one.</p><div class="jlist"><button id="smelt" class="craft">Bronze ingot ${needChips(needs)}</button></div>
     <p style="margin-top:8px">No tin? Buy it from Pip.</p>`, 'Close');
-  $('smelt').onclick = () => { if (!enough(needs)) { toast(`Not enough yet. Needs ${needText(needs)}.`); return; }
+  $('smelt').onclick = () => { if (!enough(needs)) { toast(`Not enough yet: ${needText(needs)}.`); return; }
     Object.entries(needs).forEach(([k,n]) => bagAdd(k, -n)); bagAdd('bronze'); save(); drawHud(); sfx('pick'); burst(furnace.position.clone(), 0xd9a441, 18); hideCard(); toast('You made a bronze ingot!'); };
 }
 function bronzePuzzle() {
@@ -4223,7 +4227,7 @@ function bronzePuzzle() {
   draw();
 }
 function wallsPicker() { // step 2 of the hut: three real ways to build a wall
-  showCard(`<div class="kicker">YOUR HOME</div><h2>Pick your walls</h2><div class="jlist">${Object.entries(HOME_STYLES).map(([k, w]) => `<button data-wall="${k}">${w.name} <span class="sub">${w.what} Needs ${needText(w.needs)}.</span></button>`).join('')}</div>`, 'Later');
+  showCard(`<div class="kicker">YOUR HOME</div><h2>Pick your walls</h2><div class="jlist">${Object.entries(HOME_STYLES).map(([k, w]) => `<button data-wall="${k}" class="craft">${w.name} ${needChips(w.needs)}</button>`).join('')}</div>`, 'Later');
   document.querySelectorAll('[data-wall]').forEach(b => b.onclick = () => { S.homeStyle = b.dataset.wall; save(); drawHome(); drawHud(); useBuildSite(); });
 }
 function useBuildSite() {
@@ -4232,8 +4236,8 @@ function useBuildSite() {
   const stage = HOME_STAGES[st], needs = stageNeeds(st), ok = enough(needs);
   const howTo = { log:'Tap a tree with no fruit to chop logs with a stone axe.', stone:'Tap a rock to break off stone with a stone pickaxe.', fiber:'Tap a bush to cut grass fiber.' };
   const how = Object.entries(needs).filter(([k,n]) => have(k) < n).map(([k]) => howTo[k]).filter(Boolean).join(' '); // only what you are still short of
-  showCard(`<div class="kicker">YOUR HOME</div><h2>Build ${stage.name}</h2><p>Grandma's hut blew away in the Great Gust. Build a new one, one step at a time. Step ${st + 1} of 3.</p>
-    ${st === 1 ? `<h4>${HOME_STYLES[homeStyle()].name}</h4><p>${HOME_STYLES[homeStyle()].what}</p>` : ''}<h4>You need</h4><p>${needText(needs)}</p>${how ? `<p>${how}</p>` : ''}
+  showCard(`<div class="kicker">YOUR HUT: STEP ${st + 1} OF 3</div><h2>Build ${stage.name}</h2>
+    ${st === 1 ? `<h4>${HOME_STYLES[homeStyle()].name}</h4><p>${HOME_STYLES[homeStyle()].what}</p>` : ''}${needList(needs)}${how ? `<p class="sub">${how}</p>` : ''}
     ${ok ? '<button id="buildHome">Build it</button>' : ''}${st === 1 ? ' <button id="otherWalls" class="ghost">Pick other walls</button>' : ''}`, ok ? 'Later' : 'Got it');
   if (st === 1) $('otherWalls').onclick = wallsPicker;
   if (ok) $('buildHome').onclick = () => {
@@ -4249,23 +4253,26 @@ function housePlans() {
   if (VISIT) return toast(`${VISIT.name}'s house plans.`);
   const sz = homeSize(), next = HOME_SIZES[sz + 1], ok = next && enough(next.needs) && S.coins >= next.coins;
   showCard(`<div class="kicker">HOUSE PLANS</div><h2>Your home is a ${homeName()}</h2>
-    ${next ? `<p>${next.adds}</p><h4>The ${next.name} needs</h4><p>${needText(next.needs)}, and ${next.coins} coins (you have ${S.coins})</p>${ok ? `<button id="growHome">Build the ${next.name}</button>` : ''}` : '<p>A house is the biggest home.</p>'}
-    <h4>Walls</h4><div class="jlist">${Object.entries(HOME_STYLES).map(([k, w]) => `<button data-wall="${k}">${w.name} <span class="sub">${w.what} ${k === homeStyle() ? 'Your walls now.' : `Needs ${needText(w.needs)}.`}</span></button>`).join('')}</div>`, 'Done');
+    ${next ? `<p>${next.adds}</p>${needList(next.needs, next.coins)}${ok ? `<button id="growHome">Build the ${next.name}</button> ` : ''}` : '<p>A house is the biggest home.</p>'}<button id="hpWalls" class="ghost">Change the walls</button>`, 'Close');
+  $('hpWalls').onclick = wallPlans;
   if (ok) $('growHome').onclick = () => { Object.entries(next.needs).forEach(([k,n]) => bagAdd(k, -n)); S.coins -= next.coins; S.homeSize = sz + 1; save(); drawHouse(); drawHomeInside(); drawHud(); hideCard();
     [523,659,784,1047].forEach((f,i) => setTimeout(() => chime(f), i*160)); toast(sz === 1 ? 'Your home is a cottage now! Climb the ladder to see the loft.' : 'Your home is a house now! The study is through the door in the loft.'); };
-  document.querySelectorAll('[data-wall]').forEach(b => b.onclick = () => { const k = b.dataset.wall, w = HOME_STYLES[k]; if (k === homeStyle()) return;
-    if (!enough(w.needs)) return toast(`${w.name} walls need ${needText(w.needs)}.`);
-    Object.entries(w.needs).forEach(([m,n]) => bagAdd(m, -n)); S.homeStyle = k; S.wallOn = false; save(); drawHouse(); drawHud(); sfx('till'); toast(`New walls: ${w.name.toLowerCase()}. Step outside to see them.`); housePlans(); });
+}
+function wallPlans() { // the three kinds of wall: a short row each, and the details when you tap one
+  showCard(`<div class="kicker">HOUSE PLANS</div><h2>Walls</h2><div class="jlist">${Object.entries(HOME_STYLES).map(([k, w]) => `<button data-wall="${k}" class="craft">${w.name} ${k === homeStyle() ? '<span class="sub">Your walls now</span>' : needChips(w.needs)}</button>`).join('')}</div>`, 'Back', housePlans);
+  document.querySelectorAll('[data-wall]').forEach(b => b.onclick = () => { const k = b.dataset.wall, w = HOME_STYLES[k], mine = k === homeStyle(), can = !mine && enough(w.needs);
+    showCard(`<div class="kicker">WALLS</div><h2>${w.name}</h2><p>${w.what}</p>${mine ? '<p><b>Your walls now.</b></p>' : needList(w.needs)}${can ? '<button id="wallGo">Build these walls</button>' : ''}`, 'Back', wallPlans);
+    if (can) $('wallGo').onclick = () => { Object.entries(w.needs).forEach(([m,n]) => bagAdd(m, -n)); S.homeStyle = k; S.wallOn = false; save(); drawHouse(); drawHud(); sfx('till'); hideCard(); toast(`New walls: ${w.name.toLowerCase()}. Step outside to see them.`); }; });
 }
 function homeStep() { // what the home-building goal says right now
-  if (!S.tools.axe) return enough(CRAFTS[0].needs) ? { text:'Tap the tree stump workbench to make a stone axe.', target:workbench } : { text:`Pick up sticks, stones, and grass around your island. A stone axe needs ${needText(CRAFTS[0].needs)}.`, target:pickupGroup.children[0] || null };
-  if (!S.tools.pick) return enough(CRAFTS[1].needs) ? { text:'Tap the tree stump workbench to make a stone pickaxe.', target:workbench } : { text:`A stone pickaxe needs ${needText(CRAFTS[1].needs)}. Look for grey stones on the ground. More appear each morning.`, target:pickupGroup.children.find(g => S.pickups[g.userData.i]?.t === 'stone') || pickupGroup.children[0] || null };
+  if (!S.tools.axe) return enough(CRAFTS[0].needs) ? { text:'Tap the tree stump workbench to make a stone axe.', target:workbench } : { text:`Pick up sticks, stones, and grass for a stone axe: ${needText(CRAFTS[0].needs)}.`, target:pickupGroup.children[0] || null };
+  if (!S.tools.pick) return enough(CRAFTS[1].needs) ? { text:'Tap the tree stump workbench to make a stone pickaxe.', target:workbench } : { text:`Pick up grey stones for a stone pickaxe: ${needText(CRAFTS[1].needs)}. More appear each morning.`, target:pickupGroup.children.find(g => S.pickups[g.userData.i]?.t === 'stone') || pickupGroup.children[0] || null };
   const stage = HOME_STAGES[S.home || 0], needs = stageNeeds(S.home || 0);
   if (S.home === 1 && !S.homeStyle) return { text:'Tap the frame of your hut to pick your walls.', target:buildSite };
   if (enough(needs)) return { text:`Tap ${S.home ? 'your hut' : 'the old stones where your hut stood'} to build ${stage.name}.`, target:buildSite };
   const short = Object.entries(needs).find(([k,n]) => have(k) < n)[0];
   const tg = short === 'log' ? woodTrees.find(t => S.chopped[t.userData.key] !== S.day && t.parent === scene) : short === 'stone' ? rocks.find(r => S.chopped[r.userData.key] !== S.day) : bushes.find(b => S.chopped[b.userData.key] !== S.day);
-  return { text:`To build ${stage.name}, gather ${needText(needs)}.`, target: tg || buildSite };
+  return { text:`Gather for ${stage.name}: ${needText(needs)}.`, target: tg || buildSite };
 }
 let lastHint = ''; function hintToast() { const h = homeHint(), k = h.replace(/\d+/g, ''); if (h && k !== lastHint) toast(h); lastHint = k; } // the floating +2 shows what you got; only speak up with a hint
 function homeHint() { return (S.home || 0) < 3 ? homeStep().text : ''; }
@@ -4561,7 +4568,7 @@ const hammockOpen = () => founderOn() || S.hq >= 4;
 // Nana's hammock: a short story mission. Each step says why you are doing it.
 // hq: 0 not started, 1 gather 8 grass, 3 hang it between the two trees, 4 done
 const HQ_SPOT = [6.25, -3.25];
-function hammockStep() { return S.hq === 1 ? `Cut bushes for grass, then bring it to Nana. You have ${Math.min(8, have('fiber'))} of 8.` : S.hq === 3 ? 'Hang the hammock between the two trees behind your garden. Tap the glowing spot between them.' : ''; }
+function hammockStep() { return S.hq === 1 ? `Cut bushes for grass, then bring it to Nana. ${icon('fiber')} ${Math.min(8, have('fiber'))}/8` : S.hq === 3 ? 'Hang the hammock between the two trees behind your garden. Tap the glowing spot between them.' : ''; }
 function hammockTalk() {
   if (!S.hq) return openDialog('Nana Gale', "See those two trees behind your garden? Your grandmother kept a hammock there. She said her best ideas came to her half asleep in it. The Great Gust took it.", [{ label:'Can we make a new one?', fn:() => { S.hq = 1; save(); drawHud();
       openDialog('Nana Gale', "We can. A hammock is only rope and knots, and rope is only grass. Bring me 8 grass. Bushes have plenty.", [], S.hearts.nana); } }], S.hearts.nana);
@@ -4614,7 +4621,7 @@ function openChest(chest) {
     ${spaceMeter(slotsIn(S.bag), packCap(), 'Backpack')}
     ${bag.length ? `<div class="igrid">${bag.map(([k,n]) => tile(k, n, 'in')).join('')}</div>` : '<p>Empty.</p>'}
     <div style="margin-top:10px"><button id="chMat" class="ghost">Put away all materials</button> <button id="chAll" class="ghost">Take everything</button></div>
-    ${canBand ? `<h4>Upgrade this chest</h4><p>Add bronze bands to make this chest hold twice as much (24 more slots). ${enough({ bronze:2 }) ? 'Needs' : 'Not enough yet. Needs'} ${needText({ bronze:2 })}.</p><button id="chBand"${enough({ bronze:2 }) ? '' : ' disabled style="opacity:.45"'}>Add bronze bands</button>` : chest?.band ? '<p style="margin-top:8px">This chest has bronze bands: it holds 48 slots.</p>' : ''}`);
+    ${canBand ? `<h4>Upgrade this chest</h4><p>Add bronze bands to make this chest hold twice as much (24 more slots). </p>${needList({ bronze:2 })}<button id="chBand"${enough({ bronze:2 }) ? '' : ' disabled style="opacity:.45"'}>Add bronze bands</button>` : chest?.band ? '<p style="margin-top:8px">This chest has bronze bands: it holds 48 slots.</p>' : ''}`);
   let short = false;
   const move = (k, into) => { const from = into ? S.bag : S.chest, to = into ? S.chest : S.bag, n = from[k] || 0; if (!n) return;
     const fit = roomFor(to, into ? storeCap() : packCap(), k, n); if (fit < n) short = true; if (!fit) return;
@@ -4624,7 +4631,7 @@ function openChest(chest) {
   document.querySelectorAll('[data-out]').forEach(b => b.onclick = () => { move(b.dataset.out, false); done(); });
   $('chMat').onclick = () => { Object.keys(S.bag).filter(k => ITEMS[k]?.kind === 'material').forEach(k => move(k, true)); done(); };
   $('chAll').onclick = () => { Object.keys(S.chest).forEach(k => move(k, false)); done(); };
-  if ($('chBand')) $('chBand').onclick = () => { if (!enough({ bronze:2 })) { toast(`Not enough yet. Needs ${needText({ bronze:2 })}.`); return; }
+  if ($('chBand')) $('chBand').onclick = () => { if (!enough({ bronze:2 })) { toast(`Not enough yet: ${needText({ bronze:2 })}.`); return; }
     bagAdd('bronze', -2); chest.band = true; drawBuilds(); save(); drawHud(); sfx('ting'); toast('Bronze bands added.'); openChest(chest); };
 }
 function drawBuilds() {
@@ -4657,7 +4664,7 @@ function drawGrid() { const pts = [], seg = (x0, z0, x1, z1) => { if (onLand(x0,
 const BUILD_GROUPS = [['ground','Ground'],['walls','Walls'],['lights','Lights and seats'],['garden','Garden']]; let buildGrp = 'ground';
 function drawBuildBar() {
   const bar = $('buildbar');
-  bar.innerHTML = `<p class="bhelp">${held ? `Holding your ${PIECES.find(x => x.id === held.p).name.toLowerCase()}. Tap an empty square to set it down. Rotate turns it.` : moving ? 'Tap a piece you built to pick it up and move it.' : removing ? 'Tap a piece to remove it. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
+  bar.innerHTML = `<p class="bhelp">${held ? `Holding your ${PIECES.find(x => x.id === held.p).name.toLowerCase()}. Tap an empty square to set it down. Rotate turns it.` : moving ? 'Tap a piece you built to pick it up and move it.' : removing ? 'Tap a piece to remove it. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} ${icon('log')} ${have('log')} ${icon('stone')} ${have('stone')} ${icon('fiber')} ${have('fiber')}</p>
     <div class="bcats">${BUILD_GROUPS.map(([k, n]) => `<button data-bg="${k}" class="${buildGrp === k ? 'on' : ''}">${n}</button>`).join('')}</div>
     <div class="bpieces">${PIECES.filter(p => p.grp === buildGrp && (p.id !== 'hammock' || hammockOpen()) && (!p.founder || (S.founder && fGot('lantern') && !(S.builds || []).some(b => b.p === p.id))) && (!p.age || S.stations[p.age]) && (p.id !== 'chest' || (LIMITS_ON && featureOn('chest')))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
     ${hammockOpen() || buildGrp !== 'lights' ? '' : '<p class="bhelp" style="font-weight:500;margin-top:6px">🔒 Hammock: Nana knows how to make one. Talk to her.</p>'}
@@ -5359,7 +5366,7 @@ function designStudio() {
     showCard(`<div class="kicker">DESIGN STUDIO</div><h2>Make a product</h2>${marketTabs('make')}
       <div class="brandhead">${productSwatch(d, 84)}${logoSvg(S.brand.logo, 40)}<h3>${esc(nm)}</h3></div>
       <h4>What to make</h4><div class="chips">${avail.map(([k, b]) => `<button data-ba="${k}" class="${d.base === k ? '' : 'ghost'}" ${enough(b.needs) ? '' : 'style="opacity:.5"'}>${esc(b.name)}</button>`).join('')}</div>
-      <p style="font-size:14px">${enough(B.needs) ? 'Needs' : 'Not enough yet. Needs'} ${needText(B.needs)}.</p>
+      ${needList(B.needs)}
       <h4>Main color</h4><div class="chips">${PALETTE.map(c => `<button class="sw ${d.color === c ? 'on' : ''}" data-c1="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
       <h4>Pattern and its color</h4><div class="chips">${PATTERNS.map(p => `<button data-pa="${p}" class="${d.pattern === p ? '' : 'ghost'}">${p[0].toUpperCase() + p.slice(1)}</button>`).join('')}</div>
       <div class="chips" style="margin-top:6px">${PALETTE.map(c => `<button class="sw sm ${d.color2 === c ? 'on' : ''}" data-c2="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
@@ -5373,7 +5380,7 @@ function designStudio() {
     document.querySelectorAll('[data-c1]').forEach(x => x.onclick = () => { keep(); d.color = +x.dataset.c1; draw(); });
     document.querySelectorAll('[data-c2]').forEach(x => x.onclick = () => { keep(); d.color2 = +x.dataset.c2; draw(); });
     document.querySelectorAll('[data-pa]').forEach(x => x.onclick = () => { keep(); d.pattern = x.dataset.pa; draw(); });
-    $('dMake').onclick = () => { keep(); if (!enough(B.needs)) { toast(`Not enough yet. Needs ${needText(B.needs)}.`); return; }
+    $('dMake').onclick = () => { keep(); if (!enough(B.needs)) { toast(`Not enough yet: ${needText(B.needs)}.`); return; }
       Object.entries(B.needs).forEach(([k,n]) => bagAdd(k, -n));
       const first = !(S.madeProducts > 0); S.madeProducts = (S.madeProducts || 0) + 1;
       S.products = [...(S.products || []), { uid:Date.now().toString(36), base:d.base, name:(kid ? `${d.adj} ${B.name}` : (d.name.trim() || B.name)), color:d.color, color2:d.color2, pattern:d.pattern, maker:{ code:myCode, shop:S.brand.shop, logo:S.brand.logo } }];
@@ -5433,7 +5440,7 @@ function marketDay() {
   if (!S.boat || S.boat.day !== S.day) { const pool = [...Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(s) && !CROPS[k].locked), 'apple', 'peach', 'minnow', 'trout'];
     S.boat = { day:S.day, orders:[...Array(3)].map(() => { const k = pool[Math.floor(Math.random()*pool.length)], n = 1 + Math.floor(Math.random()*3); return { k, n, pay:Math.round(ITEMS[k].sell * n * 1.5), done:false }; }) }; save(); }
   showCard(`<div class="kicker">THE FLOATING MARKET</div><h2>Today's orders</h2><p>Shoppers from all over the sky call out what they want. These orders pay 50% more than selling at your crate.</p>
-    <div class="jlist">${S.boat.orders.map((o, i) => `<button data-mo="${i}" ${o.done ? 'class="locked"' : ''}>${o.done ? '✓ ' : ''}${icon(o.k)} ${o.n} ${esc(plural(o.k, o.n))} <span class="sub">${o.done ? 'Delivered' : `pays ${o.pay} coins. You have ${have(o.k)} of ${o.n}.`}</span></button>`).join('')}</div>${S.boat.orders.every(o => o.done) ? '<p><b>All 3 orders are filled. New orders come tomorrow.</b></p>' : ''}`, 'Close');
+    <div class="jlist">${S.boat.orders.map((o, i) => `<button data-mo="${i}" ${o.done ? 'class="locked"' : ''}>${o.done ? '✓ ' : ''}${icon(o.k)} ${o.n} ${esc(plural(o.k, o.n))} <span class="sub">${o.done ? 'Delivered' : `pays ${o.pay} coins. ${Math.min(have(o.k), o.n)}/${o.n}`}</span></button>`).join('')}</div>${S.boat.orders.every(o => o.done) ? '<p><b>All 3 orders are filled. New orders come tomorrow.</b></p>' : ''}`, 'Close');
   document.querySelectorAll('[data-mo]').forEach(b => b.onclick = () => { const o = S.boat.orders[+b.dataset.mo]; if (o.done) return;
     if (have(o.k) < o.n) { toast(`You need ${o.n} ${plural(o.k, o.n)}.`); return; }
     bagAdd(o.k, -o.n); S.coins += o.pay; o.done = true; S.marketFilled = (S.marketFilled || 0) + 1; lean('trader'); goal('sell', o.pay); sfx('coin'); save(); drawHud();
@@ -5867,7 +5874,7 @@ function expandCard() {
   showCard(`<div class="kicker">NANA GALE</div><h2>Grow the island: ${e.name}</h2>
     <p>"When I was young, we made new land by piling earth and stone at the edge until it held. We can do it again."</p>
     <p>New land joins your island with room to build, plus new trees, rocks, and bushes.</p>
-    ${ready ? `<h4>It needs</h4><p>${needText(e.cost)}, and ${e.coins} coins (you have ${S.coins}).</p>` : `<h4>Not yet</h4><p>${e.why}</p>`}
+    ${ready ? needList(e.cost, e.coins) : `<h4>Not yet</h4><p>${e.why}</p>`}
     ${ready ? (ok ? `<button id="exGo">Build the ${e.name}</button>` : `<p><b>You do not have enough yet. Gather the rest, then talk to Nana Gale again.</b></p>`) : ''}`, 'Later');
   if ($('exGo')) $('exGo').onclick = () => {
     if (!enough(e.cost) || S.coins < e.coins) { toast('Not enough yet.'); return; }
@@ -6255,7 +6262,7 @@ function ensureAsks() { if (S.asks && S.asks.day === S.day) return S.asks;
   S.asks = { day:S.day, list }; save(); return S.asks; }
 function openNotice() { const fz = festival(), rows = [], asks = ensureAsks().list;
   asks.forEach((a, i) => { const nm = NEIGHBORS[a.id].name, it = ITEMS[a.k].name, h = have(a.k);
-    rows.push(`<button ${!a.done && h >= a.n ? `data-ask="${i}"` : ''} class="${a.done ? 'mdone' : ''}">${a.done ? '✓ ' : '🧺 '}${nm} would love ${a.n} ${it} ${a.why}.<span class="sub"><br>${a.done ? `Delivered. +${a.pay} coins.` : `Pays ${a.pay} coins. ${h >= a.n ? `<b>You have ${h}.</b>` : `You have ${h} of ${a.n}.`}`}</span></button>`); });
+    rows.push(`<button ${!a.done && h >= a.n ? `data-ask="${i}"` : ''} class="${a.done ? 'mdone' : ''}">${a.done ? '✓ ' : '🧺 '}${nm} would love ${a.n} ${it} ${a.why}.<span class="sub"><br>${a.done ? `Delivered. +${a.pay} coins.` : `Pays ${a.pay} coins. ${h >= a.n ? `<b>✓ ${a.n}/${a.n}</b>` : `${h}/${a.n}`}`}</span></button>`); });
   rows.push(`<button id="nbG">✅ Today's goals</button>`);
   if (founderOn() && fGot('missions') && !paused('missions')) rows.push(`<button id="nbM">✦ Missions</button>`);
   if (featureOn('townhall')) rows.push(`<button id="nbT">🗳 Town Hall votes</button>`);

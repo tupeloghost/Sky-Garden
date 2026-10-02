@@ -383,3 +383,12 @@ body.on-title #goalArrow, body.in-setup #goalArrow, .building #goalArrow { displ
 .bcats { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
 .bcats button { margin:0; padding:4px 12px; font-size:13px; border-radius:999px; background:#fff8; box-shadow:none; }
 .bcats button.on { background:var(--gold); }
+
+.nlist { display:grid; gap:5px; margin:8px 0 10px; }
+.nrow { display:flex; justify-content:space-between; align-items:center; gap:10px; background:#f1e7d6; border-radius:12px; padding:7px 14px; font-weight:700; }
+.nrow b { font-variant-numeric:tabular-nums; white-space:nowrap; }
+.nrow.ok b { color:#1f7a3f; } .nrow.no b { color:#b5482f; }
+.nrow .nco { display:inline-block; width:17px; vertical-align:-3px; }
+.jlist button.craft .needs, .needs { display:flex; flex-wrap:wrap; gap:5px; }
+.needs em { font-style:normal; font-size:13px; font-weight:800; padding:1px 8px; border-radius:999px; }
+.needs em.ok { background:#dff5dc; color:#1f7a3f; } .needs em.no { background:#fbe3dc; color:#b5482f; }
