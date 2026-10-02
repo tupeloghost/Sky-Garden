@@ -4195,24 +4195,38 @@ function usePickup(i) {
   gain(p.t, n, new THREE.Vector3(p.x, 0, p.z)); sfx({ stone:'stone', fiber:'swish', stick:'chop' }[p.t] || 'plant');
   hintToast();
 }
+// things gathered today show it: a tree has a fresh cut and chips at its foot, a rock is broken down smaller, a bush is trimmed short. Clay and ore are gone until tomorrow.
+const usedToday = o => S.chopped[o.userData.key] === S.day;
+function drawUsed() { try {
+  scene.traverse(o => { const k = o.userData && o.userData.kind; if (k === 'tree') { if (usedToday(o) && !o.userData.cut) { const c = new THREE.Group(), lt = fine(0xf1d6a8); const w = mesh(new THREE.ConeGeometry(.12,.2,4), lt, 0, .5, .2); w.rotation.x = Math.PI / 2; c.add(w); for (let i = 0; i < 6; i++) { const ch = mesh(new THREE.BoxGeometry(.08,.02,.04), lt, Math.cos(i * 1.1) * .4, .02, .25 + Math.sin(i * 1.7) * .2); ch.rotation.y = i; c.add(ch); } o.userData.cut = c; o.add(c); } if (o.userData.cut) o.userData.cut.visible = usedToday(o); }
+    if (k === 'rock') { if (o.userData.baseY == null) o.userData.baseY = o.position.y; const u = usedToday(o); o.scale.setScalar(u ? .7 : 1); o.position.y = o.userData.baseY * (u ? .7 : 1); }
+    if (k === 'bush') o.scale.setScalar(usedToday(o) ? .68 : 1); });
+  placeNodes(); } catch {} }
+// clay and ore turn up in new places each morning, and a patch you have dug is gone until tomorrow
+const NODE_SPOTS = { clay:[[0,-7.5,1.1],[0,3.0,-7.45],[0,-5.2,-6.2],[0,7.7,-.6],[0,4.3,-6.9],[0,-7.8,1.9],[1,5.5,-4.8],[1,6,1.8],[1,-6.4,1.5],[1,-1.5,6.6],[1,1.5,-6.8],[1,6.6,-1.6]], copper:[[1,-5.5,-3],[1,-2,-6.2],[1,4.2,-5.4],[1,-6.8,-.6],[1,.8,-7],[1,3.4,6.4]], tin:[[2,5,-4.5],[2,-5.2,-3.6],[2,-3.5,5.2],[2,5.6,2.4]] };
+function placeNodes() { const base = [new THREE.Vector3(), ORCH_POS, WIND_POS], on = n => (n.userData.kind === 'claypit' ? potteryOn() : bronzeOn()) && !usedToday(n);
+  nodes.forEach(n => n.visible = false); const taken = [];
+  nodes.forEach((n, i) => { if (!on(n)) return; const ore = n.userData.ore, isl = ore === 'clay' ? (i < 2 ? 0 : 1) : ore === 'copper' ? 1 : 2, pool = NODE_SPOTS[ore].filter(sp => sp[0] === isl);
+    let spot = null; for (let t = 0; t < pool.length; t++) { const sp = pool[(S.day * 5 + i * 3 + t) % pool.length], x = base[isl].x + sp[1], z = base[isl].z + sp[2]; if (taken.some(q => Math.hypot(q[0] - x, q[1] - z) < 1.5) || nearThing(x, z) || groundAt(x, base[isl].y, z) === null) continue; spot = [x, z]; break; }
+    if (spot) { n.position.set(spot[0], base[isl].y, spot[1]); taken.push(spot); } else taken.push([n.position.x, n.position.z]); n.visible = true; }); }
 function chopTree(t) {
   if (!S.tools.axe) { toast('You need a stone axe to chop trees. Make one at the tree stump workbench.'); return; }
   const key = t.userData.key; if (S.chopped[key] === S.day) { toast('This tree needs to rest. Come back tomorrow.'); return; }
   if (!canCarry('log')) return bagFull();
   S.chopped[key] = S.day; t.userData.shake = 1; sfx('chop');
   if (S.chopDay !== S.day) { S.chopDay = S.day; S.chopN = 0; } if (++S.chopN === 7) karma('harmony', -1); const wp = new THREE.Vector3(); t.getWorldPosition(wp);
-  const nl = S.tools.bronzeAxe ? 4 : 3; gain('log', nl, wp.setY(wp.y + 1), true); hintToast(); goal('chop');
+  const nl = S.tools.bronzeAxe ? 4 : 3; gain('log', nl, wp.setY(wp.y + 1), true); hintToast(); goal('chop'); drawUsed();
 }
 function mineRock(r) {
   if (!S.tools.pick) { toast('You need a stone pickaxe to break rocks. Make one at the tree stump workbench.'); return; }
   const key = r.userData.key; if (S.chopped[key] === S.day) { toast('You got all the stone from this rock today. Try again tomorrow.'); return; }
   if (!canCarry('stone')) return bagFull();
-  S.chopped[key] = S.day; sfx('stone'); const ns = S.tools.bronzePick ? 5 : 3; gain('stone', ns, r.position.clone(), true); hintToast(); goal('mine');
+  S.chopped[key] = S.day; sfx('stone'); const ns = S.tools.bronzePick ? 5 : 3; gain('stone', ns, r.position.clone(), true); hintToast(); goal('mine'); drawUsed();
 }
 function cutBush(b) {
   const key = b.userData.key; if (S.chopped[key] === S.day) { toast('You already cut grass here today.'); return; }
   if (!canCarry('fiber')) return bagFull();
-  S.chopped[key] = S.day; sfx('swish'); gain('fiber', 2, b.position.clone(), true); hintToast();
+  S.chopped[key] = S.day; sfx('swish'); gain('fiber', 2, b.position.clone(), true); hintToast(); drawUsed();
 }
 const CRAFTS = [
   { id:'axe',   name:'Stone Axe',     needs:{ stick:3, stone:2, fiber:2 }, does:'Chop trees for logs.' },
@@ -4238,8 +4252,7 @@ const AGES = [
 function agesHtml() {
   return `<div class="ages">${AGES.map(a => `<span class="${a.soon ? 'soon' : a.done() ? 'done' : ''}">${a.soon ? '' : a.done() ? '✓ ' : ''}${a.name}${a.soon ? ' (coming soon)' : ''}</span>`).join('<i>›</i>')}</div>`;
 }
-function drawStations() { kiln.visible = !!S.stations.kiln; furnace.visible = !!S.stations.furnace;
-  nodes.forEach(n => n.visible = n.userData.kind === 'claypit' ? potteryOn() : bronzeOn()); }
+function drawStations() { kiln.visible = !!S.stations.kiln; furnace.visible = !!S.stations.furnace; drawUsed(); }
 function useWorkbench() {
   const shown = CRAFTS.filter(c => (LIMITS_ON || !/^bag\d$/.test(c.id)) && (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag1' || featureOn('bagup')) && (c.id !== 'net' || featureOn('butterflies')) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
   showCard(`<div class="kicker">TREE STUMP WORKBENCH</div><h2>Make things</h2>
@@ -4266,7 +4279,7 @@ function gatherNode(n) {
   if (S.chopped[key] === S.day) { toast('Nothing left here today. It fills back in by tomorrow.'); return; }
   if (!canCarry(ore)) return bagFull();
   S.chopped[key] = S.day; const amt = kind === 'claypit' ? 2 : 1;
-  sfx(kind === 'claypit' ? 'squelch' : 'ting'); for (let i=0;i<amt;i++) bagAdd(ore); burst(n.position.clone(), kind === 'claypit' ? 0xb8653f : ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, 12); floatText(`+${amt} ${icon(ore)} ${plural(ore, amt)}`, n.position.clone()); swingT = .5; save(); drawHud();
+  sfx(kind === 'claypit' ? 'squelch' : 'ting'); for (let i=0;i<amt;i++) bagAdd(ore); burst(n.position.clone(), kind === 'claypit' ? 0xb8653f : ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, 12); floatText(`+${amt} ${icon(ore)} ${plural(ore, amt)}`, n.position.clone()); swingT = .5; save(); drawHud(); drawUsed();
   toast(`${kind === 'claypit' ? 'Clay is soft, wet earth that can be shaped and fired.' : ore === 'copper' ? 'Copper ore has those green streaks. Smelt it in a furnace.' : 'Tin is rare. People once traded it across whole continents.'}`);
 }
 // the kiln: keep the fire just right
@@ -4415,7 +4428,7 @@ function sleep(passedOut, where) {
   const fz = festival(); if (fz && !S.fests[fz.id + fz.year]) msg = `Today is ${fz.name}! Talk to ${NEIGHBORS[fz.host].name}.`;
   S.tiles.forEach((_, i) => drawTile(i));
   { const dm = dream(); S.dayDid = {}; setTimeout(() => { if (!screenBusy() && !toastQ.length && !S.newDay) toast(dm); }, 9000); } // after the good-morning message
-  spawnDigs(); applySeason(); S.goals = null; ensureGoals(); peopleNewDay(); drawShrooms(); mythLookUp(); setTimeout(founderDrip, 6000);
+  spawnDigs(); applySeason(); S.goals = null; ensureGoals(); peopleNewDay(); drawShrooms(); mythLookUp(); setTimeout(founderDrip, 6000); drawUsed();
   S.pickups = S.pickups || []; spawnPickups();
   if (where === 'outside') { if (S.where === 'hut') S.where = 'home'; } // you wake up right where you slept
   else if ((S.home || 0) < 3) { S.where = 'home'; player.position.set(campfire.position.x + .8, 0, campfire.position.z + .6); } else { S.where = 'hut'; player.position.set(ROOM.x - 1.4, 0, ROOM.z - .8); }
@@ -5027,7 +5040,18 @@ function tameOutlines() { scene.traverse(o => { const ms = Array.isArray(o.mater
   ms.forEach(m => { if (!m.isMeshToonMaterial || m.transparent || o.isInstancedMesh || o.isPoints || o.isSprite) m.userData.outlineParameters = NO_OUTLINE; }); }); }
 if (LOOK === 'b') renderer.domElement.style.filter = 'saturate(1.12) contrast(1.04)';
 if (LOOK === 'c') { renderer.domElement.style.filter = 'saturate(.88) brightness(1.04) sepia(.08)'; document.body.classList.add('paper'); }
-const clock = new THREE.Clock(); let playing = false, hudTick = 0, stepDist = 0, steerSide = 0, steerT = 0;
+const clock = new THREE.Clock(); let playing = false, hudTick = 0, stepDist = 0, steerSide = 0, steerT = 0, route = null, routeFor = null, stallT = 0, stallD = 1e9;
+// is this spot inside something solid (whether or not you are standing there)
+function solidPt(x, z) { const px = player.position.x, pz = player.position.z; player.position.x = 1e5; player.position.z = 1e5; const r = solidAt(x, z); player.position.x = px; player.position.z = pz; return r; }
+// a route to (tx, tz) around buildings, trees and edges: spreads out over the ground in half-steps from where you stand and walks back along the shortest way found
+function findRoute(tx, tz) { const C = .5, sx = player.position.x, sz = player.position.z, key = (i, j) => i * 1000 + j, from = new Map([[key(0, 0), null]]), open = [[0, 0, player.position.y]];
+  let best = [0, 0], bestD = Math.hypot(tx - sx, tz - sz); const startD = bestD;
+  for (let n = 0, q = 0; q < open.length && n < 3200; n++, q++) { const [i, j, y] = open[q], x = sx + i * C, z = sz + j * C, d = Math.hypot(tx - x, tz - z); if (d < bestD) { bestD = d; best = [i, j]; if (d < C * .8) break; }
+    for (const [di, dj] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) { const k = key(i + di, j + dj); if (from.has(k)) continue; from.set(k, 0); const nx = x + di * C, nz = z + dj * C, ny = groundAt(nx, y, nz); if (ny === null || solidPt(nx, nz)) continue;
+      if (di && dj && (solidPt(x + di * C, z) || solidPt(x, z + dj * C))) { from.delete(k); continue; } // no cutting a corner between two solid things
+      from.set(k, [i, j]); open.push([i + di, j + dj, ny]); } }
+  if (bestD > startD - .6) return null; // nowhere closer to go
+  const pts = []; for (let c = best; c && (c[0] || c[1]); c = from.get(key(c[0], c[1]))) pts.unshift([sx + c[0] * C, sz + c[1] * C]); return pts.length ? pts : null; }
 // flying: which islands are open to a bird, and where the nearest land is
 function flyIslands() { return [
   { c:new THREE.Vector3(0, 0, 0), r:9, open:true }, { c:SQ, r:5.8, open:squareOpen() },
@@ -5092,9 +5116,14 @@ function tickFrame() {
   let mv = cine ? new THREE.Vector3() : new THREE.Vector3((keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0), 0, (keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0));
   if (mv.lengthSq()) { target = null; pending = null; }
   else if (target) {
-    mv.subVectors(target, player.position); mv.y = 0;
-    if (mv.length() < (pending ? Math.max(1.3, (pending.userData.solid || 0) + .5) : .1)) { const p = pending; target = null; pending = null; mv.set(0,0,0); if (p) arrive(p); }
-  }
+    if (routeFor !== target) { routeFor = target; route = null; stallT = 0; stallD = 1e9; }
+    mv.subVectors(target, player.position); mv.y = 0; const left = mv.length();
+    if (left < (pending ? Math.max(1.3, (pending.userData.solid || 0) + .5) : .1)) { const p = pending; target = null; pending = null; route = null; mv.set(0,0,0); if (p) arrive(p); }
+    else { if (route && route.length) { mv.set(route[0][0] - player.position.x, 0, route[0][1] - player.position.z); if (mv.length() < .3) { route.shift(); if (route.length) mv.set(route[0][0] - player.position.x, 0, route[0][1] - player.position.z); else mv.subVectors(target, player.position).setY(0); } }
+      if ((stallT += dt) > .9) { // not getting closer: stop pushing against it and work out a way around
+        if (left > stallD - .3 && !(route && route.length)) { route = findRoute(target.x, target.z); if (!route) { target = null; pending = null; mv.set(0,0,0); } }
+        stallT = 0; stallD = left; } }
+  } else route = null;
   const inner = player.userData.inner;
   const flyNow = canFly() && ((flight.down && performance.now() - flight.at > 280) || keys[' ']);
   if (flyNow && !flight.on) { flight.on = true; target = null; pending = null; sfx('cast'); }
@@ -5134,7 +5163,7 @@ function tickFrame() {
       inner.position.y = Math.abs(Math.sin(now*14))*.12; inner.rotation.z = Math.sin(now*14)*.06;
     inner.userData.arms.forEach((a, i) => a.rotation.x = Math.sin(now*14 + i*Math.PI) * .7);
       S.pos = [player.position.x, player.position.y, player.position.z];
-    } else { target = null; pending = null;
+    } else { if (target && !(route && route.length)) { route = findRoute(target.x, target.z); stallT = 0; } if (!target || !route) { target = null; pending = null; } // boxed in: look for a way round before giving up
       if (groundAt(player.position.x, player.position.y, player.position.z) === null) { const L = nearestLand(); let y = null; for (const h of [player.position.y, 0, -1.5, -3, 1.5, -4.5]) { y = groundAt(L.x, h, L.z); if (y !== null) break; }
         if (y !== null) { player.position.set(L.x, y, L.z); S.pos = [L.x, y, L.z]; } } } // stuck with no ground underfoot: step back onto land
   } else { inner.position.y *= .8; inner.rotation.z *= .8; inner.scale.y = 1 + Math.sin(now*2.5)*.02; }
@@ -6667,6 +6696,7 @@ function nearLabel(o) { const k = o.userData.kind, u = o.userData;
   if (k === 'piece') return u.b && u.b.p === 'hammock' ? 'Hammock: tap to nap' : u.b && u.b.p === 'bench' ? 'Bench: tap to sit' : null;
   if (k === 'npc') return NEIGHBORS[u.id] ? `${NEIGHBORS[u.id].name}: tap to talk` : null;
   if (k === 'home') return ROOMS[u.room] ? `${ROOMS[u.room].name}: tap to go in` : null;
+  if ((k === 'tree' || k === 'rock' || k === 'bush') && usedToday(o)) return `${k[0].toUpperCase() + k.slice(1)}: back tomorrow`;
   if (k === 'tree') return S.tools.axe ? 'Tree: tap to chop' : 'Tree: make an axe at the workbench first';
   if (k === 'rock') return S.tools.pick ? 'Rock: tap to break' : 'Rock: make a pickaxe at the workbench first';
   if (k === 'house') return `Your ${homeName()}: tap to go in`;
@@ -6801,7 +6831,7 @@ try { const hr = KIT.hr, ringOf = (g, r, y, n, c1 = 0xd8cfc0, c2 = 0xbfb6a8, h =
   if (squareBits && squareBits.fnt) { squareBits.water.userData.keep = true; squareBits.drops.forEach(d => d.userData.keep = true); bake(squareBits.fnt); }
   [workbench, kiln, furnace, sundial, darkroom].forEach(o => { if (o === kiln) kilnMouth.userData.keep = kilnDome.userData.keep = true; if (o === furnace) furnaceGlow.userData.keep = true; if (o === sundial) gnomon.userData.keep = true; bake(o); }); if (lighthouse) { lighthouse.userData.pivot.userData.keep = true; bake(lighthouse); }
 } catch (e) { console.warn('detail', e); }
-window.__sg = { VERSION, getTarget:() => target && target.toArray(), walkY, groundAt, questWait, questTarget, openDialog, closeDialog, drawTile, cropModel, bugModel, critter, scene, openFiles, FILE, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { VERSION, findRoute, solidPt, getRoute:() => route, drawUsed, placeNodes, nodes, getTarget:() => target && target.toArray(), walkY, groundAt, questWait, questTarget, openDialog, closeDialog, drawTile, cropModel, bugModel, critter, scene, openFiles, FILE, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
