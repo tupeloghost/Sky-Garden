@@ -1700,7 +1700,7 @@ let cardClose = null, cardCleanup = null;
 function hideCard() { $('veil').classList.remove('show'); if (cardCleanup) { cardCleanup(); cardCleanup = null; } }
 function showCard(html, btn='Okay', onClose) {
   const kick = (html.match(/class="kicker">([^<]*)</) || [])[1] || '';
-  $('card').className = 'card ' + (/ALREADY KNEW/.test(kick) ? 'k-recall' : /FESTIVAL/.test(kick) ? 'k-fest' : /STAR|OBSERVATORY|NIGHT SKY/.test(kick) ? 'k-star' : /MEMORY|STORY|TALE|SECRET|QUESTION/.test(kick) ? 'k-mem' : /LETTER|CHAPTER/.test(kick) ? 'k-letter' : 'k-plain');
+  $('card').className = 'card ' + (/, AGAIN$/.test(kick) ? 'k-recall' : /FESTIVAL/.test(kick) ? 'k-fest' : /STAR|OBSERVATORY|NIGHT SKY/.test(kick) ? 'k-star' : /MEMORY|STORY|TALE|SECRET|QUESTION/.test(kick) ? 'k-mem' : /LETTER|CHAPTER/.test(kick) ? 'k-letter' : 'k-plain');
   if (!$('veil').classList.contains('show')) { const c = $('card'); c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); } // pops in when a menu opens
   if (cardCleanup) { cardCleanup(); cardCleanup = null; }
   btn = { 'Got it':'Okay', Done:'Close', Later:'Not now', 'Never mind':'Not now', Cancel:'Not now' }[btn] || btn; // a few words for closing, used the same way everywhere
@@ -1712,7 +1712,7 @@ function showCard(html, btn='Okay', onClose) {
 }
 function ahaHtml(id) {
   const a = AHA[id];
-  return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2>${a.hook ? `<p class="memhook">${a.hook}</p>` : ''}${a.art ? `<div class="memart">${a.art}${a.cap ? `<span>${a.cap}</span>` : ''}</div>` : ''}<h4>What you did</h4><p>${a.did}</p><h4>The real story</h4><p>${a.real}</p><h4>Where you see it today</h4><p>${a.today}</p>`;
+  return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2>${a.hook ? `<p class="memhook">${a.hook}</p>` : ''}${a.art ? `<div class="memart">${a.art}${a.cap ? `<span>${a.cap}</span>` : ''}</div>` : ''}<p class="gap">${a.did}</p><p class="gap">${a.real}</p><p class="gap">${a.today}</p>`;
 }
 function showAha(id, onClose) {
   lean('scholar', 2);
@@ -1724,10 +1724,10 @@ function showRecall(id, onClose) {
   const r = RECALL[id], a = r.aha || id;
   if (!S.used.includes(a)) S.used.push(a);
   [659,784,988,1319].forEach((f,i)=>setTimeout(()=>chime(f),i*120));
-  showCard(`<div class="kicker">YOU ALREADY KNEW THIS</div><h2>${r.title}</h2><p>${r.text}</p><h4>From your Collections</h4><p>${AHA[a].title}</p>`, 'Nice!', onClose); save();
+  showCard(`<div class="kicker">${AHA[a].title.toUpperCase()}, AGAIN</div><h2>${r.title}</h2><p>${r.text}</p>`, 'Nice!', onClose); save();
 }
 function lessonHtml(a) {
-  return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2>${a.did ? `<h4>What you did</h4><p>${a.did}</p>` : ''}<h4>The real story</h4><p>${a.real}</p><h4>Where you see it today</h4><p>${a.today}</p>`;
+  return `<div class="kicker">${a.kicker}</div><h2>${a.title}</h2>${a.did ? `<p>${a.did}</p>` : ''}<p class="gap">${a.real}</p><p class="gap">${a.today}</p>`;
 }
 function collectionList(title, kicker, items, have, show) {
   showCard(`<div class="kicker">${kicker}</div><h2>${title}</h2><div class="jlist">${items.map(x => have.includes(x.id) ? `<button data-cl="${x.id}">${x.name || x.title}</button>` : `<button class="locked">Not found yet</button>`).join('')}</div>`, 'Back', openJournal);
@@ -1991,7 +1991,7 @@ const GOAL_TYPES = {
   wish: () => 'Make a wish at the fountain', sit: () => 'Sit on a bench in the Town Square', ask: () => 'Bring a neighbor what they asked for (see the notice board)',
 };
 // know-how: count what you do; after a few times, show the real skill you've been practicing (one a day, never during the first steps)
-function knowHtml(x) { return `<div class="kicker">YOU JUST LEARNED SOMETHING REAL</div><h2>${x.icon} ${x.title}</h2><h4>What you did</h4><p>${x.did}</p><h4>What that really is</h4><p>${x.real}</p><h4>You see it here too</h4><p>${x.today}</p>`; }
+function knowHtml(x) { return `<div class="kicker">${x.term}</div><h2>${x.icon} ${x.title}</h2><p>${x.did}</p><p class="gap">${x.real}</p><p class="gap">${x.today}</p>`; } // no generic headings: the title is the idea, the kicker is its real name
 // --- neighbors as experts: help with their craft by trying things. Nothing is explained until after you've done it. ---
 function helpDone(id, know, thanks) { const first = !(S.helped || []).includes(id); if (first) { S.helped = [...(S.helped || []), id]; S.hearts[id] = Math.min(10, (S.hearts[id] || 0) + 1); }
   const x = KNOWHOW.find(k => k.id === know), isNew = !(S.know || []).includes(know); if (isNew) { S.know = [...(S.know || []), know]; S.coins += 40; }
@@ -3199,7 +3199,7 @@ function useObservatory() {
 }
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 function starHtml(c) {
-  return `<div class="kicker">STAR CHART</div><h2>${c.title}</h2><h4>The real story</h4><p>${c.real}</p><h4>Look for it</h4><p>${c.today} Best seen in the evening in ${c.months.map(m => MONTH_NAMES[m-1]).join(', ')}.</p>`;
+  return `<div class="kicker">STAR CHART</div><h2>${c.title}</h2><p>${c.real}</p><p class="gap">${c.today} Best seen in the evening in ${c.months.map(m => MONTH_NAMES[m-1]).join(', ')}.</p>`;
 }
 function openStarList() {
   showCard(`<div class="kicker">STAR CHART</div><h2>${S.charted.length} of ${CONSTELLATIONS.length} charted</h2><p>Chart them at the Observatory after 8 PM. Each one only comes out in certain months.</p>
