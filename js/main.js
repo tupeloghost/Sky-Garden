@@ -320,6 +320,56 @@ function tx(kind, rx = 1, ry = 1) {
 const fine = (c, o = {}) => { const m = mat(c, o); m.userData.outlineParameters = NO_OUTLINE; return m; }; // for small details: no dark outline around them
 roofMat.map = tx('straw', 4, 1); wallMat.map = tx('plaster', 2, 2);
 const ridgeMat = mat(0xff8fa3, { map:tx('straw', 4, 1) }), lampMat = new THREE.MeshStandardMaterial({ color:0xffe9b8, emissive:0xffc46b, emissiveIntensity:.15, roughness:.5 }); lampMat.userData.outlineParameters = NO_OUTLINE;
+// --- detailed parts shared by every building: windows, doors, stone footings, chimneys, layered roofs, pots of flowers ---
+const townHalos = [];
+const KIT = (() => {
+  const hr = i => { const x = Math.sin(i * 127.1) * 43758.5; return x - Math.floor(x); };
+  const at = (g, x, y, z, ry = 0) => { const p = new THREE.Group(); p.position.set(x, y, z); p.rotation.y = ry; g.add(p); return p; };
+  const BLOOM = [0xff8fa3, 0xfff3a0, 0xc9b6ff, 0xffffff, 0xffb36b];
+  // a window facing +z: frame, panes, sill, and (if asked) shutters, a flower box and a night glow
+  function win(g, x, y, z, o = {}) { const { w = .5, h = .46, ry = 0, shut = null, box = false, glass = winMat, frame = 0xffffff, round = false, lit = true, bars = true } = o, p = at(g, x, y, z, ry), fr = mat(frame), wt = fine(frame);
+    if (round) { p.add(mesh(new THREE.TorusGeometry(w / 2 + .03, .045, 8, 22), fr, 0, 0, .03)); p.add(mesh(new THREE.CircleGeometry(w / 2, 22), glass, 0, 0, .02)); if (bars) { p.add(mesh(new THREE.BoxGeometry(.03, w, .02), wt, 0, 0, .04)); p.add(mesh(new THREE.BoxGeometry(w, .03, .02), wt, 0, 0, .04)); } }
+    else { p.add(mesh(new THREE.BoxGeometry(w + .14, h + .14, .07), fr, 0, 0, .01)); p.add(mesh(new THREE.BoxGeometry(w, h, .08), glass, 0, 0, .03)); if (bars) { p.add(mesh(new THREE.BoxGeometry(.035, h, .03), wt, 0, 0, .08)); p.add(mesh(new THREE.BoxGeometry(w, .035, .03), wt, 0, 0, .08)); }
+      p.add(mesh(new THREE.BoxGeometry(w + .26, .07, .16), mat(0xc98f58, { map:tx('planks', 2, 1) }), 0, -h / 2 - .1, .07)); }
+    if (shut != null) { const sm = mat(shut), sl = fine(new THREE.Color(shut).multiplyScalar(.78).getHex()); [-1, 1].forEach(sd => { p.add(mesh(new THREE.BoxGeometry(.17, h + .12, .05), sm, sd * (w / 2 + .18), 0, .04)); [-.3, -.1, .1, .3].forEach(k => p.add(mesh(new THREE.BoxGeometry(.13, .02, .02), sl, sd * (w / 2 + .18), k * h, .07))); }); }
+    if (box) flowerBox(p, 0, -h / 2 - .22, .14, w + .16, x * 7 + y);
+    if (lit) { const hl = halo(0xffc46b, Math.max(w, h) * 2.4, 0); hl.position.set(0, 0, .22); p.add(hl); townHalos.push(hl); } return p; }
+  function flowerBox(g, x, y, z, w = .66, seed = 0) { g.add(mesh(new THREE.BoxGeometry(w, .15, .17), mat(0xc98f58, { map:tx('planks', 2, 1) }), x, y, z)); g.add(mesh(new THREE.BoxGeometry(w - .06, .03, .12), fine(0x5a3f2c), x, y + .08, z));
+    const n = Math.round(w / .11); for (let i = 0; i < n; i++) { const fx = x - w / 2 + .08 + i * (w - .16) / Math.max(1, n - 1), fy = y + .16 + hr(i + seed) * .08; g.add(mesh(new THREE.CylinderGeometry(.01, .01, .14, 4), fine(0x4fb46a), fx, fy - .05, z)); g.add(mesh(sph(.045), fine(BLOOM[(i + Math.floor(seed * 3 + 50)) % 5]), fx, fy + .03, z + (i % 2) * .03)); const lf = mesh(sph(.05), fine(i % 2 ? 0x4fb46a : 0x3f9a5c), fx + .04, fy - .07, z + .06); lf.scale.set(1, .5, .7); g.add(lf); } }
+  // a plank door facing +z, with a frame, iron hinges and a brass knob. round:true makes a round burrow door
+  function door(g, x, y, z, o = {}) { const { w = .6, h = 1, ry = 0, color = 0xc08a5c, frame = 0x8a6040, arch = true, round = false, pane = false, knob = 0xffc857 } = o, p = at(g, x, y, z, ry), dm = mat(color, { map:tx('grain', 1, 1) }), fm = mat(frame, { map:tx('grain', 1, 2) }), seam = fine(new THREE.Color(color).multiplyScalar(.5).getHex()), iron = fine(0x4a4450);
+    if (round) { const r = w / 2; const f = mesh(new THREE.CylinderGeometry(r + .1, r + .1, .1, 26), fm, 0, r, 0); f.rotation.x = Math.PI / 2; p.add(f); const d = mesh(new THREE.CylinderGeometry(r, r, .12, 26), dm, 0, r, .03); d.rotation.x = Math.PI / 2; p.add(d);
+      [-.5, 0, .5].forEach(k => p.add(mesh(new THREE.BoxGeometry(.012, 2 * r * Math.sqrt(1 - k * k * .8), .02), seam, k * r, r, .1))); [-.45, .45].forEach(k => { p.add(mesh(new THREE.BoxGeometry(r * 1.1, .05, .02), iron, -r * .3, r + k * r, .1)); }); p.add(mesh(sph(.05), fine(knob), r * .45, r, .12)); return p; }
+    p.add(mesh(new THREE.BoxGeometry(w + .12, h, .07), fm, 0, h / 2, 0)); p.add(mesh(new THREE.BoxGeometry(w, h - .04, .1), dm, 0, h / 2 - .02, .02));
+    if (arch) { const a1 = mesh(new THREE.CylinderGeometry(w / 2 + .06, w / 2 + .06, .07, 18, 1, false, 0, Math.PI), fm, 0, h, 0); a1.rotation.set(Math.PI / 2, 0, Math.PI / 2); p.add(a1); const a2 = mesh(new THREE.CylinderGeometry(w / 2, w / 2, .1, 18, 1, false, 0, Math.PI), dm, 0, h - .03, .02); a2.rotation.set(Math.PI / 2, 0, Math.PI / 2); p.add(a2); }
+    const n = Math.max(2, Math.round(w / .18)); for (let i = 1; i < n; i++) p.add(mesh(new THREE.BoxGeometry(.012, h + (arch ? w * .3 : -.06), .02), seam, -w / 2 + i * w / n, h / 2 + (arch ? w * .12 : 0), .075));
+    [.26, .8].forEach(k => { p.add(mesh(new THREE.BoxGeometry(w * .7, .05, .02), iron, -w * .12, h * k, .08)); p.add(mesh(sph(.028), iron, -w * .42, h * k, .08)); }); p.add(mesh(sph(.042), fine(knob), w * .33, h * .52, .1));
+    if (pane) { const pn = mesh(new THREE.BoxGeometry(.16, .16, .03), winMat, 0, h * .78, .075); pn.rotation.z = Math.PI / 4; p.add(pn); } return p; }
+  // rough stones around the foot of a wall: w wide, d deep, on the front and both sides
+  function foot(g, w, d, cz = 0, seed = 0) { const fs = [mat(0xd8cfc0), mat(0xbfb6a8), mat(0xcac2b6)]; let i = seed;
+    for (let x = -w / 2 - .04; x < w / 2; i++) { const l = .22 + hr(i + 3) * .2; g.add(mesh(new THREE.BoxGeometry(Math.min(l, w / 2 + .04 - x) - .03, .15 + hr(i) * .08, .12), fs[i % 3], x + l / 2, .1, cz + d / 2 + .04)); x += l; }
+    [-1, 1].forEach(sd => { for (let z = -d / 2; z < d / 2 - .05; i++) { const l = .24 + hr(i + 9) * .2; g.add(mesh(new THREE.BoxGeometry(.12, .15 + hr(i) * .08, Math.min(l, d / 2 - z) - .03), fs[i % 3], sd * (w / 2 + .04), .1, cz + z + l / 2)); z += l; } }); }
+  function chimney(g, x, y, z, h = .8, pot = true) { const sm = mat(0xb0a898, { map:tx('stone', 1, 1) }); g.add(mesh(new THREE.BoxGeometry(.32, h, .32), sm, x, y + h / 2, z)); for (let i = 0; i < 6; i++) g.add(mesh(new THREE.BoxGeometry(.14, .09, .05), mat(i % 2 ? 0x9a93a8 : 0xc8c2cf), x - .07 + hr(i + x) * .14, y + .1 + i * (h - .18) / 6, z + .17));
+    g.add(mesh(new THREE.BoxGeometry(.42, .08, .42), mat(0x8a8290), x, y + h + .04, z)); if (pot) g.add(mesh(new THREE.CylinderGeometry(.08, .1, .18, 10), mat(0xc9703f), x, y + h + .17, z)); }
+  // a pointed roof laid in overlapping layers with a rolled edge. R is the distance to a corner
+  function hip(g, y, R, H, m, zs = 1, layers = 4) { for (let i = 0; i < layers; i++) { const y0 = i * H / layers, y1 = Math.min(H, y0 + H / layers + .1), c = mesh(new THREE.CylinderGeometry(Math.max(.02, R * (1 - y1 / H)), R * (1 - y0 / H) + .08, y1 - y0, 4), m, 0, y + (y0 + y1) / 2, 0); c.rotation.y = Math.PI / 4; c.scale.z = zs; g.add(c); }
+    const tg = new THREE.TorusGeometry(R + .05, .09, 8, 4); tg.rotateZ(Math.PI / 4); tg.rotateX(Math.PI / 2); const roll = mesh(tg, m, 0, y + .05, 0); roll.scale.z = zs; g.add(roll); }
+  // a roof with two sloping sides. half = half the depth of the walls, W = how wide, rh = how tall, m2 = ridge and trim
+  function gable(g, y, half, rh, W, m, m2, wallM, o = {}) { const over = o.over ?? .3, ang = Math.atan2(rh, half), L = (half + over) / Math.cos(ang), n = o.layers ?? 4;
+    if (wallM) { const sh = new THREE.Shape(); sh.moveTo(-half, 0); sh.lineTo(half, 0); sh.lineTo(0, rh); sh.closePath(); const gg = new THREE.ExtrudeGeometry(sh, { depth:W - .5, bevelEnabled:false }); gg.translate(0, 0, -(W - .5) / 2); gg.rotateY(Math.PI / 2); g.add(mesh(gg, wallM, 0, y, o.cz || 0)); }
+    [0, Math.PI].forEach(yaw => { const side = new THREE.Group(); side.rotation.y = yaw; side.position.z = o.cz || 0; const sl = new THREE.Group(); sl.position.y = y + rh; sl.rotation.x = ang; side.add(sl); g.add(side);
+      for (let i = 0; i < n; i++) sl.add(mesh(new THREE.BoxGeometry(W, .16, L / n + .14), m, 0, .08 + i * .03, L - (i + .5) * L / n));
+      const roll = mesh(new THREE.CylinderGeometry(.1, .1, W, 10), m, 0, .06, L + .02); roll.rotation.z = Math.PI / 2; sl.add(roll); sl.add(mesh(new THREE.BoxGeometry(W + .06, .1, .4), m2, 0, .22, .17)); });
+    const cap = mesh(new THREE.CylinderGeometry(.12, .12, W + .08, 10), m2, 0, y + rh + .16, o.cz || 0); cap.rotation.z = Math.PI / 2; g.add(cap); }
+  // a clay pot with a leafy plant and a flower
+  function pot(g, x, z, s = 1, c = 0, y = 0) { g.add(mesh(new THREE.CylinderGeometry(.13 * s, .09 * s, .2 * s, 12), mat(0xd9825b), x, y + .1 * s, z)); g.add(mesh(new THREE.CylinderGeometry(.14 * s, .14 * s, .03 * s, 12), mat(0xc9703f), x, y + .2 * s, z)); g.add(mesh(sph(.15 * s), mat(c % 2 ? 0x4fb46a : 0x3f9a5c), x, y + .32 * s, z)); [[.07, .43, .04], [-.06, .4, -.03], [.0, .46, -.06]].forEach(([dx, dy, dz], i) => g.add(mesh(sph(.05 * s), fine(BLOOM[(c + i) % 5]), x + dx * s, y + dy * s, z + dz * s))); }
+  function barrel(g, x, z, s = 1) { g.add(mesh(new THREE.CylinderGeometry(.2 * s, .17 * s, .5 * s, 14), mat(0xa9744a, { map:tx('planks', 4, 1) }), x, .25 * s, z)); [.1, .4].forEach(y => g.add(mesh(new THREE.CylinderGeometry(.205 * s, .205 * s, .04 * s, 14), mat(0x4a4450), x, y * s, z))); g.add(mesh(new THREE.CylinderGeometry(.17 * s, .17 * s, .02, 14), mat(0x6b4630), x, .5 * s, z)); }
+  function crate(g, x, z, s = 1, ry = 0) { const p = at(g, x, 0, z, ry); p.add(mesh(new THREE.BoxGeometry(.4 * s, .34 * s, .4 * s), mat(0xc98f58, { map:tx('planks', 2, 1) }), 0, .17 * s, 0)); [-1, 1].forEach(sd => { p.add(mesh(new THREE.BoxGeometry(.44 * s, .05 * s, .05 * s), mat(0x8a6040), 0, .17 * s + sd * .15 * s, .2 * s)); p.add(mesh(new THREE.BoxGeometry(.05 * s, .34 * s, .05 * s), mat(0x8a6040), sd * .19 * s, .17 * s, .2 * s)); }); return p; }
+  function lantern(g, x, y, z) { const iron = fine(0x4a4450); g.add(mesh(new THREE.BoxGeometry(.04, .04, .2), iron, x, y + .2, z - .08)); g.add(mesh(new THREE.BoxGeometry(.03, .1, .03), iron, x, y + .15, z)); g.add(mesh(new THREE.BoxGeometry(.13, .17, .13), lampMat, x, y, z)); g.add(mesh(new THREE.BoxGeometry(.17, .03, .17), iron, x, y + .1, z)); g.add(mesh(new THREE.BoxGeometry(.17, .03, .17), iron, x, y - .1, z)); const hl = halo(0xffc46b, .9, 0); hl.position.set(x, y, z + .12); g.add(hl); townHalos.push(hl); }
+  // thin dark lines across a wall, like the gaps between boards. n lines on a face w wide and h tall at height y, facing +z at z
+  function boards(g, w, h, y, z, n, c = 0x000000, op = .18, ry = 0, x = 0) { const m = new THREE.MeshBasicMaterial({ color:c, transparent:true, opacity:op }); m.userData.outlineParameters = NO_OUTLINE; const p = at(g, x, 0, 0, ry); for (let i = 1; i < n; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(w, .018, .01), m); l.position.set(0, y - h / 2 + i * h / n, z); p.add(l); } }
+  return { win, door, foot, chimney, hip, gable, pot, barrel, crate, lantern, boards, flowerBox, hr, at, BLOOM };
+})();
 function drawHouse() {
   house.clear(); winHalos = []; applyPaint();
   const sz = homeSize(), st = homeStyle(), add = m => (house.add(m), m), hr = i => { const x = Math.sin(i * 127.1) * 43758.5; return x - Math.floor(x); };
@@ -4873,7 +4923,7 @@ function tickFrame() {
     const k = (now + u.blink) % 4.2; u.eyes.forEach(e => e.scale.y = k < .12 ? .12 : 1);
     if (c !== player) u.arms.forEach((a, i) => a.rotation.x = Math.sin(now*1.6 + i + u.blink) * .12); });
   bubbles.forEach(b => b.position.y = 2.35 + Math.sin(now*2.5 + b.userData.ph)*.06);
-  winHalos.forEach(hl => hl.material.opacity = winMat.emissiveIntensity * .45);
+  winHalos.forEach(hl => hl.material.opacity = winMat.emissiveIntensity * .45); townHalos.forEach(hl => hl.material.opacity = winMat.emissiveIntensity * .45);
   smoke.forEach((sm, i) => { const k = ((now*.25 + i/5) % 1); { const ch = house.userData.chim; sm.position.set(house.position.x + ch.x + Math.sin(k*6 + i)*.2, ch.y + k*2.2, house.position.z + ch.z); } sm.scale.setScalar(.4 + k*1.1); sm.material.opacity = (1-k) * .35 * (S.where === 'hut' ? 0 : 1); });
   moonHalo.material.opacity = moonSprite.visible ? night * .35 : 0; moonHalo.position.copy(moonSprite.position);
   tileGroups.forEach(g => g.traverse(c => { if (c.userData.bob) c.position.y = c.userData.by + Math.sin(now*3)*.04; if (c.userData.sway) c.rotation.z = Math.sin(now*2 + g.position.x)*.08; }));
@@ -5900,58 +5950,93 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
 }
 // Nana Gale's garden cottage, at the back of the home island: mossy roof, round door, flowers everywhere
 const nanaHome = new THREE.Group(); nanaHome.position.set(-1, 0, -6); nanaHome.userData = { kind:'home', room:'nana' }; scene.add(nanaHome); lateClicks.push(nanaHome);
-{ const h = nanaHome; h.add(mesh(new THREE.BoxGeometry(2.1,1.4,1.7), mat(0xf3f0d8), 0, .7, 0));
-  const rf = mesh(new THREE.ConeGeometry(1.75,1.1,4), mat(0x7fb86a), 0, 1.95, 0); rf.rotation.y = Math.PI/4; h.add(rf);
-  [[-.5,2.1,.5],[.4,2.25,.35],[.7,1.85,.6],[-.75,1.8,.55]].forEach(([x, y, z]) => h.add(mesh(sph(.16), mat(0x9bd88a), x, y, z))); // moss
-  h.add(mesh(new THREE.CylinderGeometry(.34,.34,.08,20), mat(0x9b6b4a), -.45, .5, .86).rotateX(Math.PI/2)); h.add(mesh(new THREE.BoxGeometry(.68,.5,.08), mat(0x9b6b4a), -.45, .25, .86)); h.add(mesh(sph(.04), mat(0xffc857), -.25, .45, .92));
-  h.add(mesh(new THREE.BoxGeometry(.6,.5,.06), mat(0x9fd3ff), .5, .8, .86)); h.add(mesh(new THREE.BoxGeometry(.7,.12,.2), mat(0x9b6b4a), .5, .5, .95));
-  [0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff].forEach((c, i) => h.add(mesh(sph(.07), mat(c), .28 + i*.15, .62, .97)));
-  h.add(mesh(new THREE.BoxGeometry(.26,.6,.26), mat(0xb0a898), .6, 2.2, -.3));
-  [[-1.2,.9],[1.25,.8],[-1.3,.2]].forEach(([x, z], i) => { h.add(mesh(new THREE.CylinderGeometry(.015,.015,.3,4), mat(0x4fb46a), x, .15, z)); h.add(mesh(sph(.09), mat([0xff8fa3,0xfff3a0,0xc9b6ff][i]), x, .33, z)); });
+{ const h = nanaHome, sod = mat(0x7fb86a, { map:tx('straw', 4, 1) }), wallM = mat(0xf3f0d8, { map:tx('plaster', 2, 2) }), dk = mat(0x8a6040, { map:tx('grain', 1, 2) });
+  h.add(mesh(new THREE.BoxGeometry(2.1,1.4,1.7), wallM, 0, .7, 0)); KIT.foot(h, 2.1, 1.7, 0, 2);
+  [[-1.05,.85],[1.05,.85],[-1.05,-.85],[1.05,-.85]].forEach(([x, z]) => h.add(mesh(new THREE.BoxGeometry(.14,1.4,.14), dk, x, .7, z))); h.add(mesh(new THREE.BoxGeometry(2.2,.1,1.8), dk, 0, 1.4, 0));
+  KIT.hip(h, 1.44, 1.78, 1.15, sod, .9); // a roof of living grass, with moss and flowers growing on it
+  [[-.5,2.02,.55],[.4,2.2,.36],[.75,1.82,.62],[-.8,1.76,.6],[.1,1.7,.84],[-.2,2.4,.2]].forEach(([x, y, z], i) => { const m = mesh(sph(.15), mat(i % 2 ? 0x9bd88a : 0x8fcf7a), x, y, z); m.scale.set(1.2, .6, 1); h.add(m); });
+  [[.2,2.0,.56],[-.62,1.86,.6],[.6,1.98,.5],[-.1,1.8,.78],[.9,1.72,.66]].forEach(([x, y, z], i) => { h.add(mesh(new THREE.CylinderGeometry(.01,.01,.12,4), fine(0x4fb46a), x, y + .04, z)); h.add(mesh(sph(.045), fine(KIT.BLOOM[i % 5]), x, y + .12, z)); });
+  KIT.chimney(h, .6, 1.75, -.3, .7);
+  KIT.door(h, -.45, .16, .86, { w:.72, round:true, color:0xb98a5c }); h.add(mesh(new THREE.BoxGeometry(.6,.08,.3), mat(0xbfb6a8), -.45, .04, 1.08));
+  KIT.win(h, .5, .85, .86, { w:.5, h:.42, shut:0x8fb86a, box:true });
+  KIT.win(h, 1.06, .85, 0, { w:.36, round:true, ry:Math.PI / 2 }); KIT.lantern(h, -.98, 1.05, .98);
+  KIT.pot(h, -1.02, 1.02, .9, 1); KIT.pot(h, .1, 1.04, .7, 3); KIT.pot(h, 1.2, .95, 1, 0);
+  { const can = fine(0x8fa3b0); h.add(mesh(new THREE.CylinderGeometry(.09,.1,.16,10), can, .92, .08, 1.12)); const sp = mesh(new THREE.CylinderGeometry(.015,.02,.2,6), can, 1.05, .12, 1.12); sp.rotation.z = -.9; h.add(sp); const hd = mesh(new THREE.TorusGeometry(.06,.012,6,10,Math.PI), can, .92, .17, 1.12); h.add(hd); } // a watering can
+  [[-1.3,.5],[-1.35,.1],[1.4,.4],[-1.25,-.4]].forEach(([x, z], i) => { h.add(mesh(new THREE.CylinderGeometry(.015,.015,.3,4), fine(0x4fb46a), x, .15, z)); h.add(mesh(sph(.09), mat(KIT.BLOOM[i % 5]), x, .33, z)); const lf = mesh(sph(.07), fine(0x4fb46a), x + .06, .12, z); lf.scale.y = .4; h.add(lf); });
   const hb = hitBox(2.3, 2.6, 1.9); hb.position.y = 1.3; h.add(hb); }
 // Pip's Shop on the Town Square: his cart grew up
 const pipShop = new THREE.Group(); pipShop.position.copy(SQL(.9, -4.5)); faceCenter(pipShop, .9, -4.5); pipShop.userData = { kind:'home', room:'pip' }; scene.add(pipShop); lateClicks.push(pipShop);
-{ const h = pipShop; h.add(mesh(new THREE.BoxGeometry(2.3,1.5,1.5), mat(0x86c7ff), 0, .75, 0)); h.add(mesh(new THREE.BoxGeometry(2.5,.14,1.7), mat(0xfff6e6), 0, 1.57, 0));
-  for (let i = 0; i < 6; i++) { const st = mesh(new THREE.BoxGeometry(.4,.07,.8), mat(i % 2 ? 0xfff6e6 : 0xff8fa3), -1 + i*.4, 1.42, 1.05); st.rotation.x = .3; h.add(st); }
-  h.add(mesh(new THREE.BoxGeometry(.6,1,.08), mat(0xfff6e6), -.55, .5, .76)); h.add(mesh(new THREE.BoxGeometry(.8,.55,.06), mat(0xdff3ff), .5, .85, .76));
-  [0xffc857,0x8fdc8a,0xc9b6ff].forEach((c, i) => h.add(mesh(new THREE.BoxGeometry(.18,.18,.12), mat(c), .28 + i*.22, .7, .82)));
-  const sg = signBoard("Pip's Shop", 1.5, .4, .5); sg.position.set(0, 1.62, 0); h.add(sg);
+{ const h = pipShop, wallM = mat(0x86c7ff, { map:tx('planks', 6, 1) }), cream = mat(0xfff6e6), rose = mat(0xff8fa3);
+  h.add(mesh(new THREE.BoxGeometry(2.3,1.5,1.5), wallM, 0, .75, 0)); KIT.foot(h, 2.3, 1.5, 0, 5);
+  [[-1.15,.75],[1.15,.75]].forEach(([x, z]) => h.add(mesh(new THREE.BoxGeometry(.12,1.5,.12), cream, x, .75, z)));
+  h.add(mesh(new THREE.BoxGeometry(2.5,.14,1.7), cream, 0, 1.57, 0)); h.add(mesh(new THREE.BoxGeometry(2.36,.2,1.56), mat(0x6fb3ee), 0, 1.74, 0)); h.add(mesh(new THREE.BoxGeometry(2.5,.08,1.7), cream, 0, 1.86, 0)); // a low wall around the flat roof
+  for (let i = 0; i < 6; i++) { const st = mesh(new THREE.BoxGeometry(.4,.07,.8), i % 2 ? cream : rose, -1 + i*.4, 1.42, 1.05); st.rotation.x = .3; h.add(st); const sc = mesh(new THREE.CylinderGeometry(.2,.2,.05,12,1,false,0,Math.PI), i % 2 ? cream : rose, -1 + i*.4, 1.3, 1.42); sc.rotation.set(0, Math.PI / 2, Math.PI / 2 + .3); sc.rotation.set(Math.PI / 2 + .3, 0, Math.PI); h.add(sc); } // striped awning with a scalloped edge
+  [-1.1, 1.1].forEach(x => { const br = mesh(new THREE.BoxGeometry(.05,.05,.75), mat(0x9b6b4a), x, 1.28, 1.08); br.rotation.x = .3; h.add(br); });
+  KIT.door(h, -.6, 0, .76, { w:.56, h:.98, color:0xfff6e6, frame:0xff8fa3, pane:true, arch:false });
+  KIT.win(h, .45, .88, .76, { w:.84, h:.56, frame:0xfff6e6 }); h.add(mesh(new THREE.BoxGeometry(.86,.04,.2), mat(0xc98f58), .45, .66, .85));
+  [0xffc857,0x8fdc8a,0xc9b6ff,0xff8fa3].forEach((c, i) => { h.add(mesh(new THREE.BoxGeometry(.14,.16,.1), mat(c), .14 + i*.2, .77, .87)); h.add(mesh(new THREE.BoxGeometry(.15,.03,.11), fine(0xffffff), .14 + i*.2, .8, .87)); }); // jars and boxes in the window
+  const sg = signBoard("Pip's Shop", 1.5, .4, .5); sg.position.set(0, 1.72, 0); h.add(sg);
+  for (let i = 0; i < 9; i++) { const fl = mesh(new THREE.ConeGeometry(.07,.14,3), fine(KIT.BLOOM[i % 5]), -1.08 + i * .27, 1.5 - Math.sin(i / 8 * Math.PI) * .07, .86); fl.rotation.x = Math.PI; fl.scale.z = .3; h.add(fl); } // a string of little flags
+  KIT.lantern(h, -1.02, 1.1, .88); KIT.barrel(h, 1.0, 1.0, .9); { const c = KIT.crate(h, -1.05, 1.05, .9, .3); [[-.08,.36,0,0xff8fa3],[.08,.36,.05,0xffc857],[0,.38,-.08,0x8fdc8a]].forEach(([x, y, z, col]) => c.add(mesh(sph(.08), mat(col), x, y, z))); }
+  KIT.pot(h, .1, 1.0, .8, 2);
   const hb = hitBox(2.5, 2.4, 1.8); hb.position.y = 1.2; h.add(hb); }
 // Captain Drizzle's cabin, on shore beside his ship: blue boards, a round window, a life ring
 const drizzleHome = new THREE.Group(); drizzleHome.position.set(ORCH_POS.x - 3, ORCH_POS.y, ORCH_POS.z + 5); drizzleHome.userData = { kind:'home', room:'drizzle' }; scene.add(drizzleHome); lateClicks.push(drizzleHome);
-{ const h = drizzleHome; h.add(mesh(new THREE.BoxGeometry(2,1.4,1.5), mat(0x3f86c9), 0, .7, 0)); h.add(mesh(new THREE.BoxGeometry(2.04,.14,1.54), mat(0xfff6e6), 0, .45, 0));
-  const rf = mesh(new THREE.CylinderGeometry(.85,.85,2.2,16,1,false,0,Math.PI), mat(0xd9a066), 0, 1.4, 0); rf.rotation.z = Math.PI/2; rf.scale.set(.55, 1, 1); h.add(rf);
-  h.add(mesh(new THREE.BoxGeometry(.6,1,.08), mat(0x9b6b4a), -.45, .5, .76)); h.add(mesh(sph(.04), mat(0xffc857), -.25, .5, .82));
-  h.add(mesh(new THREE.TorusGeometry(.24,.05,8,20), mat(0xfff6e6), .5, .85, .77)); h.add(mesh(new THREE.CircleGeometry(.2, 20), mat(0xbfe3ff), .5, .85, .765));
-  h.add(mesh(new THREE.TorusGeometry(.2,.07,8,20), mat(0xff5a5a), 0, 1.75, .5)); [0, 1, 2, 3].forEach(i => { const st = mesh(new THREE.BoxGeometry(.1,.15,.16), mat(0xfff6e6), Math.cos(i * Math.PI/2) * .2, 1.75 + Math.sin(i * Math.PI/2) * .2, .5); h.add(st); });
-  h.add(mesh(new THREE.CylinderGeometry(.03,.03,1,6), mat(0x9b6b4a), .85, 2.2, -.4)); h.add(mesh(new THREE.PlaneGeometry(.4,.24), new THREE.MeshStandardMaterial({ color:0xff5a5a, side:THREE.DoubleSide }), 1.06, 2.56, -.4));
+{ const h = drizzleHome, cream = mat(0xfff6e6), roofM = mat(0xd9a066, { map:tx('planks', 1, 8) });
+  h.add(mesh(new THREE.BoxGeometry(2,1.4,1.5), mat(0x3f86c9), 0, .7, 0)); KIT.boards(h, 2.01, 1.4, .7, .756, 8); KIT.boards(h, 1.5, 1.4, .7, 1.006, 8, 0, .18, Math.PI / 2); KIT.foot(h, 2, 1.5, 0, 8);
+  h.add(mesh(new THREE.BoxGeometry(2.06,.14,1.56), cream, 0, .45, 0)); [[-1,.75],[1,.75]].forEach(([x, z]) => h.add(mesh(new THREE.BoxGeometry(.1,1.4,.1), cream, x, .7, z)));
+  const rf = mesh(new THREE.CylinderGeometry(.85,.85,2.2,18,1,false,0,Math.PI), roofM, 0, 1.4, 0); rf.rotation.z = Math.PI/2; rf.scale.set(.55, 1, 1); h.add(rf); // a roof curved like an upturned boat, with ribs
+  [-1.05,-.52,0,.52,1.05].forEach(x => { const rb = mesh(new THREE.TorusGeometry(.86,.035,6,16,Math.PI), mat(0x9b6b4a), x, 1.4, 0); rb.rotation.y = Math.PI / 2; rb.scale.set(1, .56, 1); h.add(rb); });
+  [-1.11, 1.11].forEach(x => { const e = mesh(new THREE.CircleGeometry(.84, 18, 0, Math.PI), mat(0x3f86c9), x, 1.4, 0); e.rotation.y = Math.sign(x) * Math.PI / 2; e.scale.y = .56; h.add(e); });
+  KIT.door(h, -.45, 0, .76, { w:.56, h:.98, color:0xb98a5c, arch:false }); KIT.win(h, -.45, .72, .84, { w:.22, round:true, bars:false, lit:false });
+  KIT.win(h, .5, .85, .76, { w:.44, round:true, frame:0xfff6e6 }); for (let i = 0; i < 8; i++) h.add(mesh(sph(.022), fine(0xffc857), .5 + Math.cos(i * Math.PI / 4) * .26, .85 + Math.sin(i * Math.PI / 4) * .26, .82)); // a porthole with brass bolts
+  h.add(mesh(new THREE.TorusGeometry(.2,.07,8,20), mat(0xff5a5a), 0, 1.75, .5)); [0, 1, 2, 3].forEach(i => h.add(mesh(new THREE.BoxGeometry(.1,.15,.16), cream, Math.cos(i * Math.PI/2) * .2, 1.75 + Math.sin(i * Math.PI/2) * .2, .5)));
+  h.add(mesh(new THREE.CylinderGeometry(.03,.03,1,6), mat(0x9b6b4a), .85, 2.2, -.4)); h.add(mesh(sph(.045), fine(0xffc857), .85, 2.72, -.4)); h.add(mesh(new THREE.PlaneGeometry(.4,.24), new THREE.MeshStandardMaterial({ color:0xff5a5a, side:THREE.DoubleSide }), 1.06, 2.56, -.4));
+  KIT.lantern(h, .98, 1.05, .88); KIT.barrel(h, 1.25, .5, 1);
+  { const iron = mat(0x4a4450), an = KIT.at(h, -1.2, 0, .7, .4); an.rotation.z = .25; an.add(mesh(new THREE.CylinderGeometry(.03,.03,.7,6), iron, 0, .4, 0)); an.add(mesh(new THREE.TorusGeometry(.07,.02,6,12), iron, 0, .8, 0)); an.add(mesh(new THREE.BoxGeometry(.3,.04,.04), iron, 0, .68, 0)); const ar = mesh(new THREE.TorusGeometry(.22,.035,6,14,Math.PI), iron, 0, .27, 0); ar.rotation.z = Math.PI; an.add(ar); } // an anchor leaning on the wall
+  { const rope = mat(0xd9c39a); [0, 1, 2].forEach(i => { const c = mesh(new THREE.TorusGeometry(.16 - i * .02,.035,6,16), rope, .2, .04 + i * .06, 1.0); c.rotation.x = Math.PI / 2; h.add(c); }); [[.75,0xff5a5a],[.95,0xffc857]].forEach(([x, c]) => { h.add(mesh(sph(.1), mat(c), x, .1, 1.0)); h.add(mesh(new THREE.BoxGeometry(.21,.03,.21), fine(0xffffff), x, .1, 1.0)); }); } // a coil of rope and two floats
   const hb = hitBox(2.2, 2.6, 1.7); hb.position.y = 1.3; h.add(hb); }
 // Moss & Fern's burrow: a round door in a grassy mound against the windmill
 const twinsHome = new THREE.Group(); twinsHome.position.set(WIND_POS.x + 3.4, WIND_POS.y, WIND_POS.z - .3); twinsHome.userData = { kind:'home', room:'twins' }; scene.add(twinsHome); lateClicks.push(twinsHome);
-{ const h = twinsHome; const md = mesh(new THREE.SphereGeometry(1.25, 24, 14, 0, Math.PI*2, 0, Math.PI/2), mat(0x7fbf6a), 0, 0, 0); md.scale.set(1.05, .95, 1); h.add(md);
-  h.add(mesh(new THREE.CylinderGeometry(.56,.56,.14,24), mat(0x6b4a30), 0, .56, 1.02).rotateX(Math.PI/2)); h.add(mesh(new THREE.CylinderGeometry(.46,.46,.16,24), mat(0xc98f58), 0, .56, 1.05).rotateX(Math.PI/2));
-  h.add(mesh(sph(.05), mat(0xffc857), .22, .56, 1.15)); h.add(mesh(new THREE.BoxGeometry(.04,.9,.03), mat(0x9b6b4a), 0, .56, 1.14));
-  h.add(mesh(new THREE.CylinderGeometry(.09,.09,.5,8), mat(0xb0a898), -.55, 1.25, -.2)); h.add(mesh(new THREE.CylinderGeometry(.12,.12,.06,8), mat(0x8a8f96), -.55, 1.5, -.2));
-  [[.8,.62,.5,0xfff3a0],[-.85,.5,.55,0xff8fa3],[.3,1.1,.45,0xffffff]].forEach(([x, y, z, c]) => { h.add(mesh(sph(.07), mat(c), x, y, z)); });
+{ const h = twinsHome; const md = mesh(new THREE.SphereGeometry(1.25, 28, 16, 0, Math.PI*2, 0, Math.PI/2), mat(0x7fbf6a, { map:tx('straw', 8, 2) }), 0, 0, 0); md.scale.set(1.05, .95, 1); h.add(md);
+  for (let i = 0; i < 22; i++) { const a = KIT.hr(i) * Math.PI * 2, e = .15 + KIT.hr(i + 40) * 1.1, r = 1.27 * Math.cos(e), x = Math.cos(a) * r * 1.05, z = Math.sin(a) * r, y = Math.sin(e) * 1.19; if (z > .6 && Math.abs(x) < .75 && y < 1.15) continue; // grass tufts and flowers all over the mound
+    if (i % 3) { const t = mesh(new THREE.ConeGeometry(.05,.2,4), fine(i % 2 ? 0x5fa85a : 0x8fcf7a), x, y + .06, z); h.add(t); } else { h.add(mesh(new THREE.CylinderGeometry(.01,.01,.14,4), fine(0x4fb46a), x, y + .05, z)); h.add(mesh(sph(.055), fine(KIT.BLOOM[i % 5]), x, y + .14, z)); } }
+  for (let i = 0; i < 11; i++) { const a = Math.PI * (i / 10), st = mesh(new THREE.DodecahedronGeometry(.11), mat(i % 2 ? 0xbfb6a8 : 0xd8cfc0), Math.cos(a) * .66, .1 + Math.sin(a) * .62, 1.0); st.rotation.set(i, i * 2, 0); h.add(st); } // an arch of stones around the door
+  KIT.door(h, 0, .06, 1.0, { w:1.0, round:true, color:0xc98f58, frame:0x6b4a30 });
+  [-.82, .82].forEach(x => { const w = KIT.win(h, x, .62, .78, { w:.26, round:true, ry:x * .75, frame:0x8a6040 }); });
+  h.add(mesh(new THREE.CylinderGeometry(.09,.09,.5,8), mat(0xb0a898), -.55, 1.25, -.2)); h.add(mesh(new THREE.ConeGeometry(.17,.14,8), mat(0x8a8f96), -.55, 1.6, -.2)); h.add(mesh(new THREE.CylinderGeometry(.11,.11,.04,8), mat(0x8a8f96), -.55, 1.5, -.2));
+  [[1.05,.9,.14,0xe0556f],[1.2,1.05,.1,0xe0556f],[-1.15,.95,.12,0xf2c14e],[.95,1.15,.08,0xf2c14e]].forEach(([x, z, r, c]) => { h.add(mesh(new THREE.CylinderGeometry(r * .3, r * .4, r * 1.4, 8), mat(0xfff1d6), x, r * .7, z)); const cap = mesh(new THREE.SphereGeometry(r, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(c), x, r * 1.3, z); h.add(cap); [0, 2, 4].forEach(k => h.add(mesh(sph(r * .16), fine(0xffffff), x + Math.cos(k) * r * .55, r * 1.3 + r * .62, z + Math.sin(k) * r * .55))); }); // mushrooms
+  [[0,1.35],[.12,1.72],[-.1,2.05]].forEach(([x, z], i) => { const st = mesh(new THREE.CylinderGeometry(.2,.22,.05,9), mat(i % 2 ? 0xbfb6a8 : 0xd8cfc0), x, .025, z); st.scale.z = .75; h.add(st); }); // stepping stones
   const sg = signBoard('The Burrow', 1.2, .36, 1); sg.position.set(1.6, 0, .9); h.add(sg);
   const hb = hitBox(2.5, 1.7, 2.4); hb.position.y = .85; h.add(hb); }
 // Lumen's studio on Night Isle: dark walls, a big window that glows, a crescent moon on the roof
 const lumenHome = new THREE.Group(); lumenHome.position.set(NIGHT_POS.x - 1.8, NIGHT_POS.y, NIGHT_POS.z - 4.4); lumenHome.userData = { kind:'home', room:'lumen' }; scene.add(lumenHome); lateClicks.push(lumenHome);
-{ const h = lumenHome; h.add(mesh(new THREE.BoxGeometry(2.1,1.6,1.6), mat(0x3b2f6a), 0, .8, 0));
-  const rf = mesh(new THREE.ConeGeometry(1.7,1,4), mat(0x2d3a6b), 0, 2.1, 0); rf.rotation.y = Math.PI/4; h.add(rf);
-  h.add(mesh(new THREE.BoxGeometry(.6,1,.08), mat(0xc9b6ff), -.5, .5, .81)); h.add(mesh(sph(.04), glow(0xffe07a), -.3, .5, .87));
-  h.add(mesh(new THREE.BoxGeometry(.9,.8,.06), glow(0xfff3a0), .45, .95, .8)); h.add(mesh(new THREE.BoxGeometry(.04,.8,.07), mat(0x3b2f6a), .45, .95, .81)); h.add(mesh(new THREE.BoxGeometry(.9,.04,.07), mat(0x3b2f6a), .45, .95, .81));
-  const cres = mesh(new THREE.TorusGeometry(.2,.06,8,18,Math.PI*1.25), glow(0xfdf6dc), 0, 2.85, 0); cres.rotation.z = Math.PI*.9; h.add(cres);
+{ const h = lumenHome, wallM = mat(0x3b2f6a, { map:tx('planks', 5, 1) }), trimM = mat(0x5b4a94), roofM = mat(0x2d3a6b, { map:tx('straw', 4, 1) });
+  h.add(mesh(new THREE.BoxGeometry(2.1,1.6,1.6), wallM, 0, .8, 0)); KIT.foot(h, 2.1, 1.6, 0, 11);
+  [[-1.05,.8],[1.05,.8],[-1.05,-.8],[1.05,-.8]].forEach(([x, z]) => h.add(mesh(new THREE.BoxGeometry(.13,1.6,.13), trimM, x, .8, z))); h.add(mesh(new THREE.BoxGeometry(2.2,.1,1.7), trimM, 0, 1.6, 0));
+  KIT.hip(h, 1.64, 1.72, 1.05, roofM, .92);
+  [[.5,1.95,.62],[-.45,2.15,.4],[.1,2.4,.22],[-.7,1.85,.68],[.75,2.2,.3],[-.1,1.9,.75]].forEach(([x, y, z], i) => h.add(mesh(sph(i % 2 ? .03 : .04), glow(i % 2 ? 0xffffff : 0xfff3a0), x, y, z))); // stars painted on the roof
+  KIT.door(h, -.5, 0, .81, { w:.56, h:1, color:0xc9b6ff, frame:0x5b4a94, knob:0xffe07a }); { const st = mesh(new THREE.CircleGeometry(.09, 5), glow(0xffe07a), -.5, .78, .9); st.rotation.z = Math.PI / 10; h.add(st); }
+  h.add(mesh(new THREE.BoxGeometry(1.04,.94,.07), trimM, .45, .95, .8)); h.add(mesh(new THREE.BoxGeometry(.9,.8,.06), glow(0xfff3a0), .45, .95, .82)); [-.15, .15].forEach(dx => h.add(mesh(new THREE.BoxGeometry(.035,.8,.03), fine(0x3b2f6a), .45 + dx, .95, .86))); h.add(mesh(new THREE.BoxGeometry(.9,.035,.03), fine(0x3b2f6a), .45, .95, .86)); h.add(mesh(new THREE.BoxGeometry(1.14,.07,.16), trimM, .45, .46, .86));
+  const cres = mesh(new THREE.TorusGeometry(.2,.06,8,18,Math.PI*1.25), glow(0xfdf6dc), 0, 2.98, 0); cres.rotation.z = Math.PI*.9; h.add(cres); h.add(mesh(new THREE.CylinderGeometry(.015,.015,.2,5), fine(0x5b4a94), 0, 2.72, 0));
   const wh = halo(0xfff3a0, 1.6, .35); wh.position.set(.45, .95, 1); h.add(wh);
+  for (let i = 0; i < 9; i++) { const t = i / 8; h.add(mesh(sph(.045), glow([0xffe0a8, 0xc9b6ff, 0x9fe7e0][i % 3]), -1 + t * 2, 1.52 - Math.sin(t * Math.PI) * .12, .86)); } // a string of lights under the roof
+  [[-1.2,.95,0xff8fa3],[-1.0,1.1,0x9fe7e0],[-1.25,1.2,0xfff3a0]].forEach(([x, z, c]) => { h.add(mesh(new THREE.CylinderGeometry(.08,.07,.14,10), mat(0xdfe3ea), x, .07, z)); h.add(mesh(new THREE.CylinderGeometry(.07,.07,.02,10), glow(c), x, .145, z)); }); // pots of glowing paint
+  { const br = mesh(new THREE.CylinderGeometry(.015,.015,.4,5), mat(0x9b6b4a), -1.0, .12, 1.25); br.rotation.z = 1.2; h.add(br); h.add(mesh(sph(.03), glow(0xff8fa3), -.82, .19, 1.25)); }
   const hb = hitBox(2.3, 2.8, 1.8); hb.position.y = 1.4; h.add(hb); }
 // The Museum, at the back of Orchard Isle: cream stone, four columns, and a red banner
 const museumHome = new THREE.Group(); museumHome.position.set(ORCH_POS.x - .6, ORCH_POS.y, ORCH_POS.z - 4.4); museumHome.userData = { kind:'home', room:'museum' }; scene.add(museumHome); lateClicks.push(museumHome);
-{ const h = museumHome, st = mat(0xf3ead8), tr = mat(0xd9cdb6); h.add(mesh(new THREE.BoxGeometry(2.6,1.7,1.6), st, 0, .95, -.1)); h.add(mesh(new THREE.BoxGeometry(3,.12,2.2), tr, 0, .06, .1)); h.add(mesh(new THREE.BoxGeometry(2.8,.1,2), tr, 0, .16, .1));
-  [-1.05,-.38,.38,1.05].forEach(x => { h.add(mesh(new THREE.CylinderGeometry(.11,.13,1.5,12), st, x, .96, .85)); h.add(mesh(new THREE.BoxGeometry(.32,.08,.32), tr, x, 1.74, .85)); });
-  h.add(mesh(new THREE.BoxGeometry(2.9,.16,2.1), tr, 0, 1.86, .1)); { const rg = new THREE.CylinderGeometry(1.25, 1.25, 2.9, 3); rg.rotateZ(Math.PI/2); rg.rotateX(-Math.PI/2); const rf = mesh(rg, mat(0xb5622f), 0, 2.22, .1); rf.scale.y = .45; h.add(rf);
-    const fg = new THREE.CylinderGeometry(1.1, 1.1, .04, 3); fg.rotateZ(Math.PI/2); fg.rotateX(-Math.PI/2); fg.rotateY(Math.PI/2); }
-  h.add(mesh(new THREE.BoxGeometry(.7,1.15,.06), mat(0x7a5236), 0, .78, .72)); h.add(mesh(sph(.04), mat(0xffc857), .22, .78, .78));
-  [-.75,.75].forEach(x => h.add(mesh(new THREE.BoxGeometry(.3,1,.03), mat(0xd6332e), x, 1.1, .73)));
+{ const h = museumHome, st = mat(0xf3ead8, { map:tx('stone', 2, 2) }), tr = mat(0xd9cdb6), tile = mat(0xb5622f, { map:tx('planks', 12, 1) });
+  h.add(mesh(new THREE.BoxGeometry(2.6,1.7,1.6), st, 0, .95, -.1)); KIT.boards(h, 2.61, 1.7, .95, .706, 6, 0x6b5a40, .16);
+  [[3.2,.1,2.5,.05,.2],[3,.1,2.3,.15,.15],[2.8,.1,2.1,.25,.1]].forEach(([w, hh, d, y, z]) => h.add(mesh(new THREE.BoxGeometry(w, hh, d), tr, 0, y, z))); // three wide steps
+  [-1.05,-.38,.38,1.05].forEach(x => { h.add(mesh(new THREE.CylinderGeometry(.1,.12,1.36,14), st, x, 1.06, .85)); h.add(mesh(new THREE.BoxGeometry(.3,.08,.3), tr, x, .34, .85)); h.add(mesh(new THREE.CylinderGeometry(.15,.13,.06,14), tr, x, .41, .85)); h.add(mesh(new THREE.CylinderGeometry(.13,.1,.07,14), tr, x, 1.76, .85)); h.add(mesh(new THREE.BoxGeometry(.32,.07,.32), tr, x, 1.83, .85));
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI - Math.PI / 2 + .26, fl = new THREE.Mesh(new THREE.BoxGeometry(.012, 1.25, .012), new THREE.MeshBasicMaterial({ color:0x6b5a40, transparent:true, opacity:.25 })); fl.material.userData.outlineParameters = NO_OUTLINE; fl.position.set(x + Math.sin(a) * .112, 1.06, .85 + Math.cos(a) * .112); h.add(fl); } }); // columns with a base, a top, and grooves down the front
+  h.add(mesh(new THREE.BoxGeometry(2.9,.16,2.1), tr, 0, 1.94, .1)); h.add(mesh(new THREE.BoxGeometry(2.7,.06,1.9), st, 0, 2.04, .1));
+  { const rg = new THREE.CylinderGeometry(1.25, 1.25, 2.9, 3); rg.rotateZ(Math.PI/2); rg.rotateX(-Math.PI/2); const rf = mesh(rg, tile, 0, 2.32, .1); rf.scale.y = .45; h.add(rf);
+    const sh = new THREE.Shape(); sh.moveTo(-1.02, 0); sh.lineTo(1.02, 0); sh.lineTo(0, .52); sh.closePath(); h.add(mesh(new THREE.ShapeGeometry(sh), st, 0, 2.08, 1.565)); h.add(mesh(new THREE.CircleGeometry(.15, 20), mat(0xffc857), 0, 2.26, 1.57)); h.add(mesh(new THREE.CircleGeometry(.09, 20), fine(0xd6332e), 0, 2.26, 1.575)); } // the triangle over the columns, with a gold medallion
+  h.add(mesh(new THREE.BoxGeometry(.96,1.3,.05), tr, 0, .95, .7)); [-1, 1].forEach(sd => { KIT.door(h, sd * .2, .3, .72, { w:.38, h:1.18, color:0x8a5a3b, frame:0x7a5236, arch:false, knob:0xffc857 }); });
+  [-.75,.75].forEach(x => { h.add(mesh(new THREE.BoxGeometry(.3,1,.03), mat(0xd6332e), x, 1.2, .73)); h.add(mesh(new THREE.BoxGeometry(.34,.04,.05), mat(0xffc857), x, 1.71, .73)); const tp = mesh(new THREE.ConeGeometry(.15,.16,4), mat(0xd6332e), x, .62, .73); tp.rotation.set(Math.PI, Math.PI / 4, 0); tp.scale.z = .1; h.add(tp); h.add(mesh(new THREE.CircleGeometry(.07, 5), fine(0xffc857), x, 1.25, .75)); }); // banners with a star
+  [-1.35, 1.35].forEach(x => { h.add(mesh(new THREE.BoxGeometry(.4,.34,.4), tr, x, .17, 1.15)); h.add(mesh(sph(.24), mat(0x4fb46a), x, .52, 1.15)); h.add(mesh(sph(.16), mat(0x3f9a5c), x + .08, .72, 1.12)); KIT.lantern(h, x * .98, 1.3, .78); }); // clipped bushes in stone planters
   const sg = signBoard('Museum', 1.2, .36, 1); sg.position.set(1.9, 0, 1.1); h.add(sg);
   const hb = hitBox(3, 2.6, 2.3); hb.position.y = 1.3; h.add(hb); }
 // --- small playthings: things to mess about with. Play a few times and the real idea behind each one shows up in Know-how ---
