@@ -198,6 +198,24 @@ function halo(color, size, opacity = .8, additive = true) {
   sp.scale.setScalar(size); return sp;
 }
 
+// small painted textures: white with darker marks, so any paint color shows through them
+const texBase = {};
+function tx(kind, rx = 1, ry = 1) {
+  if (!texBase[kind]) { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); let sd = kind.length * 7919 + 13; const R = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    g.fillStyle = '#fff'; g.fillRect(0, 0, 256, 256);
+    const strands = (n, dark, light) => { for (let i = 0; i < n; i++) { const x = R() * 256, y = R() * 300 - 40, l = 20 + R() * 60; g.strokeStyle = R() < .6 ? `rgba(70,42,18,${dark * (.5 + R())})` : `rgba(255,255,255,${light})`; g.lineWidth = .8 + R() * 1.6; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (R() - .5) * 6, y + l); g.stroke(); } };
+    if (kind === 'straw') { strands(2200, .2, .55); const gr = g.createLinearGradient(0, 0, 0, 70); gr.addColorStop(0, 'rgba(60,35,15,.4)'); gr.addColorStop(1, 'rgba(60,35,15,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 70); for (let x = 0; x < 256; x += 3) { g.fillStyle = `rgba(255,255,255,${.25 + R() * .4})`; g.fillRect(x, 244 - R() * 10, 2, 14); } } // a shadow under the layer above, and a pale ragged fringe at the bottom
+    if (kind === 'grain') strands(520, .12, .35);
+    if (kind === 'planks') { strands(420, .1, .3); for (let x = 0; x < 256; x += 64) { g.fillStyle = 'rgba(60,35,15,.5)'; g.fillRect(x, 0, 3, 256); } }
+    if (kind === 'plaster') for (let i = 0; i < 90; i++) { const x = R() * 256, y = R() * 256, r = 10 + R() * 34; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(120,90,50,${.05 + R() * .07})`); gr.addColorStop(1, 'rgba(120,90,50,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+    if (kind === 'meadow') { for (let i = 0; i < 700; i++) { const x = R() * 256, y = R() * 256; g.strokeStyle = R() < .55 ? `rgba(40,70,20,${.07 + R() * .1})` : `rgba(255,255,255,${.25 + R() * .3})`; g.lineWidth = 1 + R(); g.beginPath(); g.moveTo(x, y); g.lineTo(x + (R() - .5) * 5, y - 4 - R() * 6); g.stroke(); } for (let i = 0; i < 26; i++) { g.fillStyle = `rgba(255,255,255,${.35 + R() * .3})`; g.beginPath(); g.arc(R() * 256, R() * 256, 1.5 + R() * 1.5, 0, 7); g.fill(); } } // short blades of grass and a few clover dots
+    if (kind === 'leaf') for (let i = 0; i < 260; i++) { const x = R() * 256, y = R() * 256, r = 5 + R() * 9; g.fillStyle = R() < .5 ? `rgba(20,60,20,${.06 + R() * .09})` : `rgba(255,255,255,${.18 + R() * .25})`; g.beginPath(); g.ellipse(x, y, r, r * .55, R() * 3, 0, 7); g.fill(); } // overlapping leaves
+    if (kind === 'earth') { for (let y = 0; y < 256; y += 22 + R() * 30) { g.fillStyle = `rgba(60,35,15,${.1 + R() * .14})`; g.fillRect(0, y, 256, 3 + R() * 7); } for (let i = 0; i < 160; i++) { g.fillStyle = `rgba(60,35,15,${.08 + R() * .12})`; g.fillRect(R() * 256, R() * 256, 3 + R() * 9, 2 + R() * 4); } } // layers of soil with pebbles
+    if (kind === 'stone') for (let i = 0; i < 900; i++) { g.fillStyle = R() < .5 ? `rgba(40,35,50,${.05 + R() * .12})` : `rgba(255,255,255,${.2 + R() * .3})`; g.fillRect(R() * 256, R() * 256, 1 + R() * 4, 1 + R() * 3); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; texBase[kind] = t; }
+  const t = texBase[kind].clone(); t.repeat.set(rx, ry); t.needsUpdate = true; return t;
+}
+const fine = (c, o = {}) => { const m = mat(c, o); m.userData.outlineParameters = NO_OUTLINE; return m; }; // for small details: no dark outline around them
 // --- islands ---
 const GRASS = [0x8fdc8a, 0x7fd07a, 0xdcbb62, 0xeef3ff]; // fall is a golden meadow, not sand
 function island(r, x, y, z, o = {}) {
@@ -205,10 +223,11 @@ function island(r, x, y, z, o = {}) {
   const topGeo = new THREE.CylinderGeometry(r, r*.97, 1, 48, 1, false); { const P = topGeo.attributes.position, col = [];
     for (let i = 0; i < P.count; i++) { const d = Math.hypot(P.getX(i), P.getZ(i)) / r, f = P.getY(i) > .49 ? 1.07 - .16 * d * d : .86; col.push(f, f, f); }
     topGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); }
-  const topMat = o.mat || mat(0x8fdc8a); topMat.vertexColors = true;
+  const topMat = o.mat || mat(0x8fdc8a); topMat.vertexColors = true; if (!topMat.map && !lowGfx) topMat.map = tx('meadow', Math.round(r * 1.2), Math.round(r * 1.2));
   const top = mesh(topGeo, topMat, 0, -.5, 0); g.add(top);
-  g.add(mesh(new THREE.CylinderGeometry(r*.97, r*.9, .6, 48), mat(0xb98a63), 0, -1.3, 0));
-  const rock = mesh(new THREE.ConeGeometry(r*.9, r*.8, 48), mat(0x9c7fa8), 0, -1.6 - r*.4, 0); rock.rotation.x = Math.PI; g.add(rock);
+  g.add(mesh(new THREE.CylinderGeometry(r*.97, r*.9, .6, 48), mat(0xb98a63, { map:tx('earth', Math.round(r), 1) }), 0, -1.3, 0));
+  const rock = mesh(new THREE.ConeGeometry(r*.9, r*.8, 48), mat(0x9c7fa8, { map:tx('stone', Math.round(r), 3) }), 0, -1.6 - r*.4, 0); rock.rotation.x = Math.PI; g.add(rock);
+  for (let i = 0; i < Math.round(r * 1.1); i++) { const a = i * 2.9 + r, d = r * (.5 + (i % 3) * .14), ck = mesh(new THREE.DodecahedronGeometry(.28 + (i % 4) * .1), mat(i % 2 ? 0x8a6f96 : 0xa98fb5), Math.cos(a) * d, -1.75 - (1 - d / r) * r * .72, Math.sin(a) * d); ck.rotation.set(i, i * 2, i * 3); g.add(ck); } // chunks of rock jutting from the underside
   const lipMat = topMat.clone(); lipMat.vertexColors = false; lipMat.color.multiplyScalar(.9); // the rim matches the deeper edge color
   const lip = mesh(new THREE.TorusGeometry(r - .05, .3, 10, 72), lipMat, 0, -.14, 0); lip.rotation.x = Math.PI/2; g.add(lip);
   for (let i=0;i<Math.round(r*1.4);i++){ const a = i*2.39, rr = r*(.45 + (i%4)*.1), len = 1 + (i%5)*.45, vine = i%3 === 0;
@@ -261,14 +280,17 @@ const CANOPY = [0x5fc377, 0x4fb46a, 0xf0a04b, 0xf4f7ff];
 function tree(parent, x, z, fruitKind) {
   const g = new THREE.Group(); g.position.set(x,0,z);
   const seed = Math.abs(Math.sin(x*12.9 + z*78.2)) * 1000, r = k => { const v = Math.sin(seed + k*37.7) * 43758.5; return v - Math.floor(v); };
-  const bark = mat(0x9b6b4a);
+  const bark = mat(0x9b6b4a, { map:tx('grain', 2, 2) });
   const trunk = mesh(new THREE.CylinderGeometry(.16,.26,1.3,10), bark, 0, .65, 0); trunk.rotation.z = (r(1)-.5)*.12; g.add(trunk);
   for (let i=0;i<3;i++){ const a = i*2.1 + r(2); const root = mesh(new THREE.ConeGeometry(.12,.45,6), bark, Math.cos(a)*.22, .1, Math.sin(a)*.22); root.rotation.set(Math.sin(a)*1.2, 0, -Math.cos(a)*1.2); g.add(root); }
   [-1,1].forEach(sd => { const br = mesh(new THREE.CylinderGeometry(.05,.08,.6,6), bark, sd*.22, 1.15, 0); br.rotation.z = -sd*.9; g.add(br); });
   const canopy = new THREE.Group(); canopy.position.y = 1.25; g.add(canopy);
-  const cm = mat(0x5fc377), cm2 = mat(0x4fb46a);
+  const cm = mat(0x5fc377, { map:tx('leaf', 3, 2) }), cm2 = mat(0x4fb46a, { map:tx('leaf', 3, 2) });
+  { const kn = mesh(new THREE.TorusGeometry(.05,.022,6,10), mat(0x7a5236), .02, .62, .2); kn.rotation.y = .1; g.add(kn); const hole = mesh(new THREE.CircleGeometry(.04, 10), mat(0x4a3020), .02, .62, .205); g.add(hole); // a knot in the trunk
+    for (let i = 0; i < 6; i++) { const a = i * 1.05 + r(11), t = mesh(new THREE.ConeGeometry(.04,.2,4), mat(i % 2 ? 0x5fa85a : 0x8fcf7a), Math.cos(a) * .36, .09, Math.sin(a) * .36); t.material.userData.outlineParameters = { visible:false }; g.add(t); } }
   const blobs = [[0,.55,0,.85,cm],[.55,.35,.2,.55,cm2],[-.5,.4,-.2,.52,cm],[.1,.95,-.1,.55,cm],[-.2,.3,.5,.5,cm2],[.3,.25,-.5,.48,cm],[-.55,.75,.25,.4,cm2],[.45,.8,.35,.38,cm]];
   blobs.forEach(([bx,by,bz,br,m], i) => { const b = mesh(sph(br * (.9 + r(i+5)*.2)), m, bx, by, bz); b.scale.y = .9; canopy.add(b); });
+  for (let i = 0; i < 14; i++) { const a = i * 2.4 + r(20), e = .1 + r(i + 21) * 1.2, rr = .92, b = mesh(sph(.16 + r(i + 30) * .1), i % 2 ? cm : cm2, Math.cos(a) * Math.cos(e) * rr, .5 + Math.sin(e) * .62, Math.sin(a) * Math.cos(e) * rr); b.scale.y = .8; canopy.add(b); } // small clumps of leaves break up the outline
   const fruits = new THREE.Group(); canopy.add(fruits);
   if (fruitKind) for (let i=0;i<8;i++){ const a=i*.8 + r(9); fruits.add(mesh(sph(.13), mat(fruitKind === 'apple' ? 0xff6b6b : 0xffb36b), Math.cos(a)*.82, .3+Math.sin(i*2)*.35, Math.sin(a)*.82)); }
   g.userData = { canopy, cm, cm2, fruits, ph:Math.random()*6 };
@@ -303,21 +325,6 @@ const HOME_SIZES = [null, { name:'hut' },
   { name:'cottage', needs:{ log:30, stone:20, fiber:12 }, coins:300, adds:'A cottage is taller. It has a loft upstairs with 6 more spots for furniture.' },
   { name:'house', needs:{ log:60, stone:40, fiber:20 }, coins:1500, adds:'A house has two full floors and a balcony. It has a study next to the loft with 6 more spots for furniture.' }];
 const homeStyle = () => HOME_STYLES[S.homeStyle] ? S.homeStyle : 'daub', homeSize = () => (S.home || 0) < 3 ? 1 : Math.min(3, S.homeSize || 1), homeName = () => HOME_SIZES[homeSize()].name;
-// small painted textures: white with darker marks, so any paint color shows through them
-const texBase = {};
-function tx(kind, rx = 1, ry = 1) {
-  if (!texBase[kind]) { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); let sd = kind.length * 7919 + 13; const R = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-    g.fillStyle = '#fff'; g.fillRect(0, 0, 256, 256);
-    const strands = (n, dark, light) => { for (let i = 0; i < n; i++) { const x = R() * 256, y = R() * 300 - 40, l = 20 + R() * 60; g.strokeStyle = R() < .6 ? `rgba(70,42,18,${dark * (.5 + R())})` : `rgba(255,255,255,${light})`; g.lineWidth = .8 + R() * 1.6; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (R() - .5) * 6, y + l); g.stroke(); } };
-    if (kind === 'straw') { strands(2200, .2, .55); const gr = g.createLinearGradient(0, 0, 0, 70); gr.addColorStop(0, 'rgba(60,35,15,.4)'); gr.addColorStop(1, 'rgba(60,35,15,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 70); for (let x = 0; x < 256; x += 3) { g.fillStyle = `rgba(255,255,255,${.25 + R() * .4})`; g.fillRect(x, 244 - R() * 10, 2, 14); } } // a shadow under the layer above, and a pale ragged fringe at the bottom
-    if (kind === 'grain') strands(520, .12, .35);
-    if (kind === 'planks') { strands(420, .1, .3); for (let x = 0; x < 256; x += 64) { g.fillStyle = 'rgba(60,35,15,.5)'; g.fillRect(x, 0, 3, 256); } }
-    if (kind === 'plaster') for (let i = 0; i < 90; i++) { const x = R() * 256, y = R() * 256, r = 10 + R() * 34; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(120,90,50,${.05 + R() * .07})`); gr.addColorStop(1, 'rgba(120,90,50,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
-    if (kind === 'stone') for (let i = 0; i < 900; i++) { g.fillStyle = R() < .5 ? `rgba(40,35,50,${.05 + R() * .12})` : `rgba(255,255,255,${.2 + R() * .3})`; g.fillRect(R() * 256, R() * 256, 1 + R() * 4, 1 + R() * 3); }
-    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; texBase[kind] = t; }
-  const t = texBase[kind].clone(); t.repeat.set(rx, ry); t.needsUpdate = true; return t;
-}
-const fine = (c, o = {}) => { const m = mat(c, o); m.userData.outlineParameters = NO_OUTLINE; return m; }; // for small details: no dark outline around them
 roofMat.map = tx('straw', 4, 1); wallMat.map = tx('plaster', 2, 2);
 const ridgeMat = mat(0xff8fa3, { map:tx('straw', 4, 1) }), lampMat = new THREE.MeshStandardMaterial({ color:0xffe9b8, emissive:0xffc46b, emissiveIntensity:.15, roughness:.5 }); lampMat.userData.outlineParameters = NO_OUTLINE;
 // --- detailed parts shared by every building: windows, doors, stone footings, chimneys, layered roofs, pots of flowers ---
@@ -547,7 +554,8 @@ WALKWAYS.forEach((pts, pi) => {
     st.rotation.y = i * 1.3; st.scale.set(1, 1, .82); st.castShadow = false; stones.add(st); pathPts.push([st.position.x, st.position.z]); } });
 // keep the grass off the paths
 tuftData.forEach(d => { if (Math.abs(d.y) < 1 && pathPts.some(([x, z]) => Math.hypot(d.x - x, d.z - z) < .55)) d.y = -50; });
-const rocks = [[-7.1,3,.42],[5.8,-6,.38],[6.55,-5.3,.45],[-6.5,3.7,.36]].map(([x,z,r],i) => { const rk = mesh(new THREE.DodecahedronGeometry(r), mat(0xb3aabb), x, r*.5, z); rk.rotation.set(i, i*2, 0); rk.userData = { kind:'rock', key:'rock'+i }; scene.add(rk); return rk; });
+const rocks = [[-7.1,3,.42],[5.8,-6,.38],[6.55,-5.3,.45],[-6.5,3.7,.36]].map(([x,z,r],i) => { const rk = mesh(new THREE.DodecahedronGeometry(r), mat(0xb3aabb, { map:tx('stone', 2, 2) }), x, r*.5, z); rk.rotation.set(i, i*2, 0); rk.userData = { kind:'rock', key:'rock'+i }; scene.add(rk);
+  [[.9,-.3,.4,.38],[-.75,-.35,.6,.3],[.2,-.4,-.95,.26]].forEach(([dx, dy, dz, k], j) => { const sm = mesh(new THREE.DodecahedronGeometry(r * k), mat(j % 2 ? 0x9a93a8 : 0xc8c2cf), dx * r, dy * r, dz * r); sm.rotation.set(j, i, j * 2); rk.add(sm); }); { const ms = mesh(sph(r * .32), mat(0x7fbf6a), r * .3, r * .72, r * .2); ms.scale.set(1.3, .35, 1); rk.add(ms); } return rk; });
 
 // --- sell crate ---
 const mailbox = new THREE.Group(); mailbox.position.set(-1.75, 0, -1.35); // beside the path, facing you
