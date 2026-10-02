@@ -35,11 +35,11 @@ const DEFAULT_LOOK = { human:true, skin:0xf6c9a4, hair:'short', hairColor:0x5a3a
 // Island modes, chosen once at the start (like picking a farm type). Each has perks.
 const MODES = [
   { id:'garden',   name:"Gardener's Isle", blurb:'For people who love to grow things.',
-    perks:['Start with a bigger garden: 12 plots instead of 9', 'Every harvest has a 1 in 5 chance of a bonus crop'] },
+    perks:['A bigger garden: 12 plots instead of 9', 'Every harvest has a 1 in 5 chance of a bonus crop'] },
   { id:'fisher',   name:"Fisher's Isle", blurb:'For people who love the water.',
-    perks:['Your own fishing dock at home from day one', 'Fish sell for 25% more'] },
+    perks:['Your own fishing dock at home', 'Fish sell for 25% more'] },
   { id:'scholar',  name:"Scholar's Isle", blurb:'For people who love to learn.',
-    perks:['Earn 30 extra coins each time you dig up or learn something new', 'Start with a bookshelf in your hut'] },
+    perks:['Earn 30 extra coins each time you dig up or learn something new', 'A bookshelf for your hut'] },
   { id:'explorer', name:"Explorer's Isle", blurb:'For people who want to see everything.',
     perks:['Walk 25% faster', 'Bridges cost 30% less'] },
   { id:'cozy',     name:'Cozy Isle', blurb:'For people who like to take their time.',
