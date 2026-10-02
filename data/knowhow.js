@@ -47,6 +47,10 @@ const KNOWHOW = [
     did:'You took a nap in the hammock and woke up later in the day.',
     real:'In 1994, a NASA study gave pilots a 40-minute rest break on long flights. They slept for about 26 minutes on average. The pilots who napped were more alert afterward than the ones who stayed awake.',
     today:'Some airlines outside the United States still plan short naps for pilots on very long flights.' },
+  { id:'sorting', act:'museum', n:5, icon:'🗂️', title:'You sort things into groups',
+    did:'You gave the museum 5 things. Each one went to its own section: fish with fish, bugs with bugs.',
+    real:'Putting living things into groups by what they share is called <b>classification</b>. In 1735, a Swedish scientist named Carl Linnaeus published a system for it. He also gave every living thing a two-part name, and scientists still name things his way. Your two-part name is Homo sapiens.',
+    today:'A grocery store does the same: fruit with fruit, fish with fish. You find things fast because someone sorted them.' },
   // learned by helping a neighbor with their craft (shown right after you help)
   { id:'pricing', act:'help', n:99, icon:'🍋', title:'You can find the right price',
     did:'You helped Pip try different prices for his lemonade.',
