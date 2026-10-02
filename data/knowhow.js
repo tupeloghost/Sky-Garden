@@ -62,7 +62,7 @@ const KNOWHOW = [
     real:'Each seed hangs under a tuft of about 100 fine hairs. Air slipping between the hairs makes a ring of spinning air above the seed. That ring holds it up.',
     today:'Plants cannot walk, so their seeds travel. Maple seeds spin like helicopters.' },
   { id:'resonance', act:'swing', n:3, icon:'🎢', term:'RESONANCE', title:'Small pushes at the right moment add up',
-    did:'You pushed the swing at the right moment each time, and it climbed as high as the bar.',
+    did:'You kicked at the same point of every swing, and you climbed as high as the bar.',
     real:'A swing has its own beat. Push in time with it, and every small push adds to the last. That is called <b>resonance</b>.',
     today:'Pumping your legs on a swing is the same trick. You add a little push at the same point, every time.' },
   { id:'skipping', act:'skip', n:3, icon:'🪨', term:'THE BEST ANGLE', title:'A stone skips best tipped up about 20 degrees, with spin',
