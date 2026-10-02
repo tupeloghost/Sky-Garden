@@ -303,62 +303,128 @@ const HOME_SIZES = [null, { name:'hut' },
   { name:'cottage', needs:{ log:30, stone:20, fiber:12 }, coins:300, adds:'A cottage is taller. It has a loft upstairs with 6 more spots for furniture.' },
   { name:'house', needs:{ log:60, stone:40, fiber:20 }, coins:1500, adds:'A house has two full floors and a balcony. It has a study next to the loft with 6 more spots for furniture.' }];
 const homeStyle = () => HOME_STYLES[S.homeStyle] ? S.homeStyle : 'daub', homeSize = () => (S.home || 0) < 3 ? 1 : Math.min(3, S.homeSize || 1), homeName = () => HOME_SIZES[homeSize()].name;
+// small painted textures: white with darker marks, so any paint color shows through them
+const texBase = {};
+function tx(kind, rx = 1, ry = 1) {
+  if (!texBase[kind]) { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); let sd = kind.length * 7919 + 13; const R = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    g.fillStyle = '#fff'; g.fillRect(0, 0, 256, 256);
+    const strands = (n, dark, light) => { for (let i = 0; i < n; i++) { const x = R() * 256, y = R() * 300 - 40, l = 20 + R() * 60; g.strokeStyle = R() < .6 ? `rgba(70,42,18,${dark * (.5 + R())})` : `rgba(255,255,255,${light})`; g.lineWidth = .8 + R() * 1.6; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (R() - .5) * 6, y + l); g.stroke(); } };
+    if (kind === 'straw') { strands(2200, .2, .55); const gr = g.createLinearGradient(0, 0, 0, 70); gr.addColorStop(0, 'rgba(60,35,15,.4)'); gr.addColorStop(1, 'rgba(60,35,15,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 70); for (let x = 0; x < 256; x += 3) { g.fillStyle = `rgba(255,255,255,${.25 + R() * .4})`; g.fillRect(x, 244 - R() * 10, 2, 14); } } // a shadow under the layer above, and a pale ragged fringe at the bottom
+    if (kind === 'grain') strands(520, .12, .35);
+    if (kind === 'planks') { strands(420, .1, .3); for (let x = 0; x < 256; x += 64) { g.fillStyle = 'rgba(60,35,15,.5)'; g.fillRect(x, 0, 3, 256); } }
+    if (kind === 'plaster') for (let i = 0; i < 90; i++) { const x = R() * 256, y = R() * 256, r = 10 + R() * 34; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(120,90,50,${.05 + R() * .07})`); gr.addColorStop(1, 'rgba(120,90,50,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+    if (kind === 'stone') for (let i = 0; i < 900; i++) { g.fillStyle = R() < .5 ? `rgba(40,35,50,${.05 + R() * .12})` : `rgba(255,255,255,${.2 + R() * .3})`; g.fillRect(R() * 256, R() * 256, 1 + R() * 4, 1 + R() * 3); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; texBase[kind] = t; }
+  const t = texBase[kind].clone(); t.repeat.set(rx, ry); t.needsUpdate = true; return t;
+}
+const fine = (c, o = {}) => { const m = mat(c, o); m.userData.outlineParameters = NO_OUTLINE; return m; }; // for small details: no dark outline around them
+roofMat.map = tx('straw', 4, 1); wallMat.map = tx('plaster', 2, 2);
+const ridgeMat = mat(0xff8fa3, { map:tx('straw', 4, 1) }), lampMat = new THREE.MeshStandardMaterial({ color:0xffe9b8, emissive:0xffc46b, emissiveIntensity:.15, roughness:.5 }); lampMat.userData.outlineParameters = NO_OUTLINE;
 function drawHouse() {
   house.clear(); winHalos = []; applyPaint();
   const sz = homeSize(), st = homeStyle(), add = m => (house.add(m), m), hr = i => { const x = Math.sin(i * 127.1) * 43758.5; return x - Math.floor(x); };
-  const wh = sz === 3 ? 3.4 : sz === 2 ? 2.2 : 1.8, fz = st === 'log' ? 1.2 : st === 'stone' ? 1.14 : 1.1; // wall height, and how far the front face sticks out
-  add(mesh(new THREE.BoxGeometry(2.6,wh,2.2), wallMat, 0, wh/2, 0));
-  add(mesh(new THREE.BoxGeometry(2.8,.18,2.4), mat(0xd8cfc0), 0, .09, 0)); // stone footing
-  if (st === 'log') { // round logs, front-and-back rows sitting between the side rows, ends sticking out at the corners
-    const lm = [mat(0xa9744a), mat(0x96633f)], end = mat(0xe0b98a);
-    for (let k = 0, y = .33; y < wh - .1; k++, y += .3) { [-1, 1].forEach(sd => { const l = add(mesh(new THREE.CylinderGeometry(.15,.15,3,10), lm[k % 2], 0, y, sd * 1.05)); l.rotation.z = Math.PI/2;
-        [-1.51, 1.51].forEach(x => { const c = add(mesh(new THREE.CircleGeometry(.11, 10), end, x, y, sd * 1.05)); c.rotation.y = Math.sign(x) * Math.PI/2; }); });
-      if (y + .15 < wh - .1) [-1, 1].forEach(sd => { const l = add(mesh(new THREE.CylinderGeometry(.15,.15,2.6,10), lm[(k + 1) % 2], sd * 1.15, y + .15, 0)); l.rotation.x = Math.PI/2; }); }
-  } else if (st === 'stone') { // fitted stones of different sizes and greys on every face you can see
-    const sm = [mat(0xb9b2c2), mat(0x9a93a8), mat(0xc8c2cf), mat(0x8f899c)];
-    for (let r = 0, y = .33; y < wh - .12; r++, y += .27) { let x = -1.3 + (r % 2 ? 0 : -.12); for (let i = 0; x < 1.3; i++) { const w = .3 + hr(r * 17 + i) * .28, x0 = Math.max(-1.3, x), x1 = Math.min(1.3, x + w);
-        if (x1 - x0 > .08) add(mesh(new THREE.BoxGeometry(x1 - x0 - .03, .24, .06), sm[Math.floor(hr(r * 31 + i * 7) * 4)], (x0 + x1) / 2, y, 1.11)); x += w; }
-      let z = -1.1 + (r % 2 ? -.1 : 0); for (let i = 0; z < 1.1; i++) { const w = .3 + hr(r * 13 + i + 50) * .28, z0 = Math.max(-1.1, z), z1 = Math.min(1.1, z + w);
-        if (z1 - z0 > .08) [-1.31, 1.31].forEach(x => add(mesh(new THREE.BoxGeometry(.06, .24, z1 - z0 - .03), sm[Math.floor(hr(r * 29 + i * 5 + x) * 4)], x, y, (z0 + z1) / 2))); z += w; } }
-  } else { // plastered walls in a wooden frame
-    [[-1.3,1.1],[1.3,1.1],[-1.3,-1.1],[1.3,-1.1]].forEach(([x,z]) => add(mesh(new THREE.BoxGeometry(.14,wh,.14), woodLight, x, wh/2, z)));
-    if (sz > 1) { add(mesh(new THREE.BoxGeometry(2.7,.12,.08), woodLight, 0, 1.8, 1.11)); [-1.31, 1.31].forEach(x => add(mesh(new THREE.BoxGeometry(.08,.12,2.2), woodLight, x, 1.8, 0))); }
-    if (sz === 3) [-.42, .42].forEach(x => add(mesh(new THREE.BoxGeometry(.1,1.5,.08), woodLight, x, 2.6, 1.11)));
+  const wh = sz === 3 ? 3.4 : sz === 2 ? 2.2 : 1.8, fz = st === 'log' ? 1.2 : st === 'stone' ? 1.16 : 1.1; // wall height, and how far the front face sticks out
+  const dark = mat(0x8a6040, { map:tx('grain', 1, 2) }), plank = mat(0xc98f58, { map:tx('planks', 2, 1) }), stoneM = mat(0xb0a898, { map:tx('stone', 1, 1) }), seam = fine(0x4a3020), iron = fine(0x4a4450), white = fine(0xffffff), leaf = fine(0x4fb46a), leaf2 = fine(0x3f9a5c);
+  add(mesh(new THREE.BoxGeometry(2.6, wh, 2.2), wallMat, 0, wh / 2, 0));
+  // a footing of rough stones, each a little different
+  add(mesh(new THREE.BoxGeometry(2.74, .2, 2.34), stoneM, 0, .1, 0));
+  { const fs = [mat(0xd8cfc0), mat(0xbfb6a8), mat(0xcac2b6)]; let i = 0;
+    for (let x = -1.34; x < 1.3; i++) { const w = .22 + hr(i + 3) * .2; add(mesh(new THREE.BoxGeometry(w - .03, .16 + hr(i) * .08, .12), fs[i % 3], x + w / 2, .11, fz + .06)); x += w; }
+    [-1, 1].forEach(sd => { for (let z = -1.1, k = 0; z < 1.05; k++, i++) { const w = .24 + hr(i + 9) * .2; add(mesh(new THREE.BoxGeometry(.12, .16 + hr(i) * .08, w - .03), fs[i % 3], sd * 1.38, .11, z + w / 2)); z += w; } }); }
+  if (st === 'log') { // round logs with bark, pale clay packed in the gaps, and ends that cross at the corners
+    const lm = [mat(0xa9744a, { map:tx('grain', 1, 3) }), mat(0x96633f, { map:tx('grain', 1, 3) })], end = fine(0xe6c69a), ring = fine(0xb98a58), chink = fine(0xe8dcc0);
+    for (let k = 0, y = .37; y < wh - .1; k++, y += .3) { const r = .15 + (hr(k) - .5) * .02;
+      [-1, 1].forEach(sd => { const l = add(mesh(new THREE.CylinderGeometry(r, r, 3.04, 12), lm[k % 2], 0, y, sd * 1.05)); l.rotation.z = Math.PI / 2;
+        [-1.53, 1.53].forEach(x => { const c = add(mesh(new THREE.CircleGeometry(r * .8, 12), end, x, y, sd * 1.05)); c.rotation.y = Math.sign(x) * Math.PI / 2; const c2 = add(mesh(new THREE.RingGeometry(r * .32, r * .42, 12), ring, x + Math.sign(x) * .002, y, sd * 1.05)); c2.rotation.y = c.rotation.y; });
+        if (y + .3 < wh - .1) add(mesh(new THREE.BoxGeometry(2.6, .07, .04), chink, 0, y + .15, sd * 1.14)); });
+      if (y + .15 < wh - .1) [-1, 1].forEach(sd => { const l = add(mesh(new THREE.CylinderGeometry(r, r, 2.64, 12), lm[(k + 1) % 2], sd * 1.15, y + .15, 0)); l.rotation.x = Math.PI / 2;
+        [-1.33, 1.33].forEach(z => { const c = add(mesh(new THREE.CircleGeometry(r * .8, 12), end, sd * 1.15, y + .15, z)); if (z < 0) c.rotation.y = Math.PI; }); }); }
+  } else if (st === 'stone') { // fitted stones: rows of different heights, stones of different sizes, big ones at the corners
+    const sm = [0xb9b2c2, 0x9a93a8, 0xc8c2cf, 0x8f899c, 0xaaa2a0].map(c => mat(c, { map:tx('stone', 1, 1) }));
+    for (let r = 0, y = .22; y < wh - .14; r++) { const h = Math.min(.2 + hr(r * 3) * .13, wh - .04 - y), yc = y + h / 2;
+      let x = -1.3 + (r % 2 ? 0 : -.14); for (let i = 0; x < 1.3; i++) { const w = .26 + hr(r * 17 + i) * .34, x0 = Math.max(-1.3, x), x1 = Math.min(1.3, x + w), d = .08 + hr(r * 5 + i * 3) * .06;
+        if (x1 - x0 > .08) add(mesh(new THREE.BoxGeometry(x1 - x0 - .025, h - .025, d), sm[Math.floor(hr(r * 31 + i * 7) * 5)], (x0 + x1) / 2, yc, 1.1 + d / 2 - .02)); x += w; }
+      let z = -1.1 + (r % 2 ? -.12 : 0); for (let i = 0; z < 1.1; i++) { const w = .26 + hr(r * 13 + i + 50) * .34, z0 = Math.max(-1.1, z), z1 = Math.min(1.1, z + w), d = .08 + hr(r * 7 + i) * .06;
+        if (z1 - z0 > .08) [-1, 1].forEach(sd => add(mesh(new THREE.BoxGeometry(d, h - .025, z1 - z0 - .025), sm[Math.floor(hr(r * 29 + i * 5 + sd) * 5)], sd * (1.3 + d / 2 - .02), yc, (z0 + z1) / 2))); z += w; }
+      [-1, 1].forEach(sd => add(mesh(new THREE.BoxGeometry(.24, h - .02, .24), sm[(r + (sd > 0 ? 2 : 0)) % 5], sd * 1.3, yc, 1.1))); y += h; }
+    [[-1.05, .3], [.5, .34], [1.2, .62], [-.6, .28]].forEach(([x, y], i) => { const m = add(mesh(sph(.09), i % 2 ? leaf : leaf2, x, y, 1.2)); m.scale.set(1.5, .5, .6); }); // moss
+  } else { // plaster between dark timbers: posts, rails and corner braces
+    const beam = (w, h, d, x, y, z, rz = 0, ry = 0) => { const m = add(mesh(new THREE.BoxGeometry(w, h, d), dark, x, y, z)); m.rotation.z = rz; m.rotation.y = ry; return m; };
+    [[-1.3, 1.1], [1.3, 1.1], [-1.3, -1.1], [1.3, -1.1]].forEach(([x, z]) => beam(.17, wh, .17, x, wh / 2, z));
+    beam(2.6, .11, .08, 0, .27, 1.11); beam(2.6, .11, .08, 0, wh - .06, 1.11);
+    [-1, 1].forEach(sd => { beam(.09, .5, .07, sd * 1.12, .52, 1.11, sd * .5); });
+    [-1.31, 1.31].forEach(x => { beam(.08, .13, 2.2, x, .28, 0); beam(.08, .13, 2.2, x, wh - .07, 0); beam(.08, wh - .3, .11, x, wh / 2, 0); beam(.08, .11, 2.2, x, 1.05, 0);
+      [-1, 1].forEach(sd => { const b = beam(.07, .1, 1.0, x, 1.45, sd * .55); b.rotation.x = sd * .62; }); });
+    if (sz > 1) beam(2.6, .13, .08, 0, 1.8, 1.11);
+    if (sz === 3) { [-1, 1].forEach(sd => { beam(.52, .08, .07, sd * .87, 2.1, 1.11, sd * .5); beam(.52, .08, .07, sd * .87, 2.1, 1.115, -sd * .5); beam(.7, .1, .08, sd * .87, 3.08, 1.11); }); [-.47, .47].forEach(x => beam(.11, 1.5, .08, x, 2.6, 1.115)); }
   }
-  const windowAt = (x, y) => { add(mesh(new THREE.BoxGeometry(.62,.57,.06), trim, x, y, fz + .01)); [-1,1].forEach(sd => add(mesh(new THREE.BoxGeometry(.16,.55,.05), mat(0x7ec8e3), x + sd*.42, y, fz + .03)));
-    add(mesh(new THREE.BoxGeometry(.5,.45,.08), winMat, x, y, fz + .02)); const hl = halo(0xffc46b, 1.3, 0); hl.position.set(x, y, fz + .2); add(hl); winHalos.push(hl); };
-  [-.85,.85].forEach(x => windowAt(x, 1.05));
-  add(mesh(new THREE.BoxGeometry(1.6,.12,.9), woodLight, 0, .12, 1.55)); // porch
-  [-.7,.7].forEach(x => add(mesh(new THREE.CylinderGeometry(.05,.05,sz === 3 ? 1.6 : 1.25,8), wood, x, sz === 3 ? .92 : .75, 1.95)));
-  const arch = add(mesh(new THREE.CylinderGeometry(.35,.35,.1,16,1,false,0,Math.PI), wood, 0, 1.1, fz + .02)); arch.rotation.set(Math.PI/2, 0, Math.PI/2);
-  add(mesh(new THREE.BoxGeometry(.3,.12,.35), mat(0xd8cfc0), 0, .06, 2.15)); // step
-  add(mesh(new THREE.BoxGeometry(.7,1.1,.1), wood, 0, .55, fz + .02)); // door
-  const chimney = (x, base, h) => { add(mesh(new THREE.BoxGeometry(.32,h,.32), mat(0xb0a898), x, base + h/2, -.35)); add(mesh(new THREE.BoxGeometry(.4,.1,.4), mat(0x8a8290), x, base + h + .03, -.35)); return base + h + .1; };
-  if (sz === 1) { // a pointed thatch roof
-    add(mesh(new THREE.BoxGeometry(2.75,.12,2.35), trim, 0, 1.8, 0));
-    const roof = add(mesh(new THREE.ConeGeometry(2.35,1.5,4), roofMat, 0, 2.52, 0)); roof.rotation.y = Math.PI/4; roof.scale.set(1, 1, .95);
-    const aw = add(mesh(new THREE.BoxGeometry(1.75,.08,1), roofMat, 0, 1.42, 1.62)); aw.rotation.x = .22;
-    house.userData.chim = { x:.75, y:chimney(.75, 2.55, .8), z:-.35 };
-  } else { // a thatch roof with two sloping sides and a ridge along the top
-    const rh = sz === 3 ? 1.5 : 1.4, half = 1.42, len = Math.hypot(half, rh), ang = Math.atan2(rh, half);
-    add(mesh(new THREE.BoxGeometry(2.75,.12,2.35), trim, 0, wh, 0));
-    const sh = new THREE.Shape(); sh.moveTo(-1.1, 0); sh.lineTo(1.1, 0); sh.lineTo(0, rh * 1.1 / half); sh.closePath();
-    const gg = new THREE.ExtrudeGeometry(sh, { depth:2.6, bevelEnabled:false }); gg.translate(0, 0, -1.3); gg.rotateY(Math.PI/2); add(mesh(gg, wallMat, 0, wh, 0)); // the pointed wall at each end
-    [1, -1].forEach(sd => { const sl = add(mesh(new THREE.BoxGeometry(3.05,.16,len + .12), roofMat, 0, wh + rh/2 + .06, sd * half/2)); sl.rotation.x = sd * ang; });
-    const ridge = add(mesh(new THREE.CylinderGeometry(.11,.11,3.1,8), roofMat, 0, wh + rh + .1, 0)); ridge.rotation.z = Math.PI/2;
-    const top = chimney(.75, wh + rh * .5, 1); if (sz === 3) chimney(-.75, wh + rh * .5, 1);
+  // a window: frame, four panes, sill, shutters with slats, and a flower box if asked
+  const shut = mat(0x7ec8e3), slat = fine(0x5aa9c8), bloom = [0xff8fa3, 0xfff3a0, 0xc9b6ff, 0xffffff, 0xffb36b].map(c => fine(c));
+  const windowAt = (x, y, box) => { add(mesh(new THREE.BoxGeometry(.64, .6, .07), trim, x, y, fz + .01)); add(mesh(new THREE.BoxGeometry(.5, .46, .08), winMat, x, y, fz + .03));
+    add(mesh(new THREE.BoxGeometry(.035, .46, .03), white, x, y, fz + .08)); add(mesh(new THREE.BoxGeometry(.5, .035, .03), white, x, y, fz + .08));
+    add(mesh(new THREE.BoxGeometry(.76, .07, .16), plank, x, y - .33, fz + .07)); if (st !== 'daub') add(mesh(new THREE.BoxGeometry(.78, .1, .1), dark, x, y + .35, fz + .04));
+    [-1, 1].forEach(sd => { add(mesh(new THREE.BoxGeometry(.17, .58, .05), shut, x + sd * .43, y, fz + .04)); [-.18, -.06, .06, .18].forEach(dy => add(mesh(new THREE.BoxGeometry(.13, .02, .02), slat, x + sd * .43, y + dy, fz + .07))); });
+    const hl = halo(0xffc46b, 1.3, 0); hl.position.set(x, y, fz + .22); add(hl); winHalos.push(hl);
+    if (box) { add(mesh(new THREE.BoxGeometry(.66, .15, .17), plank, x, y - .45, fz + .14)); add(mesh(new THREE.BoxGeometry(.6, .03, .12), fine(0x5a3f2c), x, y - .37, fz + .14));
+      for (let i = 0; i < 6; i++) { const fx = x - .25 + i * .1, fy = y - .28 + hr(i + x * 9) * .08; add(mesh(new THREE.CylinderGeometry(.01, .01, .14, 4), leaf, fx, fy - .05, fz + .14)); add(mesh(sph(.045), bloom[(i + (x > 0 ? 2 : 0)) % 5], fx, fy + .03, fz + .14 + (i % 2) * .03)); const lf = add(mesh(sph(.05), i % 2 ? leaf : leaf2, fx + .04, fy - .07, fz + .2)); lf.scale.set(1, .5, .7); } } };
+  [-.85, .85].forEach(x => windowAt(x, 1.05, true));
+  // the door: planks, iron hinges, a brass knob, a little window, and a lantern beside it
+  { const z = fz + .02; add(mesh(new THREE.BoxGeometry(.8, 1.2, .08), dark, 0, .6, z - .02)); const arch = add(mesh(new THREE.CylinderGeometry(.4, .4, .08, 18, 1, false, 0, Math.PI), dark, 0, 1.2, z - .02)); arch.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+    const dm = mat(0xc08a5c, { map:tx('grain', 1, 1) }); add(mesh(new THREE.BoxGeometry(.7, 1.14, .1), dm, 0, .59, z)); const top = add(mesh(new THREE.CylinderGeometry(.35, .35, .1, 18, 1, false, 0, Math.PI), dm, 0, 1.16, z)); top.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+    [-.175, 0, .175].forEach(x => add(mesh(new THREE.BoxGeometry(.012, 1.3, .02), seam, x, .66, z + .055))); [.3, .95].forEach(y => { add(mesh(new THREE.BoxGeometry(.5, .05, .02), iron, -.08, y, z + .06)); add(mesh(sph(.03), iron, -.3, y, z + .06)); });
+    add(mesh(sph(.045), fine(0xffc857), .24, .6, z + .08)); const pane = add(mesh(new THREE.BoxGeometry(.16, .16, .03), winMat, 0, 1.12, z + .05)); pane.rotation.z = Math.PI / 4;
+    add(mesh(new THREE.BoxGeometry(.04, .04, .2), iron, .6, 1.42, z + .1)); add(mesh(new THREE.BoxGeometry(.03, .1, .03), iron, .6, 1.37, z + .18)); add(mesh(new THREE.BoxGeometry(.13, .17, .13), lampMat, .6, 1.24, z + .18));
+    add(mesh(new THREE.BoxGeometry(.17, .03, .17), iron, .6, 1.34, z + .18)); add(mesh(new THREE.BoxGeometry(.17, .03, .17), iron, .6, 1.14, z + .18)); const lh = halo(0xffc46b, .9, 0); lh.position.set(.6, 1.24, z + .3); add(lh); winHalos.push(lh); }
+  // the porch: plank deck, square posts with brackets, two stone steps and a doormat
+  add(mesh(new THREE.BoxGeometry(1.7, .12, .95), plank, 0, .14, 1.58)); add(mesh(new THREE.BoxGeometry(1.74, .08, .06), dark, 0, .1, 2.06));
+  const ph = sz === 3 ? 1.52 : 1.27; [-.76, .76].forEach(x => { add(mesh(new THREE.BoxGeometry(.1, ph, .1), wood, x, .2 + ph / 2, 1.98)); add(mesh(new THREE.BoxGeometry(.16, .06, .16), dark, x, .23, 1.98)); add(mesh(new THREE.BoxGeometry(.16, .06, .16), dark, x, .2 + ph - .03, 1.98));
+    const br = add(mesh(new THREE.BoxGeometry(.06, .34, .06), wood, x - Math.sign(x) * .12, .2 + ph - .17, 1.98)); br.rotation.z = Math.sign(x) * .75; });
+  add(mesh(new THREE.BoxGeometry(.62, .1, .34), stoneM, 0, .05, 2.24)); add(mesh(new THREE.BoxGeometry(.8, .05, .3), stoneM, 0, .025, 2.5)); add(mesh(new THREE.BoxGeometry(.52, .025, .3), fine(0xd97f8f), 0, .215, 1.75));
+  // a vine climbing the right-hand corner
+  { const stem = fine(0x6f8a4a); for (let i = 0; i < 13; i++) { const t = i / 12, x = 1.16 + Math.sin(t * 7) * .1, y = .25 + t * Math.min(wh - .3, 1.9); if (i < 12) { const sg = add(mesh(new THREE.CylinderGeometry(.014, .018, .2, 5), stem, x, y + .08, fz + .05)); sg.rotation.z = Math.cos(t * 7) * .5; }
+      const lf = add(mesh(sph(.075), i % 2 ? leaf : leaf2, x + (i % 2 ? .08 : -.08), y, fz + .07)); lf.scale.set(1.2, .8, .45); if (i % 4 === 2) add(mesh(sph(.04), bloom[i % 5], x, y + .05, fz + .11)); } }
+  const chimney = (x, base, h) => { add(mesh(new THREE.BoxGeometry(.36, h, .36), stoneM, x, base + h / 2, -.35)); for (let i = 0; i < 7; i++) add(mesh(new THREE.BoxGeometry(.15, .1, .05), mat(i % 2 ? 0x9a93a8 : 0xc8c2cf), x - .08 + hr(i + x) * .16, base + .12 + i * (h - .2) / 7, -.16));
+    add(mesh(new THREE.BoxGeometry(.46, .09, .46), mat(0x8a8290), x, base + h + .04, -.35)); add(mesh(new THREE.CylinderGeometry(.09, .11, .2, 10), mat(0xc9703f), x, base + h + .18, -.35)); return base + h + .3; };
+  const strawTop = (x, y, z, r) => { const k = add(mesh(sph(r), ridgeMat, x, y, z)); k.scale.set(1, .7, 1); add(mesh(new THREE.ConeGeometry(r * .45, r * 1.5, 8), ridgeMat, x, y + r * .9, z)); };
+  if (sz === 1) { // a thick pointed thatch roof, laid in four overlapping layers with a rolled edge
+    add(mesh(new THREE.BoxGeometry(2.72, .1, 2.32), dark, 0, 1.8, 0));
+    const H = 1.5, Rb = 2.2; for (let i = 0; i < 4; i++) { const y0 = i * H / 4, y1 = Math.min(H, y0 + H / 4 + .1), c = add(mesh(new THREE.CylinderGeometry(Math.max(.02, Rb * (1 - y1 / H)), Rb * (1 - y0 / H) + .09, y1 - y0, 4), roofMat, 0, 1.84 + (y0 + y1) / 2, 0)); c.rotation.y = Math.PI / 4; c.scale.z = .93; }
+    const tg = new THREE.TorusGeometry(Rb + .06, .1, 8, 4); tg.rotateZ(Math.PI / 4); tg.rotateX(Math.PI / 2); const roll = add(mesh(tg, roofMat, 0, 1.9, 0)); roll.scale.z = .93;
+    strawTop(0, 3.36, 0, .16);
+    const aw = add(mesh(new THREE.BoxGeometry(1.8, .1, .86), roofMat, 0, 1.56, 1.66)); aw.rotation.x = .2; const ar = add(mesh(new THREE.CylinderGeometry(.065, .065, 1.8, 8), roofMat, 0, 1.47, 2.08)); ar.rotation.z = Math.PI / 2;
+    house.userData.chim = { x:.75, y:chimney(.75, 2.5, .85), z:-.35 };
+  } else { // a thatch roof with two sloping sides, a raised ridge with a patterned edge, and rolled eaves
+    const rh = sz === 3 ? 1.5 : 1.4, half = 1.1, over = .36, ang = Math.atan2(rh, half), L = (half + over) / Math.cos(ang), W = 3.1;
+    add(mesh(new THREE.BoxGeometry(2.72, .1, 2.32), dark, 0, wh, 0));
+    const sh = new THREE.Shape(); sh.moveTo(-half, 0); sh.lineTo(half, 0); sh.lineTo(0, rh); sh.closePath();
+    const gg = new THREE.ExtrudeGeometry(sh, { depth:2.6, bevelEnabled:false }); gg.translate(0, 0, -1.3); gg.rotateY(Math.PI / 2); add(mesh(gg, wallMat, 0, wh, 0)); // the pointed wall at each end
+    if (st === 'daub') [-1.31, 1.31].forEach(x => { [-1, 1].forEach(sd => { const b = add(mesh(new THREE.BoxGeometry(.08, .1, Math.hypot(half, rh)), dark, x, wh + rh / 2, sd * half / 2)); b.rotation.x = sd * ang; }); add(mesh(new THREE.BoxGeometry(.08, rh - .1, .1), dark, x, wh + rh / 2, 0)); });
+    [0, Math.PI].forEach(yaw => { const side = new THREE.Group(); side.rotation.y = yaw; const sl = new THREE.Group(); sl.position.y = wh + rh; sl.rotation.x = ang; side.add(sl); add(side);
+      for (let i = 0; i < 4; i++) sl.add(mesh(new THREE.BoxGeometry(W, .2, L / 4 + .16), roofMat, 0, .1 + i * .035, L - (i + .5) * L / 4));
+      const roll = mesh(new THREE.CylinderGeometry(.13, .13, W, 10), roofMat, 0, .08, L + .02); roll.rotation.z = Math.PI / 2; sl.add(roll);
+      sl.add(mesh(new THREE.BoxGeometry(W + .08, .14, .56), ridgeMat, 0, .29, .24));
+      for (let i = 0; i < 11; i++) { const d = mesh(new THREE.BoxGeometry(.2, .12, .2), ridgeMat, -W / 2 + .19 + i * (W - .38) / 10, .285, .52); d.rotation.y = Math.PI / 4; sl.add(d); }
+      [.14, .36].forEach(z => sl.add(mesh(new THREE.BoxGeometry(W + .1, .025, .035), seam, 0, .372, z))); });
+    const cap = add(mesh(new THREE.CylinderGeometry(.16, .16, W + .1, 10), ridgeMat, 0, wh + rh + .2, 0)); cap.rotation.z = Math.PI / 2; [-1, 1].forEach(sd => strawTop(sd * (W / 2 + .02), wh + rh + .24, 0, .13));
+    const top = chimney(.75, wh + rh * .45, 1.25); if (sz === 3) chimney(-.75, wh + rh * .45, 1.25);
     house.userData.chim = { x:.75, y:top, z:-.35 };
-    if (sz === 2) { // the loft window, set into the front of the roof
-      add(mesh(new THREE.BoxGeometry(.8,.62,.8), wallMat, 0, wh + .5, .85));
-      [1, -1].forEach(sd => { const sl = add(mesh(new THREE.BoxGeometry(.56,.08,.95), roofMat, sd * .23, wh + .93, .85)); sl.rotation.z = -sd * .62; });
-      add(mesh(new THREE.BoxGeometry(.5,.42,.06), trim, 0, wh + .5, 1.25)); add(mesh(new THREE.BoxGeometry(.4,.32,.08), winMat, 0, wh + .5, 1.26));
-      const hl = halo(0xffc46b, 1.1, 0); hl.position.set(0, wh + .5, 1.42); add(hl); winHalos.push(hl);
-      const aw = add(mesh(new THREE.BoxGeometry(1.75,.08,1), roofMat, 0, 1.42, 1.62)); aw.rotation.x = .22;
-    } else { // upstairs windows, and a balcony over the porch
-      [-.85,.85].forEach(x => windowAt(x, 2.65));
-      add(mesh(new THREE.BoxGeometry(1.75,.1,1), woodLight, 0, 1.75, 1.62)); add(mesh(new THREE.BoxGeometry(.5,1,.1), wood, 0, 2.3, fz + .02));
-      [[-.82,1.2],[-.82,2.08],[.82,1.2],[.82,2.08],[0,2.08],[-.41,2.08],[.41,2.08]].forEach(([x,z]) => add(mesh(new THREE.BoxGeometry(.06,.5,.06), wood, x, 2.05, z)));
-      add(mesh(new THREE.BoxGeometry(1.75,.06,.07), wood, 0, 2.3, 2.08)); [-.82,.82].forEach(x => add(mesh(new THREE.BoxGeometry(.07,.06,.95), wood, x, 2.3, 1.64)));
+    if (sz === 2) { // the loft window, under a rounded "eyebrow" of thatch
+      add(mesh(new THREE.BoxGeometry(.86, .66, .9), wallMat, 0, wh + .5, .86));
+      const brow = add(mesh(new THREE.CylinderGeometry(.56, .56, 1.02, 14, 1, false, Math.PI / 2, Math.PI), roofMat, 0, wh + .72, .84)); brow.rotation.x = Math.PI / 2; brow.scale.z = .62;
+      add(mesh(new THREE.BoxGeometry(.56, .46, .06), trim, 0, wh + .5, 1.31)); add(mesh(new THREE.BoxGeometry(.44, .34, .08), winMat, 0, wh + .5, 1.32)); add(mesh(new THREE.BoxGeometry(.03, .34, .03), white, 0, wh + .5, 1.37)); add(mesh(new THREE.BoxGeometry(.44, .03, .03), white, 0, wh + .5, 1.37));
+      add(mesh(new THREE.BoxGeometry(.62, .06, .1), plank, 0, wh + .25, 1.34));
+      const hl = halo(0xffc46b, 1.1, 0); hl.position.set(0, wh + .5, 1.5); add(hl); winHalos.push(hl);
+      const aw = add(mesh(new THREE.BoxGeometry(1.8, .1, .86), roofMat, 0, 1.56, 1.66)); aw.rotation.x = .2; const ar = add(mesh(new THREE.CylinderGeometry(.065, .065, 1.8, 8), roofMat, 0, 1.47, 2.08)); ar.rotation.z = Math.PI / 2;
+    } else { // upstairs windows, and a balcony over the porch with a glass door, turned posts and flower pots
+      [-.85, .85].forEach(x => windowAt(x, 2.65, false));
+      add(mesh(new THREE.BoxGeometry(1.8, .1, 1), plank, 0, 1.77, 1.6)); add(mesh(new THREE.BoxGeometry(1.84, .07, .06), dark, 0, 1.76, 2.1));
+      add(mesh(new THREE.BoxGeometry(.6, 1.06, .08), dark, 0, 2.35, fz)); add(mesh(new THREE.BoxGeometry(.48, .94, .1), wood, 0, 2.33, fz + .02)); add(mesh(new THREE.BoxGeometry(.34, .5, .04), winMat, 0, 2.47, fz + .07));
+      add(mesh(new THREE.BoxGeometry(.025, .5, .02), white, 0, 2.47, fz + .1)); add(mesh(new THREE.BoxGeometry(.34, .025, .02), white, 0, 2.47, fz + .1)); add(mesh(sph(.03), fine(0xffc857), .17, 2.14, fz + .08));
+      for (let i = 0; i < 9; i++) add(mesh(new THREE.CylinderGeometry(.022, .03, .46, 6), wood, -.72 + i * .18, 2.06, 2.08));
+      [1.3, 1.56, 1.82].forEach(z => [-.86, .86].forEach(x => add(mesh(new THREE.CylinderGeometry(.022, .03, .46, 6), wood, x, 2.06, z))));
+      add(mesh(new THREE.BoxGeometry(1.84, .06, .08), dark, 0, 2.31, 2.08)); [-.86, .86].forEach(x => { add(mesh(new THREE.BoxGeometry(.08, .06, .92), dark, x, 2.31, 1.64)); add(mesh(new THREE.BoxGeometry(.09, .56, .09), wood, x, 2.08, 2.08)); add(mesh(sph(.06), wood, x, 2.4, 2.08));
+        add(mesh(new THREE.CylinderGeometry(.09, .07, .13, 10), mat(0xd9825b), x * .72, 1.89, 1.95)); add(mesh(sph(.1), leaf, x * .72, 2.02, 1.95)); add(mesh(sph(.045), bloom[x > 0 ? 0 : 1], x * .72 + .04, 2.1, 1.98)); });
+      const vane = fine(0x4a4450); add(mesh(new THREE.CylinderGeometry(.015, .015, .6, 5), vane, 0, wh + rh + .6, 0)); add(mesh(new THREE.BoxGeometry(.5, .025, .025), vane, 0, wh + rh + .82, 0)); const tip = add(mesh(new THREE.ConeGeometry(.06, .16, 4), vane, .3, wh + rh + .82, 0)); tip.rotation.z = -Math.PI / 2; add(mesh(new THREE.BoxGeometry(.14, .12, .02), vane, -.24, wh + rh + .82, 0));
     }
   }
 }
@@ -1445,14 +1511,48 @@ const FURN_CAT = { cake:'decor', rug:'rug', table:'table', armchair:'seat', rock
 makeRoom('loft', 12, { name:'The loft', back:'hut', floor:0xc99a6b, line:0xb5855a, wall:0xfbe9cf, wall2:0xf3dcc0, trim:0x8a6445, mat:0xc98f58, out:() => new THREE.Vector3(-4, 0, -.25) });
 makeRoom('study', 13, { name:'The study', back:'loft', floor:0xb98a63, line:0xa3764f, wall:0xdfe8d6, wall2:0xd2dec6, trim:0x7a5236, mat:0x8fb8a0, winX:-1.4, out:() => new THREE.Vector3(-4, 0, -.25) });
 ROOMS.loft.mat.userData.label = 'Ladder: tap to climb down'; ROOMS.study.mat.userData.label = 'Door: tap to go to the loft';
+[floor, ROOMS.loft.g.children[0], ROOMS.study.g.children[0]].forEach(f => { f.material.map = tx('planks', 5, 1); f.material.needsUpdate = true; }); // floorboards with grain
 const homeLadder = new THREE.Group(), studyDoor = new THREE.Group(), homePlans = new THREE.Group();
-{ const w = mat(0x9b6b4a); [-.28, .28].forEach(z => homeLadder.add(mesh(new THREE.BoxGeometry(.07,3.3,.07), w, 0, 1.6, z))); for (let i = 0; i < 9; i++) homeLadder.add(mesh(new THREE.BoxGeometry(.05,.05,.56), w, 0, .3 + i*.34, 0));
+// what you can see from the loft window: tonight's stars, or the weather
+function loftWindow() { if (VISIT) return toast(`${VISIT.name}'s window.`);
+  const m = today().getMonth() + 1, up = CONSTELLATIONS.filter(c => c.months.includes(m)), night = hour() >= 20, done = up.filter(c => S.charted.includes(c.id)).length;
+  showCard(`<div class="kicker">THE LOFT WINDOW</div><h2>${night ? 'Stars over your island' : raining ? 'Rain on the roof' : 'A clear sky'}</h2><p>${night ? '' : 'The stars come out after 8 PM. '}In the sky this month: <b>${up.map(c => c.name).join(', ')}</b>.</p>${S.built.includes('observatory') ? `<p>You have charted ${done} of these ${up.length}.${done < up.length ? ' Chart the rest at the Observatory after 8 PM.' : ''}</p>` : ''}`, 'Okay'); }
+{ const w = mat(0x9b6b4a, { map:tx('grain', 1, 2) }), dk = mat(0x6b4630, { map:tx('grain', 1, 2) }), lt = mat(0xc98f58, { map:tx('grain', 1, 1) }), brass = fine(0xffc857), L = ROOMS.loft.g, ST = ROOMS.study.g;
+  [-.28, .28].forEach(z => homeLadder.add(mesh(new THREE.BoxGeometry(.07,3.3,.07), w, 0, 1.6, z))); for (let i = 0; i < 9; i++) homeLadder.add(mesh(new THREE.BoxGeometry(.05,.05,.56), w, 0, .3 + i*.34, 0));
   homeLadder.rotation.z = -.16; homeLadder.position.set(-3.3, 0, 2.3); const hb = hitBox(.9, 3, 1); hb.position.set(.2, 1.5, 0); homeLadder.add(hb); deco(hb, () => VISIT ? toast(`${VISIT.name}'s loft is up there.`) : enterRoom('loft')).userData.label = 'Ladder: tap to climb to the loft'; room.add(homeLadder);
-  studyDoor.add(mesh(new THREE.BoxGeometry(.1,2.1,1.1), w, 0, 1.05, 0)); studyDoor.add(mesh(new THREE.BoxGeometry(.06,1.9,.9), mat(0xc98f58), -.04, 1, 0)); studyDoor.add(mesh(sph(.05), mat(0xffc857), -.1, 1, .32));
-  studyDoor.position.set(3.66, 0, 1.6); const hd = hitBox(.6, 2.1, 1.2); hd.position.set(-.2, 1.05, 0); studyDoor.add(hd); deco(hd, () => enterRoom('study')).userData.label = 'Door: tap to go to the study'; ROOMS.loft.g.add(studyDoor);
+  studyDoor.add(mesh(new THREE.BoxGeometry(.1,2.2,1.2), dk, 0, 1.1, 0)); studyDoor.add(mesh(new THREE.BoxGeometry(.06,2,1), lt, -.04, 1, 0)); [-.25, 0, .25].forEach(z => studyDoor.add(mesh(new THREE.BoxGeometry(.01,2,.015), fine(0x7a5236), -.075, 1, z))); studyDoor.add(mesh(sph(.05), brass, -.1, 1, .36));
+  studyDoor.position.set(3.66, 0, 1.6); const hd = hitBox(.6, 2.1, 1.2); hd.position.set(-.2, 1.05, 0); studyDoor.add(hd); deco(hd, () => enterRoom('study')).userData.label = 'Door: tap to go to the study'; L.add(studyDoor);
   homePlans.add(mesh(new THREE.BoxGeometry(.05,.78,1), w, 0, 0, 0)); homePlans.add(mesh(new THREE.BoxGeometry(.03,.66,.88), mat(0x3f6fb5), -.03, 0, 0)); // a blueprint: white lines on blue paper
-  const wl = mat(0xffffff); [[0,-.12,.5,.02],[0,.1,.36,.02],[-.25,-.01,.02,.24],[.25,-.01,.02,.24],[-.14,.2,.02,.22],[.14,.2,.02,.22]].forEach(([z,y,l,h], i) => { const ln = mesh(new THREE.BoxGeometry(.01,h,l), wl, -.05, y, z); if (i > 3) ln.rotation.x = (i === 4 ? 1 : -1) * .9; homePlans.add(ln); });
-  homePlans.position.set(3.66, 1.7, -1.1); const hp = hitBox(.4, .9, 1.1); hp.position.x = -.15; homePlans.add(hp); deco(hp, () => housePlans()).userData.label = 'House plans: tap to grow your home'; room.add(homePlans); }
+  const wl = fine(0xffffff); [[0,-.12,.5,.02],[0,.1,.36,.02],[-.25,-.01,.02,.24],[.25,-.01,.02,.24],[-.14,.2,.02,.22],[.14,.2,.02,.22]].forEach(([z,y,l,h], i) => { const ln = mesh(new THREE.BoxGeometry(.01,h,l), wl, -.05, y, z); if (i > 3) ln.rotation.x = (i === 4 ? 1 : -1) * .9; homePlans.add(ln); });
+  homePlans.position.set(3.66, 1.7, -1.1); const hp = hitBox(.4, .9, 1.1); hp.position.x = -.15; homePlans.add(hp); deco(hp, () => housePlans()).userData.label = 'House plans: tap to grow your home'; room.add(homePlans);
+  // the main room: a patchwork quilt and a candle by the bed
+  [[-.35,.1,0xff8fa3],[.35,.1,0xfff3a0],[0,.6,0xc9b6ff],[-.35,.6,0x8fdc8a],[.35,.6,0xffb36b],[0,.1,0xffffff]].forEach(([x, z, c]) => bed.add(mesh(new THREE.BoxGeometry(.33,.02,.46), fine(c), x, .63, z)));
+  // the loft: rafters meeting at the top, thatch showing above them, a string of lights, a window seat and a wardrobe
+  { const straw = mat(0xd9b36a, { map:tx('straw', 3, 2) }); [-1, 1].forEach(sd => { const sh = new THREE.Shape(); sh.moveTo(sd * 3.7, 1.25); sh.lineTo(sd * 3.7, 3.2); sh.lineTo(sd * .1, 3.2); sh.closePath(); const m = mesh(new THREE.ShapeGeometry(sh), straw, 0, 0, -3.19); m.receiveShadow = false; L.add(m);
+      const len = Math.hypot(3.6, 1.95), r = mesh(new THREE.BoxGeometry(len, .2, .14), dk, sd * 1.9, 2.22, -3.13); r.rotation.z = -sd * Math.atan2(1.95, 3.6); L.add(r); });
+    L.add(mesh(new THREE.BoxGeometry(3.4,.16,.12), dk, 0, 2.62, -3.12)); L.add(mesh(new THREE.BoxGeometry(.16,.62,.12), dk, 0, 2.93, -3.11));
+    for (let i = 0; i < 11; i++) { const t = i / 10, x = -3.2 + t * 6.4, y = 1.38 - Math.sin(t * Math.PI) * .2 + (Math.abs(x) < .95 ? -.62 : 0); if (Math.abs(x) < .95) continue; L.add(mesh(sph(.055), glow([0xffe0a8, 0xffb3c1, 0xbfe3ff][i % 3]), x, y + .1, -3.1)); }
+    const seat = G(mesh(new THREE.BoxGeometry(2.2,.5,.7), lt, 0, .25, 0), mesh(new THREE.BoxGeometry(2.1,.12,.62), mat(0xff8fa3), 0, .56, 0), mesh(new THREE.BoxGeometry(2.2,.06,.04), dk, 0, .3, .36));
+    [[-.75, 0xfff3a0, .2], [.7, 0xc9b6ff, -.25], [.3, 0x8fdc8a, .1]].forEach(([x, c, rz]) => { const p = mesh(new THREE.BoxGeometry(.38,.36,.14), mat(c), x, .78, -.2); p.rotation.set(-.25, 0, rz); seat.add(p); }); [-.5, .5].forEach(x => seat.add(mesh(sph(.035), brass, x, .3, .37)));
+    thing(L, seat, 0, -2.8, 2.3, 1.2, .9, loftWindow, 'Window seat: tap to look at the sky');
+    const wr = G(mesh(new THREE.BoxGeometry(1.15,2.1,.6), w, 0, 1.05, 0), mesh(new THREE.BoxGeometry(1.27,.1,.68), dk, 0, 2.15, 0), mesh(new THREE.BoxGeometry(1.2,.12,.64), dk, 0, .06, 0));
+    [-1, 1].forEach(sd => { wr.add(mesh(new THREE.BoxGeometry(.5,1.75,.04), lt, sd * .275, 1.1, .31)); wr.add(mesh(sph(.04), brass, sd * .07, 1.05, .35)); }); wr.add(mesh(new THREE.BoxGeometry(.34,1.2,.02), new THREE.MeshStandardMaterial({ color:0xdff3ff, roughness:.15, metalness:.4 }), -.275, 1.2, .335));
+    { const sc = mesh(new THREE.BoxGeometry(.5,.07,.2), mat(0x7ec8e3), .35, 2.24, .1); sc.rotation.z = .08; wr.add(sc); wr.add(mesh(new THREE.CylinderGeometry(.16,.19,.2,12), mat(0xc98f58), -.3, 2.3, 0)); wr.add(mesh(new THREE.CylinderGeometry(.27,.27,.03,14), mat(0xc98f58), -.3, 2.21, 0)); } // a scarf and a straw hat on top
+    thing(L, wr, 2.95, -2.9, 1.3, 2.2, .9, () => VISIT ? toast(`${VISIT.name}'s wardrobe.`) : openLookEditor(() => {}), 'Wardrobe: tap to change your look'); }
+  // the study: a writing desk with your shop ledger, shelves of books, and a stand holding the story of your island
+  { const desk = G(mesh(new THREE.BoxGeometry(1.9,.08,.8), w, 0, .78, 0), mesh(new THREE.BoxGeometry(1.7,.22,.7), lt, 0, .63, 0)); [[-.85,-.32],[.85,-.32],[-.85,.32],[.85,.32]].forEach(([x, z]) => desk.add(mesh(new THREE.BoxGeometry(.09,.74,.09), dk, x, .37, z)));
+    [-.4, .4].forEach(x => desk.add(mesh(sph(.035), brass, x, .63, .36)));
+    const page = fine(0xfff8ee); [-1, 1].forEach(sd => { const pg = mesh(new THREE.BoxGeometry(.3,.02,.42), page, sd * .16 - .2, .845, .05); pg.rotation.z = sd * .08; desk.add(pg); [-.12, -.04, .04, .12].forEach(z => desk.add(mesh(new THREE.BoxGeometry(.22,.004,.012), fine(0x8a7a66), sd * .16 - .2, .86, .05 + z))); }); desk.add(mesh(new THREE.BoxGeometry(.66,.03,.46), mat(0x9b3b4a), -.2, .825, .05));
+    desk.add(mesh(new THREE.CylinderGeometry(.05,.06,.09,10), fine(0x2e2438), .35, .865, -.1)); const quill = mesh(new THREE.ConeGeometry(.03,.42,5), fine(0xffffff), .39, 1.05, -.1); quill.rotation.z = -.35; desk.add(quill);
+    desk.add(mesh(new THREE.CylinderGeometry(.09,.11,.04,12), brass, .72, .84, -.15)); desk.add(mesh(new THREE.CylinderGeometry(.015,.015,.3,6), brass, .72, 1, -.15)); desk.add(mesh(sph(.11), glow(0xffe0a8), .72, 1.2, -.15));
+    [0, 1, 2].forEach(i => desk.add(mesh(new THREE.CylinderGeometry(.07,.07,.025,12), brass, .3 + i * .012, .835 + i * .026, .25))); // a little stack of coins
+    desk.add(mesh(new THREE.BoxGeometry(.5,.07,.5), mat(0x9b3b4a), 0, .5, .75)); [[-.2,.55],[.2,.55],[-.2,.95],[.2,.95]].forEach(([x, z]) => desk.add(mesh(new THREE.BoxGeometry(.05,.46,.05), dk, x, .23, z))); // a stool
+    thing(ST, desk, -1.4, -2.7, 2, 1.4, 1.5, () => VISIT ? toast(`${VISIT.name}'s desk.`) : shopCard(), 'Desk: tap to open your shop ledger');
+    [2.25, 2.75].forEach((y, r) => { ST.add(mesh(new THREE.BoxGeometry(1.5,.05,.26), w, .2 + r * 2.2, y - r * .5, -3.05)); for (let i = 0; i < 8; i++) { const h = .22 + ((i * 7 + r * 3) % 5) * .03; ST.add(mesh(new THREE.BoxGeometry(.11,h,.19), fine([0xff8fa3,0x7ec8e3,0xffc857,0x8fdc8a,0xc9b6ff,0x9b3b4a][(i + r * 2) % 6]), -.42 + i * .13 + r * 2.2 + .2, y - r * .5 + .025 + h / 2, -3.05)); } });
+    const stand = G(mesh(new THREE.CylinderGeometry(.06,.08,1,10), dk, 0, .5, 0), mesh(new THREE.CylinderGeometry(.28,.3,.06,14), dk, 0, .03, 0)); const top = mesh(new THREE.BoxGeometry(.7,.05,.5), w, 0, 1.05, 0); top.rotation.x = .45; stand.add(top);
+    const bk = new THREE.Group(); bk.position.set(0, 1.09, .02); bk.rotation.x = .45; bk.add(mesh(new THREE.BoxGeometry(.6,.04,.4), mat(0x3f6fb5), 0, 0, 0)); [-1, 1].forEach(sd => bk.add(mesh(new THREE.BoxGeometry(.27,.03,.36), page, sd * .145, .03, 0))); bk.add(mesh(new THREE.BoxGeometry(.03,.012,.5), fine(0xff8fa3), .05, .05, .08)); stand.add(bk);
+    thing(ST, stand, 2.5, 1.7, .9, 1.4, .8, () => VISIT ? toast(`${VISIT.name}'s story.`) : openStory(), 'Book stand: tap to read your story'); }
+}
 function drawHomeInside() { homeLadder.visible = homeSize() >= 2; studyDoor.visible = homeSize() >= 3; }
 const CAT_INFO = {
   rug:   { label:'Rug', need:'a rug', buy:'Pip sells a Round Rug.' },
@@ -2450,7 +2550,7 @@ function openGoals() {
       return `<button class="goal ${done ? 'done' : ''}"><span class="gck">${done ? '✓' : ''}</span><span class="gtx">${GOAL_TYPES[g.t](g.need)}<small>${done ? 'Done' : g.t === 'sell' ? `${Math.min(g.have, g.need)} of ${g.need} coins` : `${Math.min(g.have, g.need)} of ${g.need}`}</small><i class="gbar"><b style="width:${Math.round(k * 100)}%"></b></i></span></button>`; }).join('')}</div>${hammockStep() ? `<h4>A mission from Nana: the hammock</h4><p>${hammockStep()}</p>` : ''}<div id="goalCg"><p style="margin-top:12px">Loading the community goal...</p></div>`, 'Close');
 }
 $('goalsBtn').onclick = openGoals;
-function applyPaint() { roofMat.color.set(+S.roof); wallMat.color.set(homeStyle() === 'daub' || S.wallOn ? +S.wall : HOME_STYLES[homeStyle()].color); } // log and stone walls keep their own color until you paint them
+function applyPaint() { roofMat.color.set(+S.roof); ridgeMat.color.set(+S.roof).multiplyScalar(.86); wallMat.color.set(homeStyle() === 'daub' || S.wallOn ? +S.wall : HOME_STYLES[homeStyle()].color); } // log and stone walls keep their own color until you paint them
 document.addEventListener('click', e => { if (e.target.closest('button,.slot,.hslot') && e.target.id !== 'mute') sfx('click'); });
 // S.tut: 1 Nana walks over, 2 dig the first spot, 3 plant, 4 water, 5 pick, 6 sell, 9 done
 const TUT = {
@@ -2810,13 +2910,12 @@ function talkPerson(vid) {
   if (p.gifted !== S.day) b.push({ label:'Give a gift', fn:() => { closeDialog(); personGift(vid); } });
   if (!p.request && p.status === 'visiting') { const s = season(), opts = [...Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(s) && !CROPS[k].locked), 'apple', 'peach', 'minnow', 'trout'];
     const k = pick(opts), n = 1 + Math.floor(Math.random() * 3); p.request = { k, n, done:false }; save(); }
-  if (p.request && !p.request.done) { const r = p.request; b.push({ label:have(r.k) >= r.n ? `Give ${r.n} ${plural(r.k, r.n)}` : `They asked for ${r.n} ${plural(r.k, r.n)}`, fn:() => {
-    if (have(r.k) < r.n) { toast(`Bring ${r.n} ${plural(r.k, r.n)}. You have ${have(r.k)}.`); return; }
+  if (p.request && !p.request.done && have(p.request.k) >= p.request.n) { const r = p.request; b.push({ label:`Give ${r.n} ${plural(r.k, r.n)}`, fn:() => { // the button only shows once you have enough to give
     bagAdd(r.k, -r.n); r.done = true; const pay = Math.round(ITEMS[r.k].sell * r.n * 1.6) + 20; S.coins += pay; p.hearts = Math.min(10, p.hearts + 1); if (featureOn('journey')) karma('kind', 1); lean('friend');
     save(); drawHud(); sfx('coin'); closeDialog(); openDialog(p.name, `You found them! Thank you so much. Here, ${pay} coins.`, [], p.hearts); } }); }
   if (p.status === 'visiting' && p.hearts >= 3 && Object.values(S.people).filter(x => x.status === 'resident').length < 3 && (S.home || 0) >= 3)
     b.push({ label:'Invite them to stay', fn:() => { closeDialog(); invitePerson(vid); } });
-  const extra = p.request && !p.request.done ? ' ' + pick(REQUEST_LINES).replace('{item}', plural(p.request.k, p.request.n)).replace('{n}', p.request.n) : '';
+  const extra = p.request && !p.request.done ? ' ' + pick(REQUEST_LINES).replace('{item}', plural(p.request.k, p.request.n)).replace('{n}', p.request.n) + (have(p.request.k) < p.request.n ? ` (You have ${have(p.request.k)}.)` : '') : '';
   const tail = p.status === 'visiting' && p.leaves - S.day <= 1 ? ' I head out tomorrow, by the way.' : '';
   openDialog(p.name, personLine(p) + extra + tail, b, p.hearts);
 }
@@ -2996,8 +3095,7 @@ function openBell() {
 const bridgeCost = c => Math.round(c * (S.mode === 'explorer' ? .7 : 1));
 function useSign() {
   if (S.bridge) { toast('The bridge to Orchard Isle. Walk across!'); return; }
-  openDialog('Broken Bridge', `Fix this bridge to reach Orchard Isle. Cost: ${bridgeCost(BRIDGE_COST)} coins. You have ${S.coins}.`, [{ label:S.coins >= bridgeCost(BRIDGE_COST) ? 'Fix the bridge' : `You need ${bridgeCost(BRIDGE_COST) - S.coins} more coins`, fn:() => {
-    if (S.coins < bridgeCost(BRIDGE_COST)) { toast('Not enough coins yet.'); return; }
+  openDialog('Broken Bridge', `Fix this bridge to reach Orchard Isle. Cost: ${bridgeCost(BRIDGE_COST)} coins. You have ${S.coins}.${S.coins < bridgeCost(BRIDGE_COST) ? ` You need ${bridgeCost(BRIDGE_COST) - S.coins} more.` : ''}`, S.coins < bridgeCost(BRIDGE_COST) ? [] : [{ label:'Fix the bridge', fn:() => {
     S.coins -= bridgeCost(BRIDGE_COST); S.bridge = true; if (S.quest >= 4) S.quest = 5; buildBridge(); save(); drawHud();
     [523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*160)); burst(sign.position, 0xffc857, 20);
     openDialog('Bridge fixed!', 'The bridge to Orchard Isle is whole again. Walk across and find out who answered the bell.');
@@ -3131,8 +3229,7 @@ function drizzleFinale() {
 }
 function useSign2() {
   if (S.bridge2) { toast('The bridge to Windmill Isle. Walk across!'); return; }
-  openDialog('Broken Bridge', `This bridge goes to Windmill Isle. Cost: ${bridgeCost(BRIDGE2_COST)} coins. You have ${S.coins}.`, [{ label:S.coins >= bridgeCost(BRIDGE2_COST) ? 'Fix the bridge' : `You need ${bridgeCost(BRIDGE2_COST) - S.coins} more coins`, fn:() => {
-    if (S.coins < bridgeCost(BRIDGE2_COST)) { toast('Not enough coins yet.'); return; }
+  openDialog('Broken Bridge', `This bridge goes to Windmill Isle. Cost: ${bridgeCost(BRIDGE2_COST)} coins. You have ${S.coins}.${S.coins < bridgeCost(BRIDGE2_COST) ? ` You need ${bridgeCost(BRIDGE2_COST) - S.coins} more.` : ''}`, S.coins < bridgeCost(BRIDGE2_COST) ? [] : [{ label:'Fix the bridge', fn:() => {
     S.coins -= bridgeCost(BRIDGE2_COST); S.bridge2 = true; if (S.q3 === 0) S.q3 = 1; buildBridge(); save(); drawHud();
     [523,659,784,1047].forEach((f,i)=>setTimeout(()=>chime(f),i*160)); burst(sign2.position, 0xffc857, 20);
     openDialog('Bridge fixed!', 'You can hear something creaking up on Windmill Isle.');
@@ -4704,7 +4801,7 @@ function tickFrame() {
   const mp = moon().idx; if (mp !== moonDrawn) { moonDrawn = mp; const mc = moonCanvas.getContext('2d'); drawMoon(mc, mp, 128);
     const img = mc.getImageData(0,0,128,128); for (let i=0;i<img.data.length;i+=4) if (img.data[i] < 40 && img.data[i+2] > 40 && img.data[i+2] < 70) img.data[i+3] = 0; mc.putImageData(img,0,0); moonTex.needsUpdate = true; }
   moonSprite.visible = !inside && night > 0; moonSprite.material.opacity = night; moonSprite.position.set(player.position.x - 30, player.position.y + 32, player.position.z - 70);
-  winMat.emissiveIntensity = night * 1.4 + (h > 18 ? .3 : 0);
+  winMat.emissiveIntensity = night * 1.4 + (h > 18 ? .3 : 0); lampMat.emissiveIntensity = .15 + winMat.emissiveIntensity;
   lampLights.forEach(l => l.material.opacity = night * .8);
   // movement
   if (cine) { target = null; pending = null; }
@@ -6262,7 +6359,7 @@ function solidAt(x, z) { const p = new THREE.Vector3(); for (const o of (SOLIDS 
 const walkY = (x, z) => solidAt(x, z) ? null : groundAt(x, player.position.y, z);
 function tappables() { const out = new Set(); const walk = o => { if (!o.visible) return; if (o.userData && o.userData.kind) { out.add(o); } o.children.forEach(walk); };
   [...clickables, ...lateClicks, ...digGroups].forEach(walk); decos.forEach(d => { let v = true; for (let o = d; o; o = o.parent) if (!o.visible) v = false; if (v) out.add(d); }); return [...out]; }
-window.__sg = { VERSION, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { VERSION, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
