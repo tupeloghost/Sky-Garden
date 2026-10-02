@@ -10,7 +10,7 @@ add('sundial', 'A stick, a shadow, and a long walk measured the whole Earth.',
     '<rect x="232" y="56" width="12" height="20" fill="#3b2f4a"/><path d="M228 56 h20" stroke="#7a6452" stroke-width="3"/>'
     '<path d="M92 79 L78 49" stroke="#7a5236" stroke-width="4" stroke-linecap="round"/><path d="M92 79 L74 85" stroke="#3b2f4a" stroke-width="3" stroke-linecap="round" opacity=".7"/>'
     + txt(60, 110, 'Alexandria: a shadow', 11, INK) + txt(246, 110, 'Syene: no shadow', 11, INK) + txt(165, 14, 'sunlight', 11, '#c98a1f')),
-  'At noon on the longest day, the sun shone straight down a well in Syene. In Alexandria, a stick still had a short shadow. The shadow showed the two cities were one fiftieth of the way around the Earth apart. So he multiplied their distance by 50.')
+  'At noon on the longest day, the sun shone straight down a well in Syene. In Alexandria, a stick still had a short shadow. The shadow showed the two cities were 1/50 of the way around the Earth apart. So he multiplied their distance by 50.')
 
 # ---- bell (string lengths) ----
 def string(y, frac, label, note):
@@ -58,7 +58,7 @@ add('stars', 'Leave a camera open all night, and the stars draw circles.',
   svg(330, 120, 'A drawing of a night sky photo where every star has left a curved streak, all circling one bright point above dark hills',
     f'<clipPath id="st"><rect width="330" height="120" rx="10"/></clipPath><g clip-path="url(#st)"><rect width="330" height="120" fill="#16203f"/><g fill="none" stroke-linecap="round">{arcs}</g>'
     f'<circle cx="{cx}" cy="{cy}" r="2.4" fill="#fff"/><path d="M0 120 V100 Q50 82 96 98 Q150 76 204 100 Q262 84 330 102 V120Z" fill="#0b1124"/></g>' + txt(cx + 34, cy - 6, 'Polaris', 11, '#ffe9c4')),
-  'A drawing of a photo taken over several hours. Earth is turning, so every star smears into a curved line, but Polaris hardly moves at all.')
+  'A drawing of a photo taken over several hours. Earth is turning, so every star smears into a curved line. Polaris hardly moves at all.')
 
 # ---- lever ----
 add('lever', 'Rest the beam close to the stone, and a small push lifts it.',
@@ -69,7 +69,7 @@ add('lever', 'Rest the beam close to the stone, and a small push lifts it.',
     + person(292, 108, 44) + '<path d="M292 36 v20 m-5 -6 l5 6 l5 -6" stroke="#ff6b6b" stroke-width="2.4" fill="none" stroke-linecap="round"/>'
     '<path d="M48 124 m0 -8 H96 M96 116 H292" stroke="#9a7f66" stroke-width="1.4"/><path d="M48 112 v8 M96 112 v8 M292 112 v8" stroke="#9a7f66" stroke-width="1.4"/>'
     + txt(72, 113, '1', 11, INK) + txt(196, 113, '4', 11, INK) + txt(48, 54, '100 kg', 12, INK) + txt(260, 30, 'a push of 25 kg', 12, INK)),
-  'The beam rests on one point, called the pivot. The push is 4 times farther from the pivot than the stone is, so it only needs to be 1/4 as strong.')
+  'The beam rests on one point, called the pivot. The push is 4 times farther from the pivot than the stone is. So it only needs to be 1/4 as strong.')
 
 # ---- bread ----
 r = R(12)
@@ -129,7 +129,7 @@ add('fibonacci', 'One simple rule makes every spiral in a sunflower.',
     f'<g transform="translate(0 0) scale(.92) translate(8 6)">{petals}<circle cx="110" cy="66" r="64" fill="#3f2a12"/>{seeds}</g>'
     '<g transform="translate(262 62)"><circle r="30" fill="none" stroke="#c9ab88" stroke-width="1.5"/><path d="M0 0 L30 0 M0 0 L-22.1 20.3" stroke="#3b2f4a" stroke-width="2"/><path d="M12 0 A12 12 0 1 1 -8.800 8.100" fill="none" stroke="#c98a1f" stroke-width="2"/><circle cx="30" cy="0" r="4" fill="#5a3d1e"/><circle cx="-22.1" cy="20.3" r="4" fill="#5a3d1e"/></g>'
     + txt(262, 112, 'each seed: 137.5 degrees', 10.5, INK) + txt(262, 124, 'around from the last', 10.5, INK)),
-  'A sunflower grows one seed at a time. Each seed sits 137.5 degrees around from the last one. That is a bit more than a third of a circle. Repeat that turn, and the spirals show up.')
+  'A sunflower grows one seed at a time. Each seed sits 137.5 degrees around from the last one. That is a bit more than 1/3 of a circle. Repeat that turn, and the spirals show up.')
 
 # ---- migration (European robin) ----
 add('migration', 'This small bird knows which way to fly, even with no sun or stars to see.',

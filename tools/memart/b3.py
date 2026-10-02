@@ -63,7 +63,7 @@ add('cave', 'What if everything you have ever seen was only a shadow?',
     + '<path d="M232 108 l8 -14 l8 14Z" fill="#7a5236"/>' + flame(240, 98, 1.5)
     + '<g stroke="#f6b53a" stroke-width="1" stroke-dasharray="3 4" opacity=".7"><path d="M236 86 L22 60 M236 90 L44 70"/></g>'
     + txt(36, 118, 'shadows', 10, '#f6ead8') + txt(112, 121, 'the prisoners', 10, '#f6ead8') + txt(240, 121, 'fire', 10, '#f6ead8') + txt(282, 62, 'the way out', 10, '#f6ead8')),
-  'A drawing of the cave in Plato\'s story. The prisoners are chained and have only ever seen the shadows on the wall, so they think the shadows are the real world.')
+  'A drawing of the cave in Plato\'s story. The prisoners are chained. They have only ever seen the shadows on the wall. So they think the shadows are the real world.')
 
 # ---- river ----
 r = R(25)
@@ -73,7 +73,7 @@ add('river', 'The water you stepped in is already gone.',
     '<path d="M0 0 H330 V40 Q250 30 165 40 Q80 50 0 38Z" fill="#8fdc8a"/><path d="M0 38 Q80 50 165 40 Q250 30 330 40 V98 Q250 88 165 98 Q80 108 0 96Z" fill="#5fb4dc"/><path d="M0 96 Q80 108 165 98 Q250 88 330 98 V118 H0Z" fill="#7fcf7a"/>' + flow +
     '<path d="M142 28 q4 30 2 44 q10 4 18 0 q-2 -6 -8 -8 l-2 -36Z M176 28 q4 30 2 44 q10 4 18 0 q-2 -6 -8 -8 l-2 -36Z" fill="#e8b98f"/><ellipse cx="152" cy="72" rx="16" ry="4" fill="none" stroke="#dff3ff" stroke-width="1.5"/><ellipse cx="186" cy="72" rx="16" ry="4" fill="none" stroke="#dff3ff" stroke-width="1.5"/>'
     '<path d="M230 66 h56 m-9 -6 l9 6 l-9 6" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>' + txt(258, 88, 'new water, every second', 10.5, '#fff')),
-  'The river keeps its name and its place on the map, but the water in it is never the same water. Heraclitus said everything is like that river: always changing, and still itself.')
+  'The river keeps its name and its place on the map. The water in it is never the same water. Heraclitus said everything is like that river: always changing, and still itself.')
 
 # ---- floating man ----
 r = R(26)
@@ -83,7 +83,7 @@ add('floating', 'No sight, no sound, no touch. Would you still know you are ther
     '<rect width="330" height="118" rx="10" fill="#9fd3ff"/>' + cl +
     '<g transform="rotate(-12 165 58)"><path d="M150 52 L112 40 M180 52 L220 42 M158 80 L140 110 M174 80 L190 110" stroke="#e8b98f" stroke-width="7" stroke-linecap="round"/><rect x="148" y="44" width="34" height="40" rx="10" fill="#7a6cc9"/>'
     '<circle cx="165" cy="30" r="14" fill="#e8b98f"/><path d="M152 26 q13 -16 26 0 q-13 -6 -26 0Z" fill="#3b2f4a"/><path d="M158 31 q3 3 6 0 M167 31 q3 3 6 0" stroke="#3b2f4a" stroke-width="1.5" fill="none" stroke-linecap="round"/></g>'),
-  'Ibn Sina asked you to picture it: floating in still air, eyes closed, arms and legs spread so nothing touches anything.')
+  'Ibn Sina asked you to picture it. You float in still air with your eyes closed. Your arms and legs are spread so nothing touches anything.')
 
 # ---- stoic ----
 add('stoic', 'Sort every worry into two piles.',
@@ -134,7 +134,7 @@ add('nowruz', 'Seven things on the table. In Persian, each one starts with S.',
     + '<path d="M96 66 q-14 0 -12 14 q2 10 12 10 q10 0 12 -10 q2 -14 -12 -14Z" fill="#d6332e"/><path d="M96 66 q2 -6 6 -8" stroke="#7a5236" stroke-width="1.6" fill="none"/>' + txt(96, 104, 'apple', 9.5, INK)
     + '<path d="M136 66 q-12 4 -11 14 q1 10 11 10 q10 0 11 -10 q1 -10 -11 -14Z" fill="#f4efe4" stroke="#cfc6b4" stroke-width="1.2"/><path d="M136 66 v-7 M131 72 q3 8 0 16 M141 72 q-3 8 0 16" stroke="#cfc6b4" stroke-width="1.2" fill="none"/>' + txt(136, 104, 'garlic', 9.5, INK)
     + bowl(178, '#e9d9a8', 'vinegar') + bowl(220, '#8f2436', 'sumac') + bowl(262, '#8a5a34', 'pudding') + bowl(304, '#b9783e', 'dried fruit')),
-  'A drawing of a Haft-sin table. In Persian the seven are sabzeh, sib, sir, serkeh, somaq, samanu, and senjed. Each is said to stand for a wish for the year, like new life, health, or patience.')
+  'A drawing of a Haft-sin table. In Persian the 7 are sabzeh, sib, sir, serkeh, somaq, samanu, and senjed. Each is said to stand for a wish for the year, like new life, health, or patience.')
 
 # ---- passover: matzah ----
 r = R(33)
@@ -212,11 +212,11 @@ add('diwali', 'Rows of small clay lamps, lit against the dark.',
 # ---- hanukkah: the menorah ----
 arms = ''.join(f'<path d="M{165 - d} 36 V52 Q{165 - d} {58 + d*.42:.0f} 165 {58 + d*.42:.0f} Q{165 + d} {58 + d*.42:.0f} {165 + d} 52 V36" fill="none" stroke="#c9a23a" stroke-width="4"/>' for d in (26, 52, 78, 104))
 cand = ''.join(f'<rect x="{x-3}" y="{y-16}" width="6" height="16" fill="#7ec8e3"/>' + flame(x, y - 16, .6) for x, y in [(165 + sd * d, 36) for d in (26, 52, 78, 104) for sd in (-1, 1)] + [(165, 26)])
-add('hanukkah', 'Eight nights, eight lights, and one more to light them.',
+add('hanukkah', '8 nights, 8 lights, and one more to light them.',
   svg(330, 122, 'A drawing of a gold menorah with nine candles: four on each side at the same height, and one in the middle standing a little higher',
     arms + '<path d="M165 26 V104" stroke="#c9a23a" stroke-width="5"/><path d="M135 110 Q165 96 195 110Z" fill="#c9a23a"/><rect x="128" y="108" width="74" height="6" rx="2" fill="#a8842a"/>' + cand
     ),
-  'A drawing of a Hanukkah menorah. It holds nine candles: one for each of the eight nights, plus a helper candle. The helper is lit first and lights the rest. One more candle is added each night.')
+  'A drawing of a Hanukkah menorah. It holds 9 candles: one for each of the 8 nights, plus a helper candle. The helper is lit first and lights the rest. One more candle is added each night.')
 
 # ---- december solstice: Newgrange ----
 r = R(41)

@@ -84,7 +84,7 @@ const KNOWHOW = [
     today:'Watch sailboats on a lake. The ones going upwind are zigzagging.' },
   { id:'light', act:'help', n:99, icon:'💡', term:'RGB LIGHT', title:'Red light and green light make yellow',
     did:'You helped Lumen mix red, green, and blue light.',
-    real:'Light does not mix like paint. Red, green, and blue together make white. These three are called <b>RGB</b>.',
+    real:'Light does not mix like paint. Red, green, and blue together make white. These 3 are called <b>RGB</b>.',
     today:'Every phone and TV screen makes all its colors from tiny red, green, and blue lights.' },
   { id:'arch', act:'help', n:99, icon:'🧱', term:'THE ARCH', title:'A curved roof holds more than a flat one',
     art:'<svg viewBox="0 0 330 120" role="img" aria-label="Two drawings side by side. On the left, a flat roof on two walls sags in the middle under a weight. On the right, a curved roof under the same weight passes the push down into both walls."><g fill="none" stroke-linecap="round" stroke-linejoin="round"><g stroke="#8a6040" stroke-width="9"><path d="M30 104V52M135 104V52"/><path d="M195 104V70M300 104V70"/></g><path d="M26 50Q82 74 139 50" stroke="#b0a898" stroke-width="10"/><path d="M193 70Q247 6 302 70" stroke="#b0a898" stroke-width="10"/><g stroke="#e0556f" stroke-width="3.5"><path d="M82 16V44M74 36l8 9 8-9"/><path d="M247 4V24M239 16l8 9 8-9"/><path d="M228 40Q206 52 200 78M194 68l6 11 9-8"/><path d="M266 40Q288 52 294 78M300 68l-6 11-9-8"/></g></g><g font-family="Baloo 2, sans-serif" font-size="13" font-weight="700" fill="#3b2f4a" text-anchor="middle"><text x="82" y="118">Flat: sags</text><text x="247" y="118">Curved: holds</text></g></svg>',
@@ -104,7 +104,7 @@ const KNOWHOW = [
     real:'Tapping a glass makes it shake, and the shaking is the sound. Water weighs the glass down, so it shakes more slowly. Slower shaking is a lower note. How high or low a note sounds is its <b>pitch</b>.',
     today:'Tap a full glass and an empty one at dinner. The full one sounds lower.' },
   { id:'balance', act:'help', n:99, icon:'🪨', term:'CENTER OF GRAVITY', title:'Heavy at the bottom stays standing',
-    did:'You helped Sage stack three stones that did not fall.',
+    did:'You helped Sage stack 3 stones that did not fall.',
     real:'A stack stays up when its weight sits low and over its base. The balance point of a thing is its <b>center of gravity</b>. The lower it is, the harder the thing is to tip.',
     today:'Bend your knees on a bus and you are harder to knock over. Race cars are built low for the same reason.' },
 ];
