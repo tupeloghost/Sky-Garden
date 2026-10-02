@@ -373,3 +373,5 @@ body.on-title #goalArrow, body.in-setup #goalArrow, .building #goalArrow { displ
 
 /* cards with no headings: a little air between paragraphs */
 .card p.gap { margin-top:10px; }
+
+.card .memart + p { margin-top:10px; }
