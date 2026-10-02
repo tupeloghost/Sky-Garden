@@ -2073,14 +2073,15 @@ function drawHud() {
 }
 function openDialog(name, text, btns=[], hearts, voice) {
   babble(voice || (name.startsWith('Nana') ? 'nana' : name.startsWith('Pip') ? 'pip' : name.startsWith('Captain') ? 'drizzle' : name.startsWith('Moss') ? 'twins' : name.startsWith('Lumen') ? 'lumen' : ({ Mabel:'mabel', Professor:'hoot', Allegra:'allegra', Sage:'sage' })[name.split(' ')[0]] || 'none'), text);
-  $('dName').textContent = name; typeText(text);
+  $('dName').textContent = name;
   $('dHearts').textContent = hearts == null ? '' : '♥'.repeat(hearts) + '♡'.repeat(10-hearts);
-  $('dBtns').innerHTML = '';
-  const replyOnly = btns.length === 1 && /^\(\)\s*=>\s*\{?\s*closeDialog\(\);?\s*(toast\([^;]*\);?)?\s*\}?$/.test(String(btns[0].fn));
-  [...btns, ...(replyOnly ? [] : [0])].map(b => b || { label:Object.values(NEIGHBORS).some(n => n.name === name) || Object.values(S.people || {}).some(p => p.name === name) || (typeof VISIT !== 'undefined' && VISIT && VISIT.name === name) ? 'Bye' : btns.length ? 'Not now' : 'Okay', ghost:true, fn:closeDialog }) /* closing word: Bye to someone, Not now when there was something to do, Okay when there was only something to read */.forEach(b => {
-    const el = document.createElement('button'); el.textContent = b.label; if (b.ghost) el.className = 'ghost';
-    el.onclick = b.fn; $('dBtns').appendChild(el);
-  });
+  const replyOnly = btns.some(b => b.only) || btns.length === 1 && /^\(\)\s*=>\s*\{?\s*closeDialog\(\);?\s*(toast\([^;]*\);?)?\s*\}?$/.test(String(btns[0].fn));
+  const closer = { label:Object.values(NEIGHBORS).some(n => n.name === name) || Object.values(S.people || {}).some(p => p.name === name) || (typeof VISIT !== 'undefined' && VISIT && VISIT.name === name) ? 'Bye' : btns.length ? 'Not now' : 'Okay', ghost:true, fn:closeDialog }; // closing word: Bye to someone, Not now when there was something to do, Okay when there was only something to read
+  const pages = sayPages(text), page = i => { typeText(pages[i]); $('dBtns').innerHTML = '';
+    (i < pages.length - 1 ? [{ label:'Next', fn:() => { sfx('click'); page(i + 1); } }] : [...btns, ...(replyOnly ? [] : [closer])]).forEach(b => {
+      const el = document.createElement('button'); el.textContent = b.label; if (b.ghost) el.className = 'ghost';
+      el.onclick = b.fn; $('dBtns').appendChild(el); }); };
+  page(0);
   $('dialog').classList.add('show');
 }
 function closeDialog() { $('dialog').classList.remove('show'); clearInterval(typeText.iv); }
@@ -2088,8 +2089,14 @@ function closeDialog() { $('dialog').classList.remove('show'); clearInterval(typ
 // what someone says, easy to take in: one sentence to a line, and when two people talk (Moss and Fern) each gets a line with their name in bold
 function sayLines(text) { const safe = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;'), who = safe.split(/(?=(?:Moss|Fern): )/).map(p => p.trim()).filter(Boolean);
   if (who.length > 1) return who.map(p => p.replace(/^(Moss|Fern): /, '<b>$1:</b> '));
-  return safe.length < 90 ? [safe] : safe.split(/(?<=[.!?]["”]?) (?=[A-Z0-9"“])/); }
-function typeText(text) { const el = $('dText'), lines = sayLines(text), all = lines.join('<span class="brk"></span>'); clearInterval(typeText.iv); let i = 1; el.dataset.full = all;
+  if (safe.length < 90) return [safe];
+  const out = []; // short sentences share a line (so "Oh!" is not a line by itself); a sentence that tells you what to do always gets a line to itself
+  safe.split(/(?<=[.!?]["”]?) (?=[A-Z0-9"“])/).forEach(t => { const act = /^(Tap|Go|Walk|Bring|Come back|Talk|Pick|Find|Fix|Take|Use|Cut|Help|Tell|Cross|Ring|Climb)\b/.test(t), last = out[out.length - 1];
+    if (last && !act && !last.act && last.t.length + t.length <= 64) last.t += ' ' + t; else out.push({ t, act }); });
+  return out.map(o => o.t); }
+// a long speech is shown a few lines at a time, with Next, so it is never a wall of text
+function sayPages(text) { const L = sayLines(text), n = Math.ceil(L.length / 4), size = Math.ceil(L.length / n), pages = []; for (let i = 0; i < L.length; i += size) pages.push(L.slice(i, i + size)); return pages; }
+function typeText(text) { const el = $('dText'), lines = Array.isArray(text) ? text : sayLines(text), all = lines.join('<span class="brk"></span>'); clearInterval(typeText.iv); let i = 1; el.dataset.full = all;
   el.innerHTML = lines[0]; if (lines.length > 1) typeText.iv = setInterval(() => { i++; el.innerHTML = lines.slice(0, i).join('<span class="brk"></span>'); if (i >= lines.length) clearInterval(typeText.iv); }, 420); } // lines arrive one at a time; a tap shows them all
 $('dialog').addEventListener('pointerdown', e => { if (e.target.tagName !== 'BUTTON') { clearInterval(typeText.iv); if ($('dText').dataset.full) $('dText').innerHTML = $('dText').dataset.full; } });
 let cardClose = null, cardCleanup = null;
@@ -3276,7 +3283,7 @@ function pipQuestion() {
   openDialog("Pip's Big Question", q.q, [
     ...q.a.map((a, i) => ({ label:a, fn:() => {
       S.asked = S.day; S.qi++; save();
-      openDialog('Pip', q.r[i], [{ label:'Tell me more', fn:() => { closeDialog(); showAha(q.id); } }], S.hearts.pip, 'pip'); $('dBtns').lastChild.remove(); // his reply first, then one button opens the card
+      openDialog('Pip', q.r[i], [{ label:'Tell me more', only:true, fn:() => { closeDialog(); showAha(q.id); } }], S.hearts.pip, 'pip'); // his reply first, then one button opens the card
     }})),
     { label:'Not today', fn:() => { S.asked = S.day; save(); talk('pip'); } },
   ], S.hearts.pip, 'pip');
