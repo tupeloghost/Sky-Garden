@@ -105,7 +105,7 @@ const FESTIVAL_AHA = {
   easter: { kicker:'FESTIVAL', title:'A Holiday Set by the Sky',
     did:'You celebrated Easter with Pip and his painted eggs.',
     real:'Easter is the Christian celebration of Jesus rising from the dead. It is the first Sunday after the first full moon of spring. So it moves between late March and late April. Orthodox churches use an older calendar, so their Easter is often later.',
-    today:'Many holidays are set by watching the sky.' },
+    today:'You can work out the date with arithmetic alone. The mathematician Carl Friedrich Gauss published a way to do it in 1800.' },
   eid: { kicker:'FESTIVAL', title:'Watching for the New Moon',
     did:'You celebrated Eid al-Fitr with Nana at the end of Ramadan.',
     real:'Eid al-Fitr ends Ramadan, the Islamic month when Muslims fast from dawn to sunset. The Islamic calendar follows only the moon, so each month begins with a new crescent moon.  Eid is celebrated with prayer, family visits, sweets, and gifts to people in need.',
@@ -121,7 +121,7 @@ const FESTIVAL_AHA = {
   muertos: { kicker:'FESTIVAL', title:'Remembering Keeps Them Close',
     did:'You helped Nana remember your grandmother on Dia de los Muertos.',
     real:'Dia de los Muertos, the Day of the Dead, is celebrated in Mexico on November 1 and 2. Families build these altars, called ofrendas. It blends the traditions of Mexico\'s first peoples with Catholic holidays.',
-    today:'It is a celebration, not a sad day. Remembering is how people stay with us. It is what a Keeper of Memory does.' },
+    today:'It is a celebration, not a sad day. In 2008, UNESCO added it to its list of living traditions of the world. Remembering is what a Keeper of Memory does.' },
   diwali: { kicker:'FESTIVAL', title:'The Festival of Lights',
     did:'You lit little lamps with Pip for Diwali.',
     real:'Diwali is the festival of lights, celebrated by Hindus, Sikhs, Jains, and some Buddhists. People light diyas, set off fireworks, and share sweets. For many Hindus it remembers the god Rama returning home. It also honors Lakshmi, goddess of good fortune.',
@@ -136,7 +136,7 @@ const FESTIVAL_AHA = {
     today:'In the north, the days start getting longer again tomorrow.' },
   christmas: { kicker:'FESTIVAL', title:'Christmas Around the World',
     did:'You admired Pip\'s very small Christmas tree.',
-    real:'Christmas is the Christian celebration of the birth of Jesus. Most churches hold it on December 25. Many Orthodox churches hold it in early January.',
+    real:'Christmas is the Christian celebration of the birth of Jesus. Most churches hold it on December 25. Many Orthodox churches hold it in early January. Nobody knows the real date Jesus was born. The oldest record of December 25 is from Rome, in the year 336.',
     today:'Many people who are not Christian celebrate it too, as a time for family and giving.' },
 };
 
