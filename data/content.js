@@ -94,7 +94,7 @@ const NEIGHBORS = {
     "Every night the moon looks a little different. I paint it anyway.",
     "Do you see those glowing mushrooms? They are my night lights.",
     "I like how the stars do not rush.",
-    "I tried painting the sun once. I got one yellow dot and a headache.",
+    "I tried painting the sun once. I got 1 yellow dot and a headache.",
   ], heartLines:[
     "Your grandmother used to sit right there and watch me paint. She never said much. It was nice.",
   ]},
@@ -141,7 +141,7 @@ const AHA = {
     real:'It works because 3x3 + 4x4 = 5x5. A square corner like this is called a right angle. We call this the Pythagorean theorem. But Babylonian writers knew number sets like this over 1,000 years before Pythagoras.',
     today:'Carpenters and builders still check corners with the 3-4-5 rule.' },
   stars: { kicker:'MEMORY FOUND', title:'The Star That Stays',
-    did:'You found the one star that stayed still while all the others turned.',
+    did:'You found the 1 star that stayed still while all the others turned.',
     real:'In the north, sailors used Polaris to find north. Polynesian sailors crossed thousands of miles of the Pacific by reading where many stars rise and set. In 1976, the canoe Hokule\'a sailed from Hawaii to Tahiti this way, with no instruments.',
     today:'North of the equator, if you can find Polaris, you can find north.' },
   loom: { kicker:'NANA\'S STORY', title:'Holes, No Holes: The First Programs',
@@ -150,7 +150,7 @@ const AHA = {
     today:'Every computer still runs on 2 choices: 1 or 0. Hole or no hole.' },
   migration: { kicker:'PIP\'S STORY', title:'How Birds Find Their Way',
     did:'You helped Pip figure out how birds cross whole oceans without getting lost.',
-    real:'Many migrating birds use more than one compass. They use the sun by day, the stars at night, and Earth\'s magnetic field.',
+    real:'Many migrating birds use more than 1 compass. They use the sun by day, the stars at night, and Earth\'s magnetic field.',
     today:'Your phone\'s compass senses the same invisible magnetic field.' },
   worldtree: { kicker:'DRIZZLE\'S TALE', title:'The Trees That Hold Up the Sky',
     did:'You listened to Captain Drizzle\'s tale of a giant tree holding the sky together.',
@@ -170,7 +170,7 @@ const AHA = {
     today:'Adding up a great many tiny pieces is the heart of calculus. Calculus is the math used to design bridges, rockets, and video games.' },
   cave: { kicker:"PIP'S BIG QUESTION", title:"Plato's Cave",
     did:'You wondered if what we see might only be shadows of something realer.',
-    real:'In the story, one prisoner escapes and sees the sun. He comes back to tell the others. Nobody believes him.',
+    real:'In the story, 1 prisoner escapes and sees the sun. He comes back to tell the others. Nobody believes him.',
     today:'Asking "how do I know this is true?" is where science starts.' },
   river: { kicker:"PIP'S BIG QUESTION", title:'You Cannot Step in the Same River Twice',
     did:'You decided whether you can step in the same cloud twice.',
@@ -248,14 +248,14 @@ Object.assign(AHA, {
     today:'Every camera, including the one in your phone, is a dark box with a small hole and a lens.' },
   prism: { kicker:"LUMEN'S STORY", title:'White Light Is Every Color',
     did:'You watched white light go into a crystal and come out as a rainbow.',
-    real:'In 1666, Isaac Newton split sunlight with a glass prism into a band of colors. Then he used a lens to bring the colors back together into white. That showed white light is not one plain color.',
+    real:'In 1666, Isaac Newton split sunlight with a glass prism into a band of colors. Then he used a lens to bring the colors back together into white. That showed white light is not 1 plain color.',
     today:'A rainbow is the same thing, done by raindrops.' },
 });
 const AHA_ORDER = ['tools','thatch','roads','pottery','bronze','bone','temple','tablet','sundial','bell','still','rope','stars','gears','lever','bread','rosetta','moon','optics','loom','migration','worldtree','fibonacci','prism','harvest','theseus','zeno','cave','river','floating','stoic','golden'];
 const RELICS = [ { id:'bone', name:'a notched bone' }, { id:'temple', name:'a carved stone' }, { id:'tablet', name:'a clay tablet' } ];
 const LAYERS = ['Topsoil. Roots and worms.', 'A dark layer of ash. Something burned here long ago.', 'Old clay. The deeper you dig, the older it gets.'];
 const QUESTIONS = [
-  { id:'theseus', q:"If we fix the bridge one plank at a time, until every plank is new... is it still the same bridge?",
+  { id:'theseus', q:"If we fix the bridge 1 plank at a time, until every plank is new... is it still the same bridge?",
     a:['Yes, same bridge','No, new bridge','Somehow both?'], r:["That is what I think! Mostly.", "Oh no. Then which bridge am I standing on?", "Both! My head hurts in a fun way."] },
   { id:'zeno', q:"To fly to that island, I have to get halfway there first. Then halfway across what is left. Then halfway again. There is always a little bit left! So how does anyone ever arrive?",
     a:['You just do','You never do','Tiny bits add up'], r:["Just do! Great. I will try that.", "Then I am staying here. Pass the seeds.", "Tiny bits! Like my savings."] },
@@ -338,14 +338,14 @@ const BUILDINGS = [
   { id:'temple', name:'Temple Garden', coins:800, items:{ 'kind:dish':3 }, pos:[0,7], villager:'sage',
     about:'Sage the old tortoise moves in. Hear a saying from the world\'s traditions each day, and see every festival coming this year.' },
 ];
-const GRANDMA_LETTER2 = "If you are reading this, you rang the bell. I knew you would. I spent years trying. I think I was missing the one thing you have. You learned by doing, one small thing at a time, with friends beside you. The village was never just the islands. It was the people who remembered together. Build it back, one home at a time. The sky remembers. So will you.";
+const GRANDMA_LETTER2 = "If you are reading this, you rang the bell. I knew you would. I spent years trying. I think I was missing the one thing you have. You learned by doing, 1 small thing at a time, with friends beside you. The village was never just the islands. It was the people who remembered together. Build it back, 1 home at a time. The sky remembers. So will you.";
 
 // "What to do" help for every quest step. Shown when the player taps the goal box.
 // Keep these plain: where to go, what to tap, what happens next.
 const HOWTO = {
   c1: [
     "Tap the ground to walk to Nana Gale, then tap her to talk. She is the white sheep near the top of your island. The gold arrow points at her.",
-    "Walk to a small gold sparkle on the ground and tap it 3 times. Each tap digs one layer deeper. There are 3 sparkles to find in all. New ones appear each morning.",
+    "Walk to a small gold sparkle on the ground and tap it 3 times. Each tap digs 1 layer deeper. There are 3 sparkles to find in all. New ones appear each morning.",
     "Tap the sundial when the clock at the top of the screen says about 12 PM. The sundial is the round stone with a pointer, left of your garden. If you miss noon, try again the next day.",
     "Nana will ask you to tune the bell. You tap pipes to hear them, pick the 3 that sound nice together, and ring the bell.",
     "Grow crops and sell them at the wooden crate next to your garden. When you have the coins, tap the sign by the broken bridge to fix it.",
@@ -354,16 +354,16 @@ const HOWTO = {
     "The bridge leads to Orchard Isle. The frog is Captain Drizzle.",
     "Tap the metal pot next to the ship to set it up. Then sleep in your bed, or wait for the next day. Tap the pot again to collect fresh water.",
     "Use the + and - buttons to split the rope into 3 sides. When the corner turns green, tap Tie it.",
-    "Wait until the clock says 8 PM or later. Then tap Captain Drizzle and choose Look up. Watch the stars turn, and tap the one star that does not move.",
+    "Wait until the clock says 8 PM or later. Then tap Captain Drizzle and choose Look up. Watch the stars turn, and tap the 1 star that does not move.",
     "This finishes the chapter.",
     "You finished this chapter. Keep farming, fishing, and meeting your neighbors.",
   ],
   c3: [
     "Earn 300 coins by selling crops, fruit, and fish. Then walk to the sign at the top edge of Orchard Isle and tap it.",
     "The mole twins are the 2 brown moles. Tap them to talk.",
-    "Try the small gears one at a time. Watch the 2 counters: the small gear must spin 3 times each time the big gear spins once. Then tap Fit this gear.",
+    "Try the small gears 1 at a time. Watch the 2 counters: the small gear must spin 3 times each time the big gear spins once. Then tap Fit this gear.",
     "Use the arrow buttons to move the log under the plank, then tap Push down. If the stone won't lift, move the log and try again.",
-    "One tap grinds wheat into a bag of flour for you.",
+    "1 tap grinds wheat into a bag of flour for you.",
     "Walk back to your home island and tap Nana Gale. She turns the flour into bread.",
     "Go back to Windmill Isle and tap Moss & Fern.",
     "You finished this chapter. Keep farming, fishing, and meeting your neighbors.",

@@ -69,7 +69,7 @@ add('lever', 'Rest the beam close to the stone, and a small push lifts it.',
     + person(292, 108, 44) + '<path d="M292 36 v20 m-5 -6 l5 6 l5 -6" stroke="#ff6b6b" stroke-width="2.4" fill="none" stroke-linecap="round"/>'
     '<path d="M48 124 m0 -8 H96 M96 116 H292" stroke="#9a7f66" stroke-width="1.4"/><path d="M48 112 v8 M96 112 v8 M292 112 v8" stroke="#9a7f66" stroke-width="1.4"/>'
     + txt(72, 113, '1', 11, INK) + txt(196, 113, '4', 11, INK) + txt(48, 54, '100 kg', 12, INK) + txt(260, 30, 'a push of 25 kg', 12, INK)),
-  'The beam rests on one point, called the pivot. The push is 4 times farther from the pivot than the stone is. So it only needs to be 1/4 as strong.')
+  'The beam rests on 1 point, called the pivot. The push is 4 times farther from the pivot than the stone is. So it only needs to be 1/4 as strong.')
 
 # ---- bread ----
 r = R(12)
@@ -124,12 +124,12 @@ for n in range(1, 420):
     a = n * math.radians(137.508); rad = 3.05 * math.sqrt(n)
     seeds += f'<circle cx="{110 + rad*math.cos(a):.1f}" cy="{66 + rad*math.sin(a):.1f}" r="{1.3 + n/420*1.5:.1f}" fill="{"#5a3d1e" if n % 2 else "#7a5527"}"/>'
 petals = ''.join(f'<path d="M110 66 m0 -62 q9 -16 0 -30 q-9 14 0 30Z" fill="{"#f6c531" if i % 2 else "#eeb420"}" transform="rotate({i*360/26:.1f} 110 66)" opacity=".95"/>' for i in range(26))
-add('fibonacci', 'One simple rule makes every spiral in a sunflower.',
+add('fibonacci', '1 simple rule makes every spiral in a sunflower.',
   svg(330, 132, 'A drawing of a sunflower head packed with seeds in crossing spirals, with a note showing each new seed turned 137.5 degrees from the last',
     f'<g transform="translate(0 0) scale(.92) translate(8 6)">{petals}<circle cx="110" cy="66" r="64" fill="#3f2a12"/>{seeds}</g>'
     '<g transform="translate(262 62)"><circle r="30" fill="none" stroke="#c9ab88" stroke-width="1.5"/><path d="M0 0 L30 0 M0 0 L-22.1 20.3" stroke="#3b2f4a" stroke-width="2"/><path d="M12 0 A12 12 0 1 1 -8.800 8.100" fill="none" stroke="#c98a1f" stroke-width="2"/><circle cx="30" cy="0" r="4" fill="#5a3d1e"/><circle cx="-22.1" cy="20.3" r="4" fill="#5a3d1e"/></g>'
     + txt(262, 112, 'each seed: 137.5 degrees', 10.5, INK) + txt(262, 124, 'around from the last', 10.5, INK)),
-  'A sunflower grows one seed at a time. Each seed sits 137.5 degrees around from the last one. That is a bit more than 1/3 of a circle. Repeat that turn, and the spirals show up.')
+  'A sunflower grows 1 seed at a time. Each seed sits 137.5 degrees around from the last one. That is a bit more than 1/3 of a circle. Repeat that turn, and the spirals show up.')
 
 # ---- migration (European robin) ----
 add('migration', 'This small bird knows which way to fly, even with no sun or stars to see.',

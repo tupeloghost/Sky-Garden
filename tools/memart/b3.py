@@ -7,7 +7,7 @@ def flame(x, y, s=1): return f'<path d="M{x} {y} q{-5*s} {-7*s} 0 {-15*s} q{5*s}
 r = R(21)
 thorns = ''
 crown = ''.join(f'<ellipse cx="{r.uniform(90,230):.0f}" cy="{r.uniform(18,34):.0f}" rx="{r.uniform(20,34):.0f}" ry="{r.uniform(8,13):.0f}" fill="{r.choice(["#4f9a5c","#5fae6b","#3f8a50"])}"/>' for _ in range(16))
-add('worldtree', 'Many peoples pictured one giant tree holding the world together.',
+add('worldtree', 'Many peoples pictured 1 giant tree holding the world together.',
   svg(330, 126, 'A drawing of a ceiba tree: a tall straight grey trunk, wide wing-like roots at the bottom, and a flat, spreading top',
     '<path d="M0 102 H330" stroke="#c9ab88" stroke-width="2"/><path d="M110 102 Q140 96 152 70 L152 40 L168 40 L168 70 Q180 96 210 102Z" fill="#a7ab9d"/><path d="M160 40 V102" stroke="#8f9488" stroke-width="1"/>'
     '<path d="M152 44 L112 30 M168 44 L208 30 M156 40 L140 22 M164 40 L182 22" stroke="#a7ab9d" stroke-width="5" stroke-linecap="round"/>' + thorns + crown +
@@ -50,7 +50,7 @@ add('zeno', 'Walk halfway to a door. Then halfway again. There is always a bit l
   svg(330, 104, 'A diagram of a bar cut in half, then the rest cut in half again and again, into smaller and smaller pieces that get closer and closer to the end',
     '<rect x="20" y="34" width="290" height="38" fill="#fff6e6"/>' + segs + '<rect x="20" y="34" width="290" height="38" fill="none" stroke="#3b2f4a" stroke-width="2"/>'
     + txt(20, 24, 'start', 11, INK, 'start') + txt(310, 24, 'finish', 11, INK, 'end') + txt(165, 94, '1/2 + 1/4 + 1/8 + 1/16 + ... = 1', 13, INK)),
-  'Each colored block is one step: 1/2 the way, then 1/2 of what was left. The steps shrink so fast that all of them together make the whole way.')
+  'Each colored block is 1 step: 1/2 the way, then 1/2 of what was left. The steps shrink so fast that all of them together make the whole way.')
 
 # ---- cave ----
 add('cave', 'What if everything you have ever seen was only a shadow?',
@@ -119,7 +119,7 @@ add('lunarnewyear', 'Red envelopes, for luck in the new year.',
 r = R(31)
 def pile(x, c, d): return f'<path d="M{x-24} 84 Q{x-22} 100 {x} 100 Q{x+22} 100 {x+24} 84Z" fill="#b08a5e"/><ellipse cx="{x}" cy="84" rx="24" ry="5" fill="#8a6a44"/><path d="M{x-21} 84 Q{x-8} 44 {x} 46 Q{x+8} 44 {x+21} 84Z" fill="{c}"/><path d="M{x-21} 84 Q{x-8} 44 {x} 46 Q{x-2} 66 {x-4} 84Z" fill="{d}" opacity=".5"/>'
 puffs = ''.join(f'<circle cx="{r.uniform(20,310):.0f}" cy="{r.uniform(8,40):.0f}" r="{r.uniform(5,16):.0f}" fill="{r.choice(["#ec4899","#f6c531","#3d8fe0","#4cb86a","#f08c2e","#8e44ad"])}" opacity="{r.uniform(.25,.5):.2f}"/>' for _ in range(34))
-add('holi', 'For one morning, everyone is covered in color.',
+add('holi', 'For 1 morning, everyone is covered in color.',
   svg(330, 108, 'A drawing of five bowls heaped with bright powder in pink, yellow, blue, green, and orange, with clouds of color in the air above',
     puffs + pile(48, '#ec4899', '#b0266f') + pile(106, '#f6c531', '#c79a12') + pile(164, '#3d8fe0', '#2563a8') + pile(222, '#4cb86a', '#2f8a49') + pile(280, '#f08c2e', '#b5621a')),
   'A drawing of the colored powder, called gulal, sold in heaps before the festival. Friends and strangers throw it and smear it on each other in the street.')
@@ -128,7 +128,7 @@ add('holi', 'For one morning, everyone is covered in color.',
 r = R(32)
 sprout = ''.join(f'<path d="M{x} 70 q{r.uniform(-3,3):.0f} -14 {r.uniform(-4,4):.0f} -{r.uniform(22,32):.0f}" stroke="{r.choice(["#4cb86a","#3f9a56","#6fcf82"])}" stroke-width="1.6" fill="none"/>' for x in range(22, 70, 2))
 def bowl(x, c, lab): return f'<path d="M{x-17} 72 Q{x-15} 88 {x} 88 Q{x+15} 88 {x+17} 72Z" fill="#dfeaf2" stroke="#9fb6c8" stroke-width="1.2"/><ellipse cx="{x}" cy="72" rx="17" ry="4" fill="{c}"/>' + txt(x, 104, lab, 9.5, INK)
-add('nowruz', 'Seven things on the table. In Persian, each one starts with S.',
+add('nowruz', '7 things on the table. In Persian, each one starts with S.',
   svg(330, 110, 'A drawing of seven items on a table: a dish of green sprouts, an apple, a head of garlic, and bowls of vinegar, red spice, brown pudding, and dried fruit',
     '<path d="M6 90 H324" stroke="#c9ab88" stroke-width="2"/><path d="M20 70 H72 L66 88 H26Z" fill="#dfeaf2" stroke="#9fb6c8" stroke-width="1.2"/>' + sprout + '<path d="M22 60 H70" stroke="#d6332e" stroke-width="3"/>' + txt(46, 104, 'sprouts', 9.5, INK)
     + '<path d="M96 66 q-14 0 -12 14 q2 10 12 10 q10 0 12 -10 q2 -14 -12 -14Z" fill="#d6332e"/><path d="M96 66 q2 -6 6 -8" stroke="#7a5236" stroke-width="1.6" fill="none"/>' + txt(96, 104, 'apple', 9.5, INK)
@@ -212,11 +212,11 @@ add('diwali', 'Rows of small clay lamps, lit against the dark.',
 # ---- hanukkah: the menorah ----
 arms = ''.join(f'<path d="M{165 - d} 36 V52 Q{165 - d} {58 + d*.42:.0f} 165 {58 + d*.42:.0f} Q{165 + d} {58 + d*.42:.0f} {165 + d} 52 V36" fill="none" stroke="#c9a23a" stroke-width="4"/>' for d in (26, 52, 78, 104))
 cand = ''.join(f'<rect x="{x-3}" y="{y-16}" width="6" height="16" fill="#7ec8e3"/>' + flame(x, y - 16, .6) for x, y in [(165 + sd * d, 36) for d in (26, 52, 78, 104) for sd in (-1, 1)] + [(165, 26)])
-add('hanukkah', '8 nights, 8 lights, and one more to light them.',
+add('hanukkah', '8 nights, 8 lights, and 1 more to light them.',
   svg(330, 122, 'A drawing of a gold menorah with nine candles: four on each side at the same height, and one in the middle standing a little higher',
     arms + '<path d="M165 26 V104" stroke="#c9a23a" stroke-width="5"/><path d="M135 110 Q165 96 195 110Z" fill="#c9a23a"/><rect x="128" y="108" width="74" height="6" rx="2" fill="#a8842a"/>' + cand
     ),
-  'A drawing of a Hanukkah menorah. It holds 9 candles: one for each of the 8 nights, plus a helper candle. The helper is lit first and lights the rest. One more candle is added each night.')
+  'A drawing of a Hanukkah menorah. It holds 9 candles: 1 for each of the 8 nights, plus a helper candle. The helper is lit first and lights the rest. 1 more candle is added each night.')
 
 # ---- december solstice: Newgrange ----
 r = R(41)

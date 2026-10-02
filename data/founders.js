@@ -1,8 +1,8 @@
 // Founding Gardeners: testers who help build Sky Garden. Their extras are looks only.
 // Tester missions point testers at the things we most want tried. `feature` hides a mission until that feature is on.
 const MISSIONS = [
-  { id:'fish',    title:'Catch a fish off a dock', how:'Tap a dock, watch for fish shadows, and reel one in.', done:S => Object.keys(S.fishLog || {}).length > 0 },
-  { id:'row',     title:'Plant a whole row', how:'Plant 3 plots in one row, then water one of them.', done:S => [0,3,6,9].some(r => [0,1,2].every(c => S.tiles[r + c] && S.tiles[r + c].s === 2)) },
+  { id:'fish',    title:'Catch a fish off a dock', how:'Tap a dock, watch for fish shadows, and reel 1 in.', done:S => Object.keys(S.fishLog || {}).length > 0 },
+  { id:'row',     title:'Plant a whole row', how:'Plant 3 plots in 1 row, then water 1 of them.', done:S => [0,3,6,9].some(r => [0,1,2].every(c => S.tiles[r + c] && S.tiles[r + c].s === 2)) },
   { id:'crate',   title:'Choose what to sell', how:'Tap the sell crate and pick what to sell.', done:S => !!S.soldPick },
   { id:'stars',   title:'Sleep under the stars', how:'Tap the campfire at night and sleep outside.', done:S => !!S.sleptOutside },
   { id:'nap',     title:'Take a nap in a hammock', how:'Tap the hammock between the 2 trees behind your garden.', done:S => !!S.napped },

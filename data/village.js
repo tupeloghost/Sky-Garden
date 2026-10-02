@@ -10,7 +10,7 @@ const VILLAGERS = {
     "I named my oven Gerald. Gerald runs hot.",
   ], heartLines:["Your grandmother taught me my first recipe. Burnt, of course. Everyone's first is burnt."] },
   hoot: { name:'Professor Hoot', building:'library', lines:[
-    "Ah, a reader! Every week I shelve one new book. Come back and see what it is.",
+    "Ah, a reader! Every week I shelve 1 new book. Come back and see what it is.",
     "Hoo. Knowledge is the only thing that grows when you give it away.",
     "Libraries are memory with a roof on it.",
     "I have read every book here twice. The third time is the best.",
@@ -26,7 +26,7 @@ const VILLAGERS = {
   sage: { name:'Sage', building:'temple', lines:[
     "Welcome, young one. Sit. There is no hurry in a garden.",
     "People have asked the same big questions in every language. The answers are different. The questions are the same.",
-    "Each day I read one saying. Would you like to hear today's?",
+    "Each day I read 1 saying. Would you like to hear today's?",
     "The moon gate lets everyone in. That is the only rule of this garden.",
     "I am slow, yes. I have also never once tripped.",
   ], heartLines:["I am 190 years old. Your grandmother was a baby when I planted that tree. Now look at us."] },

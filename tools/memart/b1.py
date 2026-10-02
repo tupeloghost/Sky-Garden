@@ -18,7 +18,7 @@ add('bone', 'Someone cut these marks about 20,000 years ago. Count them.',
     f'<clipPath id="ib"><path d="{path}"/></clipPath><path d="{path}" fill="#ad8b68"/><g clip-path="url(#ib)">{bl}<rect x="0" y="52" width="330" height="20" fill="#5e4532" opacity=".28"/></g>'
     '<path d="M23 40 L18 41 L17 43.500 L19 46 L23 47Z" fill="#eef3f5" stroke="#b9c6cc" stroke-width=".8"/>'
     f'<g stroke="#3f2c1f" stroke-width="1.1" stroke-linecap="round" fill="none" opacity=".85">{marks}</g>{labels}'),
-  'A drawing of the real bone, which is about 10 centimeters long. One row of notches has groups of 11, 13, 17, and 19.')
+  'A drawing of the real bone, which is about 10 centimeters long. 1 row of notches has groups of 11, 13, 17, and 19.')
 
 # ---- tablet (Plimpton 322 style): clay slab, ruled columns, rows of wedge marks, chipped edges ----
 r = R(3)
@@ -71,7 +71,7 @@ def lines(y0, y1, n, kind):
             elif kind == 'd': L = r.uniform(4, 10); out += f'<path d="M{x:.1f} {y:.1f} q{L/2:.1f} {r.uniform(-1.6,1.6):.1f} {L:.1f} 0" fill="none" stroke-width=".8"/>'; x += L + r.uniform(1, 2.5)
             else: L = r.uniform(1.2, 2); out += f'<rect x="{x:.1f}" y="{y-.9:.1f}" width="{L:.1f}" height="1.8"/>'; x += L + r.uniform(.9, 1.6)
     return out
-add('rosetta', 'One message, written 3 ways.',
+add('rosetta', '1 message, written 3 ways.',
   svg(330, 128, 'A drawing of a dark grey stone slab with a broken top, carved with three bands of writing',
     f'<clipPath id="rs"><path d="{stone}"/></clipPath><path d="{stone}" fill="#4a4a50"/><g clip-path="url(#rs)"><path d="M150 0 L230 0 L230 128 L176 128Z" fill="#3a3a40" opacity=".5"/>'
     f'<g fill="#c9c6bd" stroke="#c9c6bd" opacity=".9">{lines(22, 40, 5, "h")}{lines(50, 76, 9, "d")}{lines(85, 116, 13, "g")}</g>'
@@ -85,7 +85,7 @@ cob = 'M30 78 Q20 50 44 34 L62 30 L74 42 L88 34 L104 46 L112 40 Q128 58 118 84 Q
 scars = '<path d="M44 34 L56 52 L62 30 M74 42 L78 60 L88 34 M104 46 L100 62 L112 40 M56 52 L78 60 L100 62" fill="none" stroke="#3f3040" stroke-width="1.2" stroke-linejoin="round"/>'
 head = 'M214 30 L250 22 L262 40 L252 62 L216 58 L206 44Z'
 lash = ''.join(f'<path d="M{228+i*4} 62 L{238+i*4} 40" />' for i in range(-2, 4)) + ''.join(f'<path d="M{238+i*4} 62 L{228+i*4} 40" />' for i in range(-1, 4))
-add('tools', 'One of the first tools was a rock with one sharp edge.',
+add('tools', 'One of the first tools was a rock with 1 sharp edge.',
   svg(330, 118, 'Two drawings: a rounded stone with chips knocked off one edge, and a stone axe head tied to a wooden handle',
     f'<path d="{cob}" fill="#7a5f6a"/><path d="M30 78 Q38 96 60 100 Q96 104 118 84 Q100 92 62 90 Q40 88 30 78Z" fill="#4f3c47" opacity=".6"/><path d="M44 34 L62 30 L74 42 L88 34 L104 46 L112 40 L100 62 L78 60 L56 52Z" fill="#a08592"/>{scars}'
     + txt(84, 114, '2.6 million years old, or older', 11)
@@ -130,7 +130,7 @@ for i in range(4):
 add('loom', 'A hole means lift the thread. No hole means leave it down.',
   svg(330, 112, 'A drawing of four cream cards with rows of punched holes, tied together in a chain with red cord',
     cards + txt(165, 108, 'each card is one row of the cloth', 11)),
-  'A drawing of the punched cards from a Jacquard loom, laced into a long chain. The loom reads one card, weaves one row, then moves to the next card.')
+  'A drawing of the punched cards from a Jacquard loom, laced into a long chain. The loom reads 1 card, weaves 1 row, then moves to the next card.')
 
 # ---- bronze: the recipe ----
 dots = ''.join(f'<circle cx="{30+ (i%3)*22}" cy="{30 + (i//3)*22}" r="9" fill="#c46f3e"/><circle cx="{27+(i%3)*22}" cy="{27+(i//3)*22}" r="3" fill="#e69a6c" opacity=".8"/>' for i in range(9))

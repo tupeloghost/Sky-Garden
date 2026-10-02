@@ -9,7 +9,7 @@ const TRIALS = [
     wisdom:'Mapmakers have always named places for people who come after them. A good name helps a stranger feel at home. The oldest map of the world we know of, the Babylonian Map of the World, is a clay tablet about 2,600 years old.',
     reflect:'Think of a place that felt like home the first time you saw it. What made it feel that way?' },
   { id:'seeds', level:2, name:'The Trial of the Seeds',
-    intro:"Keepers plant things they may never see finished. The saplings grow one stage for each day you come back. They will outlast us all.",
+    intro:"Keepers plant things they may never see finished. The saplings grow 1 stage for each day you come back. They will outlast us all.",
     task:'Plant the 3 saplings at the glowing spots on your island.',
     wisdom:'"A society grows great when old people plant trees whose shade they know they will never sit in." It is a modern saying, though it is often called a Greek proverb. Some trees people plant today will still stand in 500 years.',
     reflect:'What is something you could start now that might help someone long after you?' },
