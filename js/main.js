@@ -216,11 +216,13 @@ function tx(kind, rx = 1, ry = 1) {
     if (kind === 'meadow') { for (let i = 0; i < 700; i++) { const x = R() * 256, y = R() * 256; g.strokeStyle = R() < .55 ? `rgba(40,70,20,${.07 + R() * .1})` : `rgba(255,255,255,${.25 + R() * .3})`; g.lineWidth = 1 + R(); g.beginPath(); g.moveTo(x, y); g.lineTo(x + (R() - .5) * 5, y - 4 - R() * 6); g.stroke(); } for (let i = 0; i < 26; i++) { g.fillStyle = `rgba(255,255,255,${.35 + R() * .3})`; g.beginPath(); g.arc(R() * 256, R() * 256, 1.5 + R() * 1.5, 0, 7); g.fill(); } } // short blades of grass and a few clover dots
     if (kind === 'leaf') for (let i = 0; i < 260; i++) { const x = R() * 256, y = R() * 256, r = 5 + R() * 9; g.fillStyle = R() < .5 ? `rgba(20,60,20,${.06 + R() * .09})` : `rgba(255,255,255,${.18 + R() * .25})`; g.beginPath(); g.ellipse(x, y, r, r * .55, R() * 3, 0, 7); g.fill(); } // overlapping leaves
     if (kind === 'earth') { for (let y = 0; y < 256; y += 22 + R() * 30) { g.fillStyle = `rgba(60,35,15,${.1 + R() * .14})`; g.fillRect(0, y, 256, 3 + R() * 7); } for (let i = 0; i < 160; i++) { g.fillStyle = `rgba(60,35,15,${.08 + R() * .12})`; g.fillRect(R() * 256, R() * 256, 3 + R() * 9, 2 + R() * 4); } } // layers of soil with pebbles
+    if (kind === 'fur') for (let i = 0; i < 1100; i++) { const x = R() * 256, y = R() * 256; g.strokeStyle = R() < .5 ? `rgba(60,40,30,${.05 + R() * .08})` : `rgba(255,255,255,${.2 + R() * .3})`; g.lineWidth = 1 + R(); g.beginPath(); g.moveTo(x, y); g.lineTo(x + (R() - .5) * 4, y + 5 + R() * 7); g.stroke(); }
     if (kind === 'stone') for (let i = 0; i < 900; i++) { g.fillStyle = R() < .5 ? `rgba(40,35,50,${.05 + R() * .12})` : `rgba(255,255,255,${.2 + R() * .3})`; g.fillRect(R() * 256, R() * 256, 1 + R() * 4, 1 + R() * 3); }
     const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; texBase[kind] = t; }
   const t = texBase[kind].clone(); t.repeat.set(rx, ry); t.needsUpdate = true; return t;
 }
 const fine = (c, o = {}) => { const m = mat(c, o); m.userData.outlineParameters = NO_OUTLINE; return m; }; // for small details: no dark outline around them
+const LEAF_GEO = new THREE.SphereGeometry(.5, 8, 5); // one leaf shape, stretched to fit wherever a leaf or petal is drawn
 // --- islands ---
 const GRASS = [0x8fdc8a, 0x7fd07a, 0xdcbb62, 0xeef3ff]; // fall is a golden meadow, not sand
 function island(r, x, y, z, o = {}) {
@@ -234,11 +236,15 @@ function island(r, x, y, z, o = {}) {
   const rock = mesh(new THREE.ConeGeometry(r*.9, r*.8, 48), mat(0x9c7fa8, { map:tx('stone', Math.round(r), 3) }), 0, -1.6 - r*.4, 0); rock.rotation.x = Math.PI; g.add(rock);
   for (let i = 0; i < Math.round(r * 1.1); i++) { const a = i * 2.9 + r, d = r * (.5 + (i % 3) * .14), ck = mesh(new THREE.DodecahedronGeometry(.28 + (i % 4) * .1), mat(i % 2 ? 0x8a6f96 : 0xa98fb5), Math.cos(a) * d, -1.75 - (1 - d / r) * r * .72, Math.sin(a) * d); ck.rotation.set(i, i * 2, i * 3); g.add(ck); } // chunks of rock jutting from the underside
   const lipMat = topMat.clone(); lipMat.vertexColors = false; lipMat.color.multiplyScalar(.9); // the rim matches the deeper edge color
-  const lip = mesh(new THREE.TorusGeometry(r - .05, .3, 10, 72), lipMat, 0, -.14, 0); lip.rotation.x = Math.PI/2; g.add(lip);
+  const lip = mesh(new THREE.TorusGeometry(r - .05, .3, 10, 72), lipMat, 0, -.14, 0); lip.rotation.x = Math.PI/2; lip.userData.keep = true; g.add(lip);
   for (let i=0;i<Math.round(r*1.4);i++){ const a = i*2.39, rr = r*(.45 + (i%4)*.1), len = 1 + (i%5)*.45, vine = i%3 === 0;
     const root = mesh(new THREE.CylinderGeometry(.035, .012, len, 5), mat(vine ? 0x5fb85c : 0x7a5236), Math.cos(a)*rr, -1.7 - len/2 - (1 - rr/r)*r*.5, Math.sin(a)*rr);
     root.rotation.z = Math.sin(i)*.15; g.add(root);
     if (vine) root.add(mesh(sph(.08), mat(0x7fd88a), 0, -len/2, 0)); }
+  if (!o.mat && !lowGfx) { const hr = i => { const v = Math.sin((i + r * 9.1 + x) * 127.1) * 43758.5; return v - Math.floor(v); }, bits = new THREE.Group(), n = Math.round(r * 9);
+    for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * Math.PI * 2 + hr(i) * .08, bl = mesh(new THREE.ConeGeometry(.03 + hr(i + 5) * .025, .14 + hr(i + 9) * .16, 4), lipMat, Math.cos(a) * (r + .24), -.1 - hr(i + 2) * .1, Math.sin(a) * (r + .24)); bl.rotation.set(Math.PI + Math.sin(a) * .9, 0, -Math.cos(a) * .9); bl.castShadow = false; bits.add(bl); } // blades of grass hanging over the edge
+    const pm = [mat(0xcfc6b6), mat(0xb3aabb)]; for (let i = 0; i < Math.round(r * 2.2); i++) { const a = hr(i + 30) * 6.28, d = r * (.72 + hr(i + 40) * .24), pb = mesh(new THREE.DodecahedronGeometry(.05 + hr(i + 50) * .05), pm[i % 2], Math.cos(a) * d, .03, Math.sin(a) * d); pb.rotation.set(i, i * 2, 0); pb.scale.y = .6; pb.castShadow = false; bits.add(pb); } // pebbles near the edge
+    g.add(bake(bits)); }
   bake(g); scene.add(g); if (!o.hidden) walkables.push(top); return { g, top, lip, r };
 }
 const HOME = island(9, 0, 0, 0);
@@ -312,9 +318,11 @@ const fruitTrees = [[-3,-3,'apple'],[2,-4,'peach'],[-4,3,'peach'],[5,.3,'apple']
 
 // --- flowers ---
 const flowers = new THREE.Group(); scene.add(flowers);
-for (let i=0;i<0;i++){ const a=Math.random()*Math.PI*2, r=3+Math.random()*5.3, x=Math.cos(a)*r, z=Math.sin(a)*r;
-  if (x>0 && x<5 && z>-2.5 && z<3) continue;
-  flowers.add(mesh(sph(.08), mat([0xffffff,0xffd1dc,0xfff3a0,0xc9b6ff][i%4]), x, .06, z)); }
+{ const hr = i => { const v = Math.sin(i * 127.1) * 43758.5; return v - Math.floor(v); }, wf = new THREE.Group(), stem = mat(0x4fb46a), mid = mat(0xffd23f), cols = [0xffffff, 0xffd1dc, 0xfff3a0, 0xc9b6ff].map(c => mat(c));
+  for (let i = 0; i < 46; i++) { const a = hr(i) * Math.PI * 2, r = 6.3 + hr(i + 9) * 2.1, x = Math.cos(a) * r, z = Math.sin(a) * r, h = .1 + hr(i + 3) * .08; if (z > 3.2 && Math.abs(x) < 4.5) continue; // keep the front meadow open
+    wf.add(mesh(new THREE.CylinderGeometry(.008,.008,h,3), stem, x, h / 2, z)); wf.add(mesh(sph(.022), mid, x, h + .012, z));
+    for (let p = 0; p < 5; p++) { const pa = p / 5 * Math.PI * 2, pt = mesh(LEAF_GEO, cols[i % 4], x + Math.cos(pa) * .035, h + .008, z + Math.sin(pa) * .035); pt.scale.set(.05, .014, .05); wf.add(pt); } }
+  wf.traverse(o => { if (o.isMesh) o.castShadow = false; }); flowers.add(bake(wf)); }
 
 // --- house with windows that glow at night ---
 const house = new THREE.Group(); house.position.set(-4,0,-3); house.userData.kind = 'house'; scene.add(house);
@@ -335,7 +343,7 @@ roofMat.map = tx('straw', 4, 1); wallMat.map = tx('plaster', 2, 2);
 const ridgeMat = mat(0xff8fa3, { map:tx('straw', 4, 1) }), lampMat = new THREE.MeshStandardMaterial({ color:0xffe9b8, emissive:0xffc46b, emissiveIntensity:.15, roughness:.5 }); lampMat.userData.outlineParameters = NO_OUTLINE;
 // --- keeping the detail cheap: once a building is drawn, parts that look the same are joined into one piece, so the phone draws a few pieces instead of hundreds ---
 function bake(root) { try { root.updateWorldMatrix(true, true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), buckets = new Map();
-  const walk = o => { if (o !== root && (o.userData.kind || o.userData.use || o.userData.spin || o.userData.keep || !o.visible || o.isSprite || o.isLine)) return; // things you tap, things that move, and hidden things stay as they are
+  const walk = o => { if (o !== root && (o.userData.kind || o.userData.use || o.userData.spin || o.userData.keep || o.userData.sway || o.userData.bob || !o.visible || o.isSprite || o.isLine)) return; // things you tap, things that move, and hidden things stay as they are
     if (o.isMesh && !o.children.length && o.material && !Array.isArray(o.material) && o.material.visible !== false && o.geometry.attributes.normal && o.geometry.attributes.uv && !o.userData.baked) { const m = o.material;
       const key = [m.type, m.color ? m.color.getHex() : '', m.map ? m.map.uuid : '', m.transparent, m.opacity, m.side, m.emissive ? m.emissive.getHex() : '', m.userData.outlineParameters ? 'n' : 'o', m.metalness, m.roughness, o.castShadow, o.receiveShadow, m.vertexColors].join('|');
       if (!buckets.has(key)) buckets.set(key, []); buckets.get(key).push(o); }
@@ -344,6 +352,14 @@ function bake(root) { try { root.updateWorldMatrix(true, true); const inv = new 
   buckets.forEach(list => { if (list.length < 2) return; const geos = list.map(o => { const src = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(), g = new THREE.BufferGeometry(); ['position', 'normal', 'uv'].forEach(k => g.setAttribute(k, src.attributes[k])); g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld)); return g; });
     const merged = mergeGeometries(geos); if (!merged) return; const one = new THREE.Mesh(merged, list[0].material); one.castShadow = list[0].castShadow; one.receiveShadow = list[0].receiveShadow; one.userData.baked = true; root.add(one); list.forEach(o => o.parent && o.parent.remove(o)); });
 } catch (e) { console.warn('bake', e); } return root; }
+// a bush: big leafy clumps, smaller clumps to break up the outline, paler new leaves on top, and a few berries
+function bushLook(g, s = 1, c = 0x4fb46a) { const k = g.position.x * 7.3 + g.position.z * 3.1, hr = i => { const v = Math.sin((i + k) * 127.1) * 43758.5; return v - Math.floor(v); };
+  const m1 = mat(c, { map:tx('leaf', 3, 2) }), m2 = mat(new THREE.Color(c).multiplyScalar(.84).getHex(), { map:tx('leaf', 3, 2) }), tip = fine(new THREE.Color(c).lerp(new THREE.Color(0xd8f0a0), .45).getHex()), part = new THREE.Group();
+  [[0,0,0,.45],[.35,-.05,.1,.34],[-.32,-.07,.08,.32],[.05,.15,-.15,.3]].forEach(([bx,by,bz,br], i) => part.add(mesh(sph(br*s), i % 2 ? m2 : m1, bx*s, br*s*.8 + by, bz*s)));
+  for (let i = 0; i < 12; i++) { const a = hr(i) * 6.28, e = .15 + hr(i + 20) * 1.1, r = .46 * s, cl = mesh(sph((.1 + hr(i + 40) * .07) * s), i % 2 ? m1 : m2, Math.cos(a) * Math.cos(e) * r * 1.2, .3 * s + Math.sin(e) * r * .75, Math.sin(a) * Math.cos(e) * r); cl.scale.y = .8; part.add(cl); }
+  for (let i = 0; i < 9; i++) { const a = hr(i + 60) * 6.28, r = hr(i + 70) * .3 * s, lf = mesh(LEAF_GEO, tip, Math.cos(a) * r, (.62 + hr(i + 80) * .14) * s - r * .4, Math.sin(a) * r); lf.scale.set(.09 * s, .03, .13 * s); lf.rotation.y = a; part.add(lf); }
+  for (let i = 0; i < 5; i++) { const a = hr(i + 90) * 6.28, e = .3 + hr(i + 95) * .6; part.add(mesh(sph(.035 * s), fine(i % 2 ? 0xd8323c : 0xe8617a), Math.cos(a) * Math.cos(e) * .5 * s, .3 * s + Math.sin(e) * .36 * s, Math.sin(a) * Math.cos(e) * .44 * s)); }
+  g.add(bake(part)); }
 // --- detailed parts shared by every building: windows, doors, stone footings, chimneys, layered roofs, pots of flowers ---
 const townHalos = [];
 const KIT = (() => {
@@ -874,7 +890,7 @@ const dressing = new THREE.Group(); scene.add(dressing); const grassPatches = []
       const p = new THREE.Mesh(new THREE.CircleGeometry(.9 + rnd(i*11+k)*1.4, 20), pm); p.rotation.x = -Math.PI/2; p.position.set(cx + Math.cos(a)*r, cy + .012 + i*.0005, cz + Math.sin(a)*r); p.scale.set(1, .6 + rnd(i*5)*.5, 1);
       p.receiveShadow = true; dressing.add(p); grassPatches.push(p); } });
   // bushes in little groups
-  const bush = (x, z, s=1, c=0x4fb46a, id) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.userData = { kind:'bush', key:'bush'+(id ?? bushes.length) }; bushes.push(g); [[0,0,0,.45],[.35,-.05,.1,.34],[-.32,-.07,.08,.32],[.05,.15,-.15,.3]].forEach(([bx,by,bz,br]) => g.add(mesh(sph(br*s), mat(c), bx*s, br*s*.8 + by, bz*s))); dressing.add(g); return g; };
+  const bush = (x, z, s=1, c=0x4fb46a, id) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.userData = { kind:'bush', key:'bush'+(id ?? bushes.length) }; bushes.push(g); bushLook(g, s, c); dressing.add(g); return g; };
   [[3,-5.95,1,0],[2,-6.5,.8,2],[-6.3,-5.6,1,3],[-7.9,-.3,.8,4]].forEach(([x,z,s,id]) => bush(x, z, s, undefined, id));
   // flower beds hugging the hut and along the path
   const bed = (x, z, n, rx, rz) => { for (let i=0;i<n;i++){ const fx = x + (rnd(i+x*13)-.5)*rx, fz = z + (rnd(i*3+z*7)-.5)*rz, c = [0xff8fa3,0xfff3a0,0xc9b6ff,0xffffff,0xffb36b][i%5];
@@ -957,43 +973,84 @@ function addTileGroup(i) {
 }
 S.tiles.forEach((_, i) => addTileGroup(i)); tilesReady = true;
 // Each crop looks like the real plant and grows through visible stages (k goes 0 to 1).
+// a leaf: a flat pointed oval growing out from (x, y, z), turned ry around and tipped up by tilt
+function leafAt(parent, x, y, z, len, wid, ry, tilt, m) { const p = new THREE.Group(); p.position.set(x, y, z); p.rotation.y = ry; const l = new THREE.Group(); l.rotation.x = -tilt; p.add(l);
+  const b = mesh(LEAF_GEO, m, 0, 0, len / 2); b.scale.set(wid, .05, len); l.add(b); parent.add(p); return p; }
+// each crop is drawn from the real plant: k is how grown it is (0 to 1)
 function cropModel(id, k, ripe) {
-  const c = CROPS[id], g = new THREE.Group(), leaf = mat(0x5fc377), dark = mat(0x3f8f55), sz = .35 + k*.65;
+  const c = CROPS[id], g = new THREE.Group(), leaf = mat(0x5fc377), dark = mat(0x3f8f55), stemM = mat(0x4fa862), sz = .35 + k*.65;
   const sway = o => { o.userData.sway = true; return o; }, bob = o => { o.userData.bob = true; o.userData.by = o.position.y; return o; };
   const fruit = ripe ? mat(c.color, { emissive:c.color, emissiveIntensity: id === 'starbloom' ? .6 : .15 }) : mat(0x9fd88a);
-  if (id === 'skywheat') {
+  if (id === 'skywheat') { // wheat: thin stalks with long leaves, and an ear of grain with whiskers on top
     const col = ripe ? mat(0xe6c35c) : mat(k > .6 ? 0xc9d46a : 0x7fcf6a);
-    [[-.2,-.15],[.15,-.2],[0,.1],[-.15,.25],[.22,.18]].forEach(([x,z]) => {
-      const st = sway(new THREE.Group()); st.position.set(x,.1,z);
-      st.add(mesh(new THREE.CylinderGeometry(.025,.03,.7*sz,5), col, 0, .35*sz, 0));
-      if (k > .4) st.add(mesh(new THREE.CapsuleGeometry(.06,.18*sz,3,6), col, 0, .7*sz + .08, 0));
-      g.add(st); });
-  } else if (id === 'sunbell') {
+    [[-.26,-.2],[.2,-.26],[0,.06],[-.2,.26],[.26,.2],[-.02,-.3],[.05,.34]].forEach(([x, z], i) => {
+      const st = sway(new THREE.Group()); st.position.set(x, .1, z); const h = .72 * sz;
+      st.add(mesh(new THREE.CylinderGeometry(.018,.025,h,5), col, 0, h/2, 0));
+      leafAt(st, 0, h*.3, 0, .26*sz, .045, i*1.3, .9, col); leafAt(st, 0, h*.55, 0, .22*sz, .04, i*1.3 + 2.6, 1.0, col);
+      if (k > .4) { for (let j = 0; j < 8; j++) { const kr = mesh(LEAF_GEO, col, (j % 2 ? .028 : -.028), h + .03 + j * .028 * sz, 0); kr.scale.set(.06, .07, .06); st.add(kr); }
+        [-.03, 0, .03].forEach(dx => { const aw = mesh(new THREE.CylinderGeometry(.003,.006,.16*sz,3), col, dx, h + .3*sz, 0); aw.rotation.z = -dx * 8; st.add(aw); }); }
+      g.add(bake(st)); });
+  } else if (id === 'sunbell') { // sunflower: a thick stem, big heart-shaped leaves, and a seed disc ringed with two rows of petals
     const st = sway(new THREE.Group()); st.position.y = .1; g.add(st);
-    const h = .3 + k*.9; st.add(mesh(new THREE.CylinderGeometry(.04,.05,h,6), leaf, 0, h/2, 0));
-    { const lf = mesh(new THREE.SphereGeometry(.12,8,6), leaf, .1, h*.5, 0); lf.scale.set(1,.3,.6); st.add(lf); }
-    if (k > .5) { const head = new THREE.Group(); head.position.set(0,h+.02,.05); head.rotation.x = .5; st.add(head);
-      const s2 = ripe ? .24 : .12;
-      for (let i = 0; i < 10; i++) { const a = i/10*Math.PI*2; const pt = mesh(new THREE.SphereGeometry(.07,6,4), ripe ? mat(0xffd35c) : leaf, Math.cos(a)*s2, Math.sin(a)*s2, 0); pt.scale.set(1.3,1.3,.3); head.add(pt); }
-      head.add(mesh(new THREE.CylinderGeometry(s2*.7,s2*.7,.06,12), mat(0x5a3a28), 0, 0, 0).rotateX(Math.PI/2)); }
-  } else if (id === 'moonpumpkin') {
-    [[-.3,.2],[.25,-.25],[.3,.25],[-.2,-.3]].slice(0, 1 + Math.floor(k*3)).forEach(([x,z]) => { const lf = mesh(new THREE.SphereGeometry(.16,8,5), dark, x, .16, z); lf.scale.set(1,.35,1); g.add(lf); });
-    if (k > .3) { const p = new THREE.Group(); p.position.y = .12 + (ripe ? .12 : .05); const r = ripe ? .3 : .08 + k*.1;
-      for (let i = 0; i < 6; i++) { const a = i/6*Math.PI*2; const lobe = mesh(new THREE.SphereGeometry(r*.55,8,6), fruit, Math.cos(a)*r*.4, 0, Math.sin(a)*r*.4); lobe.scale.y = .85; p.add(lobe); }
-      p.add(mesh(new THREE.CylinderGeometry(.03,.04,.12,5), mat(0x6b4f3a), 0, r*.5, 0)); g.add(ripe ? bob(p) : p); }
-  } else if (id === 'cloudberry') {
-    const b = mesh(new THREE.SphereGeometry(.3*sz,8,6), leaf, 0, .2*sz + .08, 0); b.scale.y = .6; g.add(sway(b));
-    if (k > .5) [[.18,.1],[-.15,.12],[0,-.18],[.12,-.12]].forEach(([x,z]) => g.add(mesh(new THREE.SphereGeometry(ripe ? .08 : .05,6,5), ripe ? fruit : mat(0xf2f0e0), x*sz*1.3, .3*sz + .1, z*sz*1.3)));
-  } else if (id === 'frostmint' || id === 'kale') {
-    const n = 3 + Math.floor(k*5), col = id === 'kale' ? mat(ripe ? 0x3f7a4f : 0x5f9a6a) : mat(ripe ? 0x5fd88a : 0x8fdc9a);
-    for (let i = 0; i < n; i++) { const a = i/n*Math.PI*2, lf = mesh(new THREE.SphereGeometry((id === 'kale' ? .16 : .1)*sz + .03,7,5), col, Math.cos(a)*.14*sz, .15 + (i%2)*.08*sz, Math.sin(a)*.14*sz);
-      lf.scale.set(1, id === 'kale' ? 1.4 : .7, .6); lf.rotation.y = -a; lf.rotation.z = .4; g.add(sway(lf)); }
-    if (id === 'kale') g.add(mesh(new THREE.SphereGeometry(.1*sz+.02,7,5), col, 0, .3*sz+.08, 0));
-  } else { // starbloom = Moonflower, a vine with white blooms that glow at night
-    const st = sway(new THREE.Group()); st.position.y = .1; g.add(st);
-    st.add(mesh(new THREE.CylinderGeometry(.03,.03,.9*sz,5), leaf, 0, .45*sz, 0));
-    [[.12,.3],[-.12,.5],[.1,.7]].forEach(([x,y]) => { if (y < sz) { const lf = mesh(new THREE.SphereGeometry(.09,6,4), leaf, x, y*sz+.1, 0); lf.scale.set(1.2,.4,.8); st.add(lf); } });
-    if (k > .6) { const fl = mesh(new THREE.ConeGeometry(ripe ? .2 : .08, .2, 10, 1, true), fruit, 0, .95*sz + .12, 0); fl.rotation.x = Math.PI; st.add(ripe ? bob(fl) : fl); }
+    const h = .3 + k*.95; st.add(mesh(new THREE.CylinderGeometry(.035,.05,h,7), stemM, 0, h/2, 0));
+    for (let i = 0; i < 2 + Math.floor(k * 3); i++) leafAt(st, 0, h * (.25 + i * .16), 0, .2 + k * .1, .17 + k * .06, i * 2.4, .5, i % 2 ? leaf : dark);
+    if (k > .5) { const head = new THREE.Group(); head.position.set(0, h + .02, .06); head.rotation.x = .55; st.add(head);
+      const s2 = ripe ? .2 : .1;
+      for (let i = 0; i < 10; i++) { const a = i/10*Math.PI*2, sp = mesh(LEAF_GEO, dark, Math.cos(a)*s2*1.05, Math.sin(a)*s2*1.05, -.03); sp.scale.set(.14,.07,.03); sp.rotation.z = a; head.add(sp); } // green sepals behind
+      if (ripe) { const pm = mat(0xffd23f), pm2 = mat(0xf6b62c);
+        for (let r = 0; r < 2; r++) for (let i = 0; i < 14; i++) { const a = (i + r * .5)/14*Math.PI*2, d = s2 + (r ? .07 : .1), pt = mesh(LEAF_GEO, r ? pm2 : pm, Math.cos(a)*d, Math.sin(a)*d, r ? -.012 : 0); pt.scale.set(r ? .17 : .22, .065, .02); pt.rotation.z = a; head.add(pt); }
+        const disc = mesh(new THREE.CylinderGeometry(s2*.95,s2*.95,.05,18), mat(0x5a3a28, { map:tx('stone', 2, 2) }), 0, 0, .012); disc.rotation.x = Math.PI/2; head.add(disc);
+        const ring = mesh(new THREE.TorusGeometry(s2*.6,.018,6,18), mat(0x7a5236), 0, 0, .04); head.add(ring); const mid = mesh(LEAF_GEO, mat(0x8a6a3a), 0, 0, .035); mid.scale.set(s2*.9, s2*.9, .04); head.add(mid);
+      } else { const bud = mesh(LEAF_GEO, leaf, 0, 0, .02); bud.scale.set(s2*2, s2*2, .12); head.add(bud); } }
+    bake(st);
+  } else if (id === 'moonpumpkin') { // pumpkin: a vine along the ground, broad leaves, a yellow flower, then a ribbed fruit with a curled stem
+    const vine = mesh(new THREE.TorusGeometry(.3,.018,5,14,Math.PI*1.3), stemM, 0, .13, 0); vine.rotation.x = Math.PI/2; g.add(vine);
+    [[-.32,.2],[.28,-.26],[.32,.26],[-.22,-.32],[0,.36]].slice(0, 1 + Math.floor(k*4)).forEach(([x, z], i) => { g.add(mesh(new THREE.CylinderGeometry(.012,.012,.14,4), stemM, x, .17, z)); leafAt(g, x, .24, z, .2, .22, i * 1.9, .15, i % 2 ? leaf : dark); leafAt(g, x, .24, z, .14, .16, i * 1.9 + 1.2, .15, i % 2 ? leaf : dark); });
+    { const td = mesh(new THREE.TorusGeometry(.05,.008,4,10,Math.PI*1.6), stemM, .36, .16, -.05); g.add(td); }
+    if (k > .3 && k < .8 && !ripe) { for (let i = 0; i < 5; i++) { const a = i/5*Math.PI*2, pt = mesh(LEAF_GEO, mat(0xffd23f), -.05 + Math.cos(a)*.05, .2, -.1 + Math.sin(a)*.05); pt.scale.set(.07,.02,.07); g.add(pt); } }
+    if (k > .3) { const p = new THREE.Group(); p.position.y = .12 + (ripe ? .12 : .05); const r = ripe ? .3 : .08 + k*.12;
+      const core = mesh(sph(r*.78), fruit, 0, 0, 0); core.scale.y = .78; p.add(core);
+      for (let i = 0; i < 8; i++) { const a = i/8*Math.PI*2, lobe = mesh(LEAF_GEO, fruit, Math.cos(a)*r*.55, 0, Math.sin(a)*r*.55); lobe.scale.set(r*.9, r*1.5, r*.9); p.add(lobe); } // eight ribs
+      const stk = mesh(new THREE.CylinderGeometry(.025,.04,.14,6), mat(0x6b7a3a), .02, r*.72, 0); stk.rotation.z = -.4; p.add(stk); p.add(mesh(new THREE.CylinderGeometry(.06,.07,.03,8), mat(0x6b7a3a), 0, r*.62, 0));
+      bake(p); g.add(ripe ? bob(p) : p); }
+  } else if (id === 'cloudberry') { // cloudberry: a low plant with hand-shaped leaves, a white flower, then one berry that turns from red to amber
+    const pl = sway(new THREE.Group()); pl.position.y = .1; g.add(pl);
+    const n = 2 + Math.floor(k * 3);
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + .4, hh = .08 + k * .12, x = Math.cos(a) * .14 * sz, z = Math.sin(a) * .14 * sz;
+      const stk = mesh(new THREE.CylinderGeometry(.01,.012,hh,4), stemM, x * .6, hh/2, z * .6); pl.add(stk);
+      for (let j = -2; j <= 2; j++) leafAt(pl, x, hh, z, (.11 - Math.abs(j) * .015) * (.6 + k * .6), .08, -a + Math.PI / 2 + j * .5, .12, i % 2 ? leaf : dark); } // five lobes, like a hand
+    if (k > .35) { const hh = .16 + k * .14; pl.add(mesh(new THREE.CylinderGeometry(.008,.01,hh,4), stemM, 0, hh/2, 0));
+      if (k < .7 && !ripe) { for (let i = 0; i < 5; i++) { const a = i/5*Math.PI*2, pt = mesh(LEAF_GEO, mat(0xffffff), Math.cos(a)*.045, hh, Math.sin(a)*.045); pt.scale.set(.07,.02,.07); pl.add(pt); } pl.add(mesh(sph(.02), mat(0xffd23f), 0, hh + .01, 0)); }
+      else { const bm = ripe ? fruit : mat(0xd9523a), r = ripe ? .034 : .026; pl.add(mesh(sph(r), bm, 0, hh + r, 0)); for (let i = 0; i < 7; i++) { const a = i/7*Math.PI*2; pl.add(mesh(sph(r), bm, Math.cos(a)*r*1.3, hh + r*.6 + (i % 2) * r * .5, Math.sin(a)*r*1.3)); } } }
+    bake(pl);
+  } else if (id === 'frostmint') { // mint: upright stems with leaves in facing pairs, each pair turned a quarter turn from the last, and pale purple flower spikes
+    const col = mat(ripe ? 0x5fd88a : 0x8fdc9a), col2 = mat(ripe ? 0x4cc07a : 0x7fcf8c);
+    [[0,0],[-.2,.14],[.2,-.12],[.12,.22],[-.14,-.2]].slice(0, 2 + Math.floor(k * 3)).forEach(([x, z], si) => { const st = sway(new THREE.Group()); st.position.set(x, .1, z); const h = (.2 + .42 * k) * (si ? .85 : 1);
+      st.add(mesh(new THREE.CylinderGeometry(.012,.016,h,4), stemM, 0, h/2, 0));
+      for (let lv = 0, y = .07; y < h; lv++, y += .085) [0, Math.PI].forEach(o => leafAt(st, 0, y, 0, .1 - lv * .006, .075, o + (lv % 2) * Math.PI / 2 + si, .35, lv % 2 ? col : col2));
+      if (ripe) for (let j = 0; j < 4; j++) st.add(mesh(sph(.022 - j * .003), mat(0xc9b6ff), 0, h + .02 + j * .028, 0));
+      g.add(bake(st)); });
+  } else if (id === 'kale') { // kale: a loose bunch of tall leaves with pale ribs and curly edges, and no head in the middle
+    const col = mat(ripe ? 0x3f7a5a : 0x5f9a6a), col2 = mat(ripe ? 0x4f8f66 : 0x6faa78), rib = mat(0xcfe6c8), pl = sway(new THREE.Group()); pl.position.y = .1; g.add(pl);
+    const n = 5 + Math.floor(k * 5);
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, inner = i % 2, len = (inner ? .2 : .3) * sz + .06, tilt = inner ? 1.15 : .75, m = i % 3 ? col : col2;
+      const p = leafAt(pl, Math.sin(a) * .03, .02, Math.cos(a) * .03, len, .2 * sz + .05, a, tilt, m), lf = p.children[0];
+      const rb = mesh(new THREE.CylinderGeometry(.008,.012,len,4), rib, 0, .012, len/2); rb.rotation.x = Math.PI/2; lf.add(rb);
+      for (let j = 0; j < 5; j++) { const t = j / 4, e = mesh(LEAF_GEO, m, (j % 2 ? 1 : -1) * (.085 * sz + .02) * Math.sin(Math.PI * (.25 + t * .6)), .012, len * (.25 + t * .7)); e.scale.set(.07,.07,.07); lf.add(e); } } // curls along the edge
+    bake(pl);
+  } else { // starbloom = Moonflower: a vine twining up a stake, heart-shaped leaves, and wide white trumpets that glow at night
+    const st = sway(new THREE.Group()); st.position.y = .1; g.add(st); const h = .95 * sz + .1;
+    st.add(mesh(new THREE.CylinderGeometry(.018,.022,h + .12,5), mat(0x9b6b4a), 0, (h + .12)/2, 0));
+    const top = h * Math.min(1, .25 + k);
+    for (let i = 0; i < 14; i++) { const t = i / 13, a = t * 9, y = t * top; if (y > top) break; const sg = mesh(new THREE.CylinderGeometry(.01,.01,top / 9,4), stemM, Math.cos(a) * .035, y + .03, Math.sin(a) * .035); sg.rotation.set(Math.sin(a) * .6, 0, Math.cos(a) * .6); st.add(sg); }
+    for (let i = 0; i < 2 + Math.floor(k * 4); i++) { const y = top * (.18 + i * .16); if (y > top) break; const a = i * 2.3; leafAt(st, Math.cos(a) * .03, y, Math.sin(a) * .03, .15, .15, a, .35, i % 2 ? leaf : dark); leafAt(st, Math.cos(a) * .03, y, Math.sin(a) * .03, .07, .08, a + .5, .35, i % 2 ? leaf : dark); }
+    if (k > .6) { const spots = ripe ? [[.5, top], [-2.2, top * .7], [2.6, top * .45]] : [[.5, top]];
+      spots.forEach(([a, y]) => { const f = new THREE.Group(); f.position.set(Math.cos(a) * .07, y + .05, Math.sin(a) * .07); f.rotation.set(-.9 * Math.sin(a) + .5, 0, .9 * Math.cos(a)); st.add(f);
+        if (ripe) { const tr = mesh(new THREE.ConeGeometry(.15,.07,14,1,true), fruit, 0, .125, 0); tr.rotation.x = Math.PI; tr.material.side = THREE.DoubleSide; f.add(tr);
+          for (let i = 0; i < 5; i++) { const ln = mesh(new THREE.BoxGeometry(.012,.004,.14), fine(0xdff0c8), 0, .162, 0); ln.rotation.y = i / 5 * Math.PI * 2; ln.position.set(Math.sin(i / 5 * Math.PI * 2) * .07, .15, Math.cos(i / 5 * Math.PI * 2) * .07); f.add(ln); } // the star folded into the flower
+          f.add(mesh(sph(.02), mat(0xfff3a0), 0, .06, 0)); }
+        else { const bd = mesh(new THREE.ConeGeometry(.035,.16,6), mat(0xe8f0d0), 0, .08, 0); f.add(bd); } }); }
+    bake(st);
   }
   return g;
 }
@@ -1001,7 +1058,8 @@ function drawTile(i) {
   const g = tileGroups[i], t = S.tiles[i];
   while (g.children.length > 1) g.remove(g.children[1]);
   if (t.s === 0) { g.add(mesh(new THREE.BoxGeometry(1.08,.03,1.08), new THREE.MeshStandardMaterial({ color:0x9c7a55, transparent:true, opacity:.35 }), 0, .02, 0)); return; }
-  g.add(mesh(new THREE.BoxGeometry(1.1,.14,1.1), mat(t.w ? 0x7a5236 : 0xb98a63), 0, .05, 0));
+  g.add(mesh(new THREE.BoxGeometry(1.1,.14,1.1), mat(t.w ? 0x7a5236 : 0xb98a63, { map:tx('earth', 1, 2) }), 0, .05, 0));
+  { const fm = mat(t.w ? 0x6b4630 : 0xa97a55), fr = new THREE.Group(); [-.39, -.13, .13, .39].forEach(z => { const r = mesh(new THREE.CylinderGeometry(.07,.07,1.04,6), fm, 0, .11, z); r.rotation.z = Math.PI / 2; r.scale.y = 1; r.scale.x = .5; fr.add(r); }); g.add(bake(fr)); } // furrows
   if (t.s === 2) {
     const c = CROPS[t.c], k = Math.min(1, t.d / c.days), ripe = t.d >= c.days;
     g.add(cropModel(t.c, k, ripe));
@@ -1014,7 +1072,7 @@ const lobes = EXPANSIONS.map((e, i) => {
   e.trees.forEach(([x,z], j) => { const t = tree(scene, x, z); t.userData.kind = 'tree'; t.userData.key = `x${e.id}t${j}`; L.extra.push(t); });
   e.rocks.forEach(([x,z,r], j) => { const rk = mesh(new THREE.DodecahedronGeometry(r), mat(0xb3aabb), x, r*.5, z); rk.rotation.set(j, j*2, 0); rk.userData = { kind:'rock', key:`x${e.id}r${j}` }; scene.add(rk); L.extra.push(rk); });
   e.bushes.forEach(([x,z], j) => { const b = new THREE.Group(); b.position.set(x, 0, z); b.userData = { kind:'bush', key:`x${e.id}b${j}` };
-    [[0,0,0,.45],[.35,-.05,.1,.34],[-.32,-.07,.08,.32],[.05,.15,-.15,.3]].forEach(([bx,by,bz,br]) => b.add(mesh(sph(br), mat(0x4fb46a), bx, by + br*.8, bz))); scene.add(b); L.extra.push(b); });
+    bushLook(b); scene.add(b); L.extra.push(b); });
   for (let k = 0; k < 18; k++) { const a = k*2.4, rr = 1.5 + (k*1.37) % (e.r - 2); L.g.add(mesh(sph(.08), mat([0xffffff,0xffd1dc,0xfff3a0,0xc9b6ff][k%4]), Math.cos(a)*rr, .06, Math.sin(a)*rr)); }
   L.extra.forEach(o => o.visible = false);
   return L;
@@ -1050,18 +1108,25 @@ stakes.userData.kind = 'stakes'; scene.add(stakes);
 // --- critters ---
 function critter({ body, belly, ear, earType, beak, hat, hatType, tail, frog, captain, spikes, owl, shell, outfit }) {
   const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner); const eyes = [], arms = [];
-  const b = mesh(sph(.5), mat(body), 0, .55, 0); b.scale.set(1,1.05,.95); inner.add(b);
-  inner.add(mesh(sph(.3), mat(belly), 0, .5, .28));
-  const head = mesh(sph(.42), mat(body), 0, 1.2, 0); if (frog) head.scale.set(1.2,.85,1); inner.add(head);
+  const furM = frog || shell ? mat(body) : mat(body, { map:tx('fur', 3, 2) }), bellyM = mat(belly), darkM = fine(0x2b2233), hx = frog ? 1.2 : 1, pawM = fine(new THREE.Color(body).multiplyScalar(.82).getHex());
+  const b = mesh(sph(.5), furM, 0, .55, 0); b.scale.set(1,1.05,.95); inner.add(b);
+  inner.add(mesh(sph(.3), bellyM, 0, .5, .28));
+  const head = mesh(sph(.42), furM, 0, 1.2, 0); if (frog) head.scale.set(1.2,.85,1); inner.add(head);
+  // the face: a muzzle, a nose, a smile and whiskers (birds have a beak instead; the frog has a wide mouth)
+  if (frog) { const mo = mesh(new THREE.TorusGeometry(.2,.012,5,16,Math.PI*.7), darkM, 0, 1.2, .37); mo.rotation.set(.25, 0, Math.PI*1.15); inner.add(mo); [-1, 1].forEach(sd => inner.add(mesh(sph(.012), darkM, sd*.04, 1.27, .415))); }
+  else if (!beak) { const mz = mesh(sph(.13), bellyM, 0, 1.13, .34); mz.scale.set(1.15, .8, .7); inner.add(mz); const ns = mesh(sph(.04), fine(0x5a3a3a), 0, 1.18, .44); ns.scale.set(1.2, .8, .8); inner.add(ns);
+    [-1, 1].forEach(sd => { const sm = mesh(new THREE.TorusGeometry(.04,.009,5,10,Math.PI), darkM, sd*.04, 1.12, .435); sm.rotation.z = Math.PI; inner.add(sm);
+      if (earType !== 'bunny' || true) [-.03, .03].forEach(dy => { const wk = mesh(new THREE.CylinderGeometry(.003,.003,.16,3), fine(0xffffff), sd*.2, 1.13 + dy, .38); wk.rotation.z = Math.PI/2 + sd*dy*6; wk.rotation.y = -sd*.4; inner.add(wk); }); }); }
+  [-1, 1].forEach(sd => { for (let t = -1; t <= 1; t++) inner.add(mesh(sph(.035), pawM, sd*.22 + t*.05, .05, .2)); const pad = mesh(sph(.05), pawM, sd*.5, .62, .12); pad.scale.set(.8, .8, .5); inner.add(pad); }); // toes and paw pads
   [-1,1].forEach(s => {
     const eye = new THREE.Group(); eye.add(mesh(sph(.07), mat(0x2b2233, { roughness:.25 }))); eye.add(mesh(sph(.024), glow(0xffffff), .022, .03, .055));
     if (frog) { inner.add(mesh(sph(.14), mat(body), s*.22, 1.5, .12)); eye.position.set(s*.22, 1.53, .23); }
     else eye.position.set(s*.15, 1.26, .36);
     inner.add(eye); eyes.push(eye);
-    const arm = mesh(sph(.13), mat(body), s*.47, .72, .04); arm.scale.set(.8, 1.25, .8); inner.add(arm); arms.push(arm);
+    const arm = mesh(sph(.13), furM, s*.47, .72, .04); arm.scale.set(.8, 1.25, .8); inner.add(arm); arms.push(arm);
     inner.add(mesh(sph(.07), mat(0xff9fb2), s*.26, 1.12, .32));
-    inner.add(mesh(sph(.13), mat(body), s*.22, .1, .1));
-    if (earType === 'round') inner.add(mesh(sph(.14), mat(ear), s*.3, 1.55, 0));
+    inner.add(mesh(sph(.13), furM, s*.22, .1, .1));
+    if (earType === 'round') { inner.add(mesh(sph(.14), mat(ear), s*.3, 1.55, 0)); const ei = mesh(sph(.08), fine(0xffb6c8), s*.3, 1.55, .09); ei.scale.z = .5; inner.add(ei); }
     if (earType === 'long') { const e = mesh(sph(.12), mat(ear), s*.4, 1.3, 0); e.scale.set(1.8,.7,1); inner.add(e); }
     if (earType === 'bunny') { const e = mesh(sph(.11), mat(body), s*.14, 1.78, -.02); e.scale.set(.8, 2.6, .6); e.rotation.z = -s*.12; inner.add(e); const ei = mesh(sph(.07), mat(0xffb6c8), s*.14, 1.8, .04); ei.scale.set(.7, 2.4, .3); ei.rotation.z = -s*.12; inner.add(ei); }
     if (earType === 'mouse') { const e = mesh(new THREE.CylinderGeometry(.2,.2,.05,20), mat(body), s*.34, 1.56, -.02); e.rotation.x = Math.PI/2; inner.add(e); const ei = mesh(new THREE.CylinderGeometry(.13,.13,.02,16), mat(0xffb6c8), s*.34, 1.56, .02); ei.rotation.x = Math.PI/2; inner.add(ei); }
@@ -1076,7 +1141,7 @@ function critter({ body, belly, ear, earType, beak, hat, hatType, tail, frog, ca
   if (hatType === 'bow') [-1,1].forEach(sd => { const bw = mesh(sph(.12), mat(hat), .22 + sd*.1, 1.58, .05); bw.scale.set(1.2,.8,.5); inner.add(bw); });
   if (hatType === 'straw') { inner.add(mesh(new THREE.CylinderGeometry(.6,.62,.04,24), mat(0xf2d38a), 0, 1.58, 0)); inner.add(mesh(new THREE.CylinderGeometry(.26,.3,.24,20), mat(0xf2d38a), 0, 1.7, 0)); inner.add(mesh(new THREE.CylinderGeometry(.305,.305,.06,20), mat(hat), 0, 1.63, 0)); }
   if (hat && (!hatType || hatType === 'tophat')) { inner.add(mesh(new THREE.CylinderGeometry(.35,.4,.08,20), mat(hat), 0, 1.58, 0)); inner.add(mesh(new THREE.CylinderGeometry(.22,.25,.28,20), mat(hat), 0, 1.72, 0)); }
-  if (earType === 'point') [-1,1].forEach(sd => { const e = mesh(new THREE.ConeGeometry(.13,.3,8), mat(ear), sd*.26, 1.58, 0); e.rotation.z = -sd*.3; inner.add(e); });
+  if (earType === 'point') [-1,1].forEach(sd => { const e = mesh(new THREE.ConeGeometry(.13,.3,8), mat(ear), sd*.26, 1.58, 0); e.rotation.z = -sd*.3; inner.add(e); const ei = mesh(new THREE.ConeGeometry(.07,.2,8), fine(0xffb6c8), sd*.26, 1.56, .045); ei.rotation.z = -sd*.3; inner.add(ei); });
   if (spikes) for (let i=0;i<14;i++){ const a = (i/14)*Math.PI - Math.PI/2, yy = .5 + (i%3)*.3; const sp = mesh(new THREE.ConeGeometry(.07,.32,6), mat(0x6e5345), Math.sin(a)*.42, yy + .2, -Math.cos(a)*.3 - .15); sp.rotation.x = -1.1; sp.rotation.z = -Math.sin(a)*.6; inner.add(sp); }
   if (owl) { [-1,1].forEach(sd => { const disc = mesh(new THREE.CylinderGeometry(.14,.14,.03,16), mat(0xfff6e6), sd*.15, 1.26, .37); disc.rotation.x = Math.PI/2; inner.add(disc);
     const tuft = mesh(new THREE.ConeGeometry(.08,.25,6), mat(body), sd*.28, 1.62, 0); tuft.rotation.z = -sd*.4; inner.add(tuft); });
@@ -1778,11 +1843,35 @@ const rainMat = new THREE.PointsMaterial({ color:0xdfeaff, size:.08, transparent
 const rain = new THREE.Points(rainGeo, rainMat); scene.add(rain);
 
 // --- life: butterflies, fireflies, sparkle bursts ---
+// wings, painted to match the real insect. The picture is the right-hand wing: the body is at the left edge, the head end is at the bottom.
+function wingTex(kind) { const wingPics = wingTex.pics || (wingTex.pics = {}); if (wingPics[kind]) return wingPics[kind]; // (written as plain functions so the museum, drawn earlier in this file, can use them)
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  const fore = () => { g.beginPath(); g.moveTo(0, 70); g.bezierCurveTo(20, 122, 92, 128, 124, 102); g.bezierCurveTo(128, 80, 96, 62, 0, 60); g.closePath(); };
+  const hind = () => { g.beginPath(); g.moveTo(0, 62); g.bezierCurveTo(60, 68, 104, 52, 98, 28); g.bezierCurveTo(92, 4, 30, 6, 0, 48); g.closePath(); };
+  const both = fn => { [hind, fore].forEach(sh => { g.save(); sh(); g.clip(); fn(sh === fore); g.restore(); }); };
+  const edge = (col, w = 3) => { [hind, fore].forEach(sh => { sh(); g.strokeStyle = col; g.lineWidth = w; g.stroke(); }); };
+  const dot = (x, y, r, col) => { g.fillStyle = col; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); };
+  const veins = (col, n = 6) => both(isFore => { g.strokeStyle = col; g.lineWidth = 1; for (let i = 0; i < n; i++) { g.beginPath(); g.moveTo(0, isFore ? 66 : 56); g.lineTo(128, (isFore ? 60 : 0) + i * (isFore ? 12 : 11)); g.stroke(); } });
+  if (kind === 'brimstone') { both(() => { g.fillStyle = '#f2e05a'; g.fillRect(0, 0, 128, 128); }); veins('rgba(150,130,20,.35)'); dot(62, 96, 4, '#e8892c'); dot(52, 36, 3.5, '#e8892c'); edge('#b9a52a', 2); } // butter yellow, one small orange spot on each wing
+  if (kind === 'paintedlady') { both(isFore => { g.fillStyle = '#f08a3c'; g.fillRect(0, 0, 128, 128); if (isFore) { const gr = g.createLinearGradient(70, 0, 128, 0); gr.addColorStop(0, 'rgba(30,20,15,0)'); gr.addColorStop(.45, 'rgba(30,20,15,1)'); g.fillStyle = gr; g.fillRect(70, 0, 58, 128); } });
+    [[100, 96, 5], [112, 108, 4], [92, 110, 3.5], [116, 92, 3]].forEach(([x, y, r]) => dot(x, y, r, '#ffffff')); [[40, 92, 6], [62, 84, 5], [30, 106, 4]].forEach(([x, y, r]) => dot(x, y, r, '#2a1c14')); [[40, 22], [56, 24], [72, 28], [86, 34]].forEach(([x, y]) => dot(x, y, 3.5, '#2a1c14')); edge('#2a1c14', 3); } // orange, black wing tips with white spots, a row of black dots behind
+  if (kind === 'purpleemperor') { both(() => { const gr = g.createLinearGradient(0, 0, 128, 128); gr.addColorStop(0, '#6a3fb5'); gr.addColorStop(.6, '#3b2a55'); gr.addColorStop(1, '#2a1d3d'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); g.strokeStyle = '#ffffff'; g.lineWidth = 9; g.beginPath(); g.moveTo(60, 10); g.lineTo(56, 60); g.stroke(); });
+    [[84, 92, 5], [100, 104, 4], [70, 108, 4]].forEach(([x, y, r]) => dot(x, y, r, '#ffffff')); dot(80, 30, 7, '#e8892c'); dot(80, 30, 4, '#1a1226'); edge('#1a1226', 3); } // dark with a purple sheen, a white band, and an orange-ringed eye spot
+  if (kind === 'morpho') { both(() => { const gr = g.createRadialGradient(20, 62, 4, 40, 62, 110); gr.addColorStop(0, '#7fd4ff'); gr.addColorStop(.6, '#2f8fe6'); gr.addColorStop(1, '#1a5fc4'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); }); edge('#10131f', 9); [[104, 98], [112, 106], [96, 110]].forEach(([x, y]) => dot(x, y, 2.5, '#ffffff')); } // shining blue with a wide black border
+  if (kind === 'luna') { g.beginPath(); g.moveTo(0, 62); g.bezierCurveTo(40, 66, 78, 56, 84, 40); g.bezierCurveTo(88, 24, 70, 16, 60, 0); g.bezierCurveTo(54, 14, 58, 26, 44, 30); g.bezierCurveTo(24, 34, 8, 44, 0, 50); g.closePath(); g.fillStyle = '#b6e889'; g.fill(); g.strokeStyle = '#8fcf6a'; g.lineWidth = 2; g.stroke(); // hindwing with its long tail
+    fore(); g.fillStyle = '#b6e889'; g.fill(); g.strokeStyle = '#8fcf6a'; g.lineWidth = 2; g.stroke(); g.strokeStyle = '#8a4f6a'; g.lineWidth = 5; g.beginPath(); g.moveTo(0, 70); g.bezierCurveTo(20, 122, 92, 128, 124, 102); g.stroke(); // the purple-brown front edge
+    [[58, 92], [44, 44]].forEach(([x, y]) => { dot(x, y, 7, '#f6f0c8'); dot(x, y, 4.5, '#8a4f6a'); dot(x + 1, y, 2.5, '#1a1226'); }); } // one eye spot on each wing
+  if (kind === 'clear' || kind === 'cicada') { g.beginPath(); g.ellipse(64, 64, 62, 26, 0, 0, 7); g.fillStyle = 'rgba(235,245,255,.5)'; g.fill(); g.strokeStyle = kind === 'cicada' ? '#e8892c' : 'rgba(60,60,80,.75)'; g.lineWidth = 3; g.stroke(); g.lineWidth = 1.2;
+    for (let i = 0; i < 7; i++) { g.beginPath(); g.moveTo(2, 64); g.quadraticCurveTo(60, 40 + i * 8, 124, 46 + i * 6); g.stroke(); } for (let x = 30; x < 120; x += 22) { g.beginPath(); g.moveTo(x, 42); g.lineTo(x + 6, 86); g.stroke(); } } // clear, with veins (orange on the cicada)
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return wingPics[kind] = t; }
+function wingMat(kind) { const m = new THREE.MeshStandardMaterial({ map:wingTex(kind), transparent:true, alphaTest:.25, side:THREE.DoubleSide, roughness:.7 }); m.userData.outlineParameters = NO_OUTLINE; return m; }
 const butterflies = [];
-const wingGeo = new THREE.PlaneGeometry(.2,.15); wingGeo.rotateX(-Math.PI/2); wingGeo.translate(.1,0,0);
+const wingGeo = new THREE.PlaneGeometry(.26,.26); wingGeo.rotateX(-Math.PI/2); wingGeo.translate(.13,0,0);
 for (let i=0;i<9;i++){
-  const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color:[0xffd35c,0xff9fb2,0xc9b6ff,0x9fe7e0][i%4], side:THREE.DoubleSide });
+  const g = new THREE.Group(), m = wingMat(BUTTERFLIES[i%4].id);
   const l = new THREE.Mesh(wingGeo, m), r = new THREE.Mesh(wingGeo, m); r.scale.x = -1; g.add(l, r);
+  { const bm = fine(0x2a1c14), bd = mesh(new THREE.CapsuleGeometry(.012,.11,3,6), bm, 0, 0, 0); bd.rotation.x = Math.PI/2; g.add(bd); g.add(mesh(sph(.017), bm, 0, .004, .075));
+    [-1, 1].forEach(sd => { const an = mesh(new THREE.CylinderGeometry(.002,.002,.07,3), bm, sd*.02, .012, .11); an.rotation.set(Math.PI/2 - .3, 0, -sd*.35); g.add(an); g.add(mesh(sph(.006), bm, sd*.032, .022, .143)); }); }
   const home3 = [new THREE.Vector3(), ORCH_POS, WIND_POS][i%3];
   g.userData = { l, r, ph:Math.random()*10, cx:home3.x + (Math.random()*6-3), cz:home3.z + (Math.random()*6-3), cy:home3.y };
   const hb = hitBox(.6, .6, .6); g.add(hb); g.userData.sp = BUTTERFLIES[i%4]; scene.add(g); butterflies.push(g); deco(g, () => spotButterfly(g));
@@ -4472,19 +4561,53 @@ function pickHeirloom(code) {
 // --- insects you can catch with a bug net ---
 const bugGroup = new THREE.Group(); scene.add(bugGroup); lateClicks.push(bugGroup);
 function bugModel(id) {
-  const g = new THREE.Group(), s = sph, M = mat, wingM = new THREE.MeshStandardMaterial({ color:0xffffff, transparent:true, opacity:.6, side:THREE.DoubleSide });
-  const wings = (w, h, c, y = .05) => { const m = c ? new THREE.MeshStandardMaterial({ color:c, side:THREE.DoubleSide }) : wingM, geo = new THREE.PlaneGeometry(w, h); geo.rotateX(-Math.PI/2); geo.translate(w/2, 0, 0);
-    const l = new THREE.Mesh(geo, m), r = new THREE.Mesh(geo, m); r.scale.x = -1; l.position.y = r.position.y = y; g.add(l, r); g.userData.wings = [l, r]; };
-  if (id === 'honeybee') { const b = mesh(s(.07), M(0xffc857)); b.scale.set(1, .85, 1.4); g.add(b); [-.04,.04].forEach(z => { const st = mesh(new THREE.TorusGeometry(.062,.012,6,16), M(0x2b2233), 0, 0, z); g.add(st); }); wings(.09, .06); }
-  if (id === 'ladybird') { const b = mesh(new THREE.SphereGeometry(.07, 12, 8, 0, Math.PI*2, 0, Math.PI/2), M(0xd8323c)); g.add(b); g.add(mesh(s(.035), M(0x2b2233), 0, .01, .06)); [[.03,.03],[-.03,.03],[.035,-.02],[-.035,-.02],[0,.05]].forEach(([x,z]) => g.add(mesh(s(.014), M(0x2b2233), x, .05, z))); }
-  if (id === 'dragonfly') { const b = mesh(new THREE.CylinderGeometry(.015, .01, .3, 6), M(0x3fbf8f)); b.rotation.x = Math.PI/2; g.add(b); g.add(mesh(s(.03), M(0x5b8fd6), 0, 0, .15)); wings(.16, .04); const w2 = g.userData.wings; wings(.14, .035); g.userData.wings.forEach(w => w.position.z = -.05); g.userData.wings.push(...w2); }
-  if (id === 'hopper' || id === 'mantis') { const c = id === 'mantis' ? 0x8fdc8a : 0x7fb069, b = mesh(new THREE.CapsuleGeometry(.03, .14, 4, 8), M(c)); b.rotation.x = Math.PI/2 - (id === 'mantis' ? .9 : 0); g.add(b);
-    [-1,1].forEach(sd => { const leg = mesh(new THREE.CylinderGeometry(.008, .008, .14, 4), M(c), sd*.04, .01, -.04); leg.rotation.z = sd*.9; g.add(leg); }); g.add(mesh(s(.028), M(c), 0, id === 'mantis' ? .1 : .02, .09)); }
-  if (id === 'cicada') { const b = mesh(s(.06), M(0x5f6b3a)); b.scale.set(1, .8, 1.6); g.add(b); g.add(mesh(s(.02), M(0xd8323c), .04, .03, .08)); g.add(mesh(s(.02), M(0xd8323c), -.04, .03, .08)); wings(.08, .14); }
-  if (id === 'stagbeetle') { const b = mesh(s(.08), M(0x4a2e1f)); b.scale.set(.9, .5, 1.3); g.add(b); [-1,1].forEach(sd => { const m = mesh(new THREE.ConeGeometry(.015, .1, 5), M(0x6b3a22), sd*.03, .01, .14); m.rotation.x = Math.PI/2; m.rotation.z = sd*.4; g.add(m); }); }
-  if (id === 'firefly') { const b = mesh(s(.03), M(0x3b2f4a)); g.add(b); const t = mesh(s(.025), glow(0xfff38a), 0, 0, -.03); g.add(t); const h = halo(0xfff38a, .5, .9); g.add(h); g.userData.halo = h; wings(.04, .03); }
-  if (id === 'lunamoth') { g.add(mesh(new THREE.CapsuleGeometry(.018, .06, 4, 6), M(0xf2f0e0))); wings(.14, .12, 0xc8f0b0); }
-  if (id === 'springtail') { const b = mesh(s(.03), M(0x6a6f8a)); b.scale.set(1, .7, 1.4); g.add(b); }
+  const g = new THREE.Group(), s = sph, M = fine, body = new THREE.Group(); g.add(body);
+  const wings = (w, h, kind = 'clear', y = .05, z = 0) => { const geo = new THREE.PlaneGeometry(w, h); geo.rotateX(-Math.PI/2); geo.translate(w/2, 0, 0); const m = wingMat(kind);
+    const l = new THREE.Mesh(geo, m), r = new THREE.Mesh(geo, m); r.scale.x = -1; l.position.set(0, y, z); r.position.set(0, y, z); g.add(l, r); g.userData.wings = [...(g.userData.wings || []), l, r]; };
+  const legs = (c, n = 3, len = .07, z0 = .03, dz = .035, y = 0) => { const lm = M(c); for (let i = 0; i < n; i++) [-1, 1].forEach(sd => { const lg = mesh(new THREE.CylinderGeometry(.004,.004,len,3), lm, sd * len * .45, y - .012, z0 - i * dz); lg.rotation.z = sd * 1.1; lg.rotation.y = (i - 1) * .5 * sd; body.add(lg); }); };
+  const feelers = (c, len, z, spread = .35, y = .01) => { const fm = M(c); [-1, 1].forEach(sd => { const f = mesh(new THREE.CylinderGeometry(.003,.003,len,3), fm, sd * len * .25, y + len * .25, z + len * .35); f.rotation.set(Math.PI/2 - .6, 0, -sd * spread); body.add(f); }); };
+  const part = (r, c, x, y, z, sx = 1, sy = 1, sz = 1) => { const m = mesh(s(r), M(c), x, y, z); m.scale.set(sx, sy, sz); body.add(m); return m; };
+  if (id === 'honeybee') { // fuzzy amber body in three parts, dark bands, big eyes, two pairs of clear wings
+    part(.045, 0x3b2a1a, 0, 0, .085); part(.05, 0xc98a2a, 0, .005, .03, 1, 1, 1.1); part(.06, 0xffc857, 0, 0, -.06, 1, .95, 1.5);
+    [-.02, -.06, -.1].forEach((z, i) => { const st = mesh(new THREE.TorusGeometry(.058 - i * .008,.011,6,14), M(0x2b2233), 0, 0, z); body.add(st); });
+    [-1, 1].forEach(sd => part(.02, 0x1a1420, sd * .03, .01, .1)); legs(0x2b2233, 3, .06, .05, .035); feelers(0x2b2233, .05, .1); wings(.13, .07, 'clear', .05, .02); wings(.09, .05, 'clear', .05, -.02); g.userData.wings.forEach((w, i) => w.rotation.y = i % 2 ? -.45 : .45); }
+  if (id === 'ladybird') { // the seven-spot: red wing cases with a seam, three spots on each side and one in the middle, a black head with two white marks
+    const dome = mesh(new THREE.SphereGeometry(.075, 16, 10, 0, Math.PI*2, 0, Math.PI/2), M(0xd8323c)); dome.scale.set(1, .85, 1.15); body.add(dome);
+    body.add(mesh(new THREE.BoxGeometry(.004,.01,.15), M(0x2b2233), 0, .063, -.005)); part(.04, 0x2b2233, 0, .012, .075, 1.2, .8, .8); [-1, 1].forEach(sd => part(.012, 0xffffff, sd * .03, .03, .095, 1, 1, .5));
+    [[.035,.04,.03],[.045,.03,-.02],[.03,.03,-.06]].forEach(([x, y, z]) => [-1, 1].forEach(sd => part(.015, 0x2b2233, sd * x, y + .012, z, 1, .5, 1))); part(.016, 0x2b2233, 0, .058, .045, 1, .5, 1);
+    legs(0x2b2233, 3, .05, .04, .04, .01); feelers(0x2b2233, .03, .09, .5); }
+  if (id === 'dragonfly') { // the green darner: big eyes that meet, a green middle, a long thin blue tail in segments, four veined wings held flat
+    part(.035, 0x3fbf5f, 0, 0, .12, 1, 1, 1.2); [-1, 1].forEach(sd => part(.026, 0x6fa85a, sd * .02, .012, .16));
+    for (let i = 0; i < 8; i++) { const sg = mesh(new THREE.CylinderGeometry(.012 - i * .0008,.012 - i * .0008,.036,6), M(i % 2 ? 0x3f7fd0 : 0x5b9fe6), 0, 0, .075 - i * .037); sg.rotation.x = Math.PI/2; body.add(sg); }
+    legs(0x2b2233, 3, .04, .14, .02); wings(.2, .05, 'clear', .02, .13); wings(.18, .055, 'clear', .02, .085); }
+  if (id === 'hopper') { // grasshopper: a long green body, a big head, and two folded back legs with thick thighs
+    const c = 0x7fb069; const bd = mesh(new THREE.CapsuleGeometry(.028, .13, 4, 8), M(c)); bd.rotation.x = Math.PI/2; body.add(bd); part(.032, 0x8fc079, 0, .01, .1, 1, 1.1, 1); [-1, 1].forEach(sd => part(.01, 0x2b2233, sd * .022, .025, .115));
+    const wc = mesh(new THREE.CapsuleGeometry(.02, .12, 3, 6), M(0x6a9a58), 0, .022, -.03); wc.rotation.x = Math.PI/2; wc.scale.x = .8; body.add(wc);
+    [-1, 1].forEach(sd => { const th = mesh(new THREE.CapsuleGeometry(.014, .09, 3, 6), M(c), sd * .045, .035, -.03); th.rotation.set(.9, 0, sd * .25); body.add(th); const sh = mesh(new THREE.CylinderGeometry(.005,.005,.12,4), M(0x5f8a4f), sd * .055, .02, -.085); sh.rotation.x = -.7; body.add(sh); });
+    legs(0x5f8a4f, 2, .05, .07, .04); feelers(0x5f8a4f, .09, .11, .3, .02); }
+  if (id === 'mantis') { // praying mantis: a three-cornered head on a long neck, front legs folded as if praying, a slim body
+    const c = 0x8fdc8a; const ab = mesh(new THREE.CapsuleGeometry(.024, .13, 4, 8), M(c), 0, .02, -.04); ab.rotation.x = Math.PI/2 - .15; body.add(ab);
+    const neck = mesh(new THREE.CylinderGeometry(.012,.016,.13,5), M(c), 0, .1, .06); neck.rotation.x = .5; body.add(neck);
+    const hd = mesh(new THREE.ConeGeometry(.032,.04,3), M(0x9fe89a), 0, .17, .1); hd.rotation.set(Math.PI/2 + .5, 0, Math.PI); body.add(hd); [-1, 1].forEach(sd => part(.012, 0x3f7a4f, sd * .026, .178, .1));
+    [-1, 1].forEach(sd => { const up = mesh(new THREE.CapsuleGeometry(.009, .06, 3, 5), M(c), sd * .03, .11, .11); up.rotation.x = -.9; body.add(up); const lo = mesh(new THREE.CapsuleGeometry(.008, .055, 3, 5), M(0x7fcf7a), sd * .03, .12, .15); lo.rotation.x = .7; body.add(lo); });
+    legs(0x6fbf6a, 2, .08, .0, .06, .02); feelers(0x6fbf6a, .06, .11, .4, .17); }
+  if (id === 'cicada') { // periodical cicada: a wide black body, red eyes set far apart, clear wings with orange veins that reach past the tail
+    part(.055, 0x1f1a22, 0, .005, -.02, 1, .8, 1.7); part(.045, 0x2b2430, 0, .012, .07, 1.25, .8, .8); [-1, 1].forEach(sd => part(.016, 0xd8323c, sd * .05, .022, .085));
+    [-.05, -.08].forEach(z => body.add(mesh(new THREE.TorusGeometry(.045,.006,5,12), M(0xe8892c), 0, .005, z))); legs(0xe8892c, 3, .05, .05, .035); wings(.22, .08, 'cicada', .045, .03); g.userData.wings.forEach((w, i) => w.rotation.y = i % 2 ? -1.25 : 1.25); }
+  if (id === 'stagbeetle') { // stag beetle: black head and shoulders, red-brown wing cases, and two antler jaws with prongs
+    part(.07, 0x5a2a1c, 0, .01, -.04, .95, .5, 1.35); body.add(mesh(new THREE.BoxGeometry(.004,.01,.17), M(0x2a1410), 0, .046, -.04)); part(.055, 0x1c1416, 0, .01, .055, 1.05, .5, .7); part(.045, 0x1c1416, 0, .01, .105, 1.15, .45, .6);
+    [-1, 1].forEach(sd => { const jw = new THREE.Group(); jw.position.set(sd * .022, .012, .135); jw.rotation.y = sd * .55; body.add(jw); const jm = M(0x6b2a1c); jw.add(mesh(new THREE.BoxGeometry(.013,.013,.06), jm, 0, 0, .03)); const tip = mesh(new THREE.BoxGeometry(.011,.011,.05), jm, -sd * .014, 0, .075); tip.rotation.y = -sd * .9; jw.add(tip); const pr = mesh(new THREE.BoxGeometry(.01,.01,.022), jm, -sd * .012, 0, .04); pr.rotation.y = -sd * 1.3; jw.add(pr); });
+    legs(0x1c1416, 3, .07, .07, .05, .005); feelers(0x1c1416, .04, .12, .9, .005); }
+  if (id === 'firefly') { // firefly: a soft dark beetle with a red-and-black shield behind the head, and a tail that lights up
+    part(.03, 0x2b2233, 0, 0, 0, 1, .7, 1.7); part(.024, 0xd8523c, 0, .004, .05, 1.2, .6, .7); part(.01, 0x1c1416, 0, .01, .052); const t = mesh(s(.024), glow(0xfff38a), 0, -.004, -.045); body.add(t);
+    const h = halo(0xfff38a, .5, .9); g.add(h); g.userData.halo = h; legs(0x1c1416, 3, .035, .03, .025); feelers(0x1c1416, .04, .06, .4); wings(.09, .04, 'clear', .028, .01); g.userData.wings.forEach((w, i) => w.rotation.y = i % 2 ? -1.1 : 1.1); }
+  if (id === 'lunamoth') { // luna moth: pale green wings with long tails and an eye spot on each, a white furry body, feathery feelers
+    const bd = mesh(new THREE.CapsuleGeometry(.022, .07, 4, 6), M(0xf6f2e6)); bd.rotation.x = Math.PI/2; body.add(bd); part(.02, 0xf6f2e6, 0, .004, .055);
+    [-1, 1].forEach(sd => { const f = mesh(new THREE.BoxGeometry(.012,.003,.05), M(0xd9b36a), sd * .022, .012, .085); f.rotation.y = -sd * .5; body.add(f); }); wings(.22, .26, 'luna', .01, -.02); }
+  if (id === 'springtail') { // snow flea: a tiny dark blue body in segments, short feelers, and the forked spring under its tail
+    for (let i = 0; i < 5; i++) part(.022 - Math.abs(i - 1.5) * .003, i % 2 ? 0x3a4468 : 0x2c3454, 0, 0, .045 - i * .026, 1, .8, .9); part(.016, 0x2c3454, 0, .002, .07);
+    [-1, 1].forEach(sd => { const fk = mesh(new THREE.CylinderGeometry(.003,.003,.04,3), M(0x56608a), sd * .008, -.014, -.07); fk.rotation.x = 1.1; body.add(fk); }); legs(0x56608a, 3, .03, .03, .025); feelers(0x56608a, .03, .08, .4, 0); }
+  bake(body);
   const hb = hitBox(.8, .8, .8); g.add(hb); g.scale.setScalar(id === 'lunamoth' || id === 'dragonfly' ? 1.6 : 1.8);
   return g;
 }
@@ -4511,7 +4634,7 @@ function animateBugs(now, dt) {
   bugGroup.visible = S.where !== 'hut';
   bugGroup.children.forEach(g => { const u = g.userData, b = u.bug; if (!b) return;
     if (u.flee > 0) { u.flee -= dt; g.position.y += dt * 3; if (b.where !== 'air') g.position.x += dt * 2; if (u.flee <= 0) g.visible = false; return; }
-    if (u.wings) { const f = Math.sin(now * (b.id === 'lunamoth' ? 8 : 40) + u.ph) * (b.where === 'air' ? .9 : .15); u.wings[0].rotation.z = f; u.wings[1].rotation.z = -f; }
+    if (u.wings) { const f = Math.sin(now * (b.id === 'lunamoth' ? 8 : 40) + u.ph) * (b.where === 'air' ? .9 : .15); u.wings.forEach((w, i) => w.rotation.z = i % 2 ? -f : f); }
     if (b.where === 'air') { const t = now * .5 + u.ph; g.position.set(u.ax + Math.sin(t) * 1.4, u.ay + Math.sin(t * 2.3) * .25, u.az + Math.cos(t * .8) * 1.4); g.rotation.y = Math.atan2(Math.cos(t), -Math.sin(t * .8)); }
     if (b.where === 'ground') { u.hop -= dt; if (u.hop <= 0) { u.hop = 1.5 + Math.random() * 2.5; u.hx = (Math.random()-.5) * .8; u.hz = (Math.random()-.5) * .8; u.ht = 0; }
       if (u.ht != null && u.ht < .45) { u.ht += dt; const k = u.ht / .45; g.position.x += u.hx * dt / .45; g.position.z += u.hz * dt / .45; g.position.y = u.ay + Math.sin(k * Math.PI) * .35; } }
@@ -6667,7 +6790,7 @@ try { const hr = KIT.hr, ringOf = (g, r, y, n, c1 = 0xd8cfc0, c2 = 0xbfb6a8, h =
   if (squareBits && squareBits.fnt) { squareBits.water.userData.keep = true; squareBits.drops.forEach(d => d.userData.keep = true); bake(squareBits.fnt); }
   [workbench, kiln, furnace, sundial, darkroom].forEach(o => { if (o === kiln) kilnMouth.userData.keep = kilnDome.userData.keep = true; if (o === furnace) furnaceGlow.userData.keep = true; if (o === sundial) gnomon.userData.keep = true; bake(o); }); if (lighthouse) { lighthouse.userData.pivot.userData.keep = true; bake(lighthouse); }
 } catch (e) { console.warn('detail', e); }
-window.__sg = { VERSION, openFiles, FILE, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { VERSION, drawTile, cropModel, bugModel, critter, scene, openFiles, FILE, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
