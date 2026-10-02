@@ -5250,7 +5250,7 @@ function tickFrame() {
     else { greatBell.position.set(OH.x, OH.y + 3.3, OH.z); const r = gbSwing.userData.ring || 0; gbSwing.rotation.set(0, 0, Math.sin(now*3) * .25 * Math.min(1, r)); if (r > 0) gbSwing.userData.ring = r - dt * .5; }
     if (q >= 5) frameGear.rotation.x += dt * (gbSwing.userData.ring > 0 ? 3 : .2); }
   { let tg = questTarget(); if (tg && S.where === 'hut') tg = S.room && ROOMS[S.room] ? ROOMS[S.room].mat : doormat;
-    marker.visible = markerRing.visible = !!tg && !$('veil').classList.contains('show') && !document.body.classList.contains('on-title');
+    marker.visible = markerRing.visible = !!tg && !cine && !$('veil').classList.contains('show') && !document.body.classList.contains('on-title'); // hidden during rides and film scenes
     if (tg) { const wp = new THREE.Vector3(); tg.getWorldPosition(wp); const k = tg.userData.kind;
       marker.position.set(wp.x, wp.y + (MARK_H[k] || 1.9) + Math.sin(now*3)*.15 + (k === 'greatbell' && S.q5 >= 5 ? 1.5 : 0), wp.z);
       marker.quaternion.copy(camera.quaternion); // always faces you, from any angle
