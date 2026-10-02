@@ -341,7 +341,7 @@ const KIT = (() => {
     if (round) { const r = w / 2; const f = mesh(new THREE.CylinderGeometry(r + .1, r + .1, .1, 26), fm, 0, r, 0); f.rotation.x = Math.PI / 2; p.add(f); const d = mesh(new THREE.CylinderGeometry(r, r, .12, 26), dm, 0, r, .03); d.rotation.x = Math.PI / 2; p.add(d);
       [-.5, 0, .5].forEach(k => p.add(mesh(new THREE.BoxGeometry(.012, 2 * r * Math.sqrt(1 - k * k * .8), .02), seam, k * r, r, .1))); [-.45, .45].forEach(k => { p.add(mesh(new THREE.BoxGeometry(r * 1.1, .05, .02), iron, -r * .3, r + k * r, .1)); }); p.add(mesh(sph(.05), fine(knob), r * .45, r, .12)); return p; }
     p.add(mesh(new THREE.BoxGeometry(w + .12, h, .07), fm, 0, h / 2, 0)); p.add(mesh(new THREE.BoxGeometry(w, h - .04, .1), dm, 0, h / 2 - .02, .02));
-    if (arch) { const a1 = mesh(new THREE.CylinderGeometry(w / 2 + .06, w / 2 + .06, .07, 18, 1, false, 0, Math.PI), fm, 0, h, 0); a1.rotation.set(Math.PI / 2, 0, Math.PI / 2); p.add(a1); const a2 = mesh(new THREE.CylinderGeometry(w / 2, w / 2, .1, 18, 1, false, 0, Math.PI), dm, 0, h - .03, .02); a2.rotation.set(Math.PI / 2, 0, Math.PI / 2); p.add(a2); }
+    if (arch) { const a1 = mesh(new THREE.CylinderGeometry(w / 2 + .06, w / 2 + .06, .07, 18, 1, false, -Math.PI / 2, Math.PI), fm, 0, h, 0); a1.rotation.x = -Math.PI / 2; p.add(a1); const a2 = mesh(new THREE.CylinderGeometry(w / 2, w / 2, .1, 18, 1, false, -Math.PI / 2, Math.PI), dm, 0, h - .03, .02); a2.rotation.x = -Math.PI / 2; p.add(a2); }
     const n = Math.max(2, Math.round(w / .18)); for (let i = 1; i < n; i++) p.add(mesh(new THREE.BoxGeometry(.012, h + (arch ? w * .3 : -.06), .02), seam, -w / 2 + i * w / n, h / 2 + (arch ? w * .12 : 0), .075));
     [.26, .8].forEach(k => { p.add(mesh(new THREE.BoxGeometry(w * .7, .05, .02), iron, -w * .12, h * k, .08)); p.add(mesh(sph(.028), iron, -w * .42, h * k, .08)); }); p.add(mesh(sph(.042), fine(knob), w * .33, h * .52, .1));
     if (pane) { const pn = mesh(new THREE.BoxGeometry(.16, .16, .03), winMat, 0, h * .78, .075); pn.rotation.z = Math.PI / 4; p.add(pn); } return p; }
@@ -419,8 +419,8 @@ function drawHouse() {
       for (let i = 0; i < 6; i++) { const fx = x - .25 + i * .1, fy = y - .28 + hr(i + x * 9) * .08; add(mesh(new THREE.CylinderGeometry(.01, .01, .14, 4), leaf, fx, fy - .05, fz + .14)); add(mesh(sph(.045), bloom[(i + (x > 0 ? 2 : 0)) % 5], fx, fy + .03, fz + .14 + (i % 2) * .03)); const lf = add(mesh(sph(.05), i % 2 ? leaf : leaf2, fx + .04, fy - .07, fz + .2)); lf.scale.set(1, .5, .7); } } };
   [-.85, .85].forEach(x => windowAt(x, 1.05, true));
   // the door: planks, iron hinges, a brass knob, a little window, and a lantern beside it
-  { const z = fz + .02; add(mesh(new THREE.BoxGeometry(.8, 1.2, .08), dark, 0, .6, z - .02)); const arch = add(mesh(new THREE.CylinderGeometry(.4, .4, .08, 18, 1, false, 0, Math.PI), dark, 0, 1.2, z - .02)); arch.rotation.set(Math.PI / 2, 0, Math.PI / 2);
-    const dm = mat(0xc08a5c, { map:tx('grain', 1, 1) }); add(mesh(new THREE.BoxGeometry(.7, 1.14, .1), dm, 0, .59, z)); const top = add(mesh(new THREE.CylinderGeometry(.35, .35, .1, 18, 1, false, 0, Math.PI), dm, 0, 1.16, z)); top.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+  { const z = fz + .02; add(mesh(new THREE.BoxGeometry(.8, 1.2, .08), dark, 0, .6, z - .02)); const arch = add(mesh(new THREE.CylinderGeometry(.4, .4, .08, 18, 1, false, -Math.PI / 2, Math.PI), dark, 0, 1.2, z - .02)); arch.rotation.x = -Math.PI / 2;
+    const dm = mat(0xc08a5c, { map:tx('grain', 1, 1) }); add(mesh(new THREE.BoxGeometry(.7, 1.14, .1), dm, 0, .59, z)); const top = add(mesh(new THREE.CylinderGeometry(.35, .35, .1, 18, 1, false, -Math.PI / 2, Math.PI), dm, 0, 1.16, z)); top.rotation.x = -Math.PI / 2;
     [-.175, 0, .175].forEach(x => add(mesh(new THREE.BoxGeometry(.012, 1.3, .02), seam, x, .66, z + .055))); [.3, .95].forEach(y => { add(mesh(new THREE.BoxGeometry(.5, .05, .02), iron, -.08, y, z + .06)); add(mesh(sph(.03), iron, -.3, y, z + .06)); });
     add(mesh(sph(.045), fine(0xffc857), .24, .6, z + .08)); const pane = add(mesh(new THREE.BoxGeometry(.16, .16, .03), winMat, 0, 1.12, z + .05)); pane.rotation.z = Math.PI / 4;
     add(mesh(new THREE.BoxGeometry(.04, .04, .2), iron, .6, 1.42, z + .1)); add(mesh(new THREE.BoxGeometry(.03, .1, .03), iron, .6, 1.37, z + .18)); add(mesh(new THREE.BoxGeometry(.13, .17, .13), lampMat, .6, 1.24, z + .18));
@@ -746,40 +746,69 @@ ship2.add(mesh(new THREE.PlaneGeometry(1.3,1.5), new THREE.MeshStandardMaterial(
 ship2.userData.kind = 'ship2'; scene.add(ship2);
 // building sites for rebuilding the village
 function buildingModel(id) {
-  const g = new THREE.Group();
-  if (id === 'bakery') {
-    g.add(mesh(new THREE.BoxGeometry(2.6,1.9,2.2), mat(0xffe6cc), 0, .95, 0));
-    const r = mesh(new THREE.ConeGeometry(2.1,1.2,4), mat(0xd9825b), 0, 2.5, 0); r.rotation.y = Math.PI/4; g.add(r);
-    g.add(mesh(new THREE.CylinderGeometry(.25,.3,1,10), mat(0xb0a898), .8, 3, -.4));
-    g.add(mesh(new THREE.BoxGeometry(.7,1.1,.1), mat(0x9b6b4a), 0, .55, 1.12));
-    const bread = mesh(new THREE.CapsuleGeometry(.18,.45,6,10), mat(0xd9a066), 0, 2.1, 1.2); bread.rotation.z = Math.PI/2; g.add(bread);
+  const g = new THREE.Group(), stone = c => mat(c, { map:tx('stone', 2, 2) }), ring = (r, y, c, n = 16) => { for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, st = mesh(new THREE.BoxGeometry(2 * Math.PI * r / n - .03, .16 + KIT.hr(i) * .07, .12), mat(i % 2 ? c : 0xbfb6a8), Math.sin(a) * r, y, Math.cos(a) * r); st.rotation.y = a; g.add(st); } };
+  if (id === 'bakery') { // warm plaster, a clay tile roof, a brick oven chimney, and bread in the window
+    const tile = mat(0xd9825b, { map:tx('straw', 5, 1) });
+    g.add(mesh(new THREE.BoxGeometry(2.6,1.9,2.2), mat(0xffe6cc, { map:tx('plaster', 2, 2) }), 0, .95, 0)); KIT.foot(g, 2.6, 2.2, 0, 3);
+    [[-1.3,1.1],[1.3,1.1],[-1.3,-1.1],[1.3,-1.1]].forEach(([x, z]) => g.add(mesh(new THREE.BoxGeometry(.15,1.9,.15), mat(0x9b6b4a), x, .95, z))); g.add(mesh(new THREE.BoxGeometry(2.72,.1,2.32), mat(0x9b6b4a), 0, 1.9, 0));
+    KIT.hip(g, 1.94, 2.12, 1.25, tile, .93);
+    { const br = mat(0xb5623f, { map:tx('stone', 1, 2) }); g.add(mesh(new THREE.CylinderGeometry(.24,.3,1.2,10), br, .8, 2.9, -.4)); g.add(mesh(new THREE.CylinderGeometry(.3,.3,.08,10), mat(0x8a4a30), .8, 3.52, -.4)); [2.6, 2.95, 3.3].forEach(y => g.add(mesh(new THREE.CylinderGeometry(.285 - (y - 2.6) * .05,.285 - (y - 2.6) * .05,.03,10), fine(0x8a4a30), .8, y, -.4))); }
+    KIT.door(g, 0, 0, 1.12, { w:.7, h:1.1, pane:true }); KIT.lantern(g, .62, 1.3, 1.24);
+    KIT.win(g, -.86, 1.05, 1.11, { w:.52, h:.46, shut:0xd9825b }); KIT.win(g, .86, 1.05, 1.11, { w:.52, h:.46, shut:0xd9825b });
+    [-.86, .86].forEach(x => { g.add(mesh(new THREE.BoxGeometry(.6,.04,.2), mat(0xc98f58), x, .72, 1.22)); [-.16, .02, .2].forEach((dx, i) => { const lf = mesh(new THREE.CapsuleGeometry(.05,.1,4,8), mat(i % 2 ? 0xd9a066 : 0xc98a4a), x + dx, .79, 1.24); lf.rotation.z = Math.PI / 2; g.add(lf); }); }); // loaves on the sills
+    const bread = mesh(new THREE.CapsuleGeometry(.18,.45,6,10), mat(0xd9a066), 0, 2.02, 1.24); bread.rotation.z = Math.PI/2; g.add(bread); [-.15, 0, .15].forEach(x => { const sc = mesh(new THREE.BoxGeometry(.03,.2,.02), fine(0xb5713a), x, 2.06, 1.42); sc.rotation.z = .5; g.add(sc); }); g.add(mesh(new THREE.BoxGeometry(.03,.3,.03), mat(0x4a4450), 0, 2.32, 1.24)); // the bread sign hangs over the door
+    { const aw = mat(0xfff6e6), aw2 = mat(0xd9825b); for (let i = 0; i < 5; i++) { const st = mesh(new THREE.BoxGeometry(.22,.05,.5), i % 2 ? aw : aw2, -.44 + i * .22, 1.52, 1.34); st.rotation.x = .35; g.add(st); } }
+    KIT.barrel(g, -1.05, 1.42, .9); { const sk = KIT.at(g, 1.05, 0, 1.42); sk.add(mesh(new THREE.CylinderGeometry(.2,.22,.42,12), mat(0xe8dcc0), 0, .21, 0)); sk.add(mesh(sph(.2), mat(0xe8dcc0), 0, .42, 0)); sk.add(mesh(new THREE.TorusGeometry(.12,.02,6,12), fine(0x9b6b4a), 0, .5, 0).rotateX(Math.PI / 2)); } // a sack of flour
   }
-  if (id === 'library') {
-    g.add(mesh(new THREE.BoxGeometry(3,.25,2.4), mat(0xe8e0d0), 0, .12, 0));
-    [-1.2,-.4,.4,1.2].forEach(x => g.add(mesh(new THREE.CylinderGeometry(.16,.18,1.9,12), mat(0xfff6e6), x, 1.2, .9)));
-    g.add(mesh(new THREE.BoxGeometry(2.8,1.9,1.4), mat(0xf3e8d8), 0, 1.2, -.3));
-    const ped = mesh(new THREE.CylinderGeometry(0, 1.7, .8, 3), mat(0xe8e0d0), 0, 2.55, .2); ped.rotation.set(Math.PI/2, 0, Math.PI/2); ped.scale.set(1, .5, 1); g.add(ped);
-    [0xff8fa3,0x7ec8e3,0xffc857].forEach((c,i) => g.add(mesh(new THREE.BoxGeometry(.18,.5,.35), mat(c), -.3 + i*.22, .5, 1.05)));
+  if (id === 'library') { // pale stone, four grooved columns, wide steps, and tall windows full of books
+    const st = stone(0xf3e8d8), tr = mat(0xe8e0d0);
+    [[3.4,.1,2.9,.05,.2],[3.2,.1,2.7,.15,.15],[3,.1,2.5,.25,.1]].forEach(([w, h, d, y, z]) => g.add(mesh(new THREE.BoxGeometry(w, h, d), tr, 0, y, z)));
+    g.add(mesh(new THREE.BoxGeometry(2.8,1.9,1.4), st, 0, 1.25, -.3)); KIT.boards(g, 2.81, 1.9, 1.25, .406, 7, 0x6b5a40, .14);
+    [-1.2,-.4,.4,1.2].forEach(x => { g.add(mesh(new THREE.CylinderGeometry(.14,.16,1.7,14), mat(0xfff6e6), x, 1.25, .9)); g.add(mesh(new THREE.BoxGeometry(.4,.1,.4), tr, x, .35, .9)); g.add(mesh(new THREE.CylinderGeometry(.2,.17,.07,14), tr, x, .43, .9)); g.add(mesh(new THREE.CylinderGeometry(.18,.14,.08,14), tr, x, 2.12, .9)); g.add(mesh(new THREE.BoxGeometry(.42,.08,.42), tr, x, 2.2, .9)); });
+    g.add(mesh(new THREE.BoxGeometry(3.1,.18,2.5), tr, 0, 2.32, .15));
+    { const sh = new THREE.Shape(); sh.moveTo(-1.5, 0); sh.lineTo(1.5, 0); sh.lineTo(0, .7); sh.closePath(); const pg = new THREE.ExtrudeGeometry(sh, { depth:2.4, bevelEnabled:false }); pg.translate(0, 0, -1.05); g.add(mesh(pg, tr, 0, 2.41, 0)); const bk = KIT.at(g, 0, 2.62, 1.36); bk.add(mesh(new THREE.BoxGeometry(.5,.05,.02), mat(0x3f6fb5), 0, -.03, 0)); [-1, 1].forEach(sd => { const pg2 = mesh(new THREE.BoxGeometry(.24,.3,.02), fine(0xfff8ee), sd * .125, .12, .01); pg2.rotation.z = -sd * .12; bk.add(pg2); }); } // an open book carved over the columns
+    KIT.door(g, 0, .3, .41, { w:.76, h:1.25, color:0x8a5a3b, frame:0x7a5236 });
+    [-.95, .95].forEach(x => { KIT.win(g, x, 1.35, .41, { w:.46, h:.9, frame:0xe8e0d0 }); for (let r = 0; r < 3; r++) for (let i = 0; i < 4; i++) g.add(mesh(new THREE.BoxGeometry(.08,.2,.03), fine([0xff8fa3,0x7ec8e3,0xffc857,0x8fdc8a,0xc9b6ff][(i + r) % 5]), x - .15 + i * .1, 1.02 + r * .3, .47)); });
+    [0xff8fa3,0x7ec8e3,0xffc857].forEach((c, i) => { const bk = mesh(new THREE.BoxGeometry(.18,.5,.35), mat(c), -.3 + i*.22, .55, 1.25); g.add(bk); g.add(mesh(new THREE.BoxGeometry(.19,.04,.36), fine(0xffffff), -.3 + i*.22, .7, 1.25)); });
+    [-1.5, 1.5].forEach(x => KIT.lantern(g, x, 1.5, .52));
   }
-  if (id === 'musichall') {
-    g.add(mesh(new THREE.CylinderGeometry(1.6,1.7,1.8,24), mat(0xfff1d6), 0, .9, 0));
-    g.add(mesh(new THREE.SphereGeometry(1.65,24,12,0,Math.PI*2,0,Math.PI/2), mat(0xc9b6ff), 0, 1.8, 0));
-    g.add(mesh(new THREE.BoxGeometry(.7,1.1,.1), mat(0x9b6b4a), 0, .55, 1.62));
-    const note = new THREE.Group(); note.position.set(0, 3.9, 0); g.add(note);
-    note.add(mesh(sph(.2), mat(0x3b2f4a), 0, 0, 0)); note.add(mesh(new THREE.BoxGeometry(.06,.7,.06), mat(0x3b2f4a), .17, .35, 0)); note.userData.spin = true;
+  if (id === 'musichall') { // a round hall with a tiled dome, tall arched windows, and a gold note that turns on top
+    g.add(mesh(new THREE.CylinderGeometry(1.6,1.7,1.8,28), mat(0xfff1d6, { map:tx('plaster', 6, 2) }), 0, .9, 0)); ring(1.72, .1, 0xd8cfc0, 22);
+    g.add(mesh(new THREE.CylinderGeometry(1.72,1.72,.12,28), mat(0xc9b6ff), 0, 1.84, 0)); g.add(mesh(new THREE.CylinderGeometry(1.66,1.66,.1,28), mat(0x9b88d8), 0, 1.2, 0));
+    g.add(mesh(new THREE.SphereGeometry(1.65,28,14,0,Math.PI*2,0,Math.PI/2), mat(0xc9b6ff), 0, 1.86, 0));
+    for (let i = 0; i < 10; i++) { const rb = mesh(new THREE.TorusGeometry(1.66,.035,6,14,Math.PI / 2), mat(0x9b88d8), 0, 1.86, 0); rb.rotation.y = i / 10 * Math.PI * 2; g.add(rb); } g.add(mesh(sph(.16), mat(0xffc857), 0, 3.55, 0)); // ribs up the dome
+    KIT.door(g, 0, 0, 1.64, { w:.72, h:1.1, color:0x9b6b4a }); KIT.lantern(g, .62, 1.3, 1.72);
+    [-1, 1].forEach(sd => { [.75, 1.5].forEach(a => { const w = KIT.win(g, Math.sin(sd * a) * 1.63, 1.0, Math.cos(sd * a) * 1.63, { w:.34, h:.62, ry:sd * a, frame:0x9b88d8 }); const ar = mesh(new THREE.CylinderGeometry(.24,.24,.07,14,1,false,-Math.PI / 2,Math.PI), mat(0x9b88d8), 0, .31, .01); ar.rotation.x = -Math.PI / 2; w.add(ar); }); });
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; g.add(mesh(new THREE.ConeGeometry(.06,.13,3), fine(KIT.BLOOM[i % 5]), Math.sin(a) * 1.74, 1.7, Math.cos(a) * 1.74)).children; } // little flags under the dome
+    const note = new THREE.Group(); note.position.set(0, 4.0, 0); g.add(note); const gold = mat(0xffc857);
+    [-.16, .2].forEach((x, i) => { const hd = mesh(sph(.16), gold, x, i * .08, 0); hd.scale.set(1.2, .85, 1); note.add(hd); note.add(mesh(new THREE.BoxGeometry(.05,.7,.05), gold, x + .16, .35 + i * .08, 0)); }); const bm = mesh(new THREE.BoxGeometry(.42,.1,.05), gold, .18, .72, 0); bm.rotation.z = .22; note.add(bm); note.userData.spin = true;
+    g.add(mesh(new THREE.CylinderGeometry(.02,.02,.4,6), gold, 0, 3.75, 0));
   }
-  if (id === 'temple') {
-    const gate = mesh(new THREE.TorusGeometry(1.2,.3,12,32), mat(0xe8e0d0), 0, 1.2, 0); g.add(gate);
-    g.add(mesh(new THREE.BoxGeometry(3.4,.3,.7), mat(0xd8cfc0), 0, .15, 0));
-    const pond = mesh(new THREE.CylinderGeometry(.9,.9,.05,24), mat(0x7ec8e3, { roughness:.2 }), 0, .03, -1.6); g.add(pond);
-    [[-1.6,-1.4],[1.6,-1.4]].forEach(([x,z]) => { g.add(mesh(new THREE.CylinderGeometry(.12,.18,.8,6), mat(0xb0a898), x, .4, z)); g.add(mesh(new THREE.BoxGeometry(.4,.3,.4), mat(0xb0a898), x, .95, z)); const lh = halo(0xffe0a8, 1.2, .5); lh.position.set(x, .95, z); g.add(lh); });
-    const tr = mesh(sph(.7), mat(0xffb6c8), 1.6, 1.8, -2.2); g.add(tr); g.add(mesh(new THREE.CylinderGeometry(.1,.14,1.2,8), mat(0x9b6b4a), 1.6, .6, -2.2));
+  if (id === 'temple') { // a round moon gate of fitted stones, a still pond with lilies, stone lanterns and a blossom tree
+    const gate = mesh(new THREE.TorusGeometry(1.2,.3,14,36), stone(0xe8e0d0), 0, 1.2, 0); g.add(gate);
+    for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2; if (Math.sin(a) * 1.2 + 1.2 < .25) continue; const l = new THREE.Mesh(new THREE.BoxGeometry(.012, .62, .62), new THREE.MeshBasicMaterial({ color:0x6b5a40, transparent:true, opacity:.22 })); l.material.userData.outlineParameters = NO_OUTLINE; l.position.set(Math.cos(a) * 1.2, 1.2 + Math.sin(a) * 1.2, 0); l.rotation.z = a + Math.PI / 2; g.add(l); } // the joints between the gate stones
+    g.add(mesh(new THREE.BoxGeometry(3.4,.3,.7), stone(0xd8cfc0), 0, .15, 0)); g.add(mesh(new THREE.BoxGeometry(3.6,.1,.9), mat(0xbfb6a8), 0, .05, 0));
+    const pond = mesh(new THREE.CylinderGeometry(.9,.9,.05,28), mat(0x7ec8e3, { roughness:.2 }), 0, .03, -1.6); g.add(pond);
+    for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, st = mesh(new THREE.DodecahedronGeometry(.13), mat(i % 2 ? 0xbfb6a8 : 0xd8cfc0), Math.cos(a) * .95, .07, -1.6 + Math.sin(a) * .95); st.rotation.set(i, i * 2, 0); st.scale.y = .6; g.add(st); }
+    [[-.3,-1.4,0xff8fa3],[.35,-1.85,0xffffff],[.1,-1.2,0xfff3a0]].forEach(([x, z, c]) => { g.add(mesh(new THREE.CylinderGeometry(.14,.14,.015,12,1,false,.5,5.6), fine(0x4fb46a), x, .065, z)); g.add(mesh(sph(.05), fine(c), x, .1, z)); }); // lily pads
+    [[-1.6,-1.4],[1.6,-1.4]].forEach(([x, z]) => { g.add(mesh(new THREE.CylinderGeometry(.2,.24,.1,6), mat(0x9a93a8), x, .05, z)); g.add(mesh(new THREE.CylinderGeometry(.1,.14,.7,6), mat(0xb0a898), x, .45, z)); g.add(mesh(new THREE.CylinderGeometry(.24,.2,.08,6), mat(0xb0a898), x, .82, z)); g.add(mesh(new THREE.BoxGeometry(.3,.26,.3), lampMat, x, .99, z)); [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a, b]) => g.add(mesh(new THREE.BoxGeometry(.05,.26,.05), mat(0xb0a898), x + a * .15, .99, z + b * .15)));
+      const cp = mesh(new THREE.ConeGeometry(.34,.22,4), mat(0x9a93a8), x, 1.23, z); cp.rotation.y = Math.PI / 4; g.add(cp); g.add(mesh(sph(.05), mat(0x9a93a8), x, 1.37, z)); const lh = halo(0xffe0a8, 1.2, .5); lh.position.set(x, .99, z); g.add(lh); });
+    g.add(mesh(new THREE.CylinderGeometry(.1,.16,1.2,8), mat(0x7a5236, { map:tx('grain', 1, 2) }), 1.6, .6, -2.2)); { const br = mesh(new THREE.CylinderGeometry(.04,.07,.7,6), mat(0x7a5236), 1.9, 1.3, -2.2); br.rotation.z = -.9; g.add(br); }
+    [[1.6,1.8,-2.2,.62],[2.1,1.6,-2.1,.4],[1.2,1.65,-2.4,.42],[1.7,2.25,-2.3,.4]].forEach(([x, y, z, r], i) => g.add(mesh(sph(r), mat(i % 2 ? 0xffc4d6 : 0xffb6c8), x, y, z)));
+    for (let i = 0; i < 7; i++) { const p = mesh(sph(.035), fine(0xffd9e4), 1.2 + KIT.hr(i) * 1.1, .03, -1.7 - KIT.hr(i + 5) * .9); p.scale.y = .3; g.add(p); } // fallen petals
+    [[0,.9],[.1,1.35]].forEach(([x, z]) => { const st = mesh(new THREE.CylinderGeometry(.3,.32,.05,9), mat(0xd8cfc0), x, .025, z); st.scale.z = .7; g.add(st); });
   }
-  if (id === 'observatory') {
-    g.add(mesh(new THREE.CylinderGeometry(1.6,1.8,1.8,24), mat(0xfff6e6), 0, .9, 0));
-    const dome = mesh(new THREE.SphereGeometry(1.65, 24, 12, 0, Math.PI*2, 0, Math.PI/2), mat(0x5a4b99, { metalness:.2 }), 0, 1.8, 0); g.add(dome);
-    const tube = mesh(new THREE.CylinderGeometry(.18,.25,1.8,12), mat(0x3b2f4a), .5, 2.9, .3); tube.rotation.set(.5, 0, -.6); g.add(tube);
-    g.add(mesh(new THREE.BoxGeometry(.7,1.1,.1), mat(0x9b6b4a), 0, .55, 1.62));
+  if (id === 'observatory') { // a round stone tower, a dome with a slot for the telescope, and a brass telescope
+    g.add(mesh(new THREE.CylinderGeometry(1.6,1.8,1.8,28), mat(0xfff6e6, { map:tx('stone', 6, 2) }), 0, .9, 0)); ring(1.84, .1, 0xd8cfc0, 22);
+    [.6, 1.2].forEach(y => g.add(mesh(new THREE.CylinderGeometry(1.74 - y * .11,1.74 - y * .11,.03,28), fine(0xd8cfc0), 0, y, 0)));
+    g.add(mesh(new THREE.CylinderGeometry(1.72,1.72,.14,28), mat(0x8a7fc0), 0, 1.84, 0));
+    const dome = mesh(new THREE.SphereGeometry(1.65, 28, 14, 0, Math.PI*2, 0, Math.PI/2), mat(0x5a4b99, { metalness:.2 }), 0, 1.88, 0); g.add(dome);
+    for (let i = 0; i < 8; i++) { const rb = mesh(new THREE.TorusGeometry(1.66,.03,6,14,Math.PI / 2), mat(0x8a7fc0), 0, 1.88, 0); rb.rotation.y = i / 8 * Math.PI * 2 + .4; g.add(rb); }
+    { const slot = mesh(new THREE.TorusGeometry(1.67,.09,6,14,Math.PI / 2.2), mat(0x2e2438), 0, 1.88, 0); slot.rotation.y = -Math.PI / 2 + .55; slot.scale.z = 3; g.add(slot); } // the opening in the dome
+    const tube = new THREE.Group(); tube.position.set(.5, 2.9, .3); tube.rotation.set(.5, 0, -.6); g.add(tube); tube.add(mesh(new THREE.CylinderGeometry(.18,.25,1.8,14), mat(0x3b2f4a), 0, 0, 0)); [-.6, 0, .6].forEach(y => tube.add(mesh(new THREE.CylinderGeometry(.2 + (.6 - y) * .03,.2 + (.6 - y) * .03,.06,14), mat(0xffc857), 0, y, 0))); tube.add(mesh(new THREE.CylinderGeometry(.16,.16,.02,14), mat(0xbfe3ff, { roughness:.1 }), 0, .9, 0)); tube.add(mesh(new THREE.CylinderGeometry(.05,.07,.3,8), mat(0xffc857), .2, -.6, 0));
+    KIT.door(g, 0, 0, 1.68, { w:.72, h:1.1, color:0x9b6b4a }); KIT.lantern(g, .62, 1.3, 1.76);
+    [-1, 1].forEach(sd => { const a = sd * .95; KIT.win(g, Math.sin(a) * 1.66, 1.05, Math.cos(a) * 1.66, { w:.36, round:true, ry:a, frame:0x8a7fc0 }); });
+    [[.9,2.9,-.6],[-.7,3.2,.5],[-1.1,2.5,-.5],[.2,3.4,-.4]].forEach(([x, y, z], i) => { const st = mesh(new THREE.CircleGeometry(.06, 5), glow(0xfff3a0), x, y, z); st.lookAt(x * 3, y * 3 - 3, z * 3); g.add(st); }); // gold stars set into the dome
   }
   return g;
 }
