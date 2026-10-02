@@ -10,7 +10,7 @@ add('sundial', 'A stick, a shadow, and a long walk measured the whole Earth.',
     '<rect x="232" y="56" width="12" height="20" fill="#3b2f4a"/><path d="M228 56 h20" stroke="#7a6452" stroke-width="3"/>'
     '<path d="M92 79 L78 49" stroke="#7a5236" stroke-width="4" stroke-linecap="round"/><path d="M92 79 L74 85" stroke="#3b2f4a" stroke-width="3" stroke-linecap="round" opacity=".7"/>'
     + txt(60, 110, 'Alexandria: a shadow', 11, INK) + txt(246, 110, 'Syene: no shadow', 11, INK) + txt(165, 14, 'sunlight', 11, '#c98a1f')),
-  'At noon on the longest day of the year, the sun shone straight down a well in Syene. In Alexandria, a stick still had a shadow. The angle was about 7.2 degrees, which is 1/50 of a circle. So the distance around the Earth is about 50 times the distance between the two cities.')
+  'At noon on the longest day of the year, the sun shone straight down a well in Syene. In Alexandria, at the same moment, a stick still had a short shadow. The shadow showed that Alexandria was one fiftieth of the way around the Earth from Syene. So he took the distance between the two cities and multiplied by 50.')
 
 # ---- bell (string lengths) ----
 def string(y, frac, label, note):
@@ -20,7 +20,7 @@ def string(y, frac, label, note):
 add('bell', 'Shorten a string to half. You get the same note, but higher.',
   svg(330, 120, 'A diagram of four strings: a full one, one half as long, one two thirds as long, and one three quarters as long',
     string(22, 1, '1', 'the whole string') + string(52, .5, '1/2', 'the same note, higher') + string(82, 2/3, '2/3', 'sounds sweet with the whole string') + string(112, .75, '3/4', 'also sounds sweet')),
-  'Musicians call the jump to the higher note an octave. These simple fractions show up in music all over the world. Try it on a guitar: press a string at the halfway mark and pluck.')
+  'Musicians call the jump to the higher note an octave. Strings 2/3 and 3/4 as long sound sweet with the whole string too. These fractions show up in music all over the world.')
 
 # ---- still (solar still) ----
 drops = ''.join(f'<circle cx="{x}" cy="{y}" r="2.2" fill="#7ec8e3"/>' for x, y in ((120, 44), (140, 51), (158, 57), (182, 56), (200, 50), (220, 43)))
@@ -61,7 +61,7 @@ add('stars', 'Leave a camera open all night, and the stars draw circles.',
   'A drawing of a real kind of photo, taken over several hours. Earth is turning, so every star smears into a curved line. Polaris sits almost exactly over the North Pole, so it hardly moves at all.')
 
 # ---- lever ----
-add('lever', 'Move the resting point, and a small push lifts a big stone.',
+add('lever', 'Rest the beam close to the stone, and a small push lifts it.',
   svg(330, 120, 'A diagram of a long beam resting on a pivot close to a heavy stone, with a person pushing down on the far end',
     '<path d="M20 108 H310" stroke="#c9ab88" stroke-width="2"/><path d="M84 108 L96 86 L108 108Z" fill="#7a6452"/>'
     '<path d="M36 100 L300 62" stroke="#9b6b4a" stroke-width="7" stroke-linecap="round"/>'
@@ -92,7 +92,7 @@ def moon(cx, f):  # f: 0 new .. .5 full .. 1 new; lit side on the right while gr
     return out + f'<path d="{d}" fill="#f6efd6"/>'
 names = ['new', 'crescent', 'half', 'nearly full', 'full', 'nearly full', 'half', 'crescent']
 moons = ''.join(moon(24 + i * 40.3, i / 8) + txt(24 + i * 40.3, 72, names[i], 9.5, '#cfd6f2') for i in range(8))
-add('moon', 'The moon never changes shape. Only the part we can see lit up does.',
+add('moon', 'The moon is always a ball. What changes is how much of its sunny side we can see.',
   svg(330, 104, 'A row of eight moons going from dark, to a thin crescent, to half, to full, and back again',
     '<rect width="330" height="84" rx="10" fill="#16203f"/>' + moons + txt(165, 100, 'about 29.5 days from one new moon to the next', 11)),
   'The sun always lights half of the moon. As the moon goes around Earth, we see that lit half from a different side each night. This is how it looks from north of the equator. South of it, the picture is flipped.')
@@ -116,7 +116,7 @@ add('prism', 'White light is every color at once.',
     '<rect width="330" height="120" rx="10" fill="#1d1a2b"/><path d="M10 78 L150 52" stroke="#fff" stroke-width="5"/>' + fan +
     '<path d="M168 16 L212 96 H124Z" fill="#bfe6f5" opacity=".35" stroke="#dff3ff" stroke-width="2" stroke-linejoin="round"/><path d="M150 52 L188 56" stroke="#fff" stroke-width="3" opacity=".6"/>'
     + txt(268, 26, 'red bends least', 10.5, '#ffb3b3') + txt(264, 116, 'violet bends most', 10.5, '#d5b8ff') + txt(60, 100, 'sunlight', 11, '#fff')),
-  'Glass bends each color by a different amount, so the colors spread apart. Newton then used a lens to bring the colors back together and got white light again. Raindrops bend and bounce sunlight the same way to make a rainbow.')
+  'Glass bends each color by a different amount, so the colors fan out. Red bends the least. Violet bends the most.')
 
 # ---- fibonacci (sunflower head) ----
 seeds = ''
@@ -132,7 +132,7 @@ add('fibonacci', 'One simple rule makes every spiral in a sunflower.',
   'Each new seed grows a little more than a third of a turn around from the one before (137.5 degrees). That single rule packs the seeds as tightly as they can go, and the spirals appear by themselves. Count the spirals one way, then the other. You usually get two numbers from this list: 21, 34, 55, 89.')
 
 # ---- migration (European robin) ----
-add('migration', 'This small bird may be able to see the pull that moves a compass.',
+add('migration', 'This small bird knows which way to fly, even with no sun or stars to see.',
   svg(330, 120, 'A drawing of a European robin on a twig: a round brown bird with an orange face and chest and a pale belly',
     '<path d="M60 100 Q170 92 290 104" stroke="#8a6a52" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M230 100 l24 -14" stroke="#8a6a52" stroke-width="3" stroke-linecap="round"/>'
     '<path d="M226 78 L276 92 L270 98 L222 88Z" fill="#6b5a48"/>'
@@ -149,7 +149,7 @@ r = R(14)
 big = ''.join(f'<path d="{blob(64 + i*24 + r.uniform(-3,3), 96, 12, 8, 7, .2, 60+i)}" fill="#8a8f96"/>' for i in range(9))
 grav = ''.join(f'<circle cx="{r.uniform(56,276):.0f}" cy="{r.uniform(66,82):.0f}" r="{r.uniform(1.6,3.6):.1f}" fill="{r.choice(["#b9a58c","#9c8f7c","#cfc0a6"])}"/>' for _ in range(110))
 pave = ''.join(f'<path d="{blob(70 + i*27, 52 - 6*math.cos((i-3.5)/3.5*1.3) + 5, 13, 6.5, 6, .12, 80+i)}" fill="#6f747a" stroke="#4d5156" stroke-width="1"/>' for i in range(8))
-add('roads', 'A Roman road is much more than its top stones.',
+add('roads', 'The part of a Roman road you walk on is only the top layer.',
   svg(330, 122, 'A cutaway drawing of one of the best Roman roads, built up higher than the land beside it: fitted paving stones on top, curved so water runs off, then gravel, then big stones at the bottom, with a ditch on each side',
     '<path d="M0 90 H16 L26 104 L38 90 H292 L304 104 L314 90 H330 V122 H0Z" fill="#b08a5e"/><path d="M38 90 L52 60 V112 H38Z M292 90 L278 60 V112 H292Z" fill="#9c7a50"/><rect x="52" y="86" width="226" height="26" fill="#a58a66"/>'
     '<rect x="52" y="62" width="226" height="24" fill="#d9cbb0"/>' + grav + big + pave

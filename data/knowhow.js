@@ -8,7 +8,7 @@ const KNOWHOW = [
     did:'You dug down 3 layers. The oldest things were at the bottom.',
     real:'The ground works like a stack of paper. The bottom sheet went down first, so deeper means older. A scientist named Nicolas Steno wrote this rule down in 1669.',
     today:'Look at a cliff or a road cut through a hill. The stripes are layers, oldest at the bottom.' },
-  { id:'tradeoff', act:'sell', n:3, icon:'⚖️', term:'OPPORTUNITY COST', title:'Keeping something costs what it would have sold for',
+  { id:'tradeoff', act:'sell', n:3, icon:'⚖️', term:'OPPORTUNITY COST', title:'If you keep it, you give up the coins it would sell for',
     did:'At the sell crate, you picked what to keep and what to sell.',
     real:'When you keep an apple, you give up the coins it would have earned. That is called <b>opportunity cost</b>: what you give up when you pick one thing over another.',
     today:'If you spend an hour on one thing, you can not spend that hour on something else.' },

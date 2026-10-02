@@ -25,7 +25,7 @@ add('harvest', 'When the crops come in, people everywhere stop and eat together.
     '<path d="M70 34 H110 Q104 74 112 112 H70Z M250 34 H214 Q220 74 210 112 H250Z" fill="#fbf6ea" stroke="#d9cdb6" stroke-width="1.5"/><rect x="110" y="34" width="104" height="78" fill="#efe3c8" opacity=".6"/>'
     + fruit + '<rect x="124" y="84" width="76" height="6" fill="#9b6b4a"/><path d="M130 90 v22 M194 90 v22" stroke="#9b6b4a" stroke-width="4"/><circle cx="146" cy="80" r="6" fill="#fff"/><circle cx="178" cy="80" r="6" fill="#fff"/><path d="M160 70 h4 v14 h-4Z" fill="#a3402c"/>'
     + flame(162, 70, .6) + roof + '<path d="M62 30 H258" stroke="#8a6a44" stroke-width="4"/>'),
-  'A drawing of a sukkah, the outdoor hut built for the Jewish harvest festival of Sukkot. The roof is made of cut branches. Ideally it is loose enough to see the stars through. Families eat their meals inside for a week.')
+  'A drawing of a sukkah, the outdoor hut built for the Jewish harvest festival of Sukkot. The roof is made of cut branches. It is best if you can see the stars through it. Families eat their meals inside for a week.')
 
 # ---- theseus (a trireme) ----
 r = R(23)
@@ -73,7 +73,7 @@ add('river', 'The water you stepped in is already gone.',
     '<path d="M0 0 H330 V40 Q250 30 165 40 Q80 50 0 38Z" fill="#8fdc8a"/><path d="M0 38 Q80 50 165 40 Q250 30 330 40 V98 Q250 88 165 98 Q80 108 0 96Z" fill="#5fb4dc"/><path d="M0 96 Q80 108 165 98 Q250 88 330 98 V118 H0Z" fill="#7fcf7a"/>' + flow +
     '<path d="M142 28 q4 30 2 44 q10 4 18 0 q-2 -6 -8 -8 l-2 -36Z M176 28 q4 30 2 44 q10 4 18 0 q-2 -6 -8 -8 l-2 -36Z" fill="#e8b98f"/><ellipse cx="152" cy="72" rx="16" ry="4" fill="none" stroke="#dff3ff" stroke-width="1.5"/><ellipse cx="186" cy="72" rx="16" ry="4" fill="none" stroke="#dff3ff" stroke-width="1.5"/>'
     '<path d="M230 66 h56 m-9 -6 l9 6 l-9 6" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>' + txt(258, 88, 'new water, every second', 10.5, '#fff')),
-  'The river keeps its name and its place on the map, but the water in it is never the same water. Heraclitus used it as a picture of everything: things last by changing.')
+  'The river keeps its name and its place on the map, but the water in it is never the same water. Heraclitus said everything is like that river: always changing, and still itself.')
 
 # ---- floating man ----
 r = R(26)
@@ -100,7 +100,7 @@ add('golden', 'One rule shows up almost everywhere people have lived.',
     '<path d="M108 48 Q165 22 222 48" fill="none" stroke="#c98a1f" stroke-width="3"/><path d="M214 40 l9 8 l-11 4" fill="none" stroke="#c98a1f" stroke-width="3" stroke-linecap="round"/>'
     '<path d="M222 74 Q165 100 108 74" fill="none" stroke="#c98a1f" stroke-width="3"/><path d="M116 82 l-9 -8 l11 -4" fill="none" stroke="#c98a1f" stroke-width="3" stroke-linecap="round"/>'
     + txt(165, 30, 'how I treat you', 11, INK) + txt(165, 108, 'how I would want to be treated', 11, INK)),
-  'Before you act, swap places in your head. Would you want that done to you? People in many places and times, who never met, landed on the same test.')
+  'Before you act, swap places in your head. Would you want that done to you? People in many places and times, who never met, came up with the same rule.')
 
 # =================== festivals ===================
 # ---- lunar new year: red envelopes ----
@@ -122,13 +122,13 @@ puffs = ''.join(f'<circle cx="{r.uniform(20,310):.0f}" cy="{r.uniform(8,40):.0f}
 add('holi', 'For one morning, everyone is covered in color.',
   svg(330, 108, 'A drawing of five bowls heaped with bright powder in pink, yellow, blue, green, and orange, with clouds of color in the air above',
     puffs + pile(48, '#ec4899', '#b0266f') + pile(106, '#f6c531', '#c79a12') + pile(164, '#3d8fe0', '#2563a8') + pile(222, '#4cb86a', '#2f8a49') + pile(280, '#f08c2e', '#b5621a')),
-  'A drawing of the colored powder, called gulal, sold in heaps before the festival. The night before, people light bonfires. Then friends and strangers throw it and smear it on each other in the street. By afternoon, nobody can tell who is who.')
+  'A drawing of the colored powder, called gulal, sold in heaps before the festival. The night before, people light bonfires. Then friends and strangers throw the powder and smear it on each other in the street. By afternoon, nobody can tell who is who.')
 
 # ---- nowruz: haft-sin ----
 r = R(32)
 sprout = ''.join(f'<path d="M{x} 70 q{r.uniform(-3,3):.0f} -14 {r.uniform(-4,4):.0f} -{r.uniform(22,32):.0f}" stroke="{r.choice(["#4cb86a","#3f9a56","#6fcf82"])}" stroke-width="1.6" fill="none"/>' for x in range(22, 70, 2))
 def bowl(x, c, lab): return f'<path d="M{x-17} 72 Q{x-15} 88 {x} 88 Q{x+15} 88 {x+17} 72Z" fill="#dfeaf2" stroke="#9fb6c8" stroke-width="1.2"/><ellipse cx="{x}" cy="72" rx="17" ry="4" fill="{c}"/>' + txt(x, 104, lab, 9.5, INK)
-add('nowruz', 'Seven things on the table, each starting with the letter S.',
+add('nowruz', 'Seven things on the table. In Persian, each one starts with S.',
   svg(330, 110, 'A drawing of seven items on a table: a dish of green sprouts, an apple, a head of garlic, and bowls of vinegar, red spice, brown pudding, and dried fruit',
     '<path d="M6 90 H324" stroke="#c9ab88" stroke-width="2"/><path d="M20 70 H72 L66 88 H26Z" fill="#dfeaf2" stroke="#9fb6c8" stroke-width="1.2"/>' + sprout + '<path d="M22 60 H70" stroke="#d6332e" stroke-width="3"/>' + txt(46, 104, 'sprouts', 9.5, INK)
     + '<path d="M96 66 q-14 0 -12 14 q2 10 12 10 q10 0 12 -10 q2 -14 -12 -14Z" fill="#d6332e"/><path d="M96 66 q2 -6 6 -8" stroke="#7a5236" stroke-width="1.6" fill="none"/>' + txt(96, 104, 'apple', 9.5, INK)
@@ -151,11 +151,11 @@ def egg(x, y, c, deco, rot=0): return f'<g transform="rotate({rot} {x} {y})"><pa
 d1 = lambda x, y: f'<path d="M{x-12} {y+2} q6 -5 12 0 q6 5 12 0" stroke="#fff" stroke-width="2" fill="none"/>'
 d2 = lambda x, y: ''.join(f'<circle cx="{x+dx}" cy="{y+dy}" r="2" fill="#fff"/>' for dx, dy in ((-6, 0), (0, -6), (6, 2), (-2, 8), (5, 10)))
 d3 = lambda x, y: f'<path d="M{x-13} {y+4} h26 M{x-12} {y+10} h24" stroke="#fff" stroke-width="2"/>'
-add('easter', 'Its date is set by the sun and the moon together.',
+add('easter', 'Easter moves every year, because its date follows the moon.',
   svg(330, 112, 'A drawing of a woven basket full of painted eggs in red, green, orange, blue, and pink',
     egg(130, 52, '#e5484d', d1, -14) + egg(160, 44, '#4cb86a', d2, 4) + egg(192, 50, '#f08c2e', d3, 16) + egg(146, 66, '#3d8fe0', d2, -6) + egg(178, 68, '#ec4899', d1, 10) +
     '<path d="M100 66 Q104 104 165 104 Q226 104 230 66Z" fill="#b8854a"/><g stroke="#8a5f2e" stroke-width="1.5" fill="none"><path d="M104 76 H226 M110 88 H220 M124 98 H206"/><path d="M124 66 V98 M144 66 V102 M165 66 V104 M186 66 V102 M206 66 V98"/></g><path d="M100 66 H230" stroke="#8a5f2e" stroke-width="5" stroke-linecap="round"/>'),
-  'Eggs are an old sign of new life, and painting them for Easter goes back many centuries. For most churches, Easter falls on the first Sunday after the first full moon of spring, so its date moves every year. Orthodox churches use an older calendar, so their Easter is often on a different Sunday.')
+  'Eggs are an old sign of new life. People have painted them for Easter for many centuries.')
 
 # ---- eid: the thin new crescent ----
 r = R(35)
@@ -172,7 +172,7 @@ r = R(36)
 def stone(x, w, h, seed): return f'<path d="{blob(x + w/2, 92 - h/2, w/2, h/2, 10, .07, seed)}" fill="#8f949a"/><path d="{blob(x + w*.3, 92 - h*.55, w*.18, h*.36, 7, .2, seed+50)}" fill="#a9afb6" opacity=".7"/>'
 stones = ''.join(stone(x, w, h, 400 + i) for i, (x, w, h) in enumerate(((50, 15, 46), (78, 15, 48), (116, 16, 50), (146, 16, 50), (196, 16, 50), (226, 15, 48), (258, 14, 40))))
 lint = '<path d="M48 44 H96 V52 H48Z M114 40 H164 V49 H114Z M194 40 H243 V49 H194Z" fill="#7d8288"/>'
-add('junesolstice', 'Built so the midsummer sun rises in line with the stones.',
+add('junesolstice', 'Stonehenge was built to line up with sunrise on the longest day.',
   svg(330, 118, 'A drawing of Stonehenge: a ring of tall grey standing stones with flat stones laid across the tops, on green grass, with the sun rising between two of them',
     '<rect width="330" height="94" rx="10" fill="#fbe3b8"/><circle cx="180" cy="70" r="15" fill="#f6b53a"/><g stroke="#f6b53a" stroke-width="2" opacity=".6"><path d="M180 44 V30 M158 54 L146 44 M202 54 L214 44"/></g>'
     + stones + lint + '<path d="M0 90 H330 V118 H0Z" fill="#7fbf6a"/>' + person(292, 100, 15)),
@@ -221,7 +221,7 @@ add('hanukkah', 'Eight nights, eight lights, and one more to light them.',
 # ---- december solstice: Newgrange ----
 r = R(41)
 quartz = ''.join(f'<circle cx="{r.uniform(50,280):.0f}" cy="{r.uniform(68,86):.0f}" r="{r.uniform(1.2,2.6):.1f}" fill="{r.choice(["#fff","#fff","#d9dde0","#3b3f44"])}"/>' for _ in range(150))
-add('decsolstice', 'For a few mornings a year, sunrise reaches the room deep inside.',
+add('decsolstice', 'For a few mornings a year, sunrise shines all the way into this old stone tomb.',
   svg(330, 122, 'A drawing of Newgrange: a wide, low, grass-covered mound with a wall of white stones around the front, a dark doorway with a small window above it, and a beam of sunrise light going in',
     '<rect width="330" height="92" rx="10" fill="#f6d9b0"/><circle cx="30" cy="80" r="14" fill="#f6b53a"/>'
     '<path d="M36 90 Q60 34 165 30 Q270 34 294 90Z" fill="#6fae5a"/><path d="M44 90 Q46 66 60 62 H270 Q284 66 286 90Z" fill="#eef0f1"/>' + quartz +

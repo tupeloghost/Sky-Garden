@@ -77,7 +77,7 @@ add('rosetta', 'One message, written three ways.',
     f'<g fill="#c9c6bd" stroke="#c9c6bd" opacity=".9">{lines(22, 40, 5, "h")}{lines(50, 76, 9, "d")}{lines(85, 116, 13, "g")}</g>'
     '<path d="M82 44.500 H218 M82 80.500 H218" stroke="#2a2a2e" stroke-width="1"/></g>'
     + txt(228, 34, 'Hieroglyphs', 12, '#9a7f66', 'start') + txt(228, 66, 'Demotic', 12, '#9a7f66', 'start') + txt(228, 104, 'Greek', 12, '#9a7f66', 'start') + '<path d="M66 8 V120 M61 8 h10 M61 120 h10" stroke="#9a7f66" stroke-width="1.6" fill="none"/>' + txt(34, 68, '112 cm', 12)),
-  'A drawing of the Rosetta Stone. It is 112 centimeters tall and has 14 lines of hieroglyphs, 32 of Demotic, and 54 of Greek. The top and one bottom corner are broken off.')
+  'A drawing of the Rosetta Stone. It is 112 centimeters tall and has 14 lines of hieroglyphs, 32 lines of an everyday Egyptian writing called Demotic, and 54 lines of Greek. The top and one bottom corner are broken off.')
 
 # ---- tools: an Oldowan chopper, and a stone axe head tied to a handle ----
 r = R(2)
@@ -100,7 +100,7 @@ pil = 'M118 12 L214 8 L218 34 L190 38 L192 122 L140 122 L142 38 L114 36Z'
 fox = '<path d="M150 62 q8 -8 18 -4 l6 -6 l2 8 q6 4 4 10 l-8 2 l-2 10 l-4 0 l0 -8 l-10 0 l-2 8 l-4 0 l0 -12 q-6 -6 -8 -14Z" fill="#c9bda6" stroke="#8c8068" stroke-width="1"/>'
 arms = '<path d="M146 44 L146 86 L172 92 M186 44 L186 84" fill="none" stroke="#8c8068" stroke-width="2.2"/><path d="M160 96 h5 M160 99 h5 M160 102 h5 M170 96 h5 M170 99 h5 M170 102 h5" stroke="#8c8068" stroke-width="1.4"/><path d="M141 108 H192" stroke="#8c8068" stroke-width="3"/>'
 speck = ''.join(f'<circle cx="{r.uniform(116,216):.0f}" cy="{r.uniform(10,120):.0f}" r="{r.uniform(.6,1.6):.1f}" fill="#9c8f76" opacity=".6"/>' for _ in range(70))
-add('temple', 'Hunters and gatherers carved these giant stone pillars before farming began.',
+add('temple', 'People carved these giant stone pillars before anyone had a farm.',
   svg(330, 130, 'A drawing of a tall T-shaped stone pillar carved with arms, hands, a belt, and a fox, with a person beside it for size',
     f'<path d="M20 122 H310" stroke="#c9ab88" stroke-width="2"/><clipPath id="gt"><path d="{pil}"/></clipPath><path d="{pil}" fill="#d9cfb9"/><g clip-path="url(#gt)">{speck}<path d="M176 0 H230 V130 H182Z" fill="#b7ab92" opacity=".55"/></g>{arms}{fox}'
     + person(96, 122, 36) + txt(258, 60, '5.5 meters', 12) + '<path d="M228 10 V122 M223 10 h10 M223 122 h10" stroke="#9a7f66" stroke-width="1.6" fill="none"/>'),
@@ -139,4 +139,4 @@ add('bronze', '9 parts copper, 1 part tin. Harder than both.',
   svg(330, 112, 'A drawing: nine copper-colored pieces plus one silver-grey piece of tin make a golden-brown bronze axe head',
     dots + txt(52, 104, '9 copper', 12) + txt(104, 58, '+', 22, '#3b2f4a') + '<circle cx="134" cy="52" r="9" fill="#b9c0c6"/><circle cx="131" cy="49" r="3" fill="#e8edf0"/>' + txt(134, 104, '1 tin', 12)
     + txt(184, 60, '=', 24, '#3b2f4a') + f'<path d="{axe}" fill="#b98a3e"/><path d="M206 44 L294 33 Q290 40 288 44 L208 50Z" fill="#e0b565" opacity=".75"/><path d="M294 33 Q304 53 294 73 Q292 53 294 33Z" fill="#f3d9a0"/>' + txt(256, 104, 'bronze axe head', 12)),
-  'Copper alone is soft enough to bend. Tin alone is softer still. Melted together, they make a metal hard enough for axes, saws, and swords. The axe head is a flat wedge with a sharp, slightly curved edge.')
+  'Copper alone is soft enough to bend. Tin alone is softer still. Melted together, they make a metal hard enough for axes, saws, and swords.')
