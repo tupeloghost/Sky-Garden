@@ -379,3 +379,7 @@ body.on-title #goalArrow, body.in-setup #goalArrow, .building #goalArrow { displ
 .card p .brk { display:block; height:7px; }
 
 .toast.show { pointer-events:auto; cursor:pointer; }
+
+.bcats { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+.bcats button { margin:0; padding:4px 12px; font-size:13px; border-radius:999px; background:#fff8; box-shadow:none; }
+.bcats button.on { background:var(--gold); }
