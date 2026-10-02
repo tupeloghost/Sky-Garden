@@ -5970,7 +5970,7 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   [[1.75, 2.15, 0xe2c99a], [3.7, 3.95, 0xe2c99a]].forEach(([a, b, c]) => { const r = new THREE.Mesh(new THREE.RingGeometry(a, b, 48), mat(c)); r.rotation.x = -Math.PI/2; r.position.y = .012; g.add(r); });
   const path = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 3.2), mat(0xe2c99a)); path.rotation.x = -Math.PI/2; path.rotation.z = Math.atan2(-2.9, 4.6); path.position.set(-1.55, .011, 3.3); g.add(path);
   // the fountain: tap to toss a coin and make a wish
-  const stone = mat(0xd8cfc0), fnt = new THREE.Group(); g.add(fnt);
+  const stone = mat(0xd8cfc0, { map:tx('stone', 4, 1) }), fnt = new THREE.Group(); g.add(fnt); squareBits.fnt = fnt;
   fnt.add(mesh(new THREE.CylinderGeometry(1.35, 1.45, .45, 32), stone, 0, .22, 0));
   const water = mesh(new THREE.CylinderGeometry(1.2, 1.2, .06, 32), new THREE.MeshStandardMaterial({ color:0x7ec8e3, transparent:true, opacity:.8, roughness:.15 }), 0, .4, 0); fnt.add(water); squareBits.water = water;
   fnt.add(mesh(new THREE.CylinderGeometry(.22, .3, 1.05, 16), stone, 0, .9, 0));
@@ -5982,11 +5982,15 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   // benches around the fountain: sit and let time pass faster
   [55, 235, 305].map(d => [Math.cos(d * Math.PI / 180) * 3, Math.sin(d * Math.PI / 180) * 3]).forEach(([x, z]) => { const b = new THREE.Group(); b.position.set(x, 0, z); faceCenter(b, x, z); g.add(b); const w = mat(0xc98f58);
     b.add(mesh(new THREE.BoxGeometry(1.3, .08, .42), w, 0, .42, 0)); b.add(mesh(new THREE.BoxGeometry(1.3, .34, .07), w, 0, .66, -.2));
+    w.map = tx('planks', 1, 3); [-.07, .07].forEach(z => b.add(mesh(new THREE.BoxGeometry(1.3, .012, .012), fine(0x8a6040), 0, .465, z))); [.58, .74].forEach(y => b.add(mesh(new THREE.BoxGeometry(1.3, .012, .012), fine(0x8a6040), 0, y, -.16)));
+    [-.62, .62].forEach(sx => { b.add(mesh(new THREE.BoxGeometry(.07, .06, .44), mat(0x5a3a28), sx, .62, 0)); b.add(mesh(new THREE.BoxGeometry(.07, .2, .06), mat(0x5a3a28), sx, .52, .18)); b.add(mesh(new THREE.BoxGeometry(.07, .5, .06), mat(0x5a3a28), sx, .6, -.2)); });
     [-.55, .55].forEach(sx => b.add(mesh(new THREE.BoxGeometry(.07, .42, .38), mat(0x5a3a28), sx, .21, 0)));
     const h = hitBox(1.4, .9, .8); h.position.y = .45; b.add(h); deco(h, () => sitBench(b)).userData.label = 'Bench: tap to sit'; });
   // lamp posts that glow at night
   [75, 170, 250].forEach(deg => { const a = deg * Math.PI / 180, x = Math.cos(a) * 4.9, z = Math.sin(a) * 4.9, l = new THREE.Group(); l.position.set(x, 0, z); g.add(l);
     l.add(mesh(new THREE.CylinderGeometry(.06, .08, 1.9, 8), mat(0x3b2f4a), 0, .95, 0)); l.add(mesh(new THREE.BoxGeometry(.3, .34, .3), glow(0xffe7a8), 0, 2.02, 0)); l.add(mesh(new THREE.ConeGeometry(.26, .2, 4), mat(0x3b2f4a), 0, 2.29, 0).rotateY(Math.PI/4));
+    { const ir = mat(0x3b2f4a); l.add(mesh(new THREE.CylinderGeometry(.16, .2, .14, 10), ir, 0, .07, 0)); l.add(mesh(new THREE.CylinderGeometry(.1, .14, .16, 10), ir, 0, .22, 0)); l.add(mesh(new THREE.CylinderGeometry(.09, .09, .05, 10), ir, 0, 1.2, 0)); l.add(mesh(new THREE.BoxGeometry(.36, .04, .36), ir, 0, 1.84, 0));
+      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a2, b2]) => l.add(mesh(new THREE.BoxGeometry(.03, .34, .03), fine(0x3b2f4a), a2 * .15, 2.02, b2 * .15))); l.add(mesh(sph(.045), ir, 0, 2.42, 0)); const arm = mesh(new THREE.BoxGeometry(.5, .03, .03), ir, 0, 1.62, 0); l.add(arm); }
     const lh = halo(0xffc46b, 2.4, 0); lh.position.y = 2.02; l.add(lh); lampLights.push(lh);
     const h = hitBox(.5, 2.4, .5); h.position.y = 1.2; l.add(h); deco(h, () => toast('Before electric streetlights, lamplighters lit each street lamp by hand at dusk.')); });
   // the notice board: goals, missions, votes, and what's happening
@@ -6001,6 +6005,12 @@ const faceCenter = (o, x, z) => { o.rotation.y = Math.atan2(-x, -z); };
   [-.62, .62].forEach(x => cart.add(mesh(new THREE.CylinderGeometry(.04, .04, 1.2, 6), mat(0xfff1d6), x, 1.55, -.3)));
   const aw = mesh(new THREE.BoxGeometry(1.6, .08, .9), mat(0xff8fa3), 0, 2.15, -.05); aw.rotation.x = .18; cart.add(aw);
   [[-.4, 0xffc857], [0, 0x8fdc8a], [.4, 0xc9b6ff]].forEach(([x, c]) => cart.add(mesh(new THREE.BoxGeometry(.28, .2, .22), mat(c), x, 1.13, .1)));
+  { cart.children[0].material.map = tx('planks', 5, 1); const dk = mat(0x5a3a28), cream = mat(0xfff6e6); // spoked wheels, a striped awning with a scalloped edge, handles, a counter, seed packets
+    [-.6, .6].forEach(x => { for (let i = 0; i < 4; i++) { const sp = mesh(new THREE.BoxGeometry(.03,.52,.03), dk, x, .3, .42); sp.rotation.z = i * Math.PI / 4; cart.add(sp); } cart.add(mesh(sph(.06), mat(0xffc857), x, .3, .46)); });
+    for (let i = 0; i < 4; i++) { const st = mesh(new THREE.BoxGeometry(.2,.085,.9), cream, -.6 + i * .4, 2.152, -.05); st.rotation.x = .18; cart.add(st); }
+    for (let i = 0; i < 8; i++) { const sc = mesh(new THREE.CylinderGeometry(.1,.1,.04,10,1,false,-Math.PI / 2,Math.PI), i % 2 ? cream : mat(0xff8fa3), -.7 + i * .2, 2.06, .4); sc.rotation.x = Math.PI / 2; cart.add(sc); }
+    cart.add(mesh(new THREE.BoxGeometry(1.6,.06,.9), mat(0xc98f58, { map:tx('planks', 4, 1) }), 0, 1.04, 0)); [-.4, .4].forEach(z => { const hd = mesh(new THREE.CylinderGeometry(.03,.03,.7,6), dk, -1.05, .82, z * .8); hd.rotation.z = 1.2; cart.add(hd); });
+    [[-.55,0x8fdc8a],[-.2,0xffc857],[.15,0xff8fa3],[.5,0xc9b6ff]].forEach(([x, c], i) => { const pk = mesh(new THREE.BoxGeometry(.16,.2,.02), mat(0xfff8ee), x, 1.2, .36); pk.rotation.x = -.3; cart.add(pk); const dot = mesh(new THREE.CircleGeometry(.045, 10), fine(c), x, 1.21, .375); dot.rotation.x = -.3; cart.add(dot); }); }
   const ch = hitBox(1.7, 2.2, 1.1); ch.position.y = 1.1; cart.add(ch); deco(ch, pipCart).userData.label = "Pip's cart: tap to shop"; solid(ch, .95);
   // two planters by the entrance: Pip tucks a spare seed packet in one each day
   [[-1.37, 4.14], [-.78, 3.21]].forEach(([x, z], i) => { const p = new THREE.Group(); p.position.set(x, 0, z); p.rotation.y = 1.01; g.add(p); // lining the right side of the entrance
@@ -6567,6 +6577,29 @@ try { const hr = KIT.hr, ringOf = (g, r, y, n, c1 = 0xd8cfc0, c2 = 0xbfb6a8, h =
     KIT.door(lighthouse, 0, 0, .65, { w:.4, h:.72, color:0x8a5a3b }); [1.5, 2.4].forEach((y, i) => KIT.win(lighthouse, 0, y, .58 - i * .09, { w:.2, round:true, frame:0x3b2f4a, bars:false }));
     for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; lighthouse.add(mesh(new THREE.CylinderGeometry(.015,.015,.26,5), fine(0x3b2f4a), Math.cos(a) * .53, 3.3, Math.sin(a) * .53)); } band(lighthouse, .53, 3.43, 0x3b2f4a, .018);
     lighthouse.add(mesh(sph(.07), mat(0xffc857), 0, 4.16, 0)); }
+  if (squareBits && squareBits.fnt) { // the Town Square: a carved fountain with coins in the water, joints in the paving, and goods on Pip's cart
+    const f = squareBits.fnt, g = squareBits.g, st = mat(0xd8cfc0, { map:tx('stone', 2, 1) }), dk = mat(0xbfb6a8);
+    band(f, 1.36, .46, 0xcfc6b6, .06); band(f, 1.46, .03, 0xbfb6a8, .07); ringOf(f, 1.5, 0, 20, 0xd8cfc0, 0xcac2b6, .12);
+    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, p = mesh(new THREE.BoxGeometry(.3,.26,.06), dk, Math.sin(a) * 1.41, .22, Math.cos(a) * 1.41); p.rotation.y = a; f.add(p); } // carved panels around the basin
+    f.add(mesh(new THREE.CylinderGeometry(.36,.4,.12,16), st, 0, .44, 0)); band(f, .27, .7, 0xcfc6b6, .03); band(f, .24, 1.1, 0xcfc6b6, .03); band(f, .62, 1.52, 0xcfc6b6, .035);
+    f.add(mesh(new THREE.CylinderGeometry(.09,.13,.2,10), st, 0, 1.6, 0)); f.add(mesh(new THREE.ConeGeometry(.07,.16,8), st, 0, 1.86, 0));
+    [[.5,.3],[-.6,.5],[.2,-.7],[-.3,-.4],[.8,-.2],[-.85,-.1]].forEach(([x, z], i) => { const c = mesh(new THREE.CylinderGeometry(.06,.06,.012,12), mat(0xffc857, { metalness:.5, roughness:.3 }), x, .39, z); c.rotation.z = (i % 3 - 1) * .2; f.add(c); }); // wishes
+    [[.75,.55,0xff8fa3],[-.5,-.8,0xffffff]].forEach(([x, z, c]) => { f.add(mesh(new THREE.CylinderGeometry(.16,.16,.012,12,1,false,.5,5.6), fine(0x4fb46a), x, .44, z)); f.add(mesh(sph(.05), fine(c), x, .47, z)); });
+    const jm = new THREE.MeshBasicMaterial({ color:0x8a6f48, transparent:true, opacity:.28 }); jm.userData.outlineParameters = NO_OUTLINE;
+    [[1.75, 2.15, 18], [3.7, 3.95, 34]].forEach(([a, b, n]) => { for (let i = 0; i < n; i++) { const an = i / n * Math.PI * 2, l = new THREE.Mesh(new THREE.BoxGeometry(.02, .004, b - a), jm); l.position.set(Math.sin(an) * (a + b) / 2, .016, Math.cos(an) * (a + b) / 2); l.rotation.y = an; g.add(l); } }); // gaps between paving stones
+    for (let i = 0; i < 26; i++) { const an = hr(i) * Math.PI * 2, r = 2.4 + hr(i + 30) * 1.1, pv = mesh(new THREE.CylinderGeometry(.16 + hr(i + 7) * .1, .18 + hr(i + 7) * .1, .02, 7), mat(i % 2 ? 0xe2c99a : 0xd9bd8a), Math.cos(an) * r, .012, Math.sin(an) * r); pv.rotation.y = i; pv.scale.z = .8; pv.castShadow = false; g.add(pv); } // loose paving stones between the rings
+  }
+  { // the second ship, moored at the Old Heart: a deck, planking, a railing, a spar, a flag and a lantern
+    const dk2 = mesh(new THREE.CylinderGeometry(1.78,1.78,.1,24), mat(0xd9a066, { map:tx('planks', 8, 1) }), 0, .86, 0); dk2.scale.set(1, 1, .5); ship2.add(dk2);
+    { const sp = mesh(new THREE.TorusGeometry(1.2, .06, 6, 40), mat(0xffffff), 0, .84, 0); sp.rotation.x = Math.PI / 2; sp.scale.set(1.5, .75, 1); ship2.add(sp); }
+    [[.6, .96], [.36, .85], [.14, .68]].forEach(([y, fk]) => { const r = mesh(new THREE.TorusGeometry(1.2 * fk, .02, 6, 40), fine(0x2f6aa3), 0, y, 0); r.rotation.x = Math.PI / 2; r.scale.set(1.5, .75, 1); ship2.add(r); });
+    const rl = mat(0x9b6b4a, { map:tx('grain', 1, 2) }); for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2; ship2.add(mesh(new THREE.CylinderGeometry(.022,.028,.32,6), rl, Math.cos(a) * 1.72, 1.07, Math.sin(a) * .84)); }
+    { const tr = mesh(new THREE.TorusGeometry(1, .03, 6, 40), rl, 0, 1.24, 0); tr.rotation.x = Math.PI / 2; tr.scale.set(1.72, .84, 1); ship2.add(tr); }
+    ship2.add(mesh(new THREE.CylinderGeometry(.03,.03,1.5,6), rl, .7, 3.18, 0).rotateZ(Math.PI / 2)); ship2.add(mesh(new THREE.CylinderGeometry(.028,.028,1.4,6), rl, .7, 1.64, 0).rotateZ(Math.PI / 2)); ship2.add(mesh(sph(.06), mat(0xffc857), 0, 3.54, 0));
+    ship2.add(mesh(new THREE.PlaneGeometry(.5,.3), new THREE.MeshStandardMaterial({ color:0xff5a5a, side:THREE.DoubleSide }), .27, 3.34, 0));
+    ship2.add(mesh(sph(.11), mat(0xffc857), 1.84, .95, 0)); ship2.add(mesh(new THREE.CylinderGeometry(.022,.022,.5,6), rl, -1.7, 1.2, 0)); KIT.lantern(ship2, -1.7, 1.55, 0);
+    { const d = KIT.at(ship2, .5, .91, -.35); KIT.barrel(d, 0, 0, .65); const c = KIT.at(ship2, -.7, .91, .3, .4); KIT.crate(c, 0, 0, .65); }
+    const rope = fine(0xd9c39a); [1.7, -1.7].forEach(x => { const len = Math.hypot(x, 2.5), r = mesh(new THREE.CylinderGeometry(.011,.011,len,4), rope, x / 2, 2.25, 0); r.rotation.z = Math.atan2(x, 2.5); ship2.add(r); }); }
   { // the sell crate: wood grain on the slats
     crate.children[0].material.map = tx('planks', 4, 1); crate.children[0].material.needsUpdate = true; }
 } catch (e) { console.warn('detail', e); }
