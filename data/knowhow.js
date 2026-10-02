@@ -58,7 +58,7 @@ const KNOWHOW = [
     real:'A moving thing keeps moving until something pushes back. That rule is called <b>inertia</b>. Here, the grass rubbing on the ball slowed it down.',
     today:'It is why you lean forward when a bus brakes. The bus stops. You keep going.' },
   { id:'seeds', act:'blow', n:2, icon:'🌬️', term:'HOW SEEDS TRAVEL', title:'A dandelion seed rides its own little ring of air',
-    did:'You blew the dandelions and the seeds floated off the island.',
+    did:'You blew a dandelion seed and rode the wind with it.',
     real:'Each seed hangs under a tuft of about 100 fine hairs. Air slipping between the hairs makes a ring of spinning air above the seed. That ring holds it up.',
     today:'Plants cannot walk, so their seeds travel. Maple seeds spin like helicopters.' },
   { id:'resonance', act:'swing', n:3, icon:'🎢', term:'RESONANCE', title:'Small pushes at the right moment add up',
