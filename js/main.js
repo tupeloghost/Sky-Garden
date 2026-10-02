@@ -1251,6 +1251,88 @@ function exitRoom() { const R = ROOMS[S.room]; S.room = null; S.where = 'home'; 
   thing(g, jar, -2.9, 1.8, .8, 1.1, .8, () => { if (!daily('lumenJar')) return toast('You already took a seed today. Lumen saves more by tomorrow night.'); S.seeds.starbloom = (S.seeds.starbloom || 0) + 1; sfx('plant'); floatText(`+1 ${icon('starbloom')} moonflower seed`, player.position.clone()); save(); drawHud(); toast('Lumen: "Take a moonflower seed. They open at night. I like things that wait for the dark."'); }, 'Seed jar: tap for a moonflower seed');
   const rug = mesh(new THREE.CylinderGeometry(1.25,1.25,.03,28), mat(0x8b7fd6), 0, .02, .5); g.add(rug); g.add(mesh(new THREE.CylinderGeometry(.5,.5,.035,24), mat(0xfdf6dc), 0, .02, .5));
 }
+// --- the Old Heart buildings, inside ---
+const ohOut = id => () => { const b = BUILDINGS.find(x => x.id === id); return new THREE.Vector3(OH.x + b.pos[0], OH.y, OH.z + b.pos[1] + 2.4); };
+const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIGHBORS[id].name, L[Math.floor(Math.random() * L.length)], [], S.hearts[id]); };
+{ // Mabel's Bakery: warm, floury, and run by an oven named Gerald
+  const g = makeRoom('bakery', 6, { name:"Mabel's Bakery", floor:0xe9c9a0, line:0xd4b085, wall:0xffe3c4, wall2:0xfbd6b0, trim:0xb5622f, mat:0xffc857, winX:2.2, out:ohOut('bakery') });
+  const wood = mat(0xc98f58), dark = mat(0x9b6b4a), brick = mat(0xb5622f);
+  const oven = G(mesh(new THREE.BoxGeometry(1.8,1.7,1), brick, 0, .85, 0), mesh(new THREE.CylinderGeometry(.5,.5,.12,18,1,false,0,Math.PI), mat(0x2a1c12), 0, .75, .5).rotateX(Math.PI/2).rotateZ(Math.PI/2), mesh(new THREE.BoxGeometry(.9,.5,.06), mat(0x2a1c12), 0, .5, .5), mesh(new THREE.BoxGeometry(.5,.25,.02), glow(0xff9a3c), 0, .45, .54), mesh(new THREE.BoxGeometry(.4,1.2,.4), brick, .5, 2.3, -.2)); const oh = halo(0xff9a3c, 1.2, .4); oh.position.set(0, .6, .7); oven.add(oh);
+  thing(g, oven, -.8, -2.7, 2, 2, 1.2, () => useBakery(), 'Gerald the oven: tap to cook');
+  const bowl = G(mesh(new THREE.BoxGeometry(1.5,.08,.8), wood, 0, .85, 0), mesh(new THREE.SphereGeometry(.3,16,10,0,Math.PI*2,Math.PI/2,Math.PI/2), mat(0xdfe6ea), -.3, 1.19, 0), mesh(sph(.24), mat(0xf3e2bd), -.3, 1.08, 0), mesh(new THREE.CylinderGeometry(.04,.04,.6,8), wood, .35, .92, .1).rotateZ(Math.PI/2)); [[-.65,-.3],[.65,-.3],[-.65,.3],[.65,.3]].forEach(([x, z]) => bowl.add(mesh(new THREE.BoxGeometry(.08,.85,.08), dark, x, .42, z)));
+  thing(g, bowl, 1.4, -.9, 1.6, 1.5, .9, () => HELP.mabel.run(), 'Dough bowl: tap to help Mabel');
+  const jar = G(mesh(new THREE.BoxGeometry(.9,.06,.3), wood, 0, 1.3, 0), mesh(new THREE.CylinderGeometry(.16,.16,.36,12), new THREE.MeshStandardMaterial({ color:0xdff3ff, transparent:true, opacity:.5 }), 0, 1.52, 0), mesh(new THREE.CylinderGeometry(.15,.15,.22,12), mat(0xf3e2bd), 0, 1.45, 0), mesh(new THREE.BoxGeometry(.3,.02,.3), mat(0xff8fa3), 0, 1.71, 0));
+  thing(g, jar, 2.3, -3.0, 1, 2.1, .5, () => toast('Mabel\'s sourdough starter: a jar of flour and water, alive with wild yeast. She feeds it every day. Some bakeries have kept the same starter going for more than 100 years. Hers is named Doughlores.'), 'Starter jar: tap to learn');
+  const tray = G(mesh(new THREE.BoxGeometry(1.2,.06,.6), dark, 0, .9, 0)); for (let i = 0; i < 13; i++) tray.add(mesh(sph(.085), mat(0xd9a55a), -.48 + (i % 7) * .16, .97, i < 7 ? -.12 : .12)); [[-.5,-.22],[.5,-.22],[-.5,.22],[.5,.22]].forEach(([x, z]) => tray.add(mesh(new THREE.BoxGeometry(.06,.9,.06), dark, x, .45, z)));
+  thing(g, tray, -3.0, -.6, .8, 1.3, 1.3, () => toast('Count the rolls: 13. That is a baker\'s dozen. In England about 750 years ago, a baker could be punished for selling bread that was too light. So bakers threw in an extra one, to be safe.'), "A baker's dozen: tap to learn"); tray.rotation.y = Math.PI/2;
+  const sacks = G(); [[0,0],[.5,.1],[.22,-.05]].forEach(([x, z], i) => { const sk = mesh(sph(.3), mat(0xf1e6cf), x, i === 2 ? .7 : .26, z); sk.scale.set(1, .85, .8); sacks.add(sk); });
+  thing(g, sacks, 3.0, 1.4, 1.2, 1.1, .9, hearts('mabel'), 'Flour sacks: tap to hear Mabel');
+  g.add(mesh(new THREE.CylinderGeometry(1.2,1.2,.03,28), mat(0xff8fa3), 0, .02, .6));
+}
+{ // The Library: Professor Hoot's shelves
+  const g = makeRoom('library', 7, { name:'The Library', floor:0xb98a5e, line:0x9b7248, wall:0xe6dcc6, wall2:0xdccfb4, trim:0x6b4a30, mat:0xd6332e, winX:0, out:ohOut('library') });
+  const wood = mat(0x7a5236), dark = mat(0x5f3f28), cols = [0xd6332e,0x3f86c9,0x4cb86a,0xf6c531,0x8e44ad,0xff8fa3,0x7ec8e3];
+  const shelf = side => { const sh = G(mesh(new THREE.BoxGeometry(2,2.4,.4), wood, 0, 1.2, 0)); [.35, 1.0, 1.65].forEach((y, r) => { for (let i = 0; i < 9; i++) sh.add(mesh(new THREE.BoxGeometry(.16,.5,.26), mat(cols[(i + r * 2 + side) % cols.length]), -.72 + i * .18, y + .28, .1)); sh.add(mesh(new THREE.BoxGeometry(1.9,.05,.36), dark, 0, y, .03)); }); return sh; };
+  thing(g, shelf(0), -2.4, -3.0, 2.1, 2.5, .6, () => useLibrary(), 'Bookshelf: tap to read');
+  thing(g, shelf(3), 2.4, -3.0, 2.1, 2.5, .6, () => useLibrary(), 'Bookshelf: tap to read');
+  const cart = G(mesh(new THREE.BoxGeometry(1,.06,.5), wood, 0, .7, 0), mesh(new THREE.BoxGeometry(1,.06,.5), wood, 0, .3, 0)); [0,1,2,3,4].forEach(i => cart.add(mesh(new THREE.BoxGeometry(.14,.4,.3), mat(cols[i]), -.32 + i * .16 + (i === 3 ? .02 : 0), .93, 0))); [[-.45,-.2],[.45,-.2],[-.45,.2],[.45,.2]].forEach(([x, z]) => { cart.add(mesh(new THREE.BoxGeometry(.05,.75,.05), dark, x, .38, z)); cart.add(mesh(sph(.06), mat(0x3b2f4a), x, .06, z)); });
+  thing(g, cart, 1.5, -.6, 1.1, 1.3, .7, () => HELP.hoot.run(), 'Book cart: tap to help Hoot');
+  const cat = G(mesh(new THREE.BoxGeometry(1.1,1.1,.5), wood, 0, .55, 0)); for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) { cat.add(mesh(new THREE.BoxGeometry(.22,.26,.04), mat(0xc98f58), -.39 + c * .26, .22 + r * .33, .26)); cat.add(mesh(sph(.025), mat(0xffc857), -.39 + c * .26, .22 + r * .33, .29)); }
+  thing(g, cat, -3.1, -.4, .7, 1.2, 1.2, () => toast('The card drawers. Every book has a number, so it has exactly one home on the shelf. Melvil Dewey came up with a number system for libraries in 1876, and many still use it. Hoot knows all the numbers by heart. He will tell you so.'), 'Card drawers: tap to learn'); cat.rotation.y = Math.PI/2;
+  const chair = G(mesh(new THREE.BoxGeometry(.8,.4,.8), mat(0x4cb86a), 0, .35, 0), mesh(new THREE.BoxGeometry(.8,.8,.16), mat(0x4cb86a), 0, .75, -.34), mesh(new THREE.CylinderGeometry(.03,.05,1.4,8), dark, .75, .7, -.2), mesh(new THREE.ConeGeometry(.26,.28,12,1,true), glow(0xfff3a0), .75, 1.5, -.2));
+  chair.rotation.y = .6; thing(g, chair, -2.6, 1.5, 1.6, 1.6, 1.1, hearts('hoot'), 'Reading chair: tap to hear Hoot');
+  const sign = G(mesh(new THREE.BoxGeometry(.9,.4,.04), mat(0xfff6e6), 0, 1.9, 0), mesh(new THREE.BoxGeometry(.6,.06,.02), mat(0x3b2f4a), 0, 1.95, .03), mesh(new THREE.BoxGeometry(.4,.06,.02), mat(0x3b2f4a), 0, 1.83, .03));
+  thing(g, sign, 0, -3.17, 1, 2.6, .2, () => toast('The sign says QUIET PLEASE. Under it, in small letters: "This means you, Allegra."'), 'Sign: tap to read');
+  g.add(mesh(new THREE.BoxGeometry(2.2,.03,1.4), mat(0x8e3a3a), 0, .02, .7));
+}
+{ // Allegra's Music Hall
+  const g = makeRoom('musichall', 8, { name:"Allegra's Music Hall", floor:0xc98f58, line:0xb07a45, wall:0xffd6de, wall2:0xfbc4cf, trim:0xd6332e, mat:0x7ec8e3, winX:-2.4, out:ohOut('musichall') });
+  const wood = mat(0x7a5236), dark = mat(0x3b2f4a), xc = [0xff8fa3,0xffb36b,0xffc857,0xeeeeee,0x8fdc8a,0x7ec8e3,0xeeeeee,0xff8fa3];
+  const stage = mesh(new THREE.BoxGeometry(3.6,.25,1.6), mat(0x9b6b4a), .6, .125, -2.4); g.add(stage); walkables.push(stage);
+  const xy = G(); [-.5,.5].forEach(z => xy.add(mesh(new THREE.BoxGeometry(1.7,.06,.06), wood, 0, .95, z * .5))); xc.forEach((c, i) => xy.add(mesh(new THREE.BoxGeometry(.17,.05,.75 - i * .05), mat(c), -.7 + i * .2, 1.0, 0))); [[-.8,-.25],[.8,-.25],[-.8,.25],[.8,.25]].forEach(([x, z]) => xy.add(mesh(new THREE.BoxGeometry(.06,.95,.06), wood, x, .47, z)));
+  thing(g, xy, .2, -1.2, 1.9, 1.3, .9, () => useMusicHall(), 'Xylophone: tap to play');
+  const gl = G(mesh(new THREE.BoxGeometry(1.2,.06,.4), wood, 0, .85, 0)); [.9,.65,.4,.2].forEach((f, i) => { gl.add(mesh(new THREE.CylinderGeometry(.09,.07,.3,10), new THREE.MeshStandardMaterial({ color:0xeef7fb, transparent:true, opacity:.45 }), -.42 + i * .28, 1.03, 0)); gl.add(mesh(new THREE.CylinderGeometry(.075,.065,.28 * f,10), mat(0x7ec8e3), -.42 + i * .28, .89 + .14 * f, 0)); }); [-.5,.5].forEach(x => gl.add(mesh(new THREE.BoxGeometry(.06,.85,.3), wood, x, .42, 0)));
+  thing(g, gl, 2.9, .3, .6, 1.4, 1.3, () => HELP.allegra.run(), 'Water glasses: tap to help Allegra'); gl.rotation.y = Math.PI/2;
+  const piano = G(mesh(new THREE.BoxGeometry(1.5,1.1,.5), dark, 0, .55, 0), mesh(new THREE.BoxGeometry(1.4,.06,.3), mat(0xfff6e6), 0, .72, .38), mesh(new THREE.BoxGeometry(1.5,.08,.34), dark, 0, .66, .38)); for (let i = 0; i < 9; i++) if (i % 7 !== 2 && i % 7 !== 6) piano.add(mesh(new THREE.BoxGeometry(.07,.04,.17), dark, -.56 + i * .14, .77, .32));
+  thing(g, piano, 1.4, -2.75, 1.6, 1.5, .9, () => toast('A piano has 88 keys: 52 white and 36 black. The black keys by themselves make a five-note scale. Play only those, and nothing you play sounds wrong.'), 'Piano: tap to learn');
+  const met = G(mesh(new THREE.BoxGeometry(.5,.9,.4), wood, 0, .45, 0), mesh(new THREE.ConeGeometry(.2,.5,4), mat(0x9b6b4a), 0, 1.15, 0).rotateY(Math.PI/4), mesh(new THREE.BoxGeometry(.02,.42,.02), mat(0xd9a441, { metalness:.5 }), .05, 1.12, .15).rotateZ(-.25), mesh(new THREE.BoxGeometry(.06,.06,.03), mat(0xd9a441, { metalness:.5 }), .08, 1.2, .15));
+  thing(g, met, -1.6, -2.6, .7, 1.5, .6, () => { [0, 1, 2, 3].forEach(i => setTimeout(() => tone(i ? 880 : 1175, { dur:.06, vol:.05 }), i * 500)); toast('Tick. Tick. Tick. A metronome keeps a steady beat so musicians stay together. Johann Maelzel patented this kind in 1815. Allegra says it is the only one in the band who is never late.'); }, 'Metronome: tap to hear it');
+  const fork = G(mesh(new THREE.BoxGeometry(.5,.9,.3), wood, 0, .45, 0), mesh(new THREE.CylinderGeometry(.02,.02,.2,6), mat(0xcfd6dc, { metalness:.6 }), 0, 1, 0), mesh(new THREE.BoxGeometry(.02,.32,.02), mat(0xcfd6dc, { metalness:.6 }), -.05, 1.26, 0), mesh(new THREE.BoxGeometry(.02,.32,.02), mat(0xcfd6dc, { metalness:.6 }), .05, 1.26, 0), mesh(new THREE.BoxGeometry(.12,.02,.02), mat(0xcfd6dc, { metalness:.6 }), 0, 1.1, 0));
+  thing(g, fork, -3.1, -.4, .6, 1.5, .7, () => { tone(440, { dur:1.6, vol:.05 }); toast('A tuning fork. Hit it and it rings one pure note. This one is the note A: it shakes the air 440 times every second. Orchestras all over the world tune to it.'); }, 'Tuning fork: tap to hear it');
+  const stool = G(mesh(new THREE.CylinderGeometry(.3,.3,.1,14), mat(0xd6332e), 0, .55, 0), mesh(new THREE.CylinderGeometry(.05,.05,.5,8), dark, 0, .25, 0));
+  thing(g, stool, -2.6, 1.6, .8, .8, .8, hearts('allegra'), "Allegra's stool: tap to hear her");
+}
+{ // Sage's Temple Garden: an indoor garden with a pond, raked sand, and a stone to read each day
+  const g = makeRoom('temple', 9, { name:"Sage's Temple Garden", floor:0x8fbf7a, line:0x86b572, wall:0xd9d2c0, wall2:0xcfc7b3, trim:0x8a8f96, mat:0xc9b6ff, winX:2.3, out:ohOut('temple') });
+  const stone = mat(0x8a8f96), wood = mat(0x9b6b4a);
+  const say = G(mesh(new THREE.BoxGeometry(1,1.5,.3), stone, 0, .75, 0), mesh(new THREE.BoxGeometry(.7,.06,.02), mat(0x3b2f4a), 0, 1.1, .16), mesh(new THREE.BoxGeometry(.6,.06,.02), mat(0x3b2f4a), 0, .92, .16), mesh(new THREE.BoxGeometry(.66,.06,.02), mat(0x3b2f4a), 0, .74, .16), mesh(new THREE.BoxGeometry(1.2,.12,.5), stone, 0, .06, 0));
+  thing(g, say, -.6, -2.8, 1.2, 1.7, .6, () => useTemple(), "Saying stone: tap for today's saying");
+  const pond = G(mesh(new THREE.CylinderGeometry(1.1,1.1,.08,28), stone, 0, .04, 0), mesh(new THREE.CylinderGeometry(.95,.95,.09,28), mat(0x5fb4dc), 0, .045, 0)); [[-.3,.2,0xff7a45],[.35,-.25,0xffffff],[.1,.45,0xffc857]].forEach(([x, z, c]) => { const k = mesh(sph(.1), mat(c), x, .1, z); k.scale.set(1.7, .4, .8); pond.add(k); }); pond.add(mesh(new THREE.CylinderGeometry(.16,.16,.02,12), mat(0x4f9a5c), -.5, .1, -.35));
+  thing(g, pond, 2.4, .6, 2.2, .5, 2.2, () => { sfx('water'); toast('Three koi. Koi are carp that rice farmers in Japan bred for color about 200 years ago. Sage has named them Patience, Patience Two, and Gary.'); }, 'Koi pond: tap to look');
+  const sand = G(mesh(new THREE.BoxGeometry(2,.06,1.4), mat(0xeadfc8), 0, .03, 0)); for (let i = 0; i < 6; i++) sand.add(mesh(new THREE.BoxGeometry(1.9,.015,.03), mat(0xd6c9ab), 0, .065, -.55 + i * .22)); [[-.5,-.2,.16],[.4,.2,.12],[.1,-.35,.09]].forEach(([x, z, r]) => sand.add(mesh(sph(r), stone, x, r * .7, z)));
+  thing(g, sand, -2.5, .7, 2.1, .5, 1.5, () => toast('A raked sand garden. In Japan, the raked lines stand for water and the stones for islands. The most famous one, in Kyoto, has 15 stones. They are placed so that from any spot, you can only ever see 14.'), 'Sand garden: tap to learn');
+  const st3 = G(mesh(sph(.34), stone, -.4, .2, 0), mesh(sph(.24), mat(0xa3a8ae), .2, .15, .1), mesh(sph(.15), mat(0xbcc1c6), .55, .1, -.1)); st3.children.forEach(c => c.scale.y = .6);
+  thing(g, st3, 1.9, -2.3, 1.5, .6, 1, () => HELP.sage.run(), 'Three stones: tap to help Sage');
+  const bench = G(mesh(new THREE.BoxGeometry(1.5,.1,.45), wood, 0, .45, 0)); [-.6,.6].forEach(x => bench.add(mesh(new THREE.BoxGeometry(.1,.45,.4), stone, x, .22, 0)));
+  thing(g, bench, -2.6, -2.2, 1.6, .8, .7, hearts('sage'), 'Bench: tap to sit with Sage');
+  const tree = G(mesh(new THREE.CylinderGeometry(.07,.1,1.1,8), wood, 0, .55, 0), mesh(sph(.42), mat(0xff8fa3), 0, 1.3, 0), mesh(sph(.3), mat(0xffb3c2), .3, 1.15, .1), mesh(sph(.28), mat(0xff8fa3), -.3, 1.1, -.1), mesh(new THREE.CylinderGeometry(.3,.24,.3,12), mat(0xb5622f), 0, .15, 0));
+  thing(g, tree, 3.1, -2.6, .9, 1.8, .9, () => toast('The tree Sage planted when your grandmother was a baby. He says the best time to plant a tree was 190 years ago. The second best time is after lunch.'), "Sage's tree: tap to look");
+}
+{ // The Observatory: a telescope, a model of the planets, and a rock older than the Earth
+  const g = makeRoom('observatory', 10, { name:'The Observatory', floor:0x3d4470, line:0x333a62, wall:0x232a52, wall2:0x1f2548, trim:0xd9a441, mat:0x7ec8e3, winX:-2.2, out:ohOut('observatory') });
+  const brass = mat(0xd9a441, { metalness:.5 }), dark = mat(0x2a2338), wood = mat(0x7a5236);
+  const scope = G(mesh(new THREE.CylinderGeometry(.5,.6,.5,16), dark, 0, .25, 0), mesh(new THREE.CylinderGeometry(.1,.1,1,10), brass, 0, 1, 0)); const tube = mesh(new THREE.CylinderGeometry(.22,.16,2.2,16), brass, 0, 1.9, -.3); tube.rotation.x = -.8; scope.add(tube); scope.add(mesh(new THREE.CylinderGeometry(.24,.24,.06,16), mat(0xbfe3ff), 0, 2.67, -1.09).rotateX(-.8));
+  thing(g, scope, 0, -1.6, 1.4, 2.6, 1.8, () => useObservatory(), 'Telescope: tap to chart the stars');
+  const chart = G(mesh(new THREE.BoxGeometry(1.7,1.2,.05), mat(0x16203f), 0, 1.9, 0)); [[-.6,2.2],[-.3,1.9],[0,2.1],[.3,1.75],[.6,2.0],[.1,1.55],[-.5,1.6]].forEach(([x, y]) => chart.add(mesh(sph(.035), glow(0xfff3a0), x, y, .04)));
+  thing(g, chart, 2.2, -3.16, 1.8, 3, .3, () => openStarList(), 'Star chart: tap to see what you have charted');
+  const orr = G(mesh(new THREE.CylinderGeometry(.3,.4,.8,12), wood, 0, .4, 0), mesh(sph(.16), glow(0xffc857), 0, 1.15, 0)); [[.34,.05,0x9a93a8],[.5,.07,0xe2a15a],[.68,.075,0x5fb4dc],[.86,.06,0xd6553a]].forEach(([r, sz, c], i) => { const a = i * 1.7; orr.add(mesh(new THREE.TorusGeometry(r,.008,4,36), brass, 0, 1.15, 0).rotateX(Math.PI/2)); orr.add(mesh(sph(sz), mat(c), Math.cos(a) * r, 1.15, Math.sin(a) * r)); }); g.userData.orr = orr;
+  thing(g, orr, -2.6, .3, 1.9, 1.5, 1.9, () => toast('A model of the planets going around the sun. It is called an orrery, after the Earl of Orrery, who had one made about 300 years ago. Third from the sun, the blue one: that is us.'), 'Planet model: tap to learn');
+  const rock = G(mesh(new THREE.CylinderGeometry(.22,.3,.9,10), wood, 0, .45, 0), mesh(new THREE.DodecahedronGeometry(.2), mat(0x3b3438, { metalness:.3 }), 0, 1.08, 0));
+  thing(g, rock, 2.7, .4, .8, 1.4, .8, () => toast('A meteorite: a rock that fell from space. Most are about 4.56 billion years old. The oldest rock ever found on Earth is about 4 billion. You are looking at something older than the ground you stand on.'), 'Meteorite: tap to learn');
+  const desk = G(mesh(new THREE.BoxGeometry(1.2,.08,.6), wood, 0, .8, 0), mesh(new THREE.BoxGeometry(.5,.04,.36), mat(0xfff6e6), -.1, .86, 0), mesh(new THREE.BoxGeometry(.02,.045,.36), mat(0xd6332e), -.1, .862, 0), mesh(new THREE.CylinderGeometry(.02,.02,.3,6), mat(0xffc857), .35, .87, .1).rotateZ(1.3)); [[-.5,-.22],[.5,-.22],[-.5,.22],[.5,.22]].forEach(([x, z]) => desk.add(mesh(new THREE.BoxGeometry(.07,.8,.07), dark, x, .4, z)));
+  thing(g, desk, -2.4, -2.6, 1.3, 1.2, .8, () => showCard(`<div class="kicker">ON THE DESK</div><h2>Your grandmother's star notebook</h2><p>"Monday: clear sky. Counted stars. Lost count at 412."</p><p>"Tuesday: started again. Lost count at 388. A moth landed on my nose."</p><p>"Wednesday: stopped counting. Just looked. Much better."</p>`, 'Close'), 'Notebook: tap to read');
+  g.add(mesh(new THREE.CylinderGeometry(1.3,1.3,.03,28), mat(0x232a52), 0, .02, .7)); g.add(mesh(new THREE.CylinderGeometry(.5,.5,.035,5), glow(0xfff3a0), 0, .02, .7));
+}
 // A designed room: every spot is meant for a certain kind of furniture.
 const FURN_CAT = { cake:'decor', rug:'rug', table:'table', armchair:'seat', rocker:'seat', bookshelf:'tall', lamp:'decor', fern:'decor', globe:'decor', mushroom:'decor', painting:'wall', sign:'wall' };
 const CAT_INFO = {
@@ -2981,7 +3063,7 @@ function ringGreatBell() {
 function useSite(i) {
   const b = BUILDINGS[i];
   if (S.q5 < 6) { toast('An old foundation. Ring the great bell first.'); return; }
-  if (S.built.includes(b.id)) return ({ observatory:useObservatory, bakery:useBakery, library:useLibrary, musichall:useMusicHall, temple:useTemple })[b.id]();
+  if (S.built.includes(b.id)) return enterRoom(b.id); // every finished building is a room you walk into
   if (b.soon) { toast(`${b.name}: ${b.about}`); return; }
   const kindName = { crop:'crops (any kind)', fish:'fish (any kind)', fruit:'fruits (any kind)', dish:'dishes from the Bakery (any kind)' };
   const countOf = k => k.startsWith('kind:') ? Object.entries(S.bag).filter(([id]) => ITEMS[id].kind === k.slice(5)).reduce((a, [,n]) => a + n, 0) : (S.bag[k] || 0);
