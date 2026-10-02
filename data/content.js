@@ -82,7 +82,7 @@ const NEIGHBORS = {
     "Ahoy! Mind the edge. It is a long way down, and I should know.",
     "I once sailed through a cloud so thick, the fish swam in the air. True story. Mostly.",
     "Rain is just the sky giving back what it borrowed.",
-    "Pick the fruit trees every day. They like the attention.",
+    "Pick fruit from the trees every day. They like the attention.",
     "The cloud stream by the dock is full of fish. Cast a line!",
     "A captain never gets lost. He just explores by accident.",
   ], heartLines:[
@@ -233,7 +233,7 @@ AHA.rosetta = { kicker:'MEMORY FOUND', title:'The Stone That Unlocked a Language
   today:'Translation apps still learn the same way: by comparing the same words in different languages.' };
 const RECALL = {
   bell:  { title:'Harmony, Remembered', text:'Remember tuning Grandma\'s Wind Bell? Simple lengths like 1/2 and 2/3 sounded sweet then, and they sound sweet now. The same numbers work on guitar strings and flutes.' },
-  rope:  { title:'The Rope Trick, Doubled', text:'Remember the 3-4-5 rope on Captain Drizzle\'s ship? You just used it again. 6, 8, 10 is the same triangle, twice as big. Math you understand works at any size.' },
+  rope:  { title:'The Rope Trick, Doubled', text:'Remember the 3-4-5 rope on Captain Drizzle\'s ship? You just used it again. 6, 8, 10 is the same triangle, twice as big. The same math works at any size.' },
   stars: { title:'Your Own Star Map', text:'Remember the star that stays? Sailors used it to hold a steady course at night. You just used it the same way, to find a hidden fishing spot no one else knows about.' },
   lever: { title:'Archimedes Again', text:'Remember the millstone at the windmill? This boulder is heavier and your push is stronger, but the rule has not changed: put the pivot close to the weight.' },
 };
@@ -265,20 +265,20 @@ const QUESTIONS = [
     a:['Yes','She is right','Both'], r:["I KNEW it.", "Hmm. She usually is. Annoying.", "Mysterious AND right. Classic Nana."] },
   { id:'floating', q:"If you floated in the sky with your eyes shut, touching nothing, hearing nothing... would you still know you are you?",
     a:['Yes','No','I would be asleep'], r:["Me too! I think I think.", "Spooky. Hold my wing.", "Ha! Fair. Floating is very relaxing."] },
-  { id:'stoic', q:"Rain ruined my seed stand sign again. I cannot stop the rain. So... should I stay grumpy about it?",
+  { id:'stoic', q:"Rain ruined the sign on my seed stand again. I cannot stop the rain. So... should I stay grumpy about it?",
     a:['Grumpy is fair','Just fix the sign','Dance in the rain'], r:["Fair! But my feathers are tired of frowning.", "Fix it! Yes! That part I CAN do.", "Wheee! Okay, this is way better."] },
   { id:'golden', q:"Should I be nice only to birds who are nice to me? Or to everybody, even the grumpy crow?",
     a:['Only nice birds','Everybody','Start with the crow'], r:["Hmm. But then who is nice first?", "Everybody! Even the crow. Deep breath.", "The crow?! Brave. Okay. Tomorrow."] },
 ];
 const QUEST3 = [
-  "Earn 300 coins. Then tap the sign at the far edge of Orchard Isle.",
+  "Earn 300 coins. Then tap the sign at the back edge of Orchard Isle.",
   "Walk across the new bridge to Windmill Isle. Talk to the mole twins.",
   "Tap the windmill to fix its gears.",
   "Tap the windmill to lift the millstone.",
   "Tap the windmill to grind flour.",
   "Bring the flour to Nana Gale.",
   "Talk to Moss & Fern.",
-  "Chapter 3 done! Night Isle is coming.",
+  "Chapter 3 done! Next: Night Isle.",
 ];
 const QUEST4 = [
   "After 8 PM, cross the glowing bridge on the right side of Windmill Isle. Talk to Lumen.",
@@ -304,7 +304,7 @@ const QUEST2 = [
   "Tap the ship to fix its sail.",
   "After 8 PM, talk to Captain Drizzle.",
   "Talk to Captain Drizzle.",
-  "Chapter 2 done! Windmill Isle is coming.",
+  "Chapter 2 done! Next: Windmill Isle.",
 ];
 const CHIMES = [ // length as a fraction of the big pipe; simple = sweet (true for air pipes and strings, not for solid chime bars)
   { label:'1/2', r:2, sweet:true }, { label:'5/7', r:7/5 }, { label:'2/3', r:3/2, sweet:true },
@@ -318,11 +318,11 @@ const QUEST5 = [
   "Tap the pile of wooden beams next to the bell to build a frame.",
   "Tap the pile of wooden beams again to fix the gears.",
   "Tap the bell at noon (12 PM on the clock) to ring it.",
-  "The islands are home. Rebuild the village at the Old Heart!",
+  "The islands are home. Tap an empty building site at the Old Heart to rebuild the village!",
 ];
 Object.assign(RECALL, {
   lever2: { aha:'lever', title:'The Biggest Lift Yet', text:'The great bell is twice as heavy as the boulder. Same rule as the windmill: the log goes close to the weight, and a small push lifts almost anything.' },
-  rope2:  { aha:'rope',  title:'3-4-5, Three Times Bigger', text:'A 36-knot rope, and 9, 12, 15 makes the square corner. It is the same triangle as on Drizzle\'s ship, just three times bigger. Builders have trusted it for thousands of years.' },
+  rope2:  { aha:'rope',  title:'3-4-5, Three Times Bigger', text:'This rope has 36 knots. Sides of 9, 12, and 15 make the square corner. It is the same triangle as on Drizzle\'s ship, just three times bigger. Builders have trusted it for thousands of years.' },
   gears:  { aha:'gears', title:'Gears, Remembered', text:'This time the small gear has to spin 4 times for each big turn. Same idea as the windmill: fewer teeth on the small gear means more spins.' },
   sundial:{ aha:'sundial', title:'Noon, the Old Way', text:'You knew noon was the moment of the shortest shadow. That is how people told the time for thousands of years, long before clocks.' },
 });
@@ -338,7 +338,7 @@ const BUILDINGS = [
   { id:'temple', name:'Temple Garden', coins:800, items:{ 'kind:dish':3 }, pos:[0,7], villager:'sage',
     about:'Sage the old tortoise moves in. Hear a saying from the world\'s traditions each day, and see every festival coming this year.' },
 ];
-const GRANDMA_LETTER2 = "If you are reading this, you rang it. I knew you would. I spent years trying, and I think I was missing the one thing you have: you learned it all by doing it, one small thing at a time, with friends beside you. The village was never just the islands. It was the people who remembered together. Build it back, one home at a time. The sky remembers. So will you.";
+const GRANDMA_LETTER2 = "If you are reading this, you rang the bell. I knew you would. I spent years trying. I think I was missing the one thing you have. You learned by doing, one small thing at a time, with friends beside you. The village was never just the islands. It was the people who remembered together. Build it back, one home at a time. The sky remembers. So will you.";
 
 // "What to do" help for every quest step. Shown when the player taps the goal box.
 // Keep these plain: where to go, what to tap, what happens next.
@@ -369,10 +369,10 @@ const HOWTO = {
     "You finished this chapter. Keep farming, fishing, and meeting your neighbors.",
   ],
   c4: [
-    "The glowing bridge only appears after 8 PM, on the right side of Windmill Isle. Wait for the clock, cross it, and tap Lumen, the little firefly.",
+    "After 8 PM, a glowing bridge appears on the right side of Windmill Isle. Cross it and tap Lumen, the little firefly.",
     "Tap the easel with the moon painting. Tap the 8 moon paintings in order, starting with the darkest one. The lit part grows night by night until the moon is full, then shrinks.",
     "Tap the little black house. Try the hole-size buttons. Find the one that makes the picture sharp.",
-    "Tap the purple crystals. Tap each crystal to hear it with the tallest one. Pick the 2 that sound nice together, then tap Ring them. Sound off? Tap the hint button.",
+    "Tap the purple crystals. Tap a crystal to hear it played together with the tallest one. Pick the 2 that sound nice together, then tap Ring them. If your sound is off, tap the hint button.",
     "Tap Lumen to finish the chapter.",
     "You finished this chapter. Next: the Old Heart, the old village in the middle of the sky.",
   ],

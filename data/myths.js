@@ -5,13 +5,13 @@ const MYTHS = {
   simurgh: { name:'The Simurgh', colors:[0xff5fa2, 0xffb347, 0x7ee0c3, 0x8fa8ff, 0xc98bff],
     appear:{ head:'A Simurgh flew over your island!', gift:'Glowing mushrooms popped up where its shadow passed. Tap them to see what\'s inside.' } },
   ziz: { name:'The Ziz', colors:[0x7ec8e3, 0x3f86c9, 0x8fdc8a, 0xfff3a0],
-    appear:{ head:'A Ziz flew over your island!', gift:'It made it rain on your garden, so every plant is watered. It also dropped a treat covered in sprinkles.' } },
+    appear:{ head:'A Ziz flew over your island!', gift:'It brought rain to your garden, so every plant is watered. It also dropped a treat covered in sprinkles.' } },
   ibis: { name:'The Ibis of Thoth', colors:[0xfff6e6, 0x2b2233, 0xffc857, 0x7ee0c3],
     appear:{ head:'An Ibis of Thoth flew over your island!', gift:'It dropped a golden feather worth 50 coins.' } },
 };
 // what you find under a glowing mushroom: just for fun
 const FINDS = [
-  'Under the cap: a tiny snail wearing it like a hat.',
+  'A tiny snail is under the cap, wearing it like a hat.',
   'This one hums a little when you touch it.',
   'It puffs out a cloud of glowing spores. Your hands sparkle for a minute.',
   'A ladybug was napping underneath. It is not happy about this.',

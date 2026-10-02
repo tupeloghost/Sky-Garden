@@ -2,7 +2,7 @@
 // seasons: 0 spring, 1 summer, 2 fall, 3 winter. time: day, night, or any.
 const INSECTS = [
   { id:'honeybee',  name:'Honeybee',          where:'air',    seasons:[0,1,2], time:'day',   sell:40,  fact:'A honeybee makes only about a twelfth of a teaspoon of honey in its whole life. A jar of honey is the work of more than a thousand bees.' },
-  { id:'ladybird',  name:'Seven-spot Ladybird', where:'flower', seasons:[0,1,2], time:'day', sell:35,  fact:'A single ladybird can eat about 5,000 aphids in its life. Aphids are tiny bugs that eat plants, which is why gardeners are happy to see them.' },
+  { id:'ladybird',  name:'Seven-spot Ladybird', where:'flower', seasons:[0,1,2], time:'day', sell:35,  fact:'A single ladybird can eat about 5,000 aphids in its life. Aphids are tiny bugs that eat plants, so gardeners are happy to see a ladybird.' },
   { id:'dragonfly', name:'Green Darner',      where:'air',    seasons:[1],     time:'day',   sell:90,  fact:'Dragonflies catch about 9 out of every 10 insects they chase. That makes them some of the best hunters on Earth.' },
   { id:'hopper',    name:'Grasshopper',       where:'ground', seasons:[1,2],   time:'day',   sell:45,  fact:'Many grasshoppers "sing" by rubbing a back leg against a wing, like a bow on a violin.' },
   { id:'cicada',    name:'Periodical Cicada', where:'tree',   seasons:[1],     time:'day',   sell:110, fact:'Some cicadas live underground for 13 or 17 years, then all come out together in the same spring.' },

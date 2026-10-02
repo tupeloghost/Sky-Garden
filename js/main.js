@@ -1123,7 +1123,7 @@ function makeRoom(id, n, o) { const c = new THREE.Vector3(ROOM.x + 24 * n, 0, RO
 // put a thing in a room and make all of it tappable
 const thing = (g, obj, x, z, w, h, d, fn, label) => { obj.position.set(x, 0, z); g.add(obj); const hb = hitBox(w, h, d); hb.position.set(x, h / 2, z); g.add(hb); deco(hb, fn); hb.userData.label = label; return obj; };
 const G = (...kids) => { const g = new THREE.Group(); kids.forEach(k => g.add(k)); return g; };
-function enterRoom(id) { const R = ROOMS[id]; if (!R) return; if (id === 'museum') { drawMuseum(); if (!S.museumSeen) { S.museumSeen = true; setTimeout(() => showCard(`<div class="kicker">THE MUSEUM</div><h2>It is empty. That is your job.</h2><p>Every case in here is waiting for something you find. Give the museum one of each fish, bug, and crop, and it goes on show for good.</p><p>You get 25 coins for each one, and a sign that says who gave it.</p>`, 'Okay'), 700); } } S.where = 'hut'; S.room = id; player.position.set(R.c.x, 0, R.c.z + 2.2); roomLight.position.set(R.c.x, 3, R.c.z + .5); target = null; pending = null; snapCam(); sfx('door'); drawHud(); save(); toast(R.name); }
+function enterRoom(id) { const R = ROOMS[id]; if (!R) return; if (id === 'museum') { drawMuseum(); if (!S.museumSeen) { S.museumSeen = true; setTimeout(() => showCard(`<div class="kicker">THE MUSEUM</div><h2>It is empty. That is your job.</h2><p>Every case in here is waiting for something you find. Give the museum one of each fish, bug, and crop. Each one goes on show for good.</p><p>You get 25 coins for each one, and a sign that says who gave it.</p>`, 'Okay'), 700); } } S.where = 'hut'; S.room = id; player.position.set(R.c.x, 0, R.c.z + 2.2); roomLight.position.set(R.c.x, 3, R.c.z + .5); target = null; pending = null; snapCam(); sfx('door'); drawHud(); save(); toast(R.name); }
 function exitRoom() { const R = ROOMS[S.room]; S.room = null; S.where = 'home'; roomLight.position.set(ROOM.x, 3, ROOM.z + .5); if (R) player.position.copy(R.out()); target = null; pending = null; snapCam(); sfx('door'); drawHud(); save(); }
 { // Nana Gale's garden cottage: herbs, seeds, tea, and your grandmother's picture
   const g = makeRoom('nana', 1, { name:"Nana Gale's cottage", floor:0xd8a877, line:0xc4935f, wall:0xe3ecd2, wall2:0xd6e2c2, trim:0x8a6445, mat:0x8fdc8a, winX:-1.2, out:() => new THREE.Vector3(-1, 0, -4.5) });
@@ -1328,7 +1328,7 @@ const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIG
   const orr = G(mesh(new THREE.CylinderGeometry(.3,.4,.8,12), wood, 0, .4, 0), mesh(sph(.16), glow(0xffc857), 0, 1.15, 0)); [[.34,.05,0x9a93a8],[.5,.07,0xe2a15a],[.68,.075,0x5fb4dc],[.86,.06,0xd6553a]].forEach(([r, sz, c], i) => { const a = i * 1.7; orr.add(mesh(new THREE.TorusGeometry(r,.008,4,36), brass, 0, 1.15, 0).rotateX(Math.PI/2)); orr.add(mesh(sph(sz), mat(c), Math.cos(a) * r, 1.15, Math.sin(a) * r)); }); g.userData.orr = orr;
   thing(g, orr, -2.6, .3, 1.9, 1.5, 1.9, () => toast('A model of the planets going around the sun. It is called an orrery, after the Earl of Orrery, who had one made about 300 years ago. Third from the sun, the blue one: that is us.'), 'Planet model: tap to learn');
   const rock = G(mesh(new THREE.CylinderGeometry(.22,.3,.9,10), wood, 0, .45, 0), mesh(new THREE.DodecahedronGeometry(.2), mat(0x3b3438, { metalness:.3 }), 0, 1.08, 0));
-  thing(g, rock, 2.7, .4, .8, 1.4, .8, () => toast('A meteorite: a rock that fell from space. Most are about 4.56 billion years old. The oldest rock ever found on Earth is about 4 billion. You are looking at something older than the ground you stand on.'), 'Meteorite: tap to learn');
+  thing(g, rock, 2.7, .4, .8, 1.4, .8, () => toast('A meteorite: a rock that fell from space. Most are about 4.56 billion years old. The oldest rock ever found on Earth is about 4 billion years old. You are looking at something older than the ground you stand on.'), 'Meteorite: tap to learn');
   const desk = G(mesh(new THREE.BoxGeometry(1.2,.08,.6), wood, 0, .8, 0), mesh(new THREE.BoxGeometry(.5,.04,.36), mat(0xfff6e6), -.1, .86, 0), mesh(new THREE.BoxGeometry(.02,.045,.36), mat(0xd6332e), -.1, .862, 0), mesh(new THREE.CylinderGeometry(.02,.02,.3,6), mat(0xffc857), .35, .87, .1).rotateZ(1.3)); [[-.5,-.22],[.5,-.22],[-.5,.22],[.5,.22]].forEach(([x, z]) => desk.add(mesh(new THREE.BoxGeometry(.07,.8,.07), dark, x, .4, z)));
   thing(g, desk, -2.4, -2.6, 1.3, 1.2, .8, () => showCard(`<div class="kicker">ON THE DESK</div><h2>Your grandmother's star notebook</h2><p>"Monday: clear sky. Counted stars. Lost count at 412."</p><p>"Tuesday: started again. Lost count at 388. A moth landed on my nose."</p><p>"Wednesday: stopped counting. Just looked. Much better."</p>`, 'Close'), 'Notebook: tap to read');
   g.add(mesh(new THREE.CylinderGeometry(1.3,1.3,.03,28), mat(0x232a52), 0, .02, .7)); g.add(mesh(new THREE.CylinderGeometry(.5,.5,.035,5), glow(0xfff3a0), 0, .02, .7));
@@ -1339,7 +1339,7 @@ var museumBits = {};
 function drawMuseum() { S.museum = S.museum || {}; Object.entries(museumBits).forEach(([k, o]) => o.visible = k.startsWith('relic:') ? S.aha.includes(k.slice(6)) : !!S.museum[k]); }
 function museumFact(k) { const b = INSECTS.find(x => x.id === k); return b ? `<p>${b.fact}</p>` : FINDS[k] ? `<p>${FINDS[k].fact}</p>${FINDS[k].see ? `<h4>See it for yourself</h4><p>${FINDS[k].see}</p>` : ''}` : ''; }
 function museumWing(kind, msg) { S.museum = S.museum || {}; const W = MUSEUM[kind], n = W.ids.filter(k => S.museum[k]).length;
-  showCard(`<div class="kicker">THE MUSEUM</div><h2>${W.name}: ${n} of ${W.ids.length}</h2><p>${msg || 'Give the museum one of each. It goes on show here for good, and you get 25 coins.'}</p>
+  showCard(`<div class="kicker">THE MUSEUM</div><h2>${W.name}: ${n} of ${W.ids.length}</h2><p>${msg || 'Give the museum one of each. Each one goes on show here for good, and you get 25 coins.'}</p>
     <div class="jlist">${W.ids.map(k => S.museum[k] ? `<button data-mx="${k}">${icon(k, kind)} ${ITEMS[k].name} <span class="sub">On show. Tap to read its sign.</span></button>`
       : (S.bag[k] || 0) > 0 ? `<button data-mg="${k}">${icon(k, kind)} ${ITEMS[k].name} <span class="sub">You have ${S.bag[k]}. Tap to give one.</span></button>`
       : `<button>${S.found.includes(k) || (S.bugs || []).includes(k) ? `${icon(k, kind)} ${ITEMS[k].name}` : 'Not found yet'} <span class="sub">${S.found.includes(k) || (S.bugs || []).includes(k) ? 'Bring one in your bag to give it.' : 'An empty spot, waiting.'}</span></button>`).join('')}</div>`, 'Close');
@@ -1351,7 +1351,7 @@ function museumWing(kind, msg) { S.museum = S.museum || {}; const W = MUSEUM[kin
     if (done) return showCard(`<div class="kicker">THE MUSEUM</div><h2>${W.name} is full!</h2><p>Every spot has something in it, and you put it all there. <b>+300 coins.</b></p>${all ? '<p>That was the last empty spot in the whole museum. Visitors will be reading your signs for years.</p>' : ''}`, 'Back', () => museumWing(kind));
     museumWing(kind, `<b>The ${ITEMS[k].name} is on show now. +25 coins.</b> Tap it to read its sign.`); }); }
 function museumRelics() { const got = RELICS.filter(r => S.aha.includes(r.id));
-  showCard(`<div class="kicker">THE MUSEUM</div><h2>The Relic Case: ${got.length} of ${RELICS.length}</h2><p>The old things you dig up from gold sparkles are shown here. You keep the memory. The museum keeps it safe.</p>
+  showCard(`<div class="kicker">THE MUSEUM</div><h2>The Relic Case: ${got.length} of ${RELICS.length}</h2><p>The old things you dig up from gold sparkles are shown here. You keep the memory. The museum keeps the relic safe.</p>
     <div class="jlist">${RELICS.map(r => S.aha.includes(r.id) ? `<button data-mr="${r.id}">${AHA[r.id].title} <span class="sub">Tap to read its sign.</span></button>` : `<button>Not found yet <span class="sub">Dig up gold sparkles on your island.</span></button>`).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-mr]').forEach(b => b.onclick = () => showCard(ahaHtml(b.dataset.mr), 'Back', museumRelics)); }
 function museumDesk() { S.museum = S.museum || {}; const total = Object.values(MUSEUM).reduce((a, w) => a + w.ids.length, 0), n = Object.keys(S.museum).length;
@@ -1676,7 +1676,7 @@ function drawHud() {
   $('bar').innerHTML = (tools || xt ? xt + tools + '<i class="hdiv"></i>' : '') + shown.map(([k,c]) => { const n = S.seeds[k] || 0, now = c.seasons.includes(s);
     return `<div class="hslot seed ${S.sel===k?'on':''} ${now ? '' : 'late'} ${n ? '' : 'none'}" data-k="${k}" title="${c.name}"><span>${icon(k)}</span><b>${n}</b><small>${now ? c.name : 'Off season'}</small></div>`; }).join('');
   document.querySelectorAll('.hslot.seed').forEach(el => el.onclick = () => { S.sel = el.dataset.k; drawHud(); const c = CROPS[S.sel], n = S.seeds[S.sel] || 0;
-    toast(n ? `${c.name} seeds picked. Tap an empty garden square to plant.` : `No ${c.name} seeds. Tap another seed in this bar, or buy more from Pip on the Town Square.`); });
+    toast(n ? `${c.name} seeds chosen. Tap an empty garden square to plant.` : `No ${c.name} seeds. Tap another seed in this bar, or buy more from Pip on the Town Square.`); });
   document.querySelectorAll('[data-xt]').forEach(el => el.onclick = () => extraTools[+el.dataset.xt].run());
   document.querySelectorAll('.hslot.tool:not([data-xt])').forEach(el => el.onclick = () => el.dataset.tool === 'balloon' ? balloonMenu() : el.dataset.tool === 'myth' ? mythMenu() : toast(el.dataset.how));
 }
@@ -1724,7 +1724,7 @@ const RELIC_PLAY = {
         <p style="text-align:center;font-weight:700;margin-top:8px">${got.filter(x => x != null).length ? `So far: ${got.filter(x => x != null).join(' + ')} = ${sum}` : '&nbsp;'}</p>
         ${full ? `<button id="rpNext">${row === 0 ? 'Turn the bone over' : 'What is this?'}</button>` : ''}`, null);
       document.querySelectorAll('[data-nb]').forEach(b => b.onclick = () => { const i = +b.dataset.nb; if (got[i] != null) return; got[i] = rows[row][i]; tone(500 + got[i] * 12, { dur:.12, vol:.04 });
-        const all = [0, 1, 2, 3].every(k => got[k] != null); draw(all ? (row === 0 ? '<b>The row adds up to 60.</b> There is a second row on the other side.' : '<b>60 again.</b> Two rows, different groups, the same total. Nobody alive knows if that was on purpose.') : null); });
+        const all = [0, 1, 2, 3].every(k => got[k] != null); draw(all ? (row === 0 ? '<b>The row adds up to 60.</b> There is a second row on the other side.' : '<b>60 again.</b> The groups are different, but the total is the same. Nobody alive knows if that was on purpose.') : null); });
       if ($('rpNext')) $('rpNext').onclick = () => { if (row === 0) { row = 1; got = []; return draw('The other side. <b>Count these groups too.</b>'); } hideCard(); done(); }; };
     draw(); },
   // brush the dirt off, then say what you see
@@ -1732,7 +1732,7 @@ const RELIC_PLAY = {
     const draw = (msg) => { const all = seen.every(Boolean);
       showCard(`<div class="kicker">YOU DUG THIS UP</div><h2>A carved stone, caked in ash</h2><p>${msg || 'There is a carving under the dirt. <b>Tap each patch to brush it clean.</b>'}</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">${parts.map((pt, i) => `<button data-br="${i}" style="margin:0;padding:6px;background:${seen[i] ? '#d9cfb9' : '#6b5f52'};box-shadow:none;border-radius:12px"><svg viewBox="0 0 60 80" style="display:block;width:64px;height:84px;margin:0 auto" aria-hidden="true">${seen[i] ? `<path d="${pt[1]}" fill="none" stroke="#7a6e58" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>` : '<circle cx="20" cy="26" r="7" fill="#584d42"/><circle cx="40" cy="52" r="10" fill="#584d42"/><circle cx="34" cy="20" r="4" fill="#7d7163"/>'}</svg></button>`).join('')}</div>
-        ${all && !asked ? '<h4>Arms, hands, a belt. What is this pillar?</h4><div class="chips"><button data-wh="table">A table</button><button data-wh="person">A person</button><button data-wh="tree">A tree</button></div>' : ''}${asked ? '<button id="rpNext">Who made it?</button>' : ''}`, null);
+        ${all && !asked ? '<h4>Arms, hands, a belt. What is this stone?</h4><div class="chips"><button data-wh="table">A table</button><button data-wh="person">A person</button><button data-wh="tree">A tree</button></div>' : ''}${asked ? '<button id="rpNext">Who made it?</button>' : ''}`, null);
       document.querySelectorAll('[data-br]').forEach(b => b.onclick = () => { const i = +b.dataset.br; if (seen[i]) return; seen[i] = true; sfx('dig'); draw(`<b>${parts[i][0]}</b>`); });
       document.querySelectorAll('[data-wh]').forEach(b => b.onclick = () => { if (b.dataset.wh !== 'person') return draw('Look again at the arms and the hands.'); asked = true; chime(988); draw('<b>A person.</b> The flat top of the stone is the head. This is a statue, as tall as a house.'); });
       if ($('rpNext')) $('rpNext').onclick = () => { hideCard(); done(); }; };
@@ -1741,7 +1741,7 @@ const RELIC_PLAY = {
   tablet(done) { const tried = { 60:{}, 10:{} };
     const draw = (msg) => { const n = Object.keys(tried[60]).length + Object.keys(tried[10]).length;
       const row = t => `<h4>${t} loaves, shared between...</h4><div class="chips">${[2, 3, 4, 5, 6].map(p => { const ok = t % p === 0, d = tried[t][p]; return `<button data-sh="${t}:${p}" class="${d ? '' : 'ghost'}" style="${d ? `background:${ok ? '#8fdc8a' : '#ffb3b3'}` : ''}">${p} people${d ? (ok ? `: ${t / p} each` : `: ${t % p} left over`) : ''}</button>`; }).join('')}</div>`;
-      showCard(`<div class="kicker">YOU DUG THIS UP</div><h2>A clay tablet of wedge marks</h2><p>${msg || 'The marks are numbers. The people who wrote them counted in 60s, not 10s. <b>Try sharing out bread both ways, and see why.</b>'}</p>${row(60)}${row(10)}
+      showCard(`<div class="kicker">YOU DUG THIS UP</div><h2>A clay tablet of wedge marks</h2><p>${msg || 'The marks are numbers. The people who wrote them counted in 60s, not 10s. <b>Try sharing out 60 loaves, then 10 loaves, and see why.</b>'}</p>${row(60)}${row(10)}
         ${n >= 6 ? '<button id="rpNext">So that is why</button>' : `<p class="sub" style="margin-top:8px">Try a few of each.</p>`}`, null);
       document.querySelectorAll('[data-sh]').forEach(b => b.onclick = () => { const [t, p] = b.dataset.sh.split(':').map(Number); tried[t][p] = 1; const ok = t % p === 0; sfx(ok ? 'pick' : 'click');
         draw(ok ? `<b>${t} loaves between ${p}: ${t / p} each, none left.</b>` : `<b>${t} loaves between ${p}: ${t % p} left over.</b> Somebody is going to argue.`); });
@@ -1789,14 +1789,14 @@ const PLAY = (() => { const pc = (k, t, body) => showCard(`<div class="kicker">$
     const draw = (k) => { if (k) tried[k] = 1; pc(K, 'Three pots of berries', `<p>${k ? R[k][1] : 'Mabel has three pots on the stove. <b>Cook each one and see what you get.</b>'}</p><div class="chips">${Object.entries(R).map(([id, r]) => `<button data-jm="${id}" class="${tried[id] ? 'ghost' : ''}">${r[0]}</button>`).join('')}</div>${tried.lemon ? nx('Why did that one set?') : ''}`); each('[data-jm]', b => { sfx(b.dataset.jm === 'lemon' ? 'pick' : 'click'); draw(b.dataset.jm); }); on(done); };
     draw(); },
   crisp(done) { const R = { low:['Low: 100 degrees', 'Soft and cooked through, but pale. It smells like warm apple, and that is all.'], mid:['Hot: 180 degrees', '<b>Golden brown.</b> The whole bakery smells of toast and caramel.'], high:['Very hot: 300 degrees', 'Black on top, raw underneath. Mabel: "Gerald, NO."'] }, tried = {};
-    const draw = (k) => { if (k) tried[k] = 1; pc(K, 'How hot should Gerald be?', `<p>${k ? R[k][1] : 'The apples are in the dish, topping on. <b>Pick how hot to make the oven.</b>'}</p><div class="chips">${Object.entries(R).map(([id, r]) => `<button data-cr="${id}" class="${tried[id] ? 'ghost' : ''}">${r[0]}</button>`).join('')}</div>${tried.mid ? nx('Where does the brown come from?') : ''}`); each('[data-cr]', b => { sfx(b.dataset.cr === 'mid' ? 'pick' : 'click'); draw(b.dataset.cr); }); on(done); };
+    const draw = (k) => { if (k) tried[k] = 1; pc(K, 'How hot should Gerald be?', `<p>${k ? R[k][1] : 'The apples are in the dish, with the topping on. <b>Pick how hot to make the oven.</b>'}</p><div class="chips">${Object.entries(R).map(([id, r]) => `<button data-cr="${id}" class="${tried[id] ? 'ghost' : ''}">${r[0]}</button>`).join('')}</div>${tried.mid ? nx('Where does the brown come from?') : ''}`); each('[data-cr]', b => { sfx(b.dataset.cr === 'mid' ? 'pick' : 'click'); draw(b.dataset.cr); }); on(done); };
     draw(); },
   tea(done) { let t = 0; const cup = (l, a) => `<div style="text-align:center"><svg viewBox="0 0 80 70" style="width:90px" aria-hidden="true"><path d="M12 10 H68 L62 62 H18Z" fill="#eef7fb" stroke="#9fc7da" stroke-width="2"/><path d="M15 16 H65 L60.500 59 H19.500Z" fill="rgba(79,154,92,${a.toFixed(2)})"/></svg><div><b>${l}</b></div></div>`;
     const draw = () => { pc(K, 'Two cups, no stirring', `<p>${t === 0 ? 'One cup of hot water, one of cold. <b>Drop mint leaves in both, and do not stir.</b>' : t === 1 ? 'A minute later. <b>The hot cup is already turning green.</b> The cold one has barely changed.' : '<b>The hot cup is green all the way through.</b> The cold cup is still mostly clear.'}</p><div style="display:flex;justify-content:center;gap:20px;margin-top:8px">${cup('Hot', Math.min(.85, t * .42))}${cup('Cold', t * .09)}</div>
       ${t < 2 ? `<button id="plWait" style="margin-top:10px">${t ? 'Wait another minute' : 'Drop the mint in'}</button>` : nx('What moved the color?')}`); if ($('plWait')) $('plWait').onclick = () => { t++; sfx('water'); draw(); }; on(done); };
     draw(); },
   soup(done) { let h = 0, far = false;
-    const draw = () => { pc(K, 'Carry the pot uphill', `<p>${far ? '<b>The higher you go, the cooler the boil.</b> The water bubbles just as hard, but it is not as hot, so the soup cooks slower.' : 'A pot of water boils at the foot of a mountain. <b>Drag the slider to carry it up.</b>'}</p>
+    const draw = () => { pc(K, 'Carry the pot uphill', `<p>${far ? '<b>The higher you go, the cooler the boiling water.</b> It bubbles just as hard, but it is not as hot, so the soup cooks slower.' : 'A pot of water boils at the foot of a mountain. <b>Drag the slider to carry it up.</b>'}</p>
       <p style="text-align:center;font-size:20px;font-weight:800;margin-top:8px"><span id="plH">0</span> meters up: water boils at <span id="plT">100</span> degrees</p><input id="plSl" type="range" min="0" max="8800" step="100" value="${h}" aria-label="How high up the mountain" style="width:100%;height:34px;accent-color:#e8a33d"><p class="sub" id="plN">Sea level.</p>${far ? nx('Why does height matter?') : ''}`);
       const upd = () => { h = +$('plSl').value; $('plH').textContent = h.toLocaleString(); $('plT').textContent = Math.round(100 - h / 300); $('plN').textContent = h >= 8700 ? 'The top of Mount Everest. An egg takes a very long time up here.' : h >= 3000 ? 'A high mountain town.' : h >= 1000 ? 'Up in the hills.' : 'Sea level.'; };
       upd(); $('plSl').oninput = () => { upd(); if (h >= 3000 && !far) { far = true; draw(); } }; on(done); };
@@ -1896,7 +1896,7 @@ function allCats() {
     { name:'Furniture', ids:Object.keys(FURN), has:k => S.found.includes(k), label:k => FURN[k].name, open:k => itemCard(k, 'Furniture'), hint:k => FINDS[k].hint },
     { name:'Memories', ids:AHA_ORDER, has:k => S.aha.includes(k), label:k => AHA[k].title + (S.used.includes(k) ? ' ★' : ''), open:k => () => showCard(ahaHtml(k), 'Back', () => openCategory('Memories')), hint:() => 'Find more by digging up sparkles, finishing chapters, and joining festivals.' },
     { name:'Dishes', ids:RECIPES.map(r => r.id), has:k => S.cooked.includes(k), label:k => RECIPES.find(r => r.id === k).name, open:k => () => showCard(lessonHtml(RECIPES.find(r => r.id === k).aha), 'Back', () => openCategory('Dishes')), hint:k => `Cook it at the Bakery. Needs ${Object.entries(RECIPES.find(r => r.id === k).needs).map(([i,n]) => `${n} ${ITEMS[i].name}`).join(' and ')}.` },
-    { name:'Star Chart', ids:CONSTELLATIONS.map(c => c.id), has:k => S.charted.includes(k), label:k => CONSTELLATIONS.find(c => c.id === k).name, open:k => () => showCard(starHtml(CONSTELLATIONS.find(c => c.id === k)), 'Back', () => openCategory('Star Chart')), hint:k => `Chart it at the Observatory after 8 PM. Out in ${CONSTELLATIONS.find(c => c.id === k).months.map(month).join(', ')}.` },
+    { name:'Star Chart', ids:CONSTELLATIONS.map(c => c.id), has:k => S.charted.includes(k), label:k => CONSTELLATIONS.find(c => c.id === k).name, open:k => () => showCard(starHtml(CONSTELLATIONS.find(c => c.id === k)), 'Back', () => openCategory('Star Chart')), hint:k => `Chart it at the Observatory after 8 PM. You can see it in ${CONSTELLATIONS.find(c => c.id === k).months.map(month).join(', ')}.` },
     { name:'Library Books', ids:BOOKS.map(b => b.id), has:k => S.read.includes(k), label:k => BOOKS.find(b => b.id === k).title, open:k => () => showCard(lessonHtml({ kicker:'THE LIBRARY', ...BOOKS.find(b => b.id === k) }), 'Back', () => openCategory('Library Books')), hint:() => 'Build the Library. A new book arrives every week.' },
     { name:'Songs', ids:[...SONGS.map(x => x.id), 'penta'], has:k => k === 'penta' ? S.penta : S.songs.includes(k), label:k => k === 'penta' ? 'The Five-Note Scale' : SONGS.find(x => x.id === k).name, open:k => () => showCard(lessonHtml(k === 'penta' ? PENTA_AHA : SONGS.find(x => x.id === k).aha), 'Back', () => openCategory('Songs')), hint:() => 'Build the Music Hall and play the xylophone.' },
     { name:'Know-how', ids:KNOWHOW.map(x => x.id), has:k => (S.know || []).includes(k), label:k => { const x = KNOWHOW.find(y => y.id === k); return `${x.icon} ${x.title}`; }, open:k => () => showCard(knowHtml(KNOWHOW.find(y => y.id === k)), 'Back', () => openCategory('Know-how')), hint:() => 'You pick these up by doing things, not by looking for them.' },
@@ -1939,7 +1939,7 @@ function birthdayPicker(done, fromNana) {
       if (!y) return draw('Pick the year too.');
       if (d > new Date(2024, m, 0).getDate()) return draw(`${MONTH_LONG[m-1]} only has ${new Date(2024, m, 0).getDate()} days.`);
       S.birthday = { m, d, y }; S.ageBand = ageBand(); S.birthdayAsked = true; save(); hideCard(); toast(`Birthday saved: ${MONTH_LONG[m-1]} ${d}.`); done && done(); };
-    $('bdSkip').onclick = () => { S.birthdayAsked = true; save(); hideCard(); S.ageBand = 'kid'; save(); toast('No problem. Your island will celebrate the day you started instead. You can add it later: tap Bag, then Settings.'); done && done(); };
+    $('bdSkip').onclick = () => { S.birthdayAsked = true; save(); hideCard(); S.ageBand = 'kid'; save(); toast('Your island will celebrate the day you started instead. To add your birthday later, tap Bag, then Settings.'); done && done(); };
   };
   draw();
 }
@@ -1963,7 +1963,7 @@ function birthdayParty() {
     <p>${S.birthday ? 'The whole sky came to celebrate you.' : 'One more year on your island. The whole sky came to celebrate.'} Year ${yr} begins today!</p>
     <h4>Presents</h4><div class="jlist">
       ${giftsFrom.length ? `<button>${coins} coins from ${giftsFrom.join(', ')}</button>` : `<button>${coins} coins from the sky</button>`}
-      <button>A Birthday Cake for your hut</button><button>A party hat (Bag, then Settings, then Change my look)</button></div>
+      <button>A Birthday Cake for your hut</button><button>A party hat. To wear it, tap Bag, then Settings, then Change my look</button></div>
     <h4>Your year ${yr - 1} in review</h4><div class="jlist"><button>${review.aha} memories brought back</button><button>${review.found} new things found</button><button>${review.built} buildings rebuilt</button></div>`, 'Thank you!');
 }
 function openJournal() {
@@ -2027,7 +2027,7 @@ async function openMoveGame(back) {
     <h4>Step 1: On this device</h4><p>Tap Copy code. Then send it to yourself, like in a text or email.</p>
     <textarea id="myCode" readonly rows="3" style="width:100%;margin-top:8px;font:12px monospace;border-radius:12px;border:2px solid #eadfd0;padding:8px">${code}</textarea>
     <button id="copyCode">Copy code</button>
-    <h4>Step 2: On the other device</h4><p>Open Sky Garden, tap Move my game, paste the code here, and tap Load.</p>
+    <h4>Step 2: On the other device</h4><p>Open Sky Garden. Tap Bag, then Settings, then Sync my game to another device. Paste the code in the box below, then tap Load.</p>
     <textarea id="theirCode" rows="3" placeholder="Paste a save code here" style="width:100%;margin-top:8px;font:12px monospace;border-radius:12px;border:2px solid #eadfd0;padding:8px"></textarea>
     <button id="loadCode">Load</button>
     <p id="codeMsg" style="margin-top:8px;font-weight:700;min-height:22px"></p>`, back ? 'Back' : 'Close', back);
@@ -2080,7 +2080,7 @@ function openBag() {
     return list.length ? `<h4>${label}</h4><div class="igrid">${list.map(([k,n]) => tile(k, n, ITEMS[k].name)).join('')}</div>` : ''; }).join('');
   const furn = Object.entries(S.furn).filter(([,n]) => n > 0).map(([k,n]) => `<button class="itile" data-fu="${k}"><span class="ic">${icon(k)}</span><b>${n}</b><small>${FURN[k].name}</small></button>`).join('');
   showCard(`<div class="kicker">YOUR BAG</div>${founderOn() ? `<div class="founder">✦ ${keeperLevel() >= 3 ? 'Elder Keeper' : keeperLevel() >= 2 ? 'Keeper' : 'Founding Gardener'}</div>` : ''}<h2>Your stuff</h2>${LIMITS_ON ? spaceMeter(slotsIn(S.bag), packCap(), "Backpack") : ""}
-    ${goods || '<p>Nothing yet. Pick crops, fruit, or fish.</p>'}
+    ${goods || '<p>Nothing yet. Pick crops and fruit, or catch fish.</p>'}
     ${(S.products || []).length ? `<h4>Products</h4><div class="igrid">${S.products.map((p, i) => `<button class="itile" data-pr="${i}">${productSwatch(p, 34)}<small>${productName(p)}</small></button>`).join('')}</div>` : ''}
     <h4>Furniture</h4>${furn ? `<div class="igrid">${furn}</div>` : '<p>None yet. Pip sells furniture.</p>'}
     <p id="itInfo" class="itinfo">Tap an item to see what it is for.</p>
@@ -2163,7 +2163,7 @@ const HELP = {
       document.querySelectorAll('[data-sl]').forEach(b => b.onclick = () => { const d = b.dataset.sl;
         if (d === 's') { sfx('click'); return draw('The sail flaps and the ship does not move. A ship cannot sail straight into the wind. Try pointing to one side.'); }
         trail.push([up, side]); up = Math.min(4, up + 1); side += d === 'l' ? -1 : 1; sfx('cast'); last = d;
-        draw(up >= 4 && side !== 0 ? `You are level with the island, but ${Math.abs(side)} to the ${side < 0 ? 'left' : 'right'} of it. The ship is back at the start. This time, turn back the other way sooner.` + ((up = 0, side = 0, trail = []), '') : `The sail fills! The ship moves up and to the ${d === 'l' ? 'left' : 'right'}.`); });
+        draw(up >= 4 && side !== 0 ? `You are level with the island, but ${Math.abs(side)} to the ${side < 0 ? 'left' : 'right'} of it. The ship is back at the start. This time, switch to the other side sooner.` + ((up = 0, side = 0, trail = []), '') : `The sail fills! The ship moves up and to the ${d === 'l' ? 'left' : 'right'}.`); });
       if ($('hpDone')) $('hpDone').onclick = () => helpDone('drizzle', 'tack', 'Ha! You zigzagged like an old sea dog. Left, then right, then left again.'); };
     draw(); } },
   lumen: { label:'Help mix the light', run() { const on = { r:false, g:false, b:false }; let step = 0;
@@ -2214,7 +2214,7 @@ const HELP = {
     const draw = (msg = '"I filled four glasses with water to make a tiny xylophone. Tap a glass to hear it. Then help me: <b>tap all four in order, from the lowest note to the highest.</b>"', won) => {
       showCard(`<div class="kicker">HELP ALLEGRA</div><h2>🥛 The singing glasses</h2><p>${msg}</p>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">${order.map((g, k) => glass(g, k)).join('')}</div>
-        ${won ? '<button id="hpDone">Play it for Allegra</button>' : `<p class="sub" style="margin-top:8px">${seq.length ? `You have tapped ${seq.length} of 4.` : 'Listen to each one first if you like. Your taps are counted in order.'} <button id="glReset" class="ghost" style="padding:2px 10px">Start over</button></p>`}`, 'Later');
+        ${won ? '<button id="hpDone">Play it for Allegra</button>' : `<p class="sub" style="margin-top:8px">${seq.length ? `You have tapped ${seq.length} of 4.` : 'Each tap plays the glass and counts as your next pick. Tap Start over to try again.'} <button id="glReset" class="ghost" style="padding:2px 10px">Start over</button></p>`}`, 'Later');
       if ($('glReset')) $('glReset').onclick = () => { seq = []; draw(); };
       document.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { const k = +b.dataset.gl, g = order[k]; if (won) return chime(G[g][2]); chime(G[g][2]); if (muted) toast('Sound is off, so the words will tell you each note.');
         if (seq.includes(k)) return draw(`${G[g][0]}: <b>${G[g][3]}.</b>`);
@@ -2289,7 +2289,7 @@ function goal(t, n=1) {
 function communityGoal() {
   const d = today(), m = d.getMonth(), ym = `${d.getFullYear()}-${String(m+1).padStart(2,'0')}`;
   const [type, title, verb, target] = [['harvest','The Great Harvest','Pick crops',500], ['fishing','The Big Catch','Catch fish',200], ['fruit','Orchard Days','Pick fruit',300]][m % 3];
-  return { id:`${ym}-${type}`, type, title, text:`${verb} together this month. Every one that anyone picks or catches counts.`, target, reward:150 };
+  return { id:`${ym}-${type}`, type, title, text:`${verb} together this month. Every player adds to one shared total.`, target, reward:150 };
 }
 function communityAdd(type) {
   const cg = communityGoal(); if (cg.type !== type || VISIT) return;
@@ -2308,8 +2308,8 @@ async function communityHtml() {
   const mineN = S.contrib?.[cg.id] || 0, done = count !== null && count >= cg.target, claimed = S.claimed?.[cg.id];
   return `<h4>Community goal: ${cg.title}</h4><p>${cg.text}</p>
     ${count === null ? '<p>Could not reach the cloud right now.</p>' : `<div style="height:12px;border-radius:99px;background:#eadfd0;margin-top:8px;overflow:hidden"><div style="height:100%;width:${Math.min(100, Math.round(count/cg.target*100))}%;background:#8fdc8a"></div></div>
-    <p style="margin-top:4px"><b>${Math.min(count, cg.target)} of ${cg.target}</b> together. You helped with ${mineN}.</p>`}
-    ${done && mineN > 0 && !claimed ? `<button id="claimCg">Claim your reward: ${cg.reward} coins</button>` : done ? `<p style="font-weight:700">${claimed ? 'Reward claimed. Thank you for helping!' : 'Goal reached! Help next month to earn the reward.'}</p>` : ''}`;
+    <p style="margin-top:4px"><b>${Math.min(count, cg.target)} of ${cg.target}</b> so far, from all players. You added ${mineN}.</p>`}
+    ${done && mineN > 0 && !claimed ? `<button id="claimCg">Claim your reward: ${cg.reward} coins</button>` : done ? `<p style="font-weight:700">${claimed ? 'Reward claimed. Thank you for helping!' : 'Goal reached! You did not add to this one. Help next month to earn the reward.'}</p>` : ''}`;
 }
 function wireClaim() { const b = $('claimCg'); if (!b) return; b.onclick = () => { const cg = communityGoal(); S.claimed = S.claimed || {}; S.claimed[cg.id] = true; S.coins += cg.reward; save(); drawHud(); sfx('coin'); b.outerHTML = '<p style="font-weight:700">Reward claimed. Thank you for helping!</p>'; }; }
 async function openMailbox() {
@@ -2353,7 +2353,7 @@ async function checkInbox() {
     else if (ITEMS[registerHeirloom(it.item)] && ITEMS[it.item].kind !== 'quest') { bagAdd(it.item); lines.push(`${it.from} left you a ${ITEMS[it.item].name}.`); }
   });
   S.mailLog = [...(S.mailLog || []), ...lines].slice(-20); S.mailNew = true; save(); drawHud();
-  showCard(`<div class="kicker">WHILE YOU WERE AWAY</div><h2>You had visitors!</h2><div class="jlist">${lines.map(l => `<button>${l}</button>`).join('')}</div><p style="margin-top:8px">Their gifts are in your Bag. Tap your mailbox to visit them.</p>`, 'Yay!');
+  showCard(`<div class="kicker">WHILE YOU WERE AWAY</div><h2>You had visitors!</h2><div class="jlist">${lines.map(l => `<button>${l}</button>`).join('')}</div><p style="margin-top:8px">Any gifts are in your Bag. To visit a friend back, tap your mailbox.</p>`, 'Yay!');
 }
 function openGoals() {
   ensureGoals();
@@ -2495,7 +2495,7 @@ const SHOP_STAGES = [
   { name:'Stand', at:300, perk:'Everything you sell here now earns 5% more.', term:'A SIGN', title:'Nobody can buy from a shop they cannot find',
     real:'Before most people could read, shops hung a picture outside: a boot for a shoemaker, a loaf for a baker. A sign is the oldest kind of advertising. It tells people walking past what you sell, before they have to ask.',
     today:'Count the signs on one street. Every one is a shop saying: here I am, and here is what I have.' },
-  { name:'Stall', at:1200, perk:'You now keep a ledger. Tap My shop to see what earns you the most.', term:'KEEPING BOOKS', title:'Write down what you earn, and you can see what works',
+  { name:'Stall', at:1200, perk:'You now keep a ledger. It is a record of what you sell. Tap My shop to see what earns you the most.', term:'KEEPING BOOKS', title:'Write down what you earn, and you can see what works',
     real:'Merchants in Venice kept careful books of everything that came in and everything that went out. In 1494, Luca Pacioli printed the first description of how they did it. Shops still use the same method. It is called <b>bookkeeping</b>.',
     today:'Open your ledger. The crop with the biggest price is not always the one that earns the most per day.' },
   { name:'Shop', at:3000, perk:'Cooked dishes now sell for 15% more.', term:'ADDING VALUE', title:'Flour sells for a little. Bread sells for more.',
@@ -2531,11 +2531,11 @@ function shopCard() { const d = shopData(), st = d.stage, next = SHOP_STAGES[st 
   const top = Object.entries(d.by).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const perDay = Object.entries(CROPS).map(([k, c]) => [k, Math.round((c.sell * shopBonus(k) - c.seed) / c.days)]).sort((a, b) => b[1] - a[1]);
   showCard(`<div class="kicker">MY SHOP: ${SHOP_STAGES[st].name.toUpperCase()}</div><h2>${esc(shopName())}</h2>
-    <p>You have earned <b>${d.earn} coins</b> selling here.${next ? ` At <b>${next.at}</b>, it grows into a ${next.name.toLowerCase()}.` : ' It is as big as a shop gets. You built a brand.'}</p>
+    <p>You have earned <b>${d.earn} coins</b> selling here.${next ? ` At <b>${next.at}</b> coins, your shop grows into a ${next.name.toLowerCase()}.` : ' It is as big as a shop gets. You built a brand.'}</p>
     ${next ? `<div style="height:12px;border-radius:6px;background:#eadfd0;margin-top:8px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100, Math.round((d.earn - SHOP_STAGES[st].at) / (next.at - SHOP_STAGES[st].at) * 100))}%;background:#ffc857"></i></div>` : ''}
     <div class="jlist" style="margin-top:10px">${SHOP_STAGES.map((x, i) => `<button${i && i <= st ? ` data-sg="${i}"` : ''}>${i <= st ? '✅' : '◻️'} ${x.name} <span class="sub">${i === 0 ? 'Where every shop starts.' : i <= st ? x.perk : `At ${x.at} coins earned.`}</span></button>`).join('')}</div>
     ${st >= 2 ? `<h4>Your ledger: what has earned the most</h4>${top.length ? top.map(([k, c]) => `<p>${icon(k, ITEMS[k].kind)} ${ITEMS[k].name}: <b>${c} coins</b></p>`).join('') : '<p>Nothing sold yet since you started keeping books.</p>'}
-      <h4>What each crop earns per day in the ground</h4><p class="sub">Selling price, minus the seed, split over the days it takes to grow.</p>${perDay.map(([k, v]) => `<p>${icon(k, 'crop')} ${CROPS[k].name}: <b>${v} coins a day</b> <span class="sub">(${CROPS[k].days} days, seed ${CROPS[k].seed})</span></p>`).join('')}` : `<p class="sub" style="margin-top:8px">A ledger opens here when your shop becomes a stall.</p>`}
+      <h4>What each crop earns for each day it grows</h4><p class="sub">The selling price, minus what the seed cost, divided by the days the crop takes to grow.</p>${perDay.map(([k, v]) => `<p>${icon(k, 'crop')} ${CROPS[k].name}: <b>${v} coins a day</b> <span class="sub">(${CROPS[k].days} days to grow, seed costs ${CROPS[k].seed})</span></p>`).join('')}` : `<p class="sub" style="margin-top:8px">A ledger opens here when your shop becomes a stall. It shows what earns you the most.</p>`}
     ${st >= 1 && !(S.brand && S.brand.shop) ? '<h4>Shop name</h4><input id="shName" maxlength="24" value="' + esc(shopName()) + '" style="width:100%;font:16px \'Baloo 2\',sans-serif;border-radius:12px;border:2px solid #eadfd0;padding:8px"><button id="shSave" class="ghost" style="margin-top:6px">Put this name on the sign</button>' : ''}`, 'Close');
   document.querySelectorAll('[data-sg]').forEach(b => b.onclick = () => { const x = SHOP_STAGES[+b.dataset.sg]; showCard(`<div class="kicker">${x.term}</div><h2>${x.title}</h2><p>${x.real}</p><p class="gap">${x.today}</p>`, 'Back', shopCard); });
   if ($('shSave')) $('shSave').onclick = () => { const v = $('shName').value.replace(/[<>]/g, '').trim().slice(0, 24); if (!v) return toast('Type a name first.'); S.shopName = v; save(); drawShop(); toast('The sign is repainted.'); }; }
@@ -2618,7 +2618,7 @@ function seedShop() {
   closeDialog();
   const s = season(), o = pipOrder();
   const crops = Object.entries(CROPS).filter(([,c]) => c.seasons.includes(s) && (!c.locked || S.q4 >= 5));
-  const draw = () => showCard(`<div class="kicker">PIP'S SEEDS</div><h2>${SEASONS[s]} seeds</h2><p>You have ${S.coins} coins.</p>${o && !o.done ? `<p class="itinfo">Pip wants to buy 1 ${CROPS[o.crop].name} from you today. He will pay ${o.pay} coins, more than the sell crate. ${S.bag[o.crop] ? 'You have one: talk to Pip and tap Give Pip the ' + CROPS[o.crop].name + '.' : 'Grow one and bring it to him.'}</p>` : ''}
+  const draw = () => showCard(`<div class="kicker">PIP'S SEEDS</div><h2>${SEASONS[s]} seeds</h2><p>You have ${S.coins} coins.</p>${o && !o.done ? `<p class="itinfo">Pip wants to buy 1 ${CROPS[o.crop].name} from you today. He will pay ${o.pay} coins. That is more than the wooden crate pays. ${S.bag[o.crop] ? 'You have one: talk to Pip and tap Give Pip the ' + CROPS[o.crop].name + '.' : 'Grow one and bring it to him.'}</p>` : ''}
     <div class="jlist">${crops.map(([k,c]) => {
       return `<div class="seedrow"><span class="ic">${icon(k)}</span><div class="si"><b>${c.name}</b> <small>${c.seed} coins each. Grows in ${c.days} days. Sells for ${c.sell} coins. You have ${S.seeds[k] || 0}.</small></div>
         <div class="sb">${[1,5,10].map(n => `<button data-sb="${k}:${n}" class="${S.coins >= c.seed * n ? '' : 'ghost'}">Buy ${n}</button>`).join('')}</div></div>`; }).join('')}</div>
@@ -2724,7 +2724,7 @@ function talkPerson(vid) {
   if (p.gifted !== S.day) b.push({ label:'Give a gift', fn:() => { closeDialog(); personGift(vid); } });
   if (!p.request && p.status === 'visiting') { const s = season(), opts = [...Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(s) && !CROPS[k].locked), 'apple', 'peach', 'minnow', 'trout'];
     const k = pick(opts), n = 1 + Math.floor(Math.random() * 3); p.request = { k, n, done:false }; save(); }
-  if (p.request && !p.request.done) { const r = p.request; b.push({ label:have(r.k) >= r.n ? `Give ${r.n} ${plural(r.k, r.n)}` : `Their favor: ${r.n} ${plural(r.k, r.n)}`, fn:() => {
+  if (p.request && !p.request.done) { const r = p.request; b.push({ label:have(r.k) >= r.n ? `Give ${r.n} ${plural(r.k, r.n)}` : `They asked for ${r.n} ${plural(r.k, r.n)}`, fn:() => {
     if (have(r.k) < r.n) { toast(`Bring ${r.n} ${plural(r.k, r.n)}. You have ${have(r.k)}.`); return; }
     bagAdd(r.k, -r.n); r.done = true; const pay = Math.round(ITEMS[r.k].sell * r.n * 1.6) + 20; S.coins += pay; p.hearts = Math.min(10, p.hearts + 1); if (featureOn('journey')) karma('kind', 1); lean('friend');
     save(); drawHud(); sfx('coin'); closeDialog(); openDialog(p.name, `You found them! Thank you so much. Here, ${pay} coins.`, [], p.hearts); } }); }
@@ -2875,7 +2875,7 @@ function dig(i) {
 function useSundial() {
   const h = hour();
   if (S.quest < 2) { toast('An old sundial. Its shadow moves with the sun.'); return; }
-  if (S.quest > 2) { toast('The sundial. Shortest shadow means noon.'); return; }
+  if (S.quest > 2) { toast('The sundial. When its shadow is shortest, it is noon.'); return; }
   if (h >= 11.5 && h <= 12.5) { S.quest = 3; save(); drawHud(); showAha('sundial', () => toast('Go see Nana Gale.')); }
   else if (h < 11.5) toast('Not noon yet. Come back at 12 PM. The clock is at the top of the screen.');
   else toast('Noon has passed. Try again tomorrow at 12 PM.');
@@ -2902,7 +2902,7 @@ function openBell() {
       hideCard();
       S.quest = S.bridge ? 5 : 4; S.coins += 50; bell.visible = true; save(); drawHud(); burst(bell.position, 0xffc857, 20);
       [262,330,392,524,660].forEach((f,i)=>setTimeout(()=>chime(f),i*220));
-      setTimeout(() => showAha('bell', () => openDialog('Nana Gale', "Listen... Far away, another bell just answered. Someone is out there. Fix that bridge, dear. I put 50 coins in your pocket to help.", [], S.hearts.nana)), 1300);
+      setTimeout(() => showAha('bell', () => openDialog('Nana Gale', "Listen... Far away, another bell just answered. Someone is out there. Fix the broken bridge, dear. I put 50 coins in your pocket to help.", [], S.hearts.nana)), 1300);
     };
   };
   draw();
@@ -2924,7 +2924,7 @@ function drizzleQuest() {
   if (S.quest < 4) { openDialog('Captain Drizzle', "Ahoy there! Word is your island has a broken bell. Tune it and ring it, then come find me. I will be listening.", nb, h); return; }
   if (S.q2 === 0) {
     S.q2 = 1; if (S.quest < 5) S.quest = 5; save(); drawHud();
-    openDialog('Captain Drizzle', "Ahoy! So YOU rang that bell. I am Captain Drizzle, and that is my cloud ship, the Puddle Jumper. She has not flown since the Great Gust. Help me fix her, and I will take you anywhere. First, fresh water. Everything out here is cloud-salt. Use the pot by my ship.", [], h);
+    openDialog('Captain Drizzle', "Ahoy! So YOU rang that bell. I am Captain Drizzle, and that is my cloud ship, the Puddle Jumper. She has not flown since the Great Gust. Help me fix her, and I will take you anywhere. First, we need fresh water. The cloud-sea water out here is salty. Use the pot by my ship.", [], h);
   } else if (S.q2 === 1) openDialog('Captain Drizzle', "The pot, sailor! Fill it with cloud-sea water, put the little cup in the middle, lid on top, and leave it in the sun until tomorrow. Trust the captain.", nb, h);
   else if (S.q2 === 2) openDialog('Captain Drizzle', "Fresh water, check! Now the sail. The mast needs a perfect square corner or she flies in circles. Tap the ship and use my knotted rope.", nb, h);
   else if (S.q2 === 3) {
@@ -2935,7 +2935,7 @@ function drizzleQuest() {
 }
 function usePot() {
   if (S.q2 < 1) { toast('An old metal pot.'); return; }
-  if (S.q2 > 1) { toast('The water pot. Sun in, fresh water out.'); return; }
+  if (S.q2 > 1) { toast('The water pot. Leave it in the sun and it makes fresh water.'); return; }
   if (S.potDay < 0) { S.potDay = S.day; lid.visible = true; sfx('water'); save(); toast('You filled the pot, set the cup inside, and put the lid on. Leave it in the sun until tomorrow.'); return; }
   if (S.potDay === S.day) { toast('Nothing yet. Drops are forming on the lid. Come back tomorrow.'); return; }
   S.q2 = 2; lid.visible = false; save(); drawHud(); sfx('pick'); burst(pot.position, 0x9fd3ff);
@@ -2943,7 +2943,7 @@ function usePot() {
 }
 function drizzleOldHeart() {
   S.q5 = 1; save(); drawHud(); sfx('heart');
-  openDialog('Captain Drizzle', "Lumen told me everything. The Old Heart, the great bell, your grandmother. Well, sailor, the Puddle Jumper can do more than hover now. The center of the old village is straight ahead, past the clouds. Tap her whenever you are ready, and we fly. I packed snacks. They are all fish.", [], S.hearts.drizzle);
+  openDialog('Captain Drizzle', "Lumen told me everything. The Old Heart, the great bell, your grandmother. Well, sailor, the Puddle Jumper can do more than hover now. The center of the old village is straight ahead, past the clouds. Tap the ship whenever you are ready, and we fly. I packed snacks. They are all fish.", [], S.hearts.drizzle);
 }
 function flyTo(where) {
   const f = $('fade'); f.style.opacity = 1; sfx('cast');
@@ -2962,7 +2962,7 @@ function useShip() {
   if (S.q5 >= 1) { openDialog('The Puddle Jumper', 'Fly to the Old Heart?', [{ label:'Fly to the Old Heart', fn:() => { closeDialog(); flyTo('heart'); } }]); return; }
   if (S.q2 < 2) { toast('The Puddle Jumper. Her sail is a mess.'); return; }
   if (S.q2 === 2) return ropePuzzle();
-  if (S.q2 < 5) { toast('The sail looks great. Now she needs a navigator.'); return; }
+  if (S.q2 < 5) { toast('The sail looks great. Next, talk to Captain Drizzle after 8 PM.'); return; }
   toast('The ship is fixed. Follow the note at the top of your screen.');
 }
 function ropePuzzle(o = {}) {
@@ -3167,7 +3167,7 @@ function useBoulder() {
 }
 function lumenQuest() {
   const h = S.hearts.lumen, nb = neighborButtons('lumen');
-  if (S.q3 < 7) { openDialog('Lumen', "Oh! Someone crossed the... how did you get here? Never mind. Come back when the windmill sings again.", nb, h); return; }
+  if (S.q3 < 7) { openDialog('Lumen', "Oh! Someone crossed the... how did you get here? Never mind. Come back when the windmill is working again.", nb, h); return; }
   if (S.q4 === 0) {
     S.q4 = 1; save(); drawHud();
     openDialog('Lumen', "Oh. Hello. I am Lumen. I paint at night. Nobody visits, so... sorry, I am nervous. I paint the moon every night, but the wind knocked my paintings over and now they are all mixed up. Could you help me put them back in order? They are on my easel.", [], h);
@@ -3285,7 +3285,7 @@ function useFrame() {
     text:'The frame posts must stand at a perfect square corner, or the bell will swing crooked. This rope has 36 spaces between its knots.',
     done:() => { S.q5 = 4; save(); drawHud(); sfx('pick'); burst(bellFrame.position, 0x9b6b4a, 20); showRecall('rope2', () => toast('The frame stands! Tap the pile again to fix the gears.')); } });
   if (S.q5 === 4) return gearPuzzle({ kicker:'THE BELL FRAME', target:4, what:'The bell needs its small gear',
-    done:() => { S.q5 = 5; save(); drawHud(); sfx('pick'); burst(frameGear.position, 0xc98f58, 16); showRecall('gears', () => toast('The bell hangs ready. Ring it at exactly noon.')); } });
+    done:() => { S.q5 = 5; save(); drawHud(); sfx('pick'); burst(frameGear.position, 0xc98f58, 16); showRecall('gears', () => toast('The bell hangs ready. Tap it at noon (12 PM) to ring it.')); } });
   toast('The great bell frame. Solid and square.');
 }
 function ringGreatBell() {
@@ -3619,7 +3619,7 @@ function fishing3D(d = dock, o = {}) {
     m.userData = { f, size, vx:(Math.random()-.5)*.6, vz:(Math.random()-.5)*.6 }; pool.add(m); return m; };
   let shadows = table.length ? [newShadow(), newShadow(), newShadow()] : [];
   // the on-screen controls
-  const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="fhMsg">${secret ? 'The secret spot. The big ones live here.' : 'Watch the shadows. Big shadow, big fish. Tap Cast.'}</p>
+  const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="fhMsg">${secret ? 'The secret spot. The big ones live here.' : 'Watch the shadows. A big shadow means a big fish. Tap Cast.'}</p>
     <div id="fhReel" class="fhreel" hidden><div class="fhmeter"><b id="fhM"></b></div><div class="fhbar"><i id="fhZ"></i><span id="fhF">🐟</span></div></div>
     <div class="fhbtns"><button id="fhAct">Cast</button>${night && !secret ? '<button id="fhSecret" class="ghost">Find the secret spot</button>' : ''}<button id="fhDone" class="ghost">Done</button></div>`;
   document.body.appendChild(hud);
@@ -3669,7 +3669,7 @@ function fishing3D(d = dock, o = {}) {
         nextNibble = now + 1.2 + Math.random(); biteAt = now + 2.6 + Math.random()*3.2; msg('Wait for it... a shadow is coming.'); } }
     if (state === 'wait' || state === 'bite') { const e = bobHome(); bob.position.copy(e); bob.position.y += Math.sin(now*3)*.02;
       if (state === 'wait') { if (now > nextNibble) { tone(900, { dur:.05, vol:.025 }); splash(bob.position, false); nextNibble = now + .7 + Math.random()*1.2; } if (now < nextNibble - .55 && now > nextNibble - .75) bob.position.y -= .06;
-        if (now > biteAt && cur) { state = 'bite'; t0 = now; splash(bob.position, true); sfx('splash'); tone(220, { to:110, dur:.25, vol:.08 }); msg('It bit! Tap now!'); setAct('Hook it!'); bang.visible = true; } }
+        if (now > biteAt && cur) { state = 'bite'; t0 = now; splash(bob.position, true); sfx('splash'); tone(220, { to:110, dur:.25, vol:.08 }); msg('It bit! Tap Hook it!'); setAct('Hook it!'); bang.visible = true; } }
       if (state === 'bite') { bob.position.y -= .12; bang.position.copy(bob.position).setY(bob.position.y + .9 + Math.sin(now*20)*.05); if (now - t0 > 1.1) lose('Too slow. It slipped off the hook.'); }
       drawLine(bob.position, .15); }
     if (state === 'reel') { const f = cur.f, e = bobHome();
@@ -3799,7 +3799,7 @@ const CRAFTS = [
   { id:'bag1', name:'Woven Grass Bag', needs:{ fiber:10, stick:4 }, does:'A bigger backpack: 18 slots instead of 12. People have woven bags from grass and reeds for thousands of years.', after:'axe' },
   { id:'bag2', name:'Clay-Bead Satchel', needs:{ fiber:8, pot:1, clay:4 }, does:'A bigger backpack: 24 slots. Fired clay beads make strong fastenings.', after:'kiln' },
   { id:'bag3', name:'Bronze-Buckle Pack', needs:{ bronze:2, fiber:8 }, does:'The biggest backpack: 36 slots. Metal buckles hold a heavy load closed.', after:'furnace' },
-  { id:'bronzeAxe',  name:'Bronze Axe',     needs:{ bronze:2, stick:1 }, does:'Chop 3 logs per tree instead of 2.', after:'furnace' },
+  { id:'bronzeAxe',  name:'Bronze Axe',     needs:{ bronze:2, stick:1 }, does:'Chop 4 logs per tree instead of 3.', after:'furnace' },
   { id:'bronzePick', name:'Bronze Pickaxe', needs:{ bronze:2, stick:1 }, does:'Break 5 stone per rock instead of 3.', after:'furnace' },
 ];
 const potteryOn = () => featureOn('pottery') || !!S.stations.kiln, bronzeOn = () => featureOn('bronze') || !!S.stations.furnace;
@@ -3907,7 +3907,7 @@ function useBuildSite() {
   const st = S.home || 0; if (st >= 3) return useHouse();
   const stage = HOME_STAGES[st], ok = enough(stage.needs);
   showCard(`<div class="kicker">YOUR HOME</div><h2>Build ${stage.name}</h2><p>Grandma's hut blew away in the Great Gust. Build a new one, one step at a time. Step ${st + 1} of 3.</p>
-    <h4>You need</h4><p>${needText(stage.needs)}</p><h4>How to get them</h4><p>Chop trees for logs (stone axe). Break rocks for stone (stone pickaxe). Cut bushes for grass fiber.</p>
+    <h4>You need</h4><p>${needText(stage.needs)}</p><h4>How to get them</h4><p>Chop trees with a stone axe to get logs. Break rocks with a stone pickaxe to get stone. Tap bushes to cut grass fiber.</p>
     ${ok ? '<button id="buildHome">Build it</button>' : ''}`, ok ? 'Later' : 'Got it');
   if (ok) $('buildHome').onclick = () => {
     Object.entries(stage.needs).forEach(([k,n]) => bagAdd(k, -n)); S.home = st + 1; save(); drawHome(); drawHud(); hideCard();
@@ -3918,13 +3918,13 @@ function useBuildSite() {
   };
 }
 function homeStep() { // what the home-building goal says right now
-  if (!S.tools.axe) return enough(CRAFTS[0].needs) ? { text:'Tap the tree stump workbench to make a stone axe.', target:workbench } : { text:`Pick up sticks, stones, and grass around your island. For a stone axe: ${needText(CRAFTS[0].needs)}.`, target:pickupGroup.children[0] || null };
-  if (!S.tools.pick) return enough(CRAFTS[1].needs) ? { text:'Tap the tree stump workbench to make a stone pickaxe.', target:workbench } : { text:`Gather for a stone pickaxe: ${needText(CRAFTS[1].needs)}. Look for grey stones on the ground. More appear each morning.`, target:pickupGroup.children.find(g => S.pickups[g.userData.i]?.t === 'stone') || pickupGroup.children[0] || null };
+  if (!S.tools.axe) return enough(CRAFTS[0].needs) ? { text:'Tap the tree stump workbench to make a stone axe.', target:workbench } : { text:`Pick up sticks, stones, and grass around your island. A stone axe needs ${needText(CRAFTS[0].needs)}.`, target:pickupGroup.children[0] || null };
+  if (!S.tools.pick) return enough(CRAFTS[1].needs) ? { text:'Tap the tree stump workbench to make a stone pickaxe.', target:workbench } : { text:`A stone pickaxe needs ${needText(CRAFTS[1].needs)}. Look for grey stones on the ground. More appear each morning.`, target:pickupGroup.children.find(g => S.pickups[g.userData.i]?.t === 'stone') || pickupGroup.children[0] || null };
   const stage = HOME_STAGES[S.home || 0];
   if (enough(stage.needs)) return { text:`Tap the old stones where your hut stood to build ${stage.name}.`, target:buildSite };
   const short = Object.entries(stage.needs).find(([k,n]) => have(k) < n)[0];
   const tg = short === 'log' ? woodTrees.find(t => S.chopped[t.userData.key] !== S.day && t.parent === scene) : short === 'stone' ? rocks.find(r => S.chopped[r.userData.key] !== S.day) : bushes.find(b => S.chopped[b.userData.key] !== S.day);
-  return { text:`Gather for ${stage.name}: ${needText(stage.needs)}.`, target: tg || buildSite };
+  return { text:`To build ${stage.name}, gather ${needText(stage.needs)}.`, target: tg || buildSite };
 }
 function hintToast() { const h = homeHint(); if (h) toast(h); } // the floating +2 shows what you got; only speak up with a hint
 function homeHint() { return (S.home || 0) < 3 ? homeStep().text : ''; }
@@ -4105,7 +4105,7 @@ function pickSpecialty() {
   if (!canCarry(sp.id, 3)) return bagFull();
   if (!daily('specialty')) { toast(`You already picked your ${sp.name.toLowerCase()} today. More grows by tomorrow.`); return; }
   gain(sp.id, 3, new THREE.Vector3(4, 1, 5.1), true); sfx('pick');
-  toast(`+3 ${plural(sp.id, 3)}. This is your island's specialty. It sells for ${HOME_PRICE * AWAY_MULT} coins on a friend's island, so gift it and trade.`);
+  toast(`+3 ${plural(sp.id, 3)}. This is your island's specialty. On a friend's island it sells for ${HOME_PRICE * AWAY_MULT} coins, so it makes a good gift or trade.`);
 }
 function pickHeirloom(code) {
   if (VISIT) { toast(`This heirloom flower only grows on ${VISIT.name}'s island.`); return; }
@@ -4229,7 +4229,7 @@ function hammockTalk() {
   if (S.hq === 3) return openDialog('Nana Gale', 'It is ready. Hang it between the two trees behind your garden. Tap the glowing spot.', [], S.hearts.nana); }
 var hammockSpot = null;
 function drawHammockSpot() { if (!hammockSpot) { hammockSpot = new THREE.Group(); hammockSpot.position.set(HQ_SPOT[0], 0, HQ_SPOT[1]); const ring = new THREE.Mesh(new THREE.RingGeometry(.45, .6, 32), new THREE.MeshBasicMaterial({ color:0xffe07a, transparent:true, opacity:.8, side:THREE.DoubleSide })); ring.rotation.x = -Math.PI/2; ring.position.y = .04; hammockSpot.add(ring);
-    const h = halo(0xffe07a, 1.6, .6); h.position.y = .5; hammockSpot.add(h); const hb = hitBox(1.4, 1.4, 1.4); hb.position.y = .7; hammockSpot.add(hb); deco(hb, hangHammock).userData.label = 'Hang the hammock here: tap'; scene.add(hammockSpot); lateClicks.push(hammockSpot); }
+    const h = halo(0xffe07a, 1.6, .6); h.position.y = .5; hammockSpot.add(h); const hb = hitBox(1.4, 1.4, 1.4); hb.position.y = .7; hammockSpot.add(hb); deco(hb, hangHammock).userData.label = 'Glowing spot: tap to hang the hammock'; scene.add(hammockSpot); lateClicks.push(hammockSpot); }
   hammockSpot.visible = S.hq === 3 && !VISIT; }
 function hangHammock() { if (S.hq !== 3) return; S.hq = 4; S.builds = [...(S.builds || []), { p:'hammock', x:HQ_SPOT[0], z:HQ_SPOT[1], a:-Math.atan2(3, 1.5), len:3.354 }]; drawBuilds(); drawHammockSpot(); save(); drawHud();
   burst(new THREE.Vector3(HQ_SPOT[0], 1, HQ_SPOT[1]), 0xffc857, 24); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130));
@@ -4314,7 +4314,7 @@ function drawGrid() { const pts = [], seg = (x0, z0, x1, z1) => { if (onLand(x0,
   gridLines.geometry.dispose(); gridLines.geometry = new THREE.BufferGeometry(); gridLines.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); }
 function drawBuildBar() {
   const bar = $('buildbar');
-  bar.innerHTML = `<p class="bhelp">${held ? `Holding your ${PIECES.find(x => x.id === held.p).name.toLowerCase()}. Tap an empty square to set it down. Rotate turns it.` : moving ? 'Tap a piece you built to pick it up and move it.' : removing ? 'Tap a piece to pick it up. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
+  bar.innerHTML = `<p class="bhelp">${held ? `Holding your ${PIECES.find(x => x.id === held.p).name.toLowerCase()}. Tap an empty square to set it down. Rotate turns it.` : moving ? 'Tap a piece you built to pick it up and move it.' : removing ? 'Tap a piece to remove it. You get its materials back.' : 'Pick a piece, then tap a square on the grid to place it.'} You have ${have('log')} logs, ${have('stone')} stone, ${have('fiber')} grass.</p>
     <div class="bpieces">${PIECES.filter(p => (p.id !== 'hammock' || hammockOpen()) && (!p.founder || (S.founder && fGot('lantern') && !(S.builds || []).some(b => b.p === p.id))) && (!p.age || S.stations[p.age]) && (p.id !== 'chest' || (LIMITS_ON && featureOn('chest')))).map(p => { const ok = enough(p.cost); return `<button data-pc="${p.id}" class="${buildSel === p.id && !removing ? 'on' : ''}" ${ok ? '' : 'style="opacity:.45"'}>${p.name}<small>${Object.entries(p.cost).map(([k,n]) => `${n} ${ITEMS[k].name.toLowerCase().replace('grass fiber','grass')}`).join(', ')}</small></button>`; }).join('')}</div>
     ${hammockOpen() ? '' : '<p class="bhelp" style="font-weight:500;margin-top:6px">🔒 Hammock: Nana knows how to make one. Talk to her.</p>'}
     <div class="bctl"><button id="bRot">Rotate</button><button id="bMove" class="${moving ? 'on' : ''}">Move</button><button id="bRem" class="${removing ? 'on' : ''}">Remove</button><button id="bTidy">Tidy up</button><button id="bDone" class="done">Done</button></div>`;
@@ -4339,7 +4339,7 @@ function ghostPiece() { if (ghostModel) { ghost.remove(ghostModel); ghostModel =
   ghostModel.rotation.set(Math.PI/2, 0, 0); ghostModel.rotateY((held.r || 0) * Math.PI/2); ghost.add(ghostModel); }
 function setBuildMode(on) {
   if (!on) dropHeld();
-  if (on && ((S.home || 0) < 3 || S.where !== 'home' || VISIT)) { toast((S.home || 0) < 3 ? 'Finish building your hut first.' : 'You can build on your home island.'); return; }
+  if (on && ((S.home || 0) < 3 || S.where !== 'home' || VISIT)) { toast((S.home || 0) < 3 ? 'Finish building your hut first.' : 'You can only build on your home island.'); return; }
   buildMode = on; removing = moving = false; ghostPiece(); gridLines.visible = on; if (on) drawGrid(); ghost.visible = false; document.body.classList.toggle('building', on);
   if (on) { closeDialog(); drawBuildBar(); if (player.position.distanceTo(new THREE.Vector3(0,0,0)) > 10) { player.position.set(0,0,2); } }
   drawHud();
@@ -4812,7 +4812,7 @@ function lookPicker(title, done, withName) {
 function modePicker(done, o = {}) {
   let pick = o.switching ? S.mode : null;
   const draw = () => {
-    showCard(`<div class="kicker">${o.late ? 'A BONUS' : o.switching ? 'YOUR ISLAND' : o.returning ? 'WELCOME BACK' : 'NEW GAME'}</div><h2>${o.late ? 'Pick a bonus for your island' : 'Choose your island'}</h2><p>${o.late ? 'Pick the one that fits how you play. You get both of its extras.' : o.returning || o.switching ? 'Each island gives you something extra. Your progress, coins, and collections stay exactly as they are. The perks are added on top.' : 'Each island has its own perks. You pick once, at the start.'}</p>
+    showCard(`<div class="kicker">${o.late ? 'A BONUS' : o.switching ? 'YOUR ISLAND' : o.returning ? 'WELCOME BACK' : 'NEW GAME'}</div><h2>${o.late ? 'Pick a bonus for your island' : 'Choose your island'}</h2><p>${o.late ? 'Pick the one that fits how you play. You get both of its extras.' : o.returning || o.switching ? 'Each island gives you something extra. You keep your progress, coins, and collections.' : 'Each island has its own perks. You pick once, at the start.'}</p>
       <div class="jlist">${MODES.map(m => `<button data-md="${m.id}" style="${pick === m.id ? 'background:#ffc857' : ''}">${pick === m.id ? '✓ ' : ''}${m.name} <span class="sub">${m.blurb}</span><span class="sub" style="display:block;margin-top:2px">${m.perks.map(x => '• ' + x).join('<br>')}</span></button>`).join('')}</div>
       <p id="mdMsg" style="font-weight:700;min-height:20px;margin-top:8px"></p>
       <button id="mdGo">${o.switching ? 'Switch to this island' : o.late ? 'Take this bonus' : o.returning ? 'Keep playing' : 'Start my adventure'}</button> <button id="mdBack" class="ghost">${o.switching ? 'Never mind' : o.late ? 'Ask me tomorrow' : 'Back'}</button>`, null);
@@ -4889,7 +4889,7 @@ async function openMarket(tab = 'market') {
   showCard(`<div class="kicker">TRADING POST</div><h2>${VISIT ? `${esc(res.brand?.shop || VISIT.name + "'s shop")}` : 'The market'}</h2>${marketTabs('market')}
     ${VISIT && res.brand ? `<div class="brandhead">${logoSvg(res.brand.logo, 56)}<p>Everything here was made or grown on this island.</p></div>` : ''}
     ${rows || `<p>${VISIT ? 'Nothing for sale here right now.' : 'Nothing for sale yet. Be the first! Tap Sell.'}</p>`}
-    ${!VISIT && !S.brand ? '<p class="itinfo">Want to sell your own things? Talk to Pip about a maker\'s mark first.</p>' : ''}`, 'Close');
+    ${!VISIT && !S.brand ? '<p class="itinfo">Want to sell your own things? Talk to Pip about a maker\'s mark first. That is your logo and shop name.</p>' : ''}`, 'Close');
   wireTabs();
   const byId = Object.fromEntries((res.listings || []).map(l => [l.id, l]));
   document.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyListing(byId[b.dataset.buy]));
@@ -5018,7 +5018,7 @@ function designStudio() {
       <div class="chips" style="margin-top:6px">${PALETTE.map(c => `<button class="sw sm ${d.color2 === c ? 'on' : ''}" data-c2="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
       <h4>Name it</h4>${kid ? `<select id="pdAdj">${KID_ADJ.map(w => `<option ${w === d.adj ? 'selected' : ''}>${w}</option>`).join('')}</select> ${esc(B.name)}`
         : `<input id="pdName" maxlength="30" value="${esc(d.name)}" placeholder="${esc(B.name)}" class="numin" style="width:100%">`}
-      <p style="font-size:13px;opacity:.7;margin-top:6px">Your logo goes on it, and it carries your shop name wherever it goes.</p>
+      <p style="font-size:13px;opacity:.7;margin-top:6px">Your logo and shop name stay on it, even after you sell it.</p>
       <button id="dMake">Make it</button>`, 'Close');
     wireTabs();
     const keep = () => { if ($('pdName')) d.name = $('pdName').value.slice(0, 30); if ($('pdAdj')) d.adj = $('pdAdj').value; };
@@ -5060,7 +5060,7 @@ function shipChoice() {
   const opts = Object.entries(SHIP_PATHS).filter(([k]) => !again || true);
   showCard(`<div class="kicker">CAPTAIN DRIZZLE ASKS</div><h2>What should the ship become?</h2>
     ${opts.map(([k, p]) => `<button data-sp2="${k}" class="${S.shipPath === k ? '' : 'ghost'}" style="display:block;width:100%;text-align:left;margin-top:8px"><b>${p.name}</b>${S.shipPath === k ? ' (this year)' : ''}<br><span class="sub">${p.short}</span></button>`).join('')}
-    <p style="font-size:13px;opacity:.7;margin-top:8px">She can still fly you anywhere either way. You can change your mind on your next island year.</p>`, again ? 'Keep it as is' : null, () => closeDialog());
+    <p style="font-size:13px;opacity:.7;margin-top:8px">Either way, the ship can still fly you anywhere. You can change your mind when the next island year starts.</p>`, again ? 'Keep it as is' : null, () => closeDialog());
   document.querySelectorAll('[data-sp2]').forEach(b => b.onclick = () => { const k = b.dataset.sp2, changed = k !== S.shipPath; S.shipPath = k; S.shipYear = islandYear();
     lean(k === 'explore' ? 'explorer' : 'trader', 3); if (changed) S.bigChoices = [...(S.bigChoices || []), k === 'explore' ? 'You made the Puddle Jumper an explorer\'s ship.' : 'You made the Puddle Jumper a floating market.'];
     save(); drawShip(); hideCard(); closeDialog(); burst(ship.position, 0xffc857, 22); [523,659,784].forEach((f,i) => setTimeout(() => chime(f), i*150));
@@ -5085,7 +5085,7 @@ function marketDay() {
   const s = season();
   if (!S.boat || S.boat.day !== S.day) { const pool = [...Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(s) && !CROPS[k].locked), 'apple', 'peach', 'minnow', 'trout'];
     S.boat = { day:S.day, orders:[...Array(3)].map(() => { const k = pool[Math.floor(Math.random()*pool.length)], n = 1 + Math.floor(Math.random()*3); return { k, n, pay:Math.round(ITEMS[k].sell * n * 1.5), done:false }; }) }; save(); }
-  showCard(`<div class="kicker">THE FLOATING MARKET</div><h2>Today's orders</h2><p>Shoppers from all over the sky call out what they want. These pay 50% more than your crate.</p>
+  showCard(`<div class="kicker">THE FLOATING MARKET</div><h2>Today's orders</h2><p>Shoppers from all over the sky call out what they want. These orders pay 50% more than selling at your crate.</p>
     <div class="jlist">${S.boat.orders.map((o, i) => `<button data-mo="${i}" ${o.done ? 'class="locked"' : ''}>${o.done ? '✓ ' : ''}${icon(o.k)} ${o.n} ${esc(plural(o.k, o.n))} <span class="sub">${o.done ? 'Delivered' : `pays ${o.pay} coins (you have ${have(o.k)})`}</span></button>`).join('')}</div>`, 'Close');
   document.querySelectorAll('[data-mo]').forEach(b => b.onclick = () => { const o = S.boat.orders[+b.dataset.mo]; if (o.done) return;
     if (have(o.k) < o.n) { toast(`You need ${o.n} ${plural(o.k, o.n)}.`); return; }
@@ -5245,7 +5245,7 @@ function helperGrow() { if (!featureOn('helpertree')) return; S.helper = S.helpe
 function openHelperTree() { const st = (S.helper || {}).stage || 0, today = (S.helper || {}).day === S.day;
   showCard(`<div class="kicker">HELPER TREE</div><h2>${st >= 6 ? 'In full bloom!' : `Growing: stage ${st} of 6`}</h2>
     <p>This tree grows when you help make Sky Garden better, once a day at most.${S.founder ? ' As a Founding Gardener, yours blooms in founder violet and gold.' : ''}</p>
-    <h4>Ways to help</h4><p>• Send a note with the pink Feedback button. Honest notes count the same as nice ones.</p><p>• Vote at the Town Hall.</p>${S.founder ? '<p>• Answer a quick question after a tester mission.</p>' : ''}
+    <h4>Ways to help</h4><p>• Send a note with the pink Feedback button. Honest notes count the same as nice ones.</p><p>• Vote on the Town Square notice board. Tap Town Hall votes.</p>${S.founder ? '<p>• Answer a quick question after a tester mission.</p>' : ''}
     <p style="margin-top:8px"><b>${st >= 6 ? 'It cannot grow any bigger. Thank you!' : today ? 'It already grew today. Come back tomorrow.' : 'It is ready to grow today.'}</b></p>`, 'Close'); }
 drawHelperTree();
 // ============ FOUNDER COMPANION ============
@@ -5478,11 +5478,11 @@ function openKeeper() {
     const draw = () => { act.innerHTML = `<h4>Choose a landmark</h4><div class="chips">${Object.entries(LANDMARKS).map(([k2, n]) => `<button data-lm="${k2}" class="${d.type === k2 ? '' : 'ghost'}">${n}</button>`).join('')}</div>
       <h4>Main color</h4><div class="chips">${PALETTE.map(c => `<button class="sw ${d.color === c ? 'on' : ''}" data-lc="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
       <h4>Trim color</h4><div class="chips">${PALETTE.map(c => `<button class="sw sm ${d.color2 === c ? 'on' : ''}" data-lc2="${c}" style="background:${hx(c)}"></button>`).join('')}</div>
-      <p style="font-size:13px;opacity:.7;margin-top:6px">If it is chosen, it appears in the village for everyone. It goes to Sky Garden's creator first.</p><p id="kpMsg" style="min-height:20px;font-weight:700"></p><button id="kpSend">Send my design</button>`;
+      <p style="font-size:13px;opacity:.7;margin-top:6px">Your design goes to Sky Garden's creator first. If it is chosen, everyone sees it in the village.</p><p id="kpMsg" style="min-height:20px;font-weight:700"></p><button id="kpSend">Send my design</button>`;
       act.querySelectorAll('[data-lm]').forEach(b => b.onclick = () => { d.type = b.dataset.lm; draw(); }); act.querySelectorAll('[data-lc]').forEach(b => b.onclick = () => { d.color = +b.dataset.lc; draw(); }); act.querySelectorAll('[data-lc2]').forEach(b => b.onclick = () => { d.color2 = +b.dataset.lc2; draw(); });
       $('kpSend').onclick = async () => { $('kpMsg').textContent = 'Sending...'; const r = await api('/propose', { key:S.syncKey, kind:'landmark', payload:d }); if (r.ok || devOn()) finishTrial(t); else $('kpMsg').textContent = r.error === 'too many' ? 'You already have ideas waiting for approval.' : 'Could not send it. Try again.'; }; };
     draw(); }
-  if (t.id === 'voice' && !ready) act.innerHTML = '<p>Fly home and tap the Town Hall board. The Keepers\' Council vote is there.</p>';
+  if (t.id === 'voice' && !ready) act.innerHTML = '<p>Fly to the Town Square and tap the notice board. Then tap Town Hall votes. The Keepers\' Council vote is there.</p>';
   if (t.id === 'unseen' && !ready) { act.innerHTML = '<button id="kpSecret">Leave a secret gift</button>'; $('kpSecret').onclick = secretGift; }
   if (ready && ['seeds','voice','unseen'].includes(t.id)) { act.innerHTML = '<button id="kpDone">Tell Wren you are done</button>'; $('kpDone').onclick = () => finishTrial(t); }
 }
@@ -5490,7 +5490,7 @@ function secretGift() {
   const who = Object.keys(NEIGHBORS).filter(id => npcs[id] && S.talked[id] != null), items = Object.entries(S.bag).filter(([k,n]) => n > 0 && ITEMS[k] && !['quest','material'].includes(ITEMS[k].kind));
   if (!items.length) { toast('Bring something from your bag to give.'); return; }
   let to = who[0];
-  const draw = () => { showCard(`<div class="kicker">THE TRIAL OF THE UNSEEN</div><h2>A secret gift</h2><p>Pick who, then pick the gift. They will never know it came from you.</p>
+  const draw = () => { showCard(`<div class="kicker">THE TRIAL OF THE UNSEEN</div><h2>A secret gift</h2><p>Pick a neighbor, then pick a gift from your bag. They will never know it came from you.</p>
     <div class="chips">${who.map(id => `<button data-sw="${id}" class="${to === id ? '' : 'ghost'}">${NEIGHBORS[id].name}</button>`).join('')}</div>
     <div class="igrid" style="margin-top:8px">${items.map(([k,n]) => `<button class="itile" data-sg="${k}"><span class="ic">${icon(k, ITEMS[k].kind)}</span><b>${n}</b><small>${esc(ITEMS[k].name)}</small></button>`).join('')}</div>`, 'Cancel', openKeeper);
     document.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { to = b.dataset.sw; draw(); });
@@ -5844,7 +5844,7 @@ function wishMorning() { if (S.wishDay !== S.day - 1 || S.wishPaid === S.wishDay
   if (Math.random() < .5) { S.coins += 25; return 'Your wish came true: 25 coins turned up by the fountain.'; }
   const ks = Object.keys(CROPS).filter(k => !CROPS[k].locked && CROPS[k].seasons.includes(season())), k = ks[Math.floor(Math.random() * ks.length)]; S.seeds[k] = (S.seeds[k] || 0) + 3;
   return `Your wish came true: 3 ${CROPS[k].name} seeds turned up by the fountain.`; }
-function planterSeed(i) { S.planter = S.planter || {}; if (S.planter[i] === S.day) return toast('Just flowers today. Pip tucks a seed packet in here each morning.');
+function planterSeed(i) { S.planter = S.planter || {}; if (S.planter[i] === S.day) return toast('You already took today\'s seed packet. Pip tucks a new one in here each morning.');
   const ks = Object.keys(CROPS).filter(k => !CROPS[k].locked && CROPS[k].seasons.includes(season())), k = ks[Math.floor(Math.random() * ks.length)];
   S.planter[i] = S.day; S.seeds[k] = (S.seeds[k] || 0) + 1; save(); drawHud(); sfx('plant'); toast(`You found a spare ${CROPS[k].name} seed packet in the planter.`); }
 function pipCart() { showCard(`<div class="kicker">PIP'S CART</div><h2>What do you need?</h2><p>Pip restocks the cart every morning.</p><div class="jlist"><button id="pcS">🌱 Seeds</button><button id="pcF">🪑 Furniture</button></div>`, 'Not now');
@@ -5966,7 +5966,7 @@ function mythMenu() { if (!mythOn()) return; const F = mythF(), P = mythDaily(),
     <p class="sub">New legend tasks every day.</p>`, 'Close');
   $('myForm').onclick = () => { S.mythForm = !form; save(); dressPlayer(); hideCard(); burst(player.position.clone().setY(1), F.colors[0], 30); chime(form ? 660 : 988); toast(form ? 'You are back to your everyday self.' : `You became ${F.name.replace('The ', 'the ')}. Press and hold anywhere to fly. Let go to land.`); };
   $('myPow').onclick = () => P.power === S.day ? toast('You already used your power today. Try again tomorrow.') : mythPower();
-  $('myApp').onclick = () => P.appear === S.day ? toast('You already did this today. Try again tomorrow.') : mythAppear();
+  $('myApp').onclick = () => P.appear === S.day ? toast('You already flew over an island today. Try again tomorrow.') : mythAppear();
   $('myLeg').onclick = () => showCard(`<div class="kicker">IN LEGEND</div><h2>${F.name}</h2>${F.legend.map(l => `<p>${l}</p>`).join('')}<h4>In Sky Garden: ${F.power.name}</h4><p>${F.power.text}</p>`, 'Back', mythMenu);
   if ($('myJr')) $('myJr').onclick = () => showCard(`<div class="kicker">JUST FOR YOU</div><h2>Your journal</h2>${P.journal.slice(-12).reverse().map(j => `<p><i>${esc(j.q)}</i><br>${esc(j.a)}</p>`).join('')}`, 'Back', mythMenu);
   document.querySelectorAll('[data-mt]').forEach(b => b.onclick = () => { const t = b.dataset.mt;
@@ -5994,7 +5994,7 @@ function mythPower() { const k = mythKind(), F = mythF(), P = mp();
     if (ITEMS.candy) gain('candy', 1, player.position.clone().setY(1)); toast('It\'s raining! Every plant is watered, and you got a treat covered in sprinkles.'); }
   mythCount('power'); logKeeper('mythpower', F.power.name); save(); }
 async function mythAppear(to) { const P = mp(), F = MYTHS[mythKind()]; hideCard();
-  const r = devOn() || PREVIEW ? { ok:true } : await api('/appear', to ? { key:S.syncKey, to } : { key:S.syncKey }); if (!r.ok) { toast(r.error === 'already today' ? 'You already did this today. Try again tomorrow.' : 'Could not connect. Check your internet and try again.'); return false; }
+  const r = devOn() || PREVIEW ? { ok:true } : await api('/appear', to ? { key:S.syncKey, to } : { key:S.syncKey }); if (!r.ok) { toast(r.error === 'already today' ? 'You already flew over an island today. Try again tomorrow.' : 'Could not connect. Check your internet and try again.'); return false; }
   burst(player.position.clone().setY(2), F.colors[0], 40); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 140));
   if (!to) { P.appear = S.day; mythCount('appear'); save(); toast(`Today you're flying over another player's island as ${/^[aeiou]/i.test(F.name.replace('The ', '')) ? 'an' : 'a'} ${F.name.replace('The ', '')}.`); }
   return true; }
@@ -6046,7 +6046,7 @@ function mythReveal() { if (!mythOn() || mp().revealed) return; const F = mythF(
       <button>🪽 <b>Become ${F.name.replace('The ', 'the ')}</b><span class="sub"><br>Then press and hold anywhere to fly. You follow your finger to any island you have opened. Let go to land.</span></button>
       <button>✨ <b>${F.power.name}</b>, once a day<span class="sub"><br>${F.power.text}</span></button>
       <button>🌍 <b>Fly over someone's island</b>, once a day<span class="sub"><br>They'll see ${a} ${short} pass overhead. If they tap it, they get a gift. They'll never know it was you.</span></button>
-      <button>✦ <b>Legend tasks every day</b><span class="sub"><br>${F.path}: 5 legend tasks a day, finish any 3. Each one pays 40 coins and you go up a level. New ones every day.</span></button>
+      <button>✦ <b>Legend tasks every day</b><span class="sub"><br>${F.path}: 5 new tasks each day. Finish any 3. Each one pays 40 coins and takes you up a level.</span></button>
     </div><p style="margin-top:10px">Tap the 🪽 button at the bottom of your screen to find all of this.</p>`, `Become ${F.name.replace('The ', 'the ')}`, () => { S.mythForm = true; save(); dressPlayer(); burst(player.position.clone().setY(1), F.colors[0], 40); drawHud(); setTimeout(() => toast('Press and hold anywhere to fly. Let go to land.'), 1200); });
   const secret = () => showCard(`<div class="kicker">✦ A SECRET ✦</div><h2>Where legends come from</h2>
     <p style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:26px;line-height:1">🌍</span><span>People all over the world tell stories of giant birds in the sky: the Garuda, the Thunderbird, the Roc from Sinbad's voyages. And ${F.name.replace('The ', 'the ')}.</span></p>

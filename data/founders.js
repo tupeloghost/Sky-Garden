@@ -1,9 +1,9 @@
 // Founding Gardeners: testers who help build Sky Garden. Their extras are looks only.
 // Tester missions point testers at the things we most want tried. `feature` hides a mission until that feature is on.
 const MISSIONS = [
-  { id:'fish',    title:'Catch a fish off a dock', how:'Tap a dock, watch the shadows, and reel one in.', done:S => Object.keys(S.fishLog || {}).length > 0 },
+  { id:'fish',    title:'Catch a fish off a dock', how:'Tap a dock, watch for fish shadows, and reel one in.', done:S => Object.keys(S.fishLog || {}).length > 0 },
   { id:'row',     title:'Plant a whole row', how:'Plant 3 plots in one row, then water one of them.', done:S => [0,3,6,9].some(r => [0,1,2].every(c => S.tiles[r + c] && S.tiles[r + c].s === 2)) },
-  { id:'crate',   title:'Choose what to sell', how:'Tap the sell crate and pick what goes.', done:S => !!S.soldPick },
+  { id:'crate',   title:'Choose what to sell', how:'Tap the sell crate and pick what to sell.', done:S => !!S.soldPick },
   { id:'stars',   title:'Sleep under the stars', how:'Tap the campfire at night and sleep outside.', done:S => !!S.sleptOutside },
   { id:'nap',     title:'Take a nap in a hammock', how:'Tap the hammock between the two trees behind your garden.', done:S => !!S.napped },
   { id:'build',   title:'Build something', how:'After your hut is rebuilt, tap Build and place a piece anywhere on your island.', done:S => (S.builds || []).length > 0 },
@@ -17,7 +17,7 @@ const MISSIONS = [
 const FOUNDER_GIFTS = [
   "The Founder's Lantern: fireflies gather around it at night. Find it in Build mode.",
   'The Sky Pioneer outfit: flight jacket, trailing scarf, and aviator cap. Pick it in Change my look.',
-  'Your own hot-air balloon: fly to any island you have opened, from the hotbar.',
+  'Your own hot-air balloon: tap it in the hotbar to fly to any island you have opened.',
   'A companion: a fennec fox kit, red panda cub, or barn owl chick that follows you everywhere.',
 ];
 export { MISSIONS, FOUNDER_GIFTS };

@@ -38,7 +38,7 @@ const DILEMMAS = [
     text:"The old fishing hole is packed this week, sailor. I could net every fish in there and split the lot with you.",
     a:{ label:'Net them all', now:{ items:{ trout:3, minnow:3 } }, harmony:-3, story:'You and Drizzle netted every fish in the old fishing hole.' },
     b:{ label:'Only take the big ones', now:{ items:{ trout:1 } }, harmony:3, story:'You left the young fish in the old fishing hole.',
-        later:{ days:7, from:'Captain Drizzle', letter:"The fishing hole is fuller than I have ever seen it. The young fish we left grew up and had young of their own. Real fishing nets have wide holes for exactly this reason. Here, the best of the catch.",
+        later:{ days:7, from:'Captain Drizzle', letter:"The fishing hole is fuller than I have ever seen it. The young fish we left grew up and had young of their own. Real fishing nets have wide holes so the young fish can slip through. Here, the best of the catch.",
           give:{ items:{ puffer:1, koi:2 }, coins:60 }, quote:'"A thing is right when it tends to preserve the integrity, stability, and beauty of the biotic community." (Aldo Leopold, A Sand County Almanac, 1949)' } } },
 ];
 // what the island feels like, from the hidden scores (the only hint players get)
