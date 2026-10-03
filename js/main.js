@@ -1892,7 +1892,7 @@ function drawRoom() {
   const waiting = new Set(Object.entries(S.furn || {}).filter(([k, n]) => n > S.placed.filter(p => p === k).length).map(([k]) => FURN_CAT[k]));
   spotGroups.forEach((g, i) => {
     while (g.children.length > 3) g.remove(g.children[3]);
-    const k = S.placed[i]; g.children[0].visible = g.children[2].visible = !k && waiting.has(SPOTS[i].cat);
+    const k = S.placed[i]; g.children[0].visible = g.children[2].visible = !k && waiting.has(SPOTS[i].cat) && S.where === 'hut'; /* outside, the room's spot labels would float in the sky */
     if (k) g.add(furnModel(k));
   });
   Object.entries(shelfItems).forEach(([id, m]) => m.visible = S.aha.includes(id));
@@ -4681,9 +4681,9 @@ const CRAFTS = [
   { id:'seeddrill', name:'Seed Drill', needs:{ log:4, stick:4, stone:2 }, know:'seeds', does:'In Sky Garden: when you plant a whole row, every 4th seed is free.',
     fact:'In 1701, Jethro Tull built a horse-drawn seed drill that dropped seed in neat rows at even spacing. Before that, farmers threw seed by hand, and much of it was wasted.' },
   { id:'wheelbarrow', name:'Wheelbarrow', needs:{ log:3, stick:3, stone:1 }, know:'balance', does:'In Sky Garden: get 1 more clay, sand or ore each time you dig some up.',
-    fact:'The load sits over the wheel, so your arms only steady it. Chinese tomb art shows wheelbarrows by 118 AD. Europe has no sign of one until about 1220.' },
+    fact:'The load sits over the wheel, so your arms only steady it. A Chinese tomb painting from 118 AD shows one, about 1,000 years before the first European pictures of a wheelbarrow.' },
   { id:'proofbox', name:'Proofing Box', needs:{ log:3, brick:2 }, know:'warm', does:'In Sky Garden: the golden zone in the oven is wider, so golden bakes are easier.',
-    fact:'Bakeries keep proofing cabinets at about 85°F (29°C) so dough rises on schedule. At home, most bread does best at 75 to 78°F.' },
+    fact:'Big bakeries rise their dough in steamy cabinets at about 105 to 115°F (40 to 46°C), so it is ready in under an hour. At home, most bread does best at 75 to 78°F.' },
   { id:'cabinet', name:'Cabinet of Curiosities', needs:{ log:4, stick:2, glass:1 }, know:'sorting', does:'In Sky Garden: every museum donation pays 10 more coins.',
     fact:"The Ashmolean in Oxford opened in 1683 as Britain's first public museum. It started as one family's cabinet of curiosities, the Tradescants' 'Ark'." },
 ];
@@ -4981,7 +4981,7 @@ function useHouse() {
   enterHut(); // straight inside, as the name tag says
 }
 function enterHut() { S.where = 'hut'; S.room = null; roomLight.position.set(ROOM.x, 3, ROOM.z + .5); player.position.set(ROOM.x, 0, ROOM.z + 2.2); target = null; pending = null; snapCam(); sfx('door'); drawRoom(); drawHud(); save(); }
-function exitHut() { S.where = 'home'; player.position.set(-4, 0, -.25); target = null; pending = null; snapCam(); sfx('door'); drawHud(); save(); }
+function exitHut() { S.where = 'home'; player.position.set(-4, 0, -.25); target = null; pending = null; snapCam(); sfx('door'); drawRoom(); drawHud(); save(); }
 function useSpot(i) {
   const cur = S.placed[i], sp = SPOTS[i], info = CAT_INFO[sp.cat];
   if (cur) { openDialog('Your Home', `Take down the ${FURN[cur].name}? It goes back in your bag, and you can put it somewhere else.`, [{ label:'Take it down', fn:() => { S.placed[i] = null; drawRoom(); save(); closeDialog(); } }]); return; }
