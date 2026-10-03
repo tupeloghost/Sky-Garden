@@ -101,7 +101,7 @@ const FESTIVAL_AHA = {
   passover: { kicker:'FESTIVAL', title:'Bread With No Time to Rise',
     did:'You shared flat bread with Nana at the start of Passover.',
     real:'Passover is a Jewish holiday remembering the Exodus. That is when the Israelites escaped slavery in Egypt. They left in such a hurry that their bread had no time to rise. So during Passover people eat matzah, starting with a special meal called a seder.',
-    today:'Remember that bread is alive? Matzah is bread with no yeast at all.' },
+    today:'Matzah has no yeast at all, so there is nothing in it to make it rise.' },
   easter: { kicker:'FESTIVAL', title:'A Holiday Set by the Sky',
     did:'You celebrated Easter with Pip and his painted eggs.',
     real:'Easter is the Christian celebration of Jesus rising from the dead. It is the first Sunday after the first full moon of spring. So it moves between late March and late April. Orthodox churches use an older calendar, so their Easter is often later.',

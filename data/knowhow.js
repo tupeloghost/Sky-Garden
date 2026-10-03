@@ -99,9 +99,9 @@ const KNOWHOW = [
     did:'You lined up the water glasses from the lowest note to the highest.',
     real:'Tapping a glass makes it shake, and the shaking is the sound. Water weighs the glass down, so it shakes more slowly. Slower shaking is a lower note. How high or low a note sounds is its <b>pitch</b>.',
     today:'Tap a full glass and an empty one at dinner. The full one sounds lower.' },
-  { id:'balance', act:'help', n:99, icon:'🪨', term:'CENTER OF GRAVITY', title:'Heavy at the bottom stays standing',
-    did:'You helped Sage stack 3 stones that did not fall.',
-    real:'A stack stays up when its weight sits low and over its base. The balance point of a thing is its <b>center of gravity</b>. The lower it is, the harder the thing is to tip.',
-    today:'Bend your knees on a bus and you are harder to knock over. Race cars are built low for the same reason.' },
+  { id:'balance', act:'help', n:99, icon:'🪨', term:'CENTER OF GRAVITY', title:'4 stones can lean all the way past an edge',
+    did:'You helped Sage stack 4 stones out over the edge of a wall.',
+    real:'A stack holds as long as the balance point of everything above each stone sits over that stone. The balance point is the <b>center of gravity</b>. Stack 4 the right way and the top one sits fully past the edge.',
+    today:'Mathematicians call it the block-stacking problem. With enough blocks, the overhang can be as long as you like.' },
 ];
 export { KNOWHOW };

@@ -2597,7 +2597,7 @@ const HELP = {
         <div class="chips" style="justify-content:center">${[['r', '🔴 Red'], ['g', '🟢 Green'], ['b', '🔵 Blue']].map(([k, l]) => `<button data-lt="${k}" class="${on[k] ? '' : 'ghost'}">${l}: ${on[k] ? 'on' : 'off'}</button>`).join('')}</div>
         ${hit ? `<button id="hpDone">${step === 0 ? 'Next: make white light' : 'Show Lumen'}</button>` : ''}`, 'Later');
       document.querySelectorAll('[data-lt]').forEach(x => x.onclick = () => { on[x.dataset.lt] = !on[x.dataset.lt]; chime(on[x.dataset.lt] ? 880 : 660); draw(); });
-      if ($('hpDone')) $('hpDone').onclick = () => { if (step === 0) { step = 1; return draw(); } helpDone('lumen', 'light', 'Red and green made yellow. All 3 made white. Light is strange and lovely.'); }; };
+      if ($('hpDone')) $('hpDone').onclick = () => { if (step === 0) { step = 1; return draw(); } helpDone('lumen', 'light', 'Red and green made yellow. All 3 made white. Paint never does that.'); }; };
     draw(); } },
   twins: { label:'Help dig a tunnel that holds', run() { const tried = {};
     const pic = k => `<svg viewBox="0 0 200 90" style="display:block;width:100%;max-width:260px;margin:8px auto 0" aria-hidden="true"><rect width="200" height="90" rx="12" fill="#8a6a44"/><path d="${{ flat:'M50 86 V40 H150 V86Z', point:'M50 86 V52 L100 20 L150 52 V86Z', arch:'M50 86 V52 Q50 20 100 20 Q150 20 150 52 V86Z' }[k]}" fill="#2a1c12"/><circle cx="88" cy="74" r="8" fill="#b98a63"/><circle cx="112" cy="74" r="8" fill="#9b7b5a"/></svg>`;
@@ -2647,18 +2647,16 @@ const HELP = {
         seq = []; draw('Not quite in order. Each glass now shows its note. <b>Tap them again, from the lowest note to the highest.</b>'); });
       if ($('hpDone')) $('hpDone').onclick = () => helpDone('allegra', 'pitch', 'The fullest glass sings the lowest! I had them backwards for a week. My neighbors were very patient.'); };
     draw(); } },
-  sage: { label:'Help stack the garden stones', run() { const ST = [['big', 'Big flat stone', 46], ['mid', 'Middle stone', 32], ['small', 'Small round stone', 20]]; let stack = [];
-    const pile = () => { let y = 84, h = ''; stack.forEach(k => { const w = ST.find(x => x[0] === k)[2], hh = w * .42; y -= hh; h += `<ellipse cx="100" cy="${y + hh / 2}" rx="${w}" ry="${hh / 2}" fill="${{ big:'#8a8f96', mid:'#a3a8ae', small:'#bcc1c6' }[k]}"/>`; });
-      return `<svg viewBox="0 0 200 90" style="display:block;width:100%;max-width:240px;margin:8px auto 0" aria-hidden="true"><path d="M10 84 H190" stroke="#8fbf7a" stroke-width="4" stroke-linecap="round"/>${h}</svg>`; };
-    const draw = (msg = '"The wind knocked down these 3 path stones. Stack them so they stand. There is no hurry."', won) => {
-      showCard(`<div class="kicker">HELP SAGE</div><h2>🪨 3 stones</h2><p>${msg}</p>${pile()}
-        ${won ? '<button id="hpDone">Show Sage</button>' : `<h4>${stack.length ? 'Which stone goes on next?' : 'Which stone goes on the bottom?'}</h4><div class="chips">${ST.filter(x => !stack.includes(x[0])).map(x => `<button data-sn="${x[0]}">${x[1]}</button>`).join('')}</div>`}`, 'Later');
-      document.querySelectorAll('[data-sn]').forEach(b => b.onclick = () => { stack.push(b.dataset.sn); sfx('click');
-        if (stack.length < 3) return draw('It sits there. So far, so good.');
-        if (stack.join() === 'big,mid,small') { sfx('pick'); return draw('<b>The stack stands.</b> A breeze goes by. Nothing moves.', true); }
-        const top = stack.slice(); stack = []; draw(`The stack wobbles, tips, and falls. <b>${top[0] !== 'big' ? 'The bottom stone was too small to hold the rest.' : 'The stone on top was too heavy for the one under it.'}</b> Sage: "Hm. Again. Slowly."`); });
-      if ($('hpDone')) $('hpDone').onclick = () => helpDone('sage', 'balance', 'Heavy things low. Light things high. I have been low and heavy for 190 years, and nothing has tipped me over yet.'); };
-    draw(); } },
+  sage: { label:'Help stack the garden stones', run() { const OFF = [0, 1/8, 1/8 + 1/6, 1/8 + 1/6 + 1/4, 1/8 + 1/6 + 1/4 + 1/2]; /* in stone lengths, from the bottom up: each stone reaches 1/8, 1/6, 1/4, 1/2 past the one below */
+    const pile = n => { let h = ''; for (let k = 0; k < n; k++) { const x = 100 + (OFF[k + 1] - 1) * 60; /* OFF is how far each stone's right end reaches past the edge */ h += `<rect x="${x.toFixed(1)}" y="${70 - k * 14}" width="60" height="12" rx="3" fill="${['#8a8f96', '#a3a8ae', '#bcc1c6', '#d0d4d8'][k]}"/>`; }
+      return `<svg viewBox="0 0 200 112" style="display:block;width:100%;max-width:280px;margin:8px auto 0" aria-hidden="true"><rect x="10" y="82" width="90" height="30" fill="#b9a58a"/><path d="M10 92 H100 M10 102 H100 M40 82 V92 M70 92 V102 M40 102 V112" stroke="#9b8a70" stroke-width="1.5"/><path d="M100 14 V112" stroke="#e5484d" stroke-width="1.5" stroke-dasharray="3 3"/><text x="104" y="108" font-size="9" font-weight="800" fill="#e5484d">edge</text>${h}</svg>`; };
+    const draw = (msg, n, won) => {
+      showCard(`<div class="kicker">HELP SAGE</div><h2>🪨 4 stones on the wall edge</h2><p>${msg}</p>${pile(n)}
+        ${won ? '<button id="hpDone">Show Sage</button>' : n ? '<button id="snNext">Add the next stone</button>' : '<div class="chips"><button data-sn="y">Yes</button><button data-sn="n">No, it would fall</button></div>'}`, 'Later');
+      document.querySelectorAll('[data-sn]').forEach(b => b.onclick = () => { sfx('click'); draw(b.dataset.sn === 'y' ? '<b>Sage nods.</b> "Watch." Each stone goes as far out as it can and still balance.' : '"Most people say that. Watch." Each stone goes as far out as it can and still balance.', 1); });
+      if ($('snNext')) $('snNext').onclick = () => { sfx('pick'); n++; if (n < 4) return draw(`Stone ${n}. Its balance point, with everything on top, sits right over the edge below.`, n); draw('<b>The top stone is completely past the edge.</b> Nothing is under it but air, and it holds.', 4, true); };
+      if ($('hpDone')) $('hpDone').onclick = () => helpDone('sage', 'balance', 'The trick is not strength. It is knowing exactly where the middle of the weight is.'); };
+    draw('"The wall by the gate needs a lip of stones. Here is a riddle first. Stack 4 flat stones at the edge, each leaning out past the one below. Can the top stone end up completely past the edge?"', 0); } },
 };
 // the old stone: crack its symbols by comparing names you know, the way the real Rosetta Stone was read
 function readStone() { const sym = { N:'◆', A:'●', P:'▲', I:'■' }, w = t => [...t].map(c => sym[c]).join(' ');
@@ -2924,8 +2922,8 @@ function useTile(i) {
 const SHOP_STAGES = [
   { name:'Crate', at:0 },
   { name:'Stand', at:300, perk:'Everything you sell here now earns 5% more.', term:'A SIGN', title:'Nobody can buy from a shop they cannot find',
-    real:'Before most people could read, shops hung a picture outside: a boot for a shoemaker, a loaf for a baker. A sign is the oldest kind of advertising. It tells people walking past what you sell, before they have to ask.',
-    today:'Count the signs on 1 street. Every one is a shop saying: here I am, and here is what I have.' },
+    real:'Before most people could read, shops hung a picture outside: 3 gold balls for a pawnshop, a striped pole for a barber. A sign is the oldest kind of advertising. It tells people walking past what you sell, before they have to ask.',
+    today:'Count the signs on any street. Every one is a shop saying: here I am, and here is what I have.' },
   { name:'Stall', at:1200, perk:'You now keep a ledger. It is a record of what you sell. Tap My shop to see what earns you the most.', term:'KEEPING BOOKS', title:'Write down what you earn, and you can see what works',
     real:'Merchants in Venice kept careful books of everything that came in and everything that went out. In 1494, Luca Pacioli printed the first description of how they did it. Shops still use the same method. It is called <b>bookkeeping</b>.',
     today:'Open your ledger. The crop with the biggest price is not always the one that earns the most per day.' },
@@ -3244,9 +3242,10 @@ function heartScene(id) {
 const SCENES = {
   nana3() {
     sfx('heart');
-    openDialog('Nana Gale', "Come sit with me, dear. I am weaving. See my pattern card? Each row is holes and no holes. Hole, hole, blank. Hole, hole, blank. Hole, hole... what comes next?", [
-      { label:'A hole', fn:() => openDialog('Nana Gale', "Hmm, look again. It repeats in threes.", [{ label:'Try again', fn:SCENES.nana3 }]) },
-      { label:'A blank', fn:() => { closeDialog(); showAha('loom', () => openDialog('Nana Gale', "Your grandmother used to say a pattern is just a promise you keep. Now you know how to keep this one.", [], S.hearts.nana)); } },
+    openDialog('Nana Gale', "Come sit with me, dear. I weave from a punched card. A hole lifts a thread. A blank leaves it down. Computers use the same idea: a hole is 1, a blank is 0. This row reads hole, blank, hole, hole: 1011. Counting in 2s, the places are worth 8, 4, 2, and 1. What number is it?", [
+      { label:'1,011', fn:() => openDialog('Nana Gale', "That is how it looks written down. Add up the places with a hole: 8, 2, and 1.", [{ label:'Try again', fn:SCENES.nana3 }]) },
+      { label:'3', fn:() => openDialog('Nana Gale', "That is how many holes there are. But each place is worth a different amount: 8, 4, 2, 1.", [{ label:'Try again', fn:SCENES.nana3 }]) },
+      { label:'11', fn:() => { closeDialog(); showAha('loom', () => openDialog('Nana Gale', "8, plus 2, plus 1. A loom and a laptop speak the same language, dear.", [], S.hearts.nana)); } },
     ], S.hearts.nana);
   },
   nana6() {
