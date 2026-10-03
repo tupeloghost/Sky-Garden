@@ -7376,7 +7376,7 @@ function nearLabel(o) { const k = o.userData.kind, u = o.userData;
   if (k === 'mailbox') return VISIT ? 'Mailbox: tap to go home' : 'Mailbox: tap to visit friends';
   if (k === 'sign') return S.bridge ? null : 'Broken bridge: tap to fix';
   if (k === 'sign2') return S.bridge2 ? null : 'Broken bridge: tap to fix';
-  if (k === 'site') return (S.built || []).includes(BUILDINGS[u.i].id) ? `${BUILDINGS[u.i].name}: tap to go in` : 'Building site: tap to build';
+  if (k === 'site') return (S.built || []).includes(BUILDINGS[u.i].id) ? `${BUILDINGS[u.i].name}: tap to go in` : S.q5 < 6 ? 'Building site: ring the great bell first' : BUILDINGS[u.i].soon ? `${BUILDINGS[u.i].name}: coming soon` : 'Building site: tap to build';
   if (k === 'greatbell') return S.q5 >= 5 ? 'The Great Bell: tap to ring' : 'The Great Bell: tap';
   if (k === 'boulder') return S.boulder ? 'Old stone: tap to read it' : 'Boulder: tap to move it';
   return ({ buildsite:'Your hut: tap to build', crate:`${shopName()}: tap to sell`, sundial:'Sundial: tap at noon', campfire:'Campfire: tap to sleep', workbench:'Tree stump workbench: tap to make things',
