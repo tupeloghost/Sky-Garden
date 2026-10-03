@@ -1022,7 +1022,7 @@ function spawnDigs() {
 const PLOT0 = new THREE.Vector3(1.2,0,-1), GAP = 1.25;
 const tileGroups = [], lateClicks = []; let tilesReady = false;
 function addTileGroup(i) {
-  const g = new THREE.Group(); g.position.set(PLOT0.x + (i%3)*GAP, 0, PLOT0.z + Math.floor(i/3)*GAP);
+  const g = new THREE.Group(); const t = S.tiles[i]; if (t && t.p) g.position.set(t.p[0], t.gone ? -100 : .26, t.p[1]); else g.position.set(PLOT0.x + (i%3)*GAP, 0, PLOT0.z + Math.floor(i/3)*GAP); /* a raised bed sits wherever it was built */
   g.userData = { kind:'tile', i }; scene.add(g);
   g.add(mesh(new THREE.BoxGeometry(1.15,.05,1.15), new THREE.MeshBasicMaterial({ visible:false }), 0, .02, 0));
   tileGroups.push(g); if (tilesReady) lateClicks.push(g);
@@ -4819,6 +4819,7 @@ const PIECES = [
   { id:'bench', grp:'lights',   name:'Bench',          cost:{ log:2 } },
   { id:'hammock', grp:'lights', name:'Hammock',        cost:{ fiber:8 } }, // hangs between 2 trees
   { id:'planter', grp:'garden', name:'Flower Planter', cost:{ log:1, fiber:1 } },
+  { id:'bed', grp:'garden',     name:'Raised Bed',     cost:{ log:3, stone:2 } }, // a real garden plot you can put anywhere
   { id:'arch', grp:'garden',    name:'Garden Arch',    cost:{ log:3, fiber:2 } },
   { id:'bpath', grp:'ground',   name:'Brick Path',     cost:{ brick:2 }, age:'kiln' },
   { id:'bwall', grp:'walls',   name:'Brick Wall',     cost:{ brick:3 }, age:'kiln' },
@@ -4866,6 +4867,7 @@ function pieceModel(id, hung) {
   if (id === 'gwall') { const gl = new THREE.MeshStandardMaterial({ color:0xcfeaff, transparent:true, opacity:.38, roughness:.05, metalness:.1 });
     [[0,.05,1,.1],[0,1.15,1,.1],[-.47,.6,.08,1.1],[.47,.6,.08,1.1],[0,.6,.06,1.1],[0,.6,1,.06]].forEach(([x,y,w,h]) => g.add(mesh(new THREE.BoxGeometry(w,h,.1), wood, x, y, 0)));
     [[-.24,.33],[.24,.33],[-.24,.88],[.24,.88]].forEach(([x,y]) => g.add(mesh(new THREE.BoxGeometry(.4,.48,.03), gl, x, y, 0))); }
+  if (id === 'bed') { const wd = mat(0x9b6b4a, { map:tx('planks', 2, 1) }); [[0,.55,1.2,.1],[0,-.55,1.2,.1],[.55,0,.1,1.2],[-.55,0,.1,1.2]].forEach(([x, z, w, d]) => g.add(mesh(new THREE.BoxGeometry(w, .3, d), wd, x, .15, z))); g.add(mesh(new THREE.BoxGeometry(1.02,.22,1.02), mat(0x7a5236, { map:tx('earth', 1, 1) }), 0, .13, 0)); [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([a, b]) => g.add(mesh(new THREE.BoxGeometry(.13,.34,.13), mat(0x7a5236), a * .55, .17, b * .55))); }
   if (id === 'chest') { g.add(mesh(new THREE.BoxGeometry(.8,.42,.52), wood, 0, .21, 0)); const lid = mesh(new THREE.CylinderGeometry(.26,.26,.8,12,1,false,0,Math.PI), mat(0xd9a066), 0, .42, 0); lid.rotation.z = Math.PI/2; g.add(lid);
     [-.28,.28].forEach(x => { g.add(mesh(new THREE.BoxGeometry(.06,.44,.54), dark, x, .22, 0)); }); g.add(mesh(new THREE.BoxGeometry(.12,.14,.04), mat(0xd9a441, { metalness:.5, roughness:.4 }), 0, .38, .27)); g.userData.kind = 'chest'; }
   if (id === 'arch') { [-.45,.45].forEach(x => g.add(mesh(new THREE.BoxGeometry(.1,1.6,.1), mat(0xfff1d6), x, .8, 0))); const top = mesh(new THREE.TorusGeometry(.45,.05,6,16,Math.PI), mat(0xfff1d6), 0, 1.6, 0); g.add(top);
@@ -5143,8 +5145,14 @@ function openChest(chest) {
   if ($('chBand')) $('chBand').onclick = () => { if (!enough({ bronze:2 })) { toast(`Not enough yet: ${needText({ bronze:2 })}.`); return; }
     bagAdd('bronze', -2); chest.band = true; drawBuilds(); save(); drawHud(); sfx('ting'); toast('Bronze bands added.'); openChest(chest); };
 }
+// raised beds are garden plots: each bed piece owns 1 tile, placed where the bed is; a removed bed's tile is put away (kept in the list so other tiles keep their numbers)
+function syncBeds() { const beds = (S.builds || []).filter(b => b.p === 'bed').concat(held && held.p === 'bed' ? [held] : []);
+  beds.forEach(b => { let t = b.t != null ? S.tiles[b.t] : null; if (!t || !t.bed || (t.gone && b.t != null && beds.some(o => o !== b && o.t === b.t))) t = null;
+    if (!t) { let k = S.tiles.findIndex(x => x.bed && x.gone); if (k < 0) { S.tiles.push({ s:0 }); k = S.tiles.length - 1; } b.t = k; t = S.tiles[k]; Object.assign(t, { s:0, bed:true, gone:false }); }
+    t.gone = held === b; t.p = [b.x, b.z]; if (!tileGroups[b.t]) addTileGroup(b.t); });
+  S.tiles.forEach((t, i) => { if (!t.bed) return; if (!beds.some(b => b.t === i)) Object.assign(t, { gone:true, s:0 }); const g = tileGroups[i]; if (!g) return; g.position.set(t.p[0], t.gone ? -100 : .26, t.p[1]); g.visible = !t.gone; drawTile(i); }); }
 function drawBuilds() {
-  buildGroup.clear(); lampLights.length = 0; lanternFF.length = 0;
+  syncBeds(); buildGroup.clear(); lampLights.length = 0; lanternFF.length = 0;
   (S.builds || []).filter(b => LIMITS_ON || b.p !== 'chest').forEach(b => { const m = pieceModel(b.p, b); m.position.set(b.x, 0, b.z); m.rotation.y = b.len ? b.a : (b.r || 0) * Math.PI/2; buildGroup.add(m);
     if (!m.userData.kind) m.userData = { kind:'piece', b }; else m.userData.b = b;
     if (b.p === 'chest' && b.band) [-.2,.2].forEach(z => m.add(mesh(new THREE.BoxGeometry(.84,.06,.05), mat(0xd9a441, { metalness:.55, roughness:.4 }), 0, .3, z*1.35)));
@@ -5234,6 +5242,7 @@ function buildTap(e) {
   }
   if (removing) {
     if (idx < 0) { toast('Nothing built there.'); return; }
+    if (S.builds[idx].p === 'bed' && S.tiles[S.builds[idx].t]?.s === 2) { toast('Pick the crop in this bed first.'); return; }
     const b = S.builds.splice(idx, 1)[0], p = PIECES.find(x => x.id === b.p); Object.entries(p.cost).forEach(([k,n]) => bagAdd(k, n));
     sfx('dig'); burst(new THREE.Vector3(c.x, 0, c.z), 0xc98f58, 10); drawBuilds(); save(); drawBuildBar(); drawHud(); return;
   }
