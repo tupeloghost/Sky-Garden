@@ -7,7 +7,7 @@ const ICONS = {
   flour:'🌾', stick:'🥢', stone:'🪨', fiber:'🌱', log:'🪵', clay:'🟤', brick:'🧱', pot:'🏺', copper:'🟢', tin:'⚪', bronze:'🟠', sand:'🟨', glass:'🔷',
   cacao:'🍫', coffee:'☕', vanilla:'🌸', saffron:'🌷', tea:'🍃', olive:'🫒',
   honeybee:'🐝', ladybird:'🐞', dragonfly:'🪽', hopper:'🦗', cicada:'🦗', stagbeetle:'🪲', mantis:'🦗', firefly:'✨', lunamoth:'🦋', springtail:'🐜', brimstone:'🦋', paintedlady:'🦋', purpleemperor:'🦋', morpho:'🦋',
-  rug:'🟣', fern:'🪴', lamp:'🏮', table:'🪑', armchair:'🛋️', bookshelf:'📚', globe:'🌐', rocker:'🪑', sign:'🍀', mushroom:'🍄', cake:'🎂', painting:'🖼️',
+  rug:'🟣', fern:'🪴', lamp:'🏮', table:'🪑', armchair:'🛋️', bookshelf:'📚', globe:'🌐', rocker:'🪑', sign:'🍀', mushroom:'🍄', cake:'🎂', painting:'🖼️', amphora:'🏺', mirror:'🪞', vase:'🏺', terrarium:'🪴',
 };
 const KIND_ICON = { crop:'🌱', fruit:'🍎', fish:'🐟', dish:'🍽️', material:'🪵', quest:'📦', specialty:'⭐', heirloom:'🌹', bug:'🐛' };
 const icon = (k, kind) => ICONS[k] || KIND_ICON[kind] || '✨';

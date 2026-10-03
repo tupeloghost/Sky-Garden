@@ -51,6 +51,10 @@ const FURN = {
   mushroom:  { name:'Glow Mushroom Lamp', gift:true },
   cake:      { name:'Birthday Cake', gift:true },
   painting:  { name:"Lumen's Painting", gift:true },
+  amphora:   { name:'Clay Amphora', gift:true },
+  mirror:    { name:'Bronze Mirror', gift:true },
+  vase:      { name:'Glass Vase', gift:true },
+  terrarium: { name:'Glass Terrarium', gift:true },
 };
 const LOVES = { nana:['skywheat','kale','peach'], pip:['sunbell','cloudberry','apple'], drizzle:['minnow','trout','puffer','moonpumpkin'], twins:['moonpumpkin','apple','frostmint'], lumen:['starbloom','frostmint','peach','moonray'] };
 const BRIDGE2_COST = 300;
