@@ -6,7 +6,7 @@
 // POST /save  { key, updated, save }  -> { ok, updated } (older saves are refused with 409)
 // POST /feedback { mood, text, where, day, player } -> { ok }   (playtest notes)
 // GET  /visit?code=FRIEND          -> a friend's public island (no private data)
-// POST /gift   { key, code, kind: 'gift'|'water', item } -> one of each per friend per day
+// POST /gift   { key, code, kind: 'gift'|'water'|'capsule', item } -> one of each per friend per day
 // GET  /inbox?key=KEY              -> gifts and waterings waiting for you (marks them delivered)
 // POST /contribute { key, goal, n } and GET /community?goal=ID   (shared community goals)
 // POST /brand { key, shop, logo }  and GET /brand?code=FRIEND     (a player's shop name and logo)
@@ -158,8 +158,8 @@ export default {
 
     if (request.method === 'POST' && url.pathname === '/gift') {
       let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
-      const code = String(b.code || '').toUpperCase(), kind = b.kind === 'water' ? 'water' : 'gift';
-      if (!KEY_RE.test(b.key || '') || !CODE_RE.test(code) || (kind === 'gift' && !ITEM_RE.test(b.item || ''))) return json({ error: 'bad request' }, 400, origin);
+      const code = String(b.code || '').toUpperCase(), kind = ['water', 'capsule'].includes(b.kind) ? b.kind : 'gift';
+      if (!KEY_RE.test(b.key || '') || !CODE_RE.test(code) || (kind === 'gift' && !ITEM_RE.test(b.item || '')) || (kind === 'capsule' && !/^c[0-9]{2}w(1|7|30)$/.test(b.item || ''))) return json({ error: 'bad request' }, 400, origin);
       const from = await hashKey(b.key), to = await env.DB.prepare('SELECT id FROM saves WHERE code = ?').bind(code).first();
       if (!to) return json({ error: 'not found' }, 404, origin);
       if (to.id === from) return json({ error: 'that is you' }, 400, origin);
@@ -167,7 +167,7 @@ export default {
       const meData = me ? JSON.parse(me.data) : {};
       const fromName = meData.ageBand === 'kid' ? 'A young gardener' : cleanName(meData.name);
       const res = await env.DB.prepare('INSERT OR IGNORE INTO gifts (to_id, from_id, from_name, kind, item, day, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
-        .bind(to.id, from, fromName, kind, kind === 'gift' ? b.item : null, today(), Date.now()).run();
+        .bind(to.id, from, fromName, kind, kind === 'water' ? null : b.item, today(), Date.now()).run(); // a capsule's item is a code for preset lines only (no free text), so nothing needs moderating
       if (!res.meta.changes) return json({ error: 'already today' }, 409, origin);
       return json({ ok: true }, 200, origin);
     }
