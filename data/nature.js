@@ -8,11 +8,11 @@ const BUTTERFLIES = [
 // short, checked real-life notes for things you tap around the islands
 const TAP_FACTS = {
   seeds:'The Svalbard Global Seed Vault in Norway keeps more than 1.4 million seed samples from around the world, frozen inside a mountain.',
-  sunflower:'A big sunflower head can hold over 1,000 seeds, packed in spirals.',
+  sunflower:'Young sunflowers follow the sun all day, then swing back east at night. Once they bloom, they stay facing east. The morning sun warms them, and warmer flowers get more bees.',
   mushroom:'Some real mushrooms glow in the dark. It is called bioluminescence, which means living light. People once called the glow foxfire.',
   column:'Real Greek temples were ringed with columns like these. The Parthenon in Athens, finished in 438 BC, has 46 outer columns.',
   path:'The Romans built over 80,000 km of paved roads. Many main roads in Europe still follow their routes.',
-  arch:'An arch pushes weight down and out into its sides, so it can hold a lot. Some Roman stone arches still stand after 2,000 years.',
+  arch:'The Pont du Gard in France is a Roman bridge of arches 47 meters high. It was built around 19 BC without any mortar, and it still stands.',
   statue:'Real bronze statues are made with the lost-wax method: shape the statue in wax, cover it in clay, melt the wax out, then pour in hot bronze. People have done this for over 5,000 years.',
   hedge:'Hedges have marked fields for centuries. Some hedges in England are over 700 years old.',
 };

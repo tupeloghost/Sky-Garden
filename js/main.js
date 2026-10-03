@@ -993,7 +993,7 @@ const lanternMat = glow(0xffb45c);
 [[-4,6.75],[4,6.75],[6.75,4],[-4.25,4]].forEach(([lx, lz]) => { const one = new THREE.Group(); one.position.set(lx, 0, lz); lanterns.add(one);
   one.add(mesh(new THREE.CylinderGeometry(.05,.05,1.8,6), mat(0x9b6b4a), 0, .9, 0));
   const l = mesh(sph(.22), lanternMat, 0, 1.9, 0); l.scale.y = 1.25; one.add(l); const lh = halo(0xffb45c, 1.6, .7); lh.position.set(0, 1.9, 0); one.add(lh);
-  const h = hitBox(.6, 2.2, .6); h.position.set(0, 1.1, 0); one.add(h); deco(h, () => { pulse(lh, 1.2); chime(880); toast('You made a wish on the lantern. People light lanterns at festivals all over the world.'); }); });
+  const h = hitBox(.6, 2.2, .6); h.position.set(0, 1.1, 0); one.add(h); deco(h, () => { pulse(lh, 1.2); chime(880); toast('You made a wish on the lantern.'); }); });
 
 // --- dig spots ---
 // dig spots sit in the open meadow at the front, clear of trees and rocks (checked with a spacing test)
@@ -4517,7 +4517,7 @@ function gatherNode(n) {
   if (!canCarry(ore)) return bagFull();
   S.chopped[key] = S.day; const soft = kind === 'claypit' || kind === 'sandpit', amt = soft ? 2 : 1;
   sfx(kind === 'claypit' ? 'squelch' : kind === 'sandpit' ? 'swish' : 'ting'); for (let i=0;i<amt;i++) bagAdd(ore); burst(n.position.clone(), kind === 'claypit' ? 0xb8653f : kind === 'sandpit' ? 0xead9a6 : ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, 12); floatText(`+${amt} ${icon(ore)} ${plural(ore, amt)}`, n.position.clone()); swingT = .5; save(); drawHud(); drawUsed();
-  toast(`${kind === 'claypit' ? 'Clay is soft, wet earth that can be shaped and fired.' : kind === 'sandpit' ? 'Sand is mostly tiny grains of quartz. Melt it hot enough and it turns into glass.' : ore === 'copper' ? 'Copper ore has those green streaks. Smelt it in a furnace.' : 'Tin is rare. People once traded it across whole continents.'}`);
+  toast(`${kind === 'claypit' ? 'Fire clay in a kiln to make bricks and pots.' : kind === 'sandpit' ? 'Sand is mostly tiny grains of quartz. Melt it hot enough and it turns into glass.' : ore === 'copper' ? 'Copper ore has those green streaks. Smelt it in a furnace.' : 'Tin is rare. People once traded it across whole continents.'}`);
 }
 // the kiln: keep the fire just right
 function useKiln() {
