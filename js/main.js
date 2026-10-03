@@ -2089,6 +2089,7 @@ const screenBusy = () => $('dialog').classList.contains('show') || $('veil').cla
 setInterval(() => { if (screenBusy()) quietSince = performance.now(); }, 300);
 function quiet() { if (screenBusy() || performance.now() - quietSince < 3500) return false; quietSince = performance.now(); return true; } // true means: your turn, and nobody else gets one for a few seconds
 function toast(msg) { msg = String(msg); if (toastOn && ($('toast').textContent === msg || toastQ.includes(msg))) return; if (toastOn) { if (toastQ.length < 3) toastQ.push(msg); return; }
+  { const bb = $('buildbar'), r = bb && getComputedStyle(bb).display !== 'none' ? bb.getBoundingClientRect() : null, up = r && r.height > 0 && r.top < innerHeight ? innerHeight - r.top + 10 : 0; $('toast').style.bottom = up ? up + 'px' : ''; } // in Build mode, sit just above the build panel instead of behind it
   const t = $('toast'); t.textContent = msg; t.classList.add('show'); toastOn = true; clearTimeout(toastT); toastT = setTimeout(toastNext, Math.min(9000, Math.max(2600, 1300 + msg.length * 60))); }
 function toastNext() { clearTimeout(toastT); $('toast').classList.remove('show'); toastOn = false; if (toastQ.length) { const m = toastQ.shift(); setTimeout(() => toast(m), 280); } }
 $('toast').addEventListener('click', toastNext);
