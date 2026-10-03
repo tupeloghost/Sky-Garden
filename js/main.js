@@ -5023,13 +5023,13 @@ function swingNet(g, b, onMiss) {
 const PAINTS = [0xfff1d6, 0xff8fa3, 0x7ec8e3, 0xffc857, 0x8fdc8a, 0xc9b6ff, 0x9b6b4a];
 const daily = key => { if (S.chopped[key] === S.day) return false; S.chopped[key] = S.day; return true; };
 function pickSeeds(key) {
-  if (!daily(key)) { toast('You already saved seeds here today. The flowers make more by tomorrow.'); return; }
+  if (!daily('seedsave')) { toast('You already saved a seed today. Seeds need a day to dry. Come back tomorrow.'); return; } // 1 saved seed a day, from whichever flowers you pick
   const s = season(), pool = Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(s) && !CROPS[k].locked), k = pool[Math.floor(Math.random()*pool.length)] || 'cloudberry';
   S.seeds[k] = (S.seeds[k] || 0) + 1; sfx('plant'); floatText(`+1 ${icon(k)} ${CROPS[k].name.toLowerCase()} seed`, player.position.clone()); save(); drawHud();
   toast(`You saved a ${CROPS[k].name.toLowerCase()} seed from the flowers. ${TAP_FACTS.seeds}`);
 }
 function sunflowerSeeds(i) {
-  if (!daily('sunseed' + i)) { toast('You already took seeds from this sunflower today.'); return; }
+  if (!daily('sunseed')) { toast('You already gathered sunflower seeds today. More heads ripen by tomorrow.'); return; } // 1 handful a day from the whole field
   S.seeds.sunbell = (S.seeds.sunbell || 0) + 2; sfx('plant'); floatText(`+2 ${icon('sunbell')} sunflower seeds`, player.position.clone()); save(); drawHud();
   toast(`+2 sunflower seeds. ${TAP_FACTS.sunflower}`);
 }
@@ -7183,8 +7183,8 @@ function wishFountain() {
   showCard(`<div class="kicker">THE FOUNTAIN</div><h2>You made a wish</h2><p>${facts[S.day % facts.length]}</p><p class="sub">In Sky Garden, a wish brings a small surprise tomorrow morning.</p>`, 'Okay'); }
 function wishMorning() { if (S.wishDay !== S.day - 1 || S.wishPaid === S.wishDay) return; S.wishPaid = S.wishDay;
   if (Math.random() < .5) { S.coins += 25; return 'Your wish came true: 25 coins turned up by the fountain.'; }
-  const ks = Object.keys(CROPS).filter(k => !CROPS[k].locked && CROPS[k].seasons.includes(season())), k = ks[Math.floor(Math.random() * ks.length)]; S.seeds[k] = (S.seeds[k] || 0) + 3;
-  return `Your wish came true: 3 ${CROPS[k].name} seeds turned up by the fountain.`; }
+  const ks = Object.keys(CROPS).filter(k => !CROPS[k].locked && CROPS[k].seasons.includes(season())), k = ks[Math.floor(Math.random() * ks.length)]; S.seeds[k] = (S.seeds[k] || 0) + 2;
+  return `Your wish came true: 2 ${CROPS[k].name} seeds turned up by the fountain.`; }
 // the planters: be the bee. Carry pollen from a flower to another of the same kind, and that flower makes seeds you can keep (1 planter, once a day)
 function planterSeed(i) { S.planter = S.planter || {}; if (S.planter[i] === S.day) return toast('You already got seeds from this planter today. New flowers open by tomorrow.');
   let ks = Object.keys(CROPS).filter(k => !CROPS[k].locked && k !== 'skywheat' && CROPS[k].seasons.includes(season())); if (!ks.length) ks = ['sunbell'];
