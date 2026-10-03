@@ -1710,7 +1710,7 @@ function museumWing(kind, msg) { S.museum = S.museum || {}; const W = MUSEUM[kin
       : (S.bag[k] || 0) > 0 ? `<button data-mg="${k}">${icon(k, kind)} ${ITEMS[k].name} <span class="sub">Tap to give 1 of your ${S.bag[k]}${museumWant().k === k && !museumWant().paid ? ' · <b>WANTED +50</b>' : ''}</span></button>`
       : `<button class="locked">${icon(k, kind)} ${ITEMS[k].name}</button>`).join('')}</div>${hidden ? `<p class="sub" style="margin-top:8px">${hidden} more you have not found yet.</p>` : ''}`, 'Close');
   document.querySelectorAll('[data-mx]').forEach(b => b.onclick = () => { const k = b.dataset.mx; showCard(`<div class="kicker">${W.name.toUpperCase()}</div><h2>${icon(k, kind)} ${ITEMS[k].name}</h2><h4>In real life</h4>${museumFact(k)}<p class="sub" style="margin-top:10px">Given by you on day ${S.museum[k]}.</p>`, 'Back', () => museumWing(kind)); });
-  document.querySelectorAll('[data-mg]').forEach(b => b.onclick = () => { const k = b.dataset.mg, w = museumWant(), wanted = w.k === k && !w.paid; bagAdd(k, -1); S.museum[k] = S.day; S.coins += 25 + (wanted ? 50 : 0); if (wanted) w.paid = true; did('museum'); sfx('coin'); drawMuseum(); drawHud();
+  document.querySelectorAll('[data-mg]').forEach(b => b.onclick = () => { const k = b.dataset.mg, w = museumWant(), wanted = w.k === k && !w.paid; bagAdd(k, -1); S.museum[k] = S.day; S.coins += 25 + (wanted ? 50 : 0) + (S.tools.cabinet ? 10 : 0); if (wanted) w.paid = true; did('museum'); sfx('coin'); drawMuseum(); drawHud();
     const done = W.ids.every(x => S.museum[x]), all = done && Object.values(MUSEUM).every(w => w.ids.every(x => S.museum[x]));
     if (done) { S.coins += 300; [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 130)); }
     save(); drawHud();
@@ -2984,7 +2984,7 @@ function drawQuestMain() {
 const rowOf = i => S.tiles[i]?.bed ? [i] : S.tiles.map((_, j) => j).filter(j => !S.tiles[j].bed && Math.floor(j / 3) === Math.floor(i / 3)); // a garden row works together; each raised bed stands alone
 // planting 1 dug plot plants the rest of its row too, while your seeds last
 function plantRest(i) { let n = 0; const k = S.sel, c = CROPS[k];
-  rowOf(i).forEach((j, q) => { const tj = S.tiles[j]; if (j === i || tj.s > 1 || tj.gone || S.seeds[k] <= 0) return; S.seeds[k]--; Object.assign(tj, { s:2, c:k, d:0 }); goal('plant'); n++; burst(tileGroups[j].position, 0xb98a63, 8); setTimeout(() => { drawTile(j); popSprout(j); sfx('plant'); }, 140 * (q + 1)); });
+  rowOf(i).forEach((j, q) => { const tj = S.tiles[j]; if (j === i || tj.s > 1 || tj.gone || S.seeds[k] <= 0) return; if (!(S.tools.seeddrill && (n + 1) % 4 === 0)) S.seeds[k]--; Object.assign(tj, { s:2, c:k, d:0 }); goal('plant'); n++; burst(tileGroups[j].position, 0xb98a63, 8); setTimeout(() => { drawTile(j); popSprout(j); sfx('plant'); }, 140 * (q + 1)); });
   if (!S.seenPlant) { S.seenPlant = true; setTimeout(() => toast(PLANT_FACT), 1200); } return n; }
 // a new sprout springs up out of the soil
 function popSprout(j) { setTimeout(() => { const g = tileGroups[j], crop = g && g.children[g.children.length - 1]; if (!crop) return; let t = 0, last = performance.now();
@@ -3950,7 +3950,7 @@ function bakeGame(r) { if (bake3 || cine) return; target = null; pending = null;
     if (phase === 'mix') { const h = ray.intersectObjects(items.filter(it => !it.userData.used).map(it => it.userData.hit), false)[0]; if (!h) return; const it = items.find(x => x.userData.hit === h.object); it.userData.used = true; flying.push({ it, from:it.position.clone(), t:0 }); sfx('swish'); }
     else if (phase === 'knead') { if (!ray.intersectObject(doughHit, false).length) return; kneads++; squash = 1; sfx('squelch'); burst(dough.position.clone().setY(dough.position.y + .1), 0xfff6e6, 10); tone(300 + kneads * 60, { dur:.06, vol:.04 });
       if (kneads >= 4) { phase = 'slide'; slide = 0; msg('Into Gerald it goes...'); } else msg(`Knead the dough. ${kneads} of 4.`); } };
-  const takeOut = () => { if (phase !== 'bake' || done) return; done = true; const gold = heat >= .52 && heat <= .74; phase = 'out'; slide = 0; glowH.material.opacity = 0; g.userData.ember.material.opacity = .25;
+  const takeOut = () => { if (phase !== 'bake' || done) return; done = true; const gold = S.tools.proofbox ? heat >= .47 && heat <= .79 : heat >= .52 && heat <= .74; phase = 'out'; slide = 0; glowH.material.opacity = 0; g.userData.ember.material.opacity = .25;
     if (gold && canCarry(r.id)) bagAdd(r.id); save(); drawHud(); [523, 659, 784].forEach((f, i) => setTimeout(() => chime(f), i * 100)); $('bkOut').style.display = 'none'; $('bkBarW').style.display = 'none'; $('bkDone').textContent = 'Close'; $('bkDone').className = '';
     msg(gold ? `<b>Golden!</b> Mabel is so pleased she makes a second batch. <b>2 ${r.name}.</b>` : heat < .52 ? `<b>A bit pale,</b> but cooked. You made ${r.name}.` : `<b>Gerald, no!</b> A little dark, but still tasty. You made ${r.name}.`); };
   $('bkOut').onclick = takeOut;
@@ -4625,6 +4625,15 @@ const CRAFTS = [
   { id:'mirror', name:'Bronze Mirror', needs:{ bronze:2 }, does:'A polished bronze mirror to hang on your wall.', furn:true, age:'furnace' },
   { id:'vase', name:'Glass Vase', needs:{ glass:1, fiber:1 }, does:'A glass vase of flowers for your home.', furn:true, age:'glass' },
   { id:'terrarium', name:'Glass Terrarium', needs:{ glass:2, fiber:2 }, does:'A tiny sealed garden in a glass case.', furn:true, age:'glass' },
+  /* inventions: each one unlocks from a Know-how card, and each changes how something on the island works */
+  { id:'seeddrill', name:'Seed Drill', needs:{ log:4, stick:4, stone:2 }, know:'seeds', does:'In Sky Garden: when you plant a whole row, every 4th seed is free.',
+    fact:'In 1701, Jethro Tull built a horse-drawn seed drill that dropped seed in neat rows at even spacing. Before that, farmers threw seed by hand, and much of it was wasted.' },
+  { id:'wheelbarrow', name:'Wheelbarrow', needs:{ log:3, stick:3, stone:1 }, know:'balance', does:'In Sky Garden: get 1 more clay, sand or ore each time you dig some up.',
+    fact:'The load sits over the wheel, so your arms only steady it. Chinese tomb art shows wheelbarrows by 118 AD. Europe has no sign of one until about 1220.' },
+  { id:'proofbox', name:'Proofing Box', needs:{ log:3, brick:2 }, know:'warm', does:'In Sky Garden: the golden zone in the oven is wider, so golden bakes are easier.',
+    fact:'Bakeries keep proofing cabinets at about 85°F (29°C) so dough rises on schedule. At home, most bread does best at 75 to 78°F.' },
+  { id:'cabinet', name:'Cabinet of Curiosities', needs:{ log:4, stick:2, glass:1 }, know:'sorting', does:'In Sky Garden: every museum donation pays 10 more coins.',
+    fact:"The Ashmolean in Oxford opened in 1683 as Britain's first public museum. It started as one family's cabinet of curiosities, the Tradescants' 'Ark'." },
 ];
 const potteryOn = () => featureOn('pottery') || !!S.stations.kiln, bronzeOn = () => featureOn('bronze') || !!S.stations.furnace;
 const hasCraft = id => id === 'kiln' || id === 'furnace' ? !!S.stations[id] : !!S.tools[id];
@@ -4640,9 +4649,10 @@ function agesHtml() {
 }
 function drawStations() { kiln.visible = !!S.stations.kiln; furnace.visible = !!S.stations.furnace; drawUsed(); }
 function useWorkbench() {
-  const shown = CRAFTS.filter(c => (!c.furn || S.stations[c.age]) && (LIMITS_ON || !/^bag\d$/.test(c.id)) && (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag1' || featureOn('bagup')) && (c.id !== 'net' || featureOn('butterflies')) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
+  const knows = k => (S.know || []).includes(k), locked = CRAFTS.filter(c => c.know && !knows(c.know)).length;
+  const shown = CRAFTS.filter(c => (!c.know || knows(c.know)) && (!c.furn || S.stations[c.age]) && (LIMITS_ON || !/^bag\d$/.test(c.id)) && (!c.after || hasCraft(c.after)) && (c.id !== 'kiln' || potteryOn()) && (!['furnace','bronzeAxe','bronzePick','bag3'].includes(c.id) || bronzeOn()) && (c.id !== 'bag1' || featureOn('bagup')) && (c.id !== 'net' || featureOn('butterflies')) && (c.id !== 'bag2' || (potteryOn() && S.tools.bag1)) && (c.id !== 'bag3' || S.tools.bag2));
   showCard(`<div class="kicker">TREE STUMP WORKBENCH</div><h2>Make things</h2>
-    <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln && potteryOn() ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>
+    <p style="margin-top:8px">Make tools and workshops from what you gather.${S.tools.pick && !S.stations.kiln && potteryOn() ? ' Scoop clay from the reddish patches at the edge of your island.' : ''}${S.stations.kiln && !S.stations.furnace ? ' Fire clay into bricks at your kiln.' : ''}</p>${locked ? `<p class="sub">💡 ${locked} invention${locked === 1 ? '' : 's'} still locked. Each one unlocks when you learn its Know-how card.</p>` : ''}
     <div class="jlist">${[...shown].sort((a, b) => (hasCraft(a.id) - hasCraft(b.id)) || (enough(b.needs) - enough(a.needs))).map(c => { const own = hasCraft(c.id), ok = enough(c.needs);
       return `<button data-cr="${c.id}" class="craft ${own ? 'own' : ok ? 'ready' : ''}"><span class="ct">${c.name}${own ? ' <small>You have it</small>' : ok ? ' <small class="go">Ready to make</small>' : ''}</span>
         <span class="sub">${c.does}</span>${own ? '' : `<span class="needs">${Object.entries(c.needs).map(([k,n]) => `<em class="${have(k) >= n ? 'ok' : 'no'}">${icon(k)} ${Math.min(have(k), n)}/${n}</em>`).join('')}</span>`}</button>`; }).join('')}</div>`, 'Close');
@@ -4651,8 +4661,12 @@ function useWorkbench() {
     if (hasCraft(c.id)) { toast(`You already have a ${c.name.toLowerCase()}.`); return; }
     if (!enough(c.needs)) { toast(`Not enough yet: ${needText(c.needs)}.`); return; }
     if (c.furn) return furnCraft(c);
+    if (c.know) return inventCard(c);
     makeCraft(c); });
 }
+function inventCard(c) { const x = KNOWHOW.find(k => k.id === c.know);
+  showCard(`<div class="kicker">AN INVENTION · FROM ${x.term}</div><h2>💡 ${c.name}</h2><h4>In real life</h4><p>${c.fact}</p><h4>What it does</h4><p>${c.does}</p><p class="needs">${needText(c.needs)}</p><button id="ivMake">Build it</button>`, 'Not now');
+  $('ivMake').onclick = () => { craftDone(c); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 110)); toast(`💡 You invented a ${c.name.toLowerCase()}!`); }; }
 // furniture made at the workbench goes straight to your home, ready to place
 function furnCraft(c) { Object.entries(c.needs).forEach(([k, n]) => bagAdd(k, -n)); S.furn = { ...(S.furn || {}), [c.id]:(S.furn?.[c.id] || 0) + 1 }; save(); drawHud(); drawRoom(); sfx('wood'); chime(784);
   showCard(`<div class="kicker">YOU MADE</div><h2>${icon(c.id)} ${c.name}</h2><p>Place it in your home: it goes in a <b>${CAT_INFO[FURN_CAT[c.id]].label.toLowerCase()}</b> spot.</p><h4>In real life</h4><p>${FINDS[c.id].fact}</p>`, 'Okay');
@@ -4707,7 +4721,7 @@ function gatherNode(n) {
   if (kind === 'ore' && !S.tools.pick) { toast('You need a stone pickaxe to dig ore. Make 1 at the tree stump workbench.'); return; }
   if (S.chopped[key] === S.day) { toast('Nothing left here today. It fills back in by tomorrow.'); return; }
   if (!canCarry(ore)) return bagFull();
-  S.chopped[key] = S.day; const soft = kind === 'claypit' || kind === 'sandpit', amt = soft ? 2 : 1;
+  S.chopped[key] = S.day; const soft = kind === 'claypit' || kind === 'sandpit', amt = (soft ? 2 : 1) + (S.tools.wheelbarrow ? 1 : 0);
   sfx(kind === 'claypit' ? 'squelch' : kind === 'sandpit' ? 'swish' : 'ting'); for (let i=0;i<amt;i++) bagAdd(ore); burst(n.position.clone(), kind === 'claypit' ? 0xb8653f : kind === 'sandpit' ? 0xead9a6 : ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, 12); floatText(`+${amt} ${icon(ore)} ${plural(ore, amt)}`, n.position.clone()); swingT = .5; save(); drawHud(); drawUsed();
   toast(`${kind === 'claypit' ? 'Fire clay in a kiln to make bricks and pots.' : kind === 'sandpit' ? 'Sand is mostly tiny grains of quartz. Melt it hot enough and it turns into glass.' : ore === 'copper' ? 'Copper ore has those green streaks. Smelt it in a furnace.' : 'Tin is rare. People once traded it across whole continents.'}`);
 }
