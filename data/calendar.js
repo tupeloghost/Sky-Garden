@@ -121,11 +121,11 @@ const FESTIVAL_AHA = {
   muertos: { kicker:'FESTIVAL', title:'Remembering Keeps Them Close',
     did:'You helped Nana remember your grandmother on Dia de los Muertos.',
     real:'Dia de los Muertos, the Day of the Dead, is celebrated in Mexico on November 1 and 2. Families build these altars, called ofrendas. It blends the traditions of Mexico\'s first peoples with Catholic holidays.',
-    today:'It is a celebration, not a sad day. In 2008, UNESCO added it to its list of living traditions of the world. Remembering is what a Keeper of Memory does.' },
+    today:'It is a celebration, not a sad day. In 2008, UNESCO added it to its list of living traditions of the world.' },
   diwali: { kicker:'FESTIVAL', title:'The Festival of Lights',
     did:'You lit little lamps with Pip for Diwali.',
     real:'Diwali is the festival of lights, celebrated by Hindus, Sikhs, Jains, and some Buddhists. People light diyas, set off fireworks, and share sweets. For many Hindus it remembers the god Rama returning home. It also honors Lakshmi, goddess of good fortune.',
-    today:'It falls on the new moon, the darkest night of the month. So all those little lamps really matter.' },
+    today:'It falls on the new moon, the darkest night of the month.' },
   hanukkah: { kicker:'FESTIVAL', title:'8 Nights of Light',
     did:'You helped Pip light the Hanukkah candles.',
     real:'Hanukkah is an 8-night Jewish festival of lights. It remembers the day the Temple in Jerusalem was made holy again, about 2,200 years ago. It also remembers the story of a small jar of oil that lasted 8 nights.',
@@ -133,11 +133,11 @@ const FESTIVAL_AHA = {
   decsolstice: { kicker:'FESTIVAL', title:'The December Solstice',
     did:'You marked the turning of the year with Nana.',
     real:'Around December 21, the South Pole tilts most toward the sun. North of the equator it is the shortest day of the year, and south of it, the longest. The tomb at Newgrange is about 5,200 years old.',
-    today:'In the north, the days start getting longer again tomorrow.' },
+    today:'In the north, the earliest sunset of the year comes about 2 weeks before this day, not on it. The latest sunrise comes in early January.' },
   christmas: { kicker:'FESTIVAL', title:'Christmas Around the World',
     did:'You admired Pip\'s very small Christmas tree.',
     real:'Christmas is the Christian celebration of the birth of Jesus. Most churches hold it on December 25. Many Orthodox churches hold it in early January. Nobody knows the real date Jesus was born. The oldest record of December 25 is from Rome, in the year 336.',
-    today:'Many people who are not Christian celebrate it too, as a time for family and giving.' },
+    today:'In Japan, many families eat KFC fried chicken at Christmas. It began with a 1974 ad: Kentucky for Christmas!' },
 };
 
 export { MONTHS, realSeason, moonPhase, FESTIVALS, activeFestival, festivalWindow, dateLabel, FESTIVAL_AHA };
