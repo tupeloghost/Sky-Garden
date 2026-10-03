@@ -89,7 +89,7 @@ const BOOKS = [
     today:'By 1501, presses in Europe had printed about 30,000 different books.' },
   { id:'handwashing', title:'Wash Your Hands',
     real:'In 1847, the doctor Ignaz Semmelweis noticed something. Far fewer new mothers died when doctors washed their hands in a chlorine mix before helping them. Many doctors refused to believe him. Years later, Louis Pasteur and Robert Koch showed that tiny germs cause many diseases.',
-    today:'20 seconds of soap still saves lives every day.' },
+    today:'Washing hands with soap cuts diarrhea illness by about 23% to 40%, according to the CDC.' },
   { id:'drift', title:'The Drifting Continents',
     real:'People had long seen that the coasts of South America and Africa fit together like puzzle pieces. In 1912, Alfred Wegener said the continents had drifted apart. Most scientists laughed. In the 1960s, new evidence from the ocean floor proved the continents do move. They move a few centimeters each year.',
     today:'The ground under you is drifting right now, about as fast as your fingernails grow.' },
