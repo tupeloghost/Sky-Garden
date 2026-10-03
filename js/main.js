@@ -3085,7 +3085,8 @@ function stallGame(goods) { if (stall3 || cine || !goods.length) return; target 
 
 // --- neighbors ---
 function talk(id) {
-  if (id === 'pip' && meetingPip()) { S.helped = [...(S.helped || []), 'pip']; save(); drawHud(); } // meeting Pip is just saying hello
+  if (id === 'pip' && meetingPip()) { S.helped = [...(S.helped || []), 'pip']; S.talked.pip = S.day; S.hearts.pip = Math.min(10, (S.hearts.pip || 0) + 1); save(); drawHud(); chime(698); // meeting Pip is just saying hello
+    return openDialog('Pip', "Oh! A new face! Hi! I'm Pip. That's my shop, and this is my cart. I sell seeds and furniture. Need seeds? I've got seeds.", [{ label:'Nice to meet you', fn:() => talk('pip') }], S.hearts.pip, 'pip'); }
   const n = NEIGHBORS[id], firstToday = S.talked[id] !== S.day;
   if (firstToday) { S.talked[id] = S.day; S.hearts[id] = Math.min(10, S.hearts[id]+1); chime(698); goal('talk'); }
   if (heartScene(id)) return;
@@ -3315,7 +3316,7 @@ const SCENES = {
   },
   pip6() {
     S.furn.sign = (S.furn.sign||0) + 1; sfx('heart'); save();
-    openDialog('Pip', "I made this for my shop. The one I do not have yet. But you believe in me, so... I want you to keep it until I do. It is my lucky sign!", [
+    openDialog('Pip', "I painted this lucky sign for my shop. But you believed in me before anyone, so... I want you to have it.", [
       { label:'I will keep it safe', fn:() => { closeDialog(); toast("You got Pip's Lucky Sign! Place it inside your home."); } }], S.hearts.pip);
   },
   drizzle3() {

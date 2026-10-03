@@ -76,7 +76,7 @@ const NEIGHBORS = {
   ]},
   pip: { name:'Pip', lines:[
     "Seeds! Fresh seeds! Well. Fresh-ish. They were in my hat.",
-    "One day I will have a real shop. On a big island. With a sign!",
+    "I have a real shop now, right on the square. Come and look around.",
     "Cloudberries grow fast. Sunflowers sell high. I did that math myself.",
     "I sell furniture now too. Your home looks like a cloud with a door.",
     "You are my best customer. You are also my only customer.",
