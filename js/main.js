@@ -1448,6 +1448,9 @@ function exitRoom() { const R = ROOMS[S.room];
   // the counter, with jars of seeds
   const counter = G(mesh(new THREE.BoxGeometry(3,.9,.8), mat(0x86c7ff), 0, .45, 0), mesh(new THREE.BoxGeometry(3.1,.08,.9), wood, 0, .94, 0)); [0xffc857,0x8fdc8a,0xc9b6ff,0xff8fa3].forEach((c, i) => { counter.add(mesh(new THREE.CylinderGeometry(.13,.13,.3,12), new THREE.MeshStandardMaterial({ color:0xdff3ff, transparent:true, opacity:.55 }), -1.1 + i*.4, 1.13, .1)); counter.add(mesh(sph(.09), mat(c), -1.1 + i*.4, 1.08, .1)); });
   thing(g, counter, -.6, -1.4, 3.2, 1.4, 1, () => seedShop(), 'Seed counter: tap to buy seeds');
+  // Pip himself, behind his counter
+  const pipIn = critter({ body:0x86c7ff, belly:0xfff3a0, beak:0xffb347, hat:0xff8fa3, outfit:{ style:'vest', color:0x8fdc8a } }); pipIn.scale.setScalar(.8);
+  thing(g, pipIn, .4, -2.4, .9, 1.6, .8, () => talk('pip'), 'Pip: tap to talk');
   // lemonade
   const lem = G(mesh(new THREE.CylinderGeometry(.14,.12,.34,12), new THREE.MeshStandardMaterial({ color:0xfff3a0, transparent:true, opacity:.8 }), 0, 1.15, 0), mesh(sph(.06), mat(0xffe07a), .05, 1.3, 0));
   thing(g, lem, .65, -1.35, .5, 1.6, .6, () => HELP.pip.run(), 'Lemonade: tap to help Pip');
@@ -1459,7 +1462,7 @@ function exitRoom() { const R = ROOMS[S.room];
   thing(g, furn, -2.7, 1.2, 1.9, 1.6, 1.1, () => furnShop(), 'Furniture: tap to buy');
   // the sign he keeps repainting
   const easel = G(mesh(new THREE.BoxGeometry(1.2,.6,.05), mat(0xfff6e6), 0, 1.25, 0), mesh(new THREE.BoxGeometry(.5,.08,.02), mat(0xff8fa3), -.2, 1.33, .03), mesh(new THREE.BoxGeometry(.3,.08,.02), mat(0x7ec8e3), .25, 1.15, .03)); [-.45,.45].forEach(x => easel.add(mesh(new THREE.BoxGeometry(.06,1.5,.06), dark, x, .75, -.06)));
-  easel.rotation.y = -.5; thing(g, easel, 2.7, .6, 1.3, 1.7, .8, () => toy('sign'), "Pip's sign: tap to help");
+  easel.rotation.y = -.5; thing(g, easel, 2.7, .6, 1.3, 1.7, .8, () => toy('sign'), "Pip's sign ideas: tap to look");
   // his first coin
   const jar = G(mesh(new THREE.BoxGeometry(.5,.5,.3), dark, 0, 1.75, 0), mesh(new THREE.CylinderGeometry(.11,.11,.03,16), mat(0xffc857, { metalness:.5 }), 0, 1.75, .17).rotateX(Math.PI/2));
   thing(g, jar, -2.9, -3.1, .7, 2.2, .4, () => toy('coin'), 'Framed coin: tap to flip it');
@@ -1506,13 +1509,13 @@ function exitRoom() { const R = ROOMS[S.room];
   thing(g, gears, -2.7, -3.15, 1.4, 3, .3, () => toy('gears'), 'Gears: tap to turn');
   // shovels
   const rack = G(mesh(new THREE.BoxGeometry(1.3,.08,.08), dark, 0, 1.9, 0)); [-.45,0,.45].forEach((x, i) => { rack.add(mesh(new THREE.CylinderGeometry(.03,.03,1.3,6), wood, x, 1.25, .06)); rack.add(mesh(new THREE.BoxGeometry(.24,.3,.04), iron, x, .5, .06)); if (i === 2) rack.add(mesh(new THREE.BoxGeometry(.26,.03,.05), mat(0xd6332e), x, 1.0, .08)); });
-  thing(g, rack, .9, -3.12, 1.4, 2.2, .4, () => toy('shovels'), 'Shovels: tap to dig');
+  thing(g, rack, .9, -3.12, 1.4, 2.2, .4, () => toy('shovels'), 'Shovels: tap to dig down');
   // the worm jars
   const jars = G(mesh(new THREE.BoxGeometry(1.2,.06,.35), wood, 0, 1.25, 0)); [-.38,0,.38].forEach(x => { jars.add(mesh(new THREE.CylinderGeometry(.15,.15,.34,12), new THREE.MeshStandardMaterial({ color:0xdff3ff, transparent:true, opacity:.5 }), x, 1.46, 0)); jars.add(mesh(new THREE.CylinderGeometry(.14,.14,.2,12), mat(0x5f4630), x, 1.39, 0)); jars.add(mesh(new THREE.TorusGeometry(.05,.02,6,10,4), mat(0xe58a8a), x, 1.5, .04)); });
   thing(g, jars, 2.4, -3.05, 1.3, 2, .5, () => toy('worms'), 'Worm jars: tap to try');
   // bunk beds
   const bunk = G(); [.35, 1.25].forEach((y, i) => { bunk.add(mesh(new THREE.BoxGeometry(1.7,.14,.8), wood, 0, y, 0)); bunk.add(mesh(new THREE.BoxGeometry(1.6,.12,.7), mat(i ? 0x8fdc8a : 0xffc857), 0, y + .12, 0)); bunk.add(mesh(new THREE.BoxGeometry(.4,.1,.5), mat(0xfff6e6), -.55, y + .22, 0)); }); [[-.85,-.4],[.85,-.4],[-.85,.4],[.85,.4]].forEach(([x, z]) => bunk.add(mesh(new THREE.BoxGeometry(.1,1.6,.1), dark, x, .8, z)));
-  bunk.rotation.y = Math.PI/2; thing(g, bunk, -3.1, .3, 1, 1.7, 1.9, () => toy('bunk'), 'Bunk beds: tap to jump');
+  bunk.rotation.y = Math.PI/2; thing(g, bunk, -3.1, .3, 1, 1.7, 1.9, () => toy('bunk'), 'Bunk beds: tap to nap');
   // mushroom lamps
   const lamps = G(); [[0,.5,.16],[.3,.34,.12],[-.28,.28,.1]].forEach(([x, h, r]) => { lamps.add(mesh(new THREE.CylinderGeometry(.04,.05,h,8), mat(0xf1e6cf), x, h/2, 0)); lamps.add(mesh(new THREE.SphereGeometry(r,16,10,0,Math.PI*2,0,Math.PI/2), glow(0x9fe7e0), x, h, 0)); }); const lh = halo(0x9fe7e0, 1.6, .5); lh.position.y = .5; lamps.add(lh);
   thing(g, lamps, 3.0, 1.2, .9, 1, .9, () => toy('mushrooms'), 'Glowing mushrooms: tap to try');
@@ -1557,7 +1560,7 @@ const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIG
   const jar = G(mesh(new THREE.BoxGeometry(.9,.06,.3), wood, 0, 1.3, 0), mesh(new THREE.CylinderGeometry(.16,.16,.36,12), new THREE.MeshStandardMaterial({ color:0xdff3ff, transparent:true, opacity:.5 }), 0, 1.52, 0), mesh(new THREE.CylinderGeometry(.15,.15,.22,12), mat(0xf3e2bd), 0, 1.45, 0), mesh(new THREE.BoxGeometry(.3,.02,.3), mat(0xff8fa3), 0, 1.71, 0));
   thing(g, jar, 2.3, -3.0, 1, 2.1, .5, () => toy('starter'), 'Starter jar: tap to feed it');
   const tray = G(mesh(new THREE.BoxGeometry(1.2,.06,.6), dark, 0, .9, 0)); for (let i = 0; i < 13; i++) tray.add(mesh(sph(.085), mat(0xd9a55a), -.48 + (i % 7) * .16, .97, i < 7 ? -.12 : .12)); [[-.5,-.22],[.5,-.22],[-.5,.22],[.5,.22]].forEach(([x, z]) => tray.add(mesh(new THREE.BoxGeometry(.06,.9,.06), dark, x, .45, z)));
-  thing(g, tray, -3.0, -.6, .8, 1.3, 1.3, () => toy('dozen'), "Tray of rolls: tap to count"); tray.rotation.y = Math.PI/2;
+  thing(g, tray, -3.0, -.6, .8, 1.3, 1.3, () => toy('dozen'), "Tray of rolls: tap to look"); tray.rotation.y = Math.PI/2;
   const sacks = G(); [[0,0],[.5,.1],[.22,-.05]].forEach(([x, z], i) => { const sk = mesh(sph(.3), mat(0xf1e6cf), x, i === 2 ? .7 : .26, z); sk.scale.set(1, .85, .8); sacks.add(sk); });
   thing(g, sacks, 3.0, 1.4, 1.2, 1.1, .9, hearts('mabel'), 'Flour sacks: tap to hear Mabel');
   g.add(mesh(new THREE.CylinderGeometry(1.2,1.2,.03,28), mat(0xff8fa3), 0, .02, .6));
@@ -1575,7 +1578,7 @@ const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIG
   const chair = G(mesh(new THREE.BoxGeometry(.8,.4,.8), mat(0x4cb86a), 0, .35, 0), mesh(new THREE.BoxGeometry(.8,.8,.16), mat(0x4cb86a), 0, .75, -.34), mesh(new THREE.CylinderGeometry(.03,.05,1.4,8), dark, .75, .7, -.2), mesh(new THREE.ConeGeometry(.26,.28,12,1,true), glow(0xfff3a0), .75, 1.5, -.2));
   chair.rotation.y = .6; thing(g, chair, -2.6, 1.5, 1.6, 1.6, 1.1, hearts('hoot'), 'Reading chair: tap to hear Hoot');
   const sign = G(mesh(new THREE.BoxGeometry(.9,.4,.04), mat(0xfff6e6), 0, 1.9, 0), mesh(new THREE.BoxGeometry(.6,.06,.02), mat(0x3b2f4a), 0, 1.95, .03), mesh(new THREE.BoxGeometry(.4,.06,.02), mat(0x3b2f4a), 0, 1.83, .03));
-  thing(g, sign, 0, -3.17, 1, 2.6, .2, () => toy('quiet'), 'Sign: tap to sneak past');
+  thing(g, sign, 0, -3.17, 1, 2.6, .2, () => toy('quiet'), 'Sign: tap to read the old page');
   g.add(mesh(new THREE.BoxGeometry(2.2,.03,1.4), mat(0x8e3a3a), 0, .02, .7));
 }
 { // Allegra's Music Hall
@@ -1609,7 +1612,7 @@ const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIG
   const bench = G(mesh(new THREE.BoxGeometry(1.5,.1,.45), wood, 0, .45, 0)); [-.6,.6].forEach(x => bench.add(mesh(new THREE.BoxGeometry(.1,.45,.4), stone, x, .22, 0)));
   thing(g, bench, -2.6, -2.2, 1.6, .8, .7, hearts('sage'), 'Bench: tap to sit with Sage');
   const tree = G(mesh(new THREE.CylinderGeometry(.07,.1,1.1,8), wood, 0, .55, 0), mesh(sph(.42), mat(0xff8fa3), 0, 1.3, 0), mesh(sph(.3), mat(0xffb3c2), .3, 1.15, .1), mesh(sph(.28), mat(0xff8fa3), -.3, 1.1, -.1), mesh(new THREE.CylinderGeometry(.3,.24,.3,12), mat(0xb5622f), 0, .15, 0));
-  thing(g, tree, 3.1, -2.6, .9, 1.8, .9, () => toy('rings'), "Sage's tree: tap to count its rings");
+  thing(g, tree, 3.1, -2.6, .9, 1.8, .9, () => toy('rings'), "Sage's tree: tap to read its rings");
 }
 { // The Observatory: a telescope, a model of the planets, and a rock older than the Earth
   const g = makeRoom('observatory', 10, { name:'The Observatory', floor:0x3d4470, line:0x333a62, wall:0x232a52, wall2:0x1f2548, trim:0xd9a441, mat:0x7ec8e3, winX:-2.2, out:ohOut('observatory') });
@@ -1623,7 +1626,7 @@ const hearts = id => () => { const L = NEIGHBORS[id].heartLines; openDialog(NEIG
   const rock = G(mesh(new THREE.CylinderGeometry(.22,.3,.9,10), wood, 0, .45, 0), mesh(new THREE.DodecahedronGeometry(.2), mat(0x3b3438, { metalness:.3 }), 0, 1.08, 0));
   thing(g, rock, 2.7, .4, .8, 1.4, .8, () => toy('meteorite'), 'Meteorite: tap to test');
   const desk = G(mesh(new THREE.BoxGeometry(1.2,.08,.6), wood, 0, .8, 0), mesh(new THREE.BoxGeometry(.5,.04,.36), mat(0xfff6e6), -.1, .86, 0), mesh(new THREE.BoxGeometry(.02,.045,.36), mat(0xd6332e), -.1, .862, 0), mesh(new THREE.CylinderGeometry(.02,.02,.3,6), mat(0xffc857), .35, .87, .1).rotateZ(1.3)); [[-.5,-.22],[.5,-.22],[-.5,.22],[.5,.22]].forEach(([x, z]) => desk.add(mesh(new THREE.BoxGeometry(.07,.8,.07), dark, x, .4, z)));
-  thing(g, desk, -2.4, -2.6, 1.3, 1.2, .8, () => toy('stars'), 'Notebook: tap to count stars');
+  thing(g, desk, -2.4, -2.6, 1.3, 1.2, .8, () => toy('stars'), 'Notebook: tap to look');
   g.add(mesh(new THREE.CylinderGeometry(1.3,1.3,.03,28), mat(0x232a52), 0, .02, .7)); g.add(mesh(new THREE.CylinderGeometry(.5,.5,.035,5), glow(0xfff3a0), 0, .02, .7));
 }
 // --- the Museum: a place you fill. Give it one of each fish, bug, and crop, and it goes on show ---
@@ -2670,7 +2673,7 @@ function readStone() { const sym = { N:'◆', A:'●', P:'▲', I:'■' }, w = t
 function did(act, n = 1) { if (VISIT) return; S.did = S.did || {}; S.did[act] = (S.did[act] || 0) + n; S.dayDid = S.dayDid || {}; S.dayDid[act] = 1; }
 // dreams: a silly line each time you wake up. Half the time it is about something you did that day.
 const DREAMS = ['You dreamed the sundial was running late.', 'You dreamed the moon came down to borrow a cup of sugar.', 'You dreamed your hut had a second floor. It was all stairs.',
-  'You dreamed a cloud followed you around like a puppy.', 'You dreamed Pip finally spelled SHOP right. Everyone clapped.', 'You dreamed the bridge was made of toast. It held.',
+  'You dreamed a cloud followed you around like a puppy.', 'You dreamed Pip hung 3 gold balls outside his shop. Everyone tried to pawn a hat.', 'You dreamed the bridge was made of toast. It held.',
   'You dreamed a snail passed you and said sorry.', 'You dreamed every fish wore a tiny hat.', 'You dreamed you won a staring contest with an owl.',
   'You dreamed the stars spelled your name. They spelled it wrong.', 'You dreamed you were a sandwich. A good one.', 'You dreamed you could fly, but only sideways.',
   'You dreamed the Wind Bell rang. It was your alarm clock.', 'You dreamed Nana knitted a sweater for the whole island.', 'You dreamed a potato gave a speech. It was moving.'];
@@ -6720,7 +6723,7 @@ const TOYS = {
     tryIt("PIP'S SHOP", '⚖️ The balance scale', 'How heavy is the sack? Add weights until the beam is level.',
       `<svg viewBox="0 0 300 140" ${SVGW}><path d="M150 30 V125 M120 125 H180" stroke="#7a5236" stroke-width="6" stroke-linecap="round"/><g id="scBeam"><path d="M50 30 H250" stroke="#b8793f" stroke-width="6" stroke-linecap="round"/><g id="scL"><path d="M50 30 L30 80 H70Z" fill="none" stroke="#9aa3ad" stroke-width="1.5"/><path d="M25 80 H75" stroke="#7a5236" stroke-width="4" stroke-linecap="round"/><path d="M36 79 q14 -34 28 0Z" fill="#d9c49a" stroke="#a8875a"/><text x="50" y="74" text-anchor="middle" font-size="12" font-weight="800" fill="#7a5236">?</text></g><g id="scR"><path d="M250 30 L230 80 H270Z" fill="none" stroke="#9aa3ad" stroke-width="1.5"/><path d="M225 80 H275" stroke="#7a5236" stroke-width="4" stroke-linecap="round"/><text id="scSum" x="250" y="74" text-anchor="middle" font-size="14" font-weight="800" fill="#3b2f4a">0</text></g></g></svg>
        <div class="chips" style="justify-content:center">${[1, 2, 5].map(n => `<button data-w="${n}">+${n}</button>`).join('')}<button id="scClr" class="ghost">Take all off</button></div>`,
-      'A balance scale compares 2 things. It does not weigh 1. So it would read the same on the Moon, where everything weighs 1/6 as much.',
+      ['On the Moon, everything weighs 1/6 as much.', 'A bathroom scale there would show 1/6 of your weight.', 'This scale would still say 8.', 'Both sides get lighter by the same amount, so they still balance.'],
       t => { const set = () => { t.el('scSum').textContent = sum; t.tip(sum === W ? `<b>Level.</b> The sack weighs ${W}.` : sum > W ? '<b>Too much.</b> Your side dropped. Take all off and try again.' : `Your side holds ${sum}. The sack is heavier.`); if (sum === W) t.reveal(); };
         t.on('[data-w]', b => { sum += +b.dataset.w; sfx('click'); set(); }); t.el('scClr').onclick = () => { sum = 0; set(); t.tip('How heavy is the sack? Add weights until the beam is level.'); };
         t.loop(dt => { const want = Math.max(-16, Math.min(16, (sum - W) * 4)); ang += (want - ang) * Math.min(1, dt * 5); t.el('scBeam').setAttribute('transform', `rotate(${ang.toFixed(2)} 150 30)`); ['scL', 'scR'].forEach((id, i) => t.el(id).setAttribute('transform', `rotate(${(-ang).toFixed(2)} ${i ? 250 : 50} 30)`)); }); }); },
@@ -6805,11 +6808,12 @@ const TOYS = {
       t => { t.el('stGo').onclick = () => { fed = 1; peak = false; sfx('water'); t.tip('Fed. Watch the red line.'); };
         t.loop((dt, T) => { if (fed) { lvl = Math.min(64, lvl + dt * 7); if (lvl >= 60 && !peak) { peak = true; t.tip('<b>It doubled.</b> It is alive, and full of bubbles.'); t.reveal(); } if (lvl >= 64) fed = 0; } else if (peak && lvl > 34) { lvl -= dt * 1.5; if (lvl <= 34) t.tip('It sank back. It is hungry again.'); }
           t.el('stD').setAttribute('y', 137 - lvl); t.el('stD').setAttribute('height', lvl); t.el('stBub').innerHTML = lvl > 34 ? [...Array(9)].map((_, i) => { const y = 134 - ((T * 9 + i * 13) % Math.max(8, lvl - 6)); return `<circle cx="${112 + (i * 37 % 76)}" cy="${y.toFixed(1)}" r="${2 + i % 3}" fill="#fffdf6" stroke="#d8c9a6"/>`; }).join('') : ''; }); }); },
-  dozen() { let n = 0; const P = [[0, 4], [1, 5], [2, 4]].flatMap(([r, c]) => [...Array(c)].map((_, i) => [150 + (i - (c - 1) / 2) * 50, 34 + r * 40]));
-    tryIt("MABEL'S BAKERY", '🥖 The tray of rolls', 'Tap each roll to count them.',
-      `<svg viewBox="0 0 300 150" ${SVGW}><rect x="12" y="6" width="276" height="138" rx="12" fill="#cfd6dd" stroke="#8d97a1" stroke-width="3"/>${P.map(([x, y], i) => `<g data-r="${i}" style="cursor:pointer"><ellipse cx="${x}" cy="${y}" rx="20" ry="15" fill="#e3b574" stroke="#b08040" stroke-width="2"/><text x="${x}" y="${y + 5}" text-anchor="middle" font-size="14" font-weight="800" fill="#3b2f4a"></text></g>`).join('')}</svg>`,
-      "13 is called a baker's dozen. In England long ago, bakers were punished if their bread was too light. So they added 1 extra to be safe.",
-      t => t.on('[data-r]', r => { const tx = r.querySelector('text'); if (tx.textContent) return; n++; tx.textContent = n; r.querySelector('ellipse').setAttribute('fill', '#f1cf94'); chime(392 * Math.pow(1.06, n)); t.tip(n === 12 ? '<b>12.</b> That is a dozen. But there is 1 more.' : n === 13 ? "<b>13.</b> A baker's dozen." : `Rolls counted: <b>${n}</b>`); if (n === 13) t.reveal(); })); },
+  dozen() { const P = [[0, 4], [1, 5], [2, 4]].flatMap(([r, c]) => [...Array(c)].map((_, i) => [150 + (i - (c - 1) / 2) * 50, 34 + r * 40])); let done = false;
+    tryIt("MABEL'S BAKERY", "🥖 The baker's dozen", 'Someone orders a dozen rolls. Mabel bags 13. Why the extra one?',
+      `<svg viewBox="0 0 300 150" ${SVGW}><rect x="12" y="6" width="276" height="138" rx="12" fill="#cfd6dd" stroke="#8d97a1" stroke-width="3"/>${P.map(([x, y], i) => `<ellipse cx="${x}" cy="${y}" rx="20" ry="15" fill="${i === 12 ? '#f1cf94' : '#e3b574'}" stroke="#b08040" stroke-width="2"/>`).join('')}</svg>
+       <div class="chips" style="justify-content:center"><button data-a="luck">For luck</button><button data-a="law">To stay out of trouble</button><button data-a="tray">The tray holds 13</button></div>`,
+      ["13 is called a baker's dozen.", 'In medieval England, bakers faced stiff penalties for selling bread that weighed too little.', 'The likely reason for the extra roll: being safe.'],
+      t => t.on('[data-a]', b => { if (done) return; if (b.dataset.a !== 'law') { sfx('click'); return t.tip({ luck:'Not luck. Think about what could go wrong for a baker.', tray:'The tray is not the reason. Think about the law.' }[b.dataset.a]); } done = true; chime(784); t.tip('<b>Right.</b> 1 extra roll was cheap insurance.'); t.reveal(); })); },
   cards() { let st = 0; const row = (from, stepN, names) => `<div class="chips" style="justify-content:center">${[...Array(10)].map((_, i) => `<button data-n="${from + i * stepN}" class="ghost" style="min-width:54px">${String(from + i * stepN).padStart(3, '0')}</button>`).join('')}</div>`;
     const draw = t => { t.el('cdRow').innerHTML = st === 0 ? row(0, 100) : st === 1 ? row(500, 10) : st === 2 ? row(590, 1) : '<p style="text-align:center;font-size:30px;margin:6px 0">📘🐋</p>';
         document.querySelectorAll('#cdRow [data-n]').forEach(b => b.onclick = () => { const v = +b.dataset.n, ok = [500, 590, 599][st] === v; if (!ok) { sfx('click'); return t.tip(`Not in there. Look at the ${['first', 'second', 'last'][st]} digit of <b>599</b>.`); } st++; chime(660 + st * 110); t.tip(['', '<b>500: science.</b> Now pick the next drawer.', '<b>590: animals.</b> Now the last digit.', '<b>599: mammals.</b> There it is. The book about whales.'][st]); draw(t); if (st === 3) t.reveal(); }); };
@@ -6858,7 +6862,7 @@ const TOYS = {
             if (pour > .33 && pour < 1) t.el('ktStream').setAttribute('d', `M208 32 Q217 70 218 ${(138 - Math.max(0, (pour - .33) / .67) * 34).toFixed(1)}`); else t.el('ktStream').setAttribute('d', ''); const lv = Math.max(0, (pour - .33) / .67) * 34; t.el('ktTea').setAttribute('d', lv > 0 ? `M${(204 - lv / 11).toFixed(1)} ${(140 - lv).toFixed(1)} L204 140 H232 L${(232 + lv / 11).toFixed(1)} ${(140 - lv).toFixed(1)}Z` : ''); t.el('ktFoam').setAttribute('cy', 140 - lv); t.el('ktFoam').setAttribute('rx', lv > 2 ? 14 : 0); t.el('ktFoam').setAttribute('ry', lv > 2 ? 3 : 0);
             if (pour >= 1) { st = 5; t.tip('<b>A glass of mint tea, with foam on top.</b> Nana hands it to you.'); t.reveal(); } } }); }); },
   coin() { let flips = 0, right = 0, spin = 0, face = 'H', pick = null, seq = '';
-    tryIt("PIP'S SHOP", '🪙 The first coin Pip ever earned', 'Pip lets you flip it. Call it: heads or tails?',
+    tryIt("PIP'S SHOP", '🪙 The first coin Pip ever earned', 'Flip it. Call it: heads or tails?',
       `<svg viewBox="0 0 300 110" ${SVGW}><g id="cnC"><circle cx="150" cy="55" r="40" fill="#ffc857" stroke="#c98f1e" stroke-width="5"/><text id="cnT" x="150" y="66" text-anchor="middle" font-size="30" font-weight="800" fill="#8a5a12">H</text></g></svg><p id="cnSeq" class="sub" style="text-align:center;min-height:20px;margin:4px 0 0;letter-spacing:3px"></p>
        <div class="chips" style="justify-content:center"><button data-c="H">Heads</button><button data-c="T">Tails</button></div>`,
       'A coin has no memory. Even after 5 heads in a row, the next flip is still 1 chance in 2. Lots of shopkeepers frame the first coin they earn.',
@@ -6866,30 +6870,30 @@ const TOYS = {
         t.loop(dt => { if (spin <= 0) return; spin -= dt; const k = Math.cos(spin * 28); t.el('cnC').setAttribute('transform', `translate(0 ${(-Math.sin(Math.max(0, spin) / .9 * Math.PI) * 26).toFixed(1)}) translate(150 55) scale(1 ${Math.abs(k).toFixed(2)}) translate(-150 -55)`); t.el('cnT').textContent = k > 0 ? 'H' : 'T';
           if (spin <= 0) { face = Math.random() < .5 ? 'H' : 'T'; t.el('cnT').textContent = face; t.el('cnC').setAttribute('transform', ''); flips++; seq += face; if (face === pick) right++; t.el('cnSeq').textContent = seq.split('').join(' '); chime(face === pick ? 880 : 440);
             t.tip(`<b>${face === 'H' ? 'Heads' : 'Tails'}.</b> ${face === pick ? 'You called it.' : 'Not this time.'} ${right} right out of ${flips}.`); if (flips >= 5) t.reveal(); } }); }); },
-  sign() { let built = ''; const WORD = 'SHOP';
-    const draw = t => { t.el('sgW').textContent = built.padEnd(4, '_').split('').join(' '); t.el('sgL').innerHTML = 'OHSP'.split('').filter(c => !built.includes(c)).map(c => `<button data-l="${c}" style="min-width:48px;font-size:18px">${c}</button>`).join('');
-      document.querySelectorAll('#sgL [data-l]').forEach(b => b.onclick = () => { const c = b.dataset.l; if (c === WORD[built.length]) { built += c; chime(520 + built.length * 90); t.tip(built.length < 4 ? `<b>${built}</b>` : '<b>SHOP.</b> Pip stares at it. "That is the one."'); draw(t); if (built.length === 4) t.reveal(); } else { sfx('click'); t.tip(`"${built}${c}..." Pip: "I tried that. It looked wrong."`); } }); };
-    tryIt("PIP'S SHOP", "🪧 Pip's shop sign", 'Pip cannot get his sign right. Tap the letters in order to spell it for him.',
-      `<svg viewBox="0 0 300 90" ${SVGW}><rect x="30" y="10" width="240" height="64" rx="10" fill="#fff6e6" stroke="#b8793f" stroke-width="6"/><text id="sgW" x="150" y="56" text-anchor="middle" font-size="34" font-weight="800" fill="#e5484d"></text></svg><div id="sgL" class="chips" style="justify-content:center"></div>`,
-      'So far Pip had spelled it SHPO, SOHP and SHOPP. He says yours is his favorite.', t => draw(t)); },
-  shovels() { let depth = 0, want = 0, used = {}, found = '';
-    tryIt("THE TWINS' BURROW", '⛏️ The 3 shovels', 'Pick a shovel and dig.',
-      `<svg viewBox="0 0 300 120" ${SVGW}><rect width="300" height="40" fill="#dff1fb"/><rect y="40" width="300" height="80" fill="#8a6a48"/><rect y="40" width="300" height="8" fill="#6fae5a"/><path id="shHole" d="" fill="#4a3524"/><text id="shFind" x="150" y="34" text-anchor="middle" font-size="24"></text></svg>
-       <div class="chips" style="justify-content:center"><button data-s="moss">Moss's shovel</button><button data-s="fern">Fern's shovel</button><button data-s="tape">The taped one</button></div>`,
-      "Moss's shovel. Fern's shovel. And a third one, taped in the middle, that nobody will admit to breaking. Now it has been broken 2 times.",
-      t => { t.on('[data-s]', b => { const k = b.dataset.s; depth = 0; want = k === 'tape' ? .35 : 1; found = { moss:'🪨', fern:'🪱', tape:'💥' }[k]; used[k] = 1; t.el('shFind').textContent = ''; sfx('swish');
-          t.tip({ moss:'Dig, dig, dig...', fern:'Dig, dig, dig...', tape:'Dig...' }[k]); b.dataset.done = k; });
-        t.loop(dt => { if (depth < want) { depth = Math.min(want, depth + dt * .9); t.el('shHole').setAttribute('d', `M120 40 h60 l-8 ${(depth * 60).toFixed(0)} h-44Z`);
-            if (depth >= want && found) { t.el('shFind').textContent = found; const k = found === '🪨' ? 'moss' : found === '🪱' ? 'fern' : 'tape'; found = ''; t.tip({ moss:'<b>A stone.</b> Moss would be thrilled.', fern:'<b>A worm.</b> Fern would say hello to it.', tape:'<b>Snap.</b> It broke again. Right where the tape was.' }[k]); if (k === 'tape') { tone(160, { dur:.08, vol:.06, type:'square' }); t.reveal(); } else sfx('click'); } } }); }); },
-  bunk() { let y = 0, vy = 0, told = false;
-    tryIt("THE TWINS' BURROW", '🛏️ The bunk beds', 'Jump on the bottom bunk. Tap Jump each time you land.',
-      `<svg viewBox="0 0 300 150" ${SVGW}><path d="M70 12 V140 M230 12 V140" stroke="#b8793f" stroke-width="8" stroke-linecap="round"/><rect x="70" y="40" width="160" height="14" rx="4" fill="#7ec8e3"/><rect x="70" y="118" width="160" height="14" rx="4" fill="#ff8fa3"/><path id="bkM" d="M74 118 Q150 118 226 118" stroke="#fff" stroke-width="5" fill="none"/><g id="bkY"><circle cx="150" cy="98" r="12" fill="#f1c9a5"/><path d="M143 96 q7 6 14 0" stroke="#3b2f4a" stroke-width="2" fill="none"/><rect x="141" y="108" width="18" height="10" rx="4" fill="#8fb8a0"/></g></svg>
-       <div class="chips" style="justify-content:center"><button id="bkGo">Jump</button></div>`,
-      'Moss sleeps on top. Fern sleeps on the bottom. They swap every night, and argue about it every night. Neither of them knows you were here.',
-      t => { t.el('bkGo').onpointerdown = e => { e.preventDefault(); if (y < 9) { vy = Math.min(260, Math.abs(vy) * .9 + 80); sfx('swish'); /* a jump timed with the landing adds to the bounce */ t.tip('<b>Higher.</b> Tap again as you land.'); } else t.tip('Wait until you land.'); };
-        t.loop(dt => { vy -= 520 * dt; y += vy * dt; if (y <= 0) { y = 0; if (vy < -30) { vy = -vy * .78; tone(200, { dur:.05, vol:.03 }); } else vy = 0; }
-          if (y >= 52) { y = 52; vy = -60; tone(140, { dur:.08, vol:.06, type:'square' }); if (!told) { told = true; t.tip('<b>Bonk.</b> You hit the top bunk.'); t.reveal(); } }
-          t.el('bkY').setAttribute('transform', `translate(0 ${(-y).toFixed(1)})`); t.el('bkM').setAttribute('d', `M74 118 Q150 ${(118 + (y < 6 ? 8 - y : 0)).toFixed(1)} 226 118`); }); }); },
+  sign() { let left = [0, 1];
+    const SG = [{ art:'<rect x="135" y="14" width="30" height="96" rx="15" fill="#fff"/><path d="M135 30 l30 -14 M135 52 l30 -14 M135 74 l30 -14 M135 96 l30 -14" stroke="#e5484d" stroke-width="9"/><circle cx="150" cy="14" r="9" fill="#c9a24a"/>', ok:'barber', hit:'<b>The barber.</b> Red for blood, white for pulled teeth. Barbers once did both.' },
+      { art:'<path d="M110 16 H190" stroke="#7a5236" stroke-width="5"/><path d="M125 16 V40 M150 16 V62 M175 16 V40" stroke="#7a5236" stroke-width="3"/><circle cx="125" cy="52" r="14" fill="#ffc857" stroke="#c98f1e" stroke-width="3"/><circle cx="150" cy="74" r="14" fill="#ffc857" stroke="#c98f1e" stroke-width="3"/><circle cx="175" cy="52" r="14" fill="#ffc857" stroke="#c98f1e" stroke-width="3"/>', ok:'pawn', hit:'<b>The pawnshop.</b> Bring something valuable, borrow money against it, and buy it back later.' }];
+    let cur = 0; const draw = t => { t.el('sgA').innerHTML = SG[cur].art; };
+    tryIt("PIP'S SHOP", '🪧 Signs without words', 'Pip is studying old shop signs for his own. Which shop hung this one?',
+      `<svg viewBox="0 0 300 120" ${SVGW}><rect width="300" height="120" rx="10" fill="#f3e3c4"/><g id="sgA"></g></svg><div class="chips" style="justify-content:center"><button data-p="barber">Barber</button><button data-p="pawn">Pawnshop</button><button data-p="baker">Baker</button></div>`,
+      ['When most people could not read, shops and inns hung pictures instead of words.', 'The 3 gold balls still mark pawnshops today.', 'The striped pole still marks barbers.'],
+      t => { draw(t); t.on('[data-p]', b => { if (cur > 1) return; if (b.dataset.p !== SG[cur].ok) { sfx('click'); return t.tip('Not that one. Look again.'); } chime(660 + cur * 120); t.tip(SG[cur].hit + (cur === 0 ? '<br>Next sign.' : '')); cur++; if (cur < 2) setTimeout(() => draw(t), 900); else t.reveal(); }); }); },
+  shovels() { let depth = 0, digging = false, told = 0;
+    tryIt("THE TWINS' BURROW", '⛏️ Under your feet', 'Hold Dig to dig straight down. Watch the layers.',
+      `<svg viewBox="0 0 300 130" ${SVGW}><rect width="300" height="20" fill="#dff1fb"/><rect y="20" width="300" height="18" fill="#3e2a1c"/><rect y="38" width="300" height="52" fill="#a7784a"/><rect y="90" width="300" height="40" fill="#9aa3ad"/><rect y="20" width="300" height="4" fill="#6fae5a"/><path id="shHole" d="" fill="#1f1610"/><text id="shL" x="290" y="0" text-anchor="end" font-size="12" font-weight="800" fill="#fff6e6"></text></svg>
+       <div class="chips" style="justify-content:center"><button id="shGo">Dig</button></div>`,
+      ['That dark top layer is topsoil. Most of the life in soil lives there.', '2.5 cm of it can take 500 to 1,000 years to form.'],
+      t => { const b = t.el('shGo'); b.onpointerdown = e => { e.preventDefault(); digging = true; }; ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => { digging = false; }));
+        t.loop(dt => { if (!digging || depth >= 100) return; depth = Math.min(100, depth + dt * 30); if (Math.random() < dt * 4) sfx('swish'); t.el('shHole').setAttribute('d', `M135 20 h30 v${depth.toFixed(0)} h-30Z`);
+          const L = depth < 18 ? 0 : depth < 70 ? 1 : 2; if (L >= told) { const y = [31, 66, 112][L], w = ['<b>Topsoil.</b> Dark, full of roots and worms.', '<b>Subsoil.</b> Paler, and almost no roots.', '<b>Rock.</b> The shovel stops here.'][L]; t.el('shL').setAttribute('y', y); t.el('shL').textContent = ['Topsoil', 'Subsoil', 'Rock'][L]; t.tip(w); chime(520 + L * 120); told = L + 1; if (L === 2) { depth = 100; t.reveal(); } } }); }); },
+  bunk() { const tried = {};
+    tryIt("THE TWINS' BURROW", '🛏️ The bunk beds', 'Take a nap on the bottom bunk. How long should you sleep?',
+      `<svg viewBox="0 0 300 150" ${SVGW}><path d="M70 12 V140 M230 12 V140" stroke="#b8793f" stroke-width="8" stroke-linecap="round"/><rect x="70" y="40" width="160" height="14" rx="4" fill="#7ec8e3"/><rect x="70" y="118" width="160" height="14" rx="4" fill="#ff8fa3"/><circle cx="150" cy="108" r="12" fill="#f1c9a5"/><path id="bkF" d="M143 108 q7 4 14 0" stroke="#3b2f4a" stroke-width="2" fill="none"/><text id="bkZ" x="176" y="96" font-size="16" font-weight="800" fill="#7a7290"></text></svg>
+       <div class="chips" style="justify-content:center"><button data-m="20">20 minutes</button><button data-m="45">45 minutes</button><button data-m="90">90 minutes</button></div>`,
+      ['A nap of 10 to 30 minutes stays in light sleep.', 'From about 30 to 60 minutes, you sink into deep sleep.', 'Waking from deep sleep makes you groggy. It is called sleep inertia.', 'A 90-minute nap finishes a whole sleep cycle, so it usually avoids it.'],
+      t => t.on('[data-m]', b => { const m = +b.dataset.m, foggy = m === 45; tried[m] = 1; sfx('swish'); t.el('bkZ').textContent = 'z z z';
+        setTimeout(() => { t.el('bkZ').textContent = foggy ? '???' : ''; t.el('bkF').setAttribute('d', foggy ? 'M143 112 q7 -4 14 0' : 'M143 106 q7 8 14 0'); chime(foggy ? 300 : 784);
+          t.tip(foggy ? '<b>45 minutes.</b> You wake up foggy and cross. Try another.' : `<b>${m} minutes.</b> You wake up clear-headed.` + (tried[45] ? '' : ' Now try 45.')); if (tried[45] && (tried[20] || tried[90])) t.reveal(); }, 900); })); },
   moons() { let d = 0; const NM = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'];
     const lit = () => { const p = d / 29.5, R = 44, rx = Math.abs(Math.cos(p * 2 * Math.PI)) * R, wax = p < .5, gib = p > .25 && p < .75; if (d === 0) return ''; return `M150 16 A${R} ${R} 0 0 ${wax ? 1 : 0} 150 104 A${rx.toFixed(1)} ${R} 0 0 ${wax ? (gib ? 1 : 0) : (gib ? 0 : 1)} 150 16Z`; };
     tryIt("LUMEN'S HOME", '🌙 The moon paintings', 'Lumen paints the moon every night. Drag to turn the nights.',
@@ -6897,17 +6901,13 @@ const TOYS = {
       'The moon makes no light of its own. The sun always lights 1/2 of it. It takes about 29.5 days to go from 1 new moon to the next.',
       t => { let seenFull = false; const set = () => { d = +t.el('mnS').value; t.el('mnL').setAttribute('d', lit()); const i = d === 0 ? 0 : d < 7 ? 1 : d === 7 ? 2 : d < 15 ? 3 : d === 15 ? 4 : d < 22 ? 5 : d === 22 ? 6 : 7; t.el('mnN').textContent = `Night ${d + 1}: ${NM[i]}`; if (d >= 15) seenFull = true; if (seenFull && d >= 22) t.reveal(); };
         t.el('mnS').oninput = set; if (t.el('mnA')) t.el('mnA').onclick = () => showCard(ahaHtml('moon'), 'Close'); set(); }); },
-  quiet() { let x = 30, hold = false, ph = 'away', pt = 2, won = false;
-    tryIt('THE LIBRARY', '🤫 The QUIET PLEASE sign', 'Sneak to the shelf. Hold Tiptoe to move. Let go when Hoot turns around.',
-      `<svg viewBox="0 0 300 120" ${SVGW}><rect width="300" height="120" rx="10" fill="#f3e3c4"/><rect y="100" width="300" height="20" fill="#b8793f"/><rect x="262" y="30" width="30" height="70" fill="#7a5236"/>${[40, 56, 72].map(y => `<path d="M264 ${y} h26" stroke="#e5484d" stroke-width="6"/>`).join('')}<g id="qtH"><path d="M211 54 l-2 -12 l10 6Z M239 54 l2 -12 l-10 6Z" fill="#7a5c40"/><ellipse cx="225" cy="70" rx="17" ry="22" fill="#9b7a5a"/><text x="225" y="113" text-anchor="middle" font-size="10" font-weight="800" fill="#fff6e6">Hoot</text><g id="qtF"><circle cx="219" cy="62" r="4.5" fill="#fff"/><circle cx="231" cy="62" r="4.5" fill="#fff"/><circle cx="219" cy="62" r="2" fill="#3b2f4a"/><circle cx="231" cy="62" r="2" fill="#3b2f4a"/><path d="M222 68 l3 5 l3 -5Z" fill="#ffc857"/></g></g><g id="qtY"><circle cx="0" cy="72" r="10" fill="#f1c9a5"/><rect x="-8" y="82" width="16" height="16" rx="5" fill="#8fb8a0"/></g><text id="qtS" x="225" y="38" text-anchor="middle" font-size="16" font-weight="800" fill="#e5484d"></text></svg>
-       <div class="chips" style="justify-content:center"><button id="qtGo">Tiptoe</button></div>`,
-      'The sign says QUIET PLEASE. Under it, in small letters: "This means you, Allegra."',
-      t => { const b = t.el('qtGo'); b.onpointerdown = e => { e.preventDefault(); hold = true; }; ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => { hold = false; }));
-        t.loop(dt => { if (won) return; if ((pt -= dt) <= 0) { ph = ph === 'away' ? 'turn' : ph === 'turn' ? 'look' : 'away'; pt = ph === 'away' ? 1.6 + Math.random() * 1.6 : ph === 'turn' ? .55 : 1 + Math.random() * .8; }
-          t.el('qtF').style.display = ph === 'look' ? '' : 'none'; t.el('qtS').textContent = ph === 'turn' ? '?' : ''; 
-          if (hold) { if (ph === 'look') { x = 30; hold = false; t.el('qtS').textContent = 'Shh!'; tone(300, { dur:.2, vol:.05 }); t.tip('<b>Shh!</b> Hoot saw you. Back to the door.'); } else x += dt * 46; }
-          if (x >= 196) { won = true; chime(880); t.el('qtS').textContent = ''; t.tip('<b>You made it.</b> Not a sound.'); t.reveal(); }
-          t.el('qtY').setAttribute('transform', `translate(${x.toFixed(1)} ${hold ? Math.sin(x * .5) * 2 : 0})`); }); }); },
+  quiet() { const TXT = 'READINGWITHOUTSPACESISHARD', GAPS = [6, 13, 19, 21]; const cut = new Set(); let done = false;
+    const draw = t => { t.el('qtW').innerHTML = TXT.split('').map((c, i) => `<span data-i="${i}" style="display:inline-block;padding:4px 1px;cursor:pointer;margin-right:${cut.has(i) ? 14 : 0}px">${c}</span>`).join(''); };
+    tryIt('THE LIBRARY', '📜 A page with no spaces', 'Under the QUIET PLEASE sign hangs an old page. Tap the last letter of each word to split it.',
+      `<p id="qtW" style="text-align:center;font:800 20px/1.6 Georgia,serif;letter-spacing:1px;margin:10px 0;word-break:break-all"></p>`,
+      ['Old Latin and Greek books had no spaces between words.', 'Irish and Anglo-Saxon scribes added them in the 600s and 700s.', 'Around 384 AD, Augustine wrote with surprise that Ambrose read with his voice silent.'],
+      t => { draw(t); t.el('qtW').onclick = e => { if (done) return; const i = e.target.dataset && e.target.dataset.i; if (i == null || +i === TXT.length - 1) return; const n = +i; cut.has(n) ? cut.delete(n) : cut.add(n); tone(500 + cut.size * 60, { dur:.05, vol:.03 }); draw(t);
+          if (cut.size === GAPS.length && GAPS.every(g => cut.has(g))) { done = true; chime(880); t.tip('<b>Reading without spaces is hard.</b> Now you know why they were added.'); t.reveal(); } else t.tip(`Words: <b>${cut.size + 1}</b>`); }; }); },
   koi() { const K = [{ n:'Patience', x:120, y:60, a:0, sp:52, c:'#f08c2e', ate:0 }, { n:'Patience Two', x:175, y:90, a:2, sp:60, c:'#fdf6ea', ate:0 }, { n:'Gary', x:160, y:50, a:4, sp:96, c:'#e5484d', ate:0 }]; let food = [], total = 0;
     tryIt("SAGE'S GARDEN", '🐟 The koi pond', 'Tap the water to drop in some food.',
       `<svg id="koS" viewBox="0 0 300 150" ${SVGW} style="touch-action:none"><ellipse cx="150" cy="75" rx="130" ry="66" fill="#bfe3f2" stroke="#8d8f96" stroke-width="6"/><g id="koF"></g><g id="koK"></g></svg>`,
@@ -6918,23 +6918,18 @@ const TOYS = {
             else { k.a += dt * .7; k.x += Math.cos(k.a) * 16 * dt; k.y += Math.sin(k.a) * 16 * dt; if (Math.pow((k.x - 150) / 105, 2) + Math.pow((k.y - 75) / 46, 2) > 1) k.a = Math.atan2(75 - k.y, 150 - k.x); } });
           t.el('koF').innerHTML = food.map(f => `<circle cx="${f[0].toFixed(1)}" cy="${f[1].toFixed(1)}" r="3" fill="#8a5a2b"/>`).join('');
           t.el('koK').innerHTML = K.map(k => `<g transform="translate(${k.x.toFixed(1)} ${k.y.toFixed(1)}) rotate(${(k.a * 57.3).toFixed(0)})"><path d="M-12 0 l-9 -6 v12Z" fill="${k.c}" stroke="#b8793f" stroke-width="1"/><ellipse rx="13" ry="6" fill="${k.c}" stroke="#b8793f" stroke-width="1"/><circle cx="8" cy="-2" r="1.3" fill="#3b2f4a"/></g>`).join(''); }); }); },
-  stars() { let n = 0, stars = [], sp = 0, moth = false, look = 0;
-    const btns = (h) => { const e = document.getElementById('nbB'); if (e) e.innerHTML = h; };
-    tryIt('THE OBSERVATORY', '📓 Counting the stars', 'Tap each star to count it.',
-      `<svg id="nbS" viewBox="0 0 300 150" ${SVGW} style="touch-action:manipulation"><rect width="300" height="150" rx="10" fill="#101425"/><g id="nbG"></g><g id="nbM" style="display:none"><path d="M150 78 L70 30 Q40 70 96 112Z M150 78 L230 30 Q260 70 204 112Z" fill="#b9a98c" stroke="#8a7a60" stroke-width="3"/><circle cx="96" cy="66" r="9" fill="#8a7a60"/><circle cx="204" cy="66" r="9" fill="#8a7a60"/><ellipse cx="150" cy="80" rx="10" ry="34" fill="#6f6250"/><path d="M146 48 q-10 -18 -22 -20 M154 48 q10 -18 22 -20" stroke="#6f6250" stroke-width="3" fill="none"/></g><path id="nbSh" d="" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg><div id="nbB" class="chips" style="justify-content:center"></div>`,
-      ['Your grandmother did the same. Her star notebook is on the desk.', '"Monday: clear sky. Counted stars. Lost count at 412."', '"Tuesday: started again. Lost count at 388. A moth landed on my nose."', '"Wednesday: stopped counting. Just looked. Much better."'],
-      t => { const add = () => stars.push({ x:14 + Math.random() * 272, y:12 + Math.random() * 126, r:1.4 + Math.random() * 1.8, c:false }); for (let i = 0; i < 14; i++) add();
-        const draw = () => t.el('nbG').innerHTML = stars.map((s, i) => `<circle data-i="${i}" cx="${s.x.toFixed(0)}" cy="${s.y.toFixed(0)}" r="${s.c ? s.r + 1 : s.r}" fill="${s.c ? '#ffd23f' : '#fff'}"/><circle data-i="${i}" cx="${s.x.toFixed(0)}" cy="${s.y.toFixed(0)}" r="11" fill="transparent"/>`).join('');
-        t.el('nbS').onpointerdown = e => { const i = e.target && e.target.dataset ? e.target.dataset.i : null; if (i == null || moth || look) return; const s = stars[+i]; if (s.c) return; s.c = true; n++; chime(700 + (n % 8) * 60); t.tip(`Stars counted: <b>${n}</b>`); draw();
-          if (n >= 12) { moth = true; t.el('nbM').style.display = ''; stars.forEach(q => q.c = false); draw(); t.tip(`<b>A moth lands on your nose.</b> You lost count at ${n}.`); btns('<button id="nbA">Start again</button><button id="nbL">Stop counting. Just look.</button>');
-            t.el('nbA').onclick = () => { moth = false; n = 0; t.el('nbM').style.display = 'none'; btns(''); t.tip('Tap each star to count it.'); }; t.el('nbL').onclick = () => { moth = false; look = .001; t.el('nbM').style.display = 'none'; btns(''); t.tip('...'); }; } };
-        draw(); t.loop(dt => { if (!moth && !look && stars.length < 70 && (sp += dt) > .45) { sp = 0; add(); draw(); }
-          if (look) { look += dt; const k = Math.min(1, Math.max(0, (look - 1.2) / .7)); t.el('nbSh').setAttribute('d', k > 0 && k < 1 ? `M${60 + k * 150} ${30 + k * 50} l-26 -9` : ''); if (look > 2.2) { t.tip('<b>A shooting star.</b> Much better.'); t.reveal(); } } }); }); },
-  rings() { const R = [9, 16, 26, 31, 42, 50, 54, 64, 70]; let n = 0;
-    tryIt("SAGE'S GARDEN", "🌳 Sage's tree", 'A branch came down in the wind. Tap each ring to count them, from the middle out.',
+  stars() { let done = false, city = false; const S2 = [...Array(90)].map(() => [14 + Math.random() * 272, 12 + Math.random() * 126, 1 + Math.random() * 1.8]);
+    tryIt('THE OBSERVATORY', '📓 How many stars?', 'On a clear night far from any town, about how many stars can you see at once?',
+      `<svg viewBox="0 0 300 150" ${SVGW}><rect id="nbSky" width="300" height="150" rx="10" fill="#101425"/>${S2.map(([x, y, r], i) => `<circle class="nbs" data-k="${i % 18 ? 1 : 0}" cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" fill="#fff"/>`).join('')}</svg>
+       <div id="nbB" class="chips" style="justify-content:center"><button data-n="250">250</button><button data-n="2500">2,500</button><button data-n="25000">25,000</button></div>`,
+      ['From a truly dark place: about 2,500 stars at once.', 'From a big city center: as few as 50.', 'The rest are still there, washed out by the glow of streetlights.', 'Your grandmother\'s notebook: "Lost count at 412. A moth landed on my nose."'],
+      t => t.on('[data-n]', b => { if (done) return; const n = +b.dataset.n; if (n !== 2500) { sfx('click'); return t.tip(n < 2500 ? 'More than that.' : 'Fewer than that.'); } done = true; chime(784); t.tip('<b>About 2,500.</b> Now see what a city does to them.');
+        t.el('nbB').innerHTML = '<button id="nbC">Turn on the city lights</button>'; t.el('nbC').onclick = () => { city = !city; document.querySelectorAll('.nbs').forEach(c => c.style.opacity = city && c.dataset.k === '1' ? 0 : 1); t.el('nbSky').setAttribute('fill', city ? '#3a3350' : '#101425'); t.el('nbC').textContent = city ? 'Turn them off' : 'Turn on the city lights'; t.tip(city ? '<b>The city.</b> Only the brightest few are left.' : '<b>Dark again.</b> All of them back.'); t.reveal(); }; })); },
+  rings() { const R = [9, 16, 26, 31, 42, 50, 54, 64, 70]; let done = false;
+    tryIt("SAGE'S GARDEN", "🌳 Sage's tree", 'A branch came down in the wind. 1 ring grew in a drought year. Tap it.',
       `<svg viewBox="0 0 300 160" ${SVGW}><circle cx="150" cy="80" r="76" fill="#7a5236"/>${[...R].reverse().map((r, k) => `<circle data-g="${R.length - 1 - k}" cx="150" cy="80" r="${r}" fill="${(R.length - 1 - k) % 2 ? '#e9c99a' : '#dcb47e'}" stroke="#a9773f" stroke-width="1.5" style="cursor:pointer"/>`).join('')}</svg>`,
-      'A tree adds 1 ring each year. A wide ring means a good, wet year. A thin ring means a hard, dry one. Sage planted this tree when your grandmother was a baby. He says the best time to plant a tree was 190 years ago. The second best time is after lunch.',
-      t => t.on('[data-g]', c => { const g = +c.dataset.g; if (g !== n) return t.tip(g < n ? 'You counted that one.' : 'Start from the middle and go out, 1 ring at a time.'); c.setAttribute('fill', '#ffc857'); n++; chime(392 * Math.pow(1.07, n)); t.tip(n < R.length ? `Rings counted: <b>${n}</b>` : `<b>${n} rings.</b> This branch grew for ${n} years.`); if (n === R.length) t.reveal(); })); },
+      ['A tree adds 1 ring each year.', 'A wide ring means a good, wet year. A thin ring means a hard, dry one.', 'Scientists match ring patterns in old beams to date buildings to the exact year.', 'It is called dendrochronology.'],
+      t => t.on('[data-g]', c => { if (done) return; const g = +c.dataset.g; if (g !== 6) { sfx('click'); return t.tip(g === 0 ? 'That is the middle: the first year. Look for the thinnest band.' : 'That ring is wide: a good year. Look for the thinnest band.'); } done = true; c.setAttribute('fill', '#ffc857'); chime(660); t.tip(`<b>Ring 7.</b> The branch barely grew that year. It was ${R.length - 7} years before it fell.`); t.reveal(); })); },
   picture() { let len = 0, lp = null;
     tryIt("ON NANA'S WALL", '🖼️ The dusty picture', 'The glass is dusty. Rub it clean with your finger.',
       `<div style="position:relative;max-width:300px;margin:0 auto"><svg viewBox="0 0 300 200" style="display:block;width:100%;border-radius:10px"><rect width="300" height="200" fill="#fdf3dc"/><path d="M196 30 h46 M219 30 v18" stroke="#7a5236" stroke-width="4"/><path d="M203 48 h32 l6 46 h-44Z" fill="#d9a441"/><circle cx="219" cy="100" r="5" fill="#b8793f"/><circle cx="120" cy="70" r="16" fill="#e8e2d6"/><circle cx="120" cy="105" r="38" fill="#c98a5c"/><path d="M82 100 q38 -52 76 0 q-10 -30 -38 -30 q-28 0 -38 30Z" fill="#e8e2d6"/><circle cx="106" cy="104" r="4" fill="#3b2f4a"/><circle cx="134" cy="104" r="4" fill="#3b2f4a"/><path d="M104 120 q16 14 32 0" stroke="#3b2f4a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="98" cy="116" r="6" fill="#f2a08a" opacity=".6"/><circle cx="142" cy="116" r="6" fill="#f2a08a" opacity=".6"/><path d="M78 200 q42 -66 84 0Z" fill="#8fb8a0"/></svg><canvas id="pcC" width="300" height="200" style="position:absolute;inset:0;width:100%;height:100%;border-radius:10px;touch-action:none"></canvas></div>`,
