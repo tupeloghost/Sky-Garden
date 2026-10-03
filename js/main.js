@@ -1508,9 +1508,6 @@ function exitRoom() { const R = ROOMS[S.room];
   // Pip himself, behind his counter
   const pipIn = critter({ body:0x86c7ff, belly:0xfff3a0, beak:0xffb347, hat:0xff8fa3, outfit:{ style:'vest', color:0x8fdc8a } }); pipIn.scale.setScalar(.8);
   thing(g, pipIn, .4, -2.4, .9, 1.6, .8, () => talk('pip'), 'Pip: tap to talk');
-  // lemonade
-  const lem = G(mesh(new THREE.CylinderGeometry(.14,.12,.34,12), new THREE.MeshStandardMaterial({ color:0xfff3a0, transparent:true, opacity:.8 }), 0, 1.15, 0), mesh(sph(.06), mat(0xffe07a), .05, 1.3, 0));
-  thing(g, lem, .65, -1.35, .5, 1.6, .6, () => HELP.pip.run(), 'Lemonade: tap to help Pip');
   // a balance scale
   const scale = G(mesh(new THREE.CylinderGeometry(.03,.05,.5,8), mat(0xd9a441, { metalness:.5 }), 0, 1.23, 0), mesh(new THREE.BoxGeometry(.7,.03,.03), mat(0xd9a441, { metalness:.5 }), 0, 1.48, 0)); [-.33,.33].forEach(x => scale.add(mesh(new THREE.CylinderGeometry(.13,.1,.04,12), mat(0xd9a441, { metalness:.5 }), x, 1.32, 0)));
   thing(g, scale, 1.25, -1.4, .8, 1.7, .6, () => toy('scale'), 'Scale: tap to try');
@@ -2616,14 +2613,6 @@ function helpDone(id, know, thanks) { const first = !(S.helped || []).includes(i
   const said = id === 'twins' ? thanks.split(/(?=Moss: |Fern: )/).map(l => l.replace(/^(Moss|Fern): /, '<b>$1:</b> ')).join('<br>') : `"${thanks}"`;
   showCard(`<div class="kicker">${NEIGHBORS[id].name.toUpperCase()}</div><p style="font-size:18px;line-height:1.5">${said}</p>`, 'Next', () => showCard(knowHtml(x) + (isNew ? '<p style="margin-top:10px"><b>+40 coins.</b> Saved in Collections, under Know-how.</p>' : ''), 'Huh. Neat.', () => { if (id === 'pip' && S.meetPip) { delete S.meetPip; save(); drawHud(); if ((S.home || 0) < 3) setTimeout(() => openDialog('Pip', "You are the new Keeper! Nana says you have no roof. I slept in my hat for a year. First, gather sticks and stones. Then make an axe at the tree stump workbench by your garden.", [], S.hearts.pip), 500); } })); }
 const HELP = {
-  pip: { label:'Help price the lemonade', run() { const tried = {}; let best = null;
-    const draw = (msg = '"I made 10 cups of lemonade. Each cup cost me 2 coins to make. What should I charge?"') => { const n = Object.keys(tried).length;
-      showCard(`<div class="kicker">HELP PIP</div><h2>🍋 Pip's lemonade</h2><p>${msg}</p><h4>Pick a price for 1 cup</h4><div class="chips">${[2, 4, 6, 7, 8, 10, 12].map(p => `<button data-pr="${p}" class="${tried[p] != null ? 'ghost' : ''}">${p} coins${tried[p] != null ? ` (earned ${tried[p]})` : ''}</button>`).join('')}</div>
-        ${n >= 3 ? `<button id="hpDone">Go with ${best} coins</button>` : `<p class="sub" style="margin-top:8px">Try a few prices and see what happens.</p>`}`, 'Later');
-      document.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => { const p = +b.dataset.pr, sold = Math.max(0, Math.min(10, 12 - p)), earn = sold * (p - 2); tried[p] = earn; if (best == null || earn > tried[best]) best = p; sfx(sold ? 'coin' : 'click');
-        draw(`${'🥤'.repeat(sold) || 'Nobody came.'}<br><b>At ${p} coins, ${sold} ${sold === 1 ? 'neighbor' : 'neighbors'} bought a cup.</b> ${p === 2 ? 'Pip sold them all, but earned nothing. Each cup cost 2 coins to make.' : sold === 0 ? 'Too pricey. Pip earned nothing.' : `Pip earned ${earn} coins after paying for the lemons.`}`); });
-      if ($('hpDone')) $('hpDone').onclick = () => helpDone('pip', 'pricing', best === 7 ? '7 coins! Best day my cart has ever had.' : `${best} coins it is. That earned more than my guess would have!`); };
-    draw(); } },
   nana: { label:'Help plant the old seeds', run() { const on = { corn:false, beans:false, squash:false };
     const tell = () => { const { corn, beans, squash } = on, out = [];
       if (!corn && !beans && !squash) return 'An empty mound of soil. Tap a seed to plant it. Tap again to take it out.';
@@ -2890,7 +2879,7 @@ function tutSold() {
   S.tut = 9; save(); drawHud(); openSquare(); setTimeout(founderDrip, 9000); // the Town Square first, then any founder surprise
   setTimeout(() => {
     S.meetPip = true; save(); drawHud();
-    openDialog('Nana Gale', (S.home || 0) < 3 ? "Your first coins! The neighbors just mended the little bridge at the back of the island. Go and meet Pip on the Town Square. He is selling lemonade, and it is not going well." : "Your first coins! That is how it works up here: grow things, sell them, and use the coins to rebuild. Now, there are more memories buried out there. New sparkles appear every morning. Off you go, dear!", [], S.hearts.nana);
+    openDialog('Nana Gale', (S.home || 0) < 3 ? "Your first coins! The neighbors just mended the little bridge at the back of the island. Go and meet Pip on the Town Square. He sells seeds and furniture from his cart." : "Your first coins! That is how it works up here: grow things, sell them, and use the coins to rebuild. Now, there are more memories buried out there. New sparkles appear every morning. Off you go, dear!", [], S.hearts.nana);
     spawnDigs(); nanaWalk = { to: NANA_HOME.clone(), back:true };
     const fb = $('fbBtn'); fb.classList.add('pulse'); setTimeout(() => fb.classList.remove('pulse'), 4000);
   }, 900);
@@ -2920,7 +2909,7 @@ const MARK_H = { npc:2.4, ship:4.2, windmill:5.6, greatbell:2.2, bellframe:1.4, 
 function meetingPip() { return !VISIT && S.tut >= 9 && !!S.meetPip && !(S.helped || []).includes('pip'); }
 function currentHowto() {
   if (TUT[S.tut]) return TUT[S.tut].help;
-  if (meetingPip()) return 'Walk to the back of your island and cross the little bridge to the Town Square. The gold arrow points the way. Pip is the bird by the cart. Tap him, then tap Help price the lemonade.';
+  if (meetingPip()) return 'Walk to the back of your island and cross the little bridge to the Town Square. The gold arrow points the way. Pip is the bird by the cart. Tap him to say hello.';
   if (S.quest < 5) return HOWTO.c1[S.quest];
   if (S.q2 < 5) return HOWTO.c2[S.q2];
   if (S.q3 < 7) return HOWTO.c3[S.bridge2 && S.q3 === 0 ? 1 : S.q3];
@@ -2931,7 +2920,7 @@ $('quest').onclick = () => { if (VISIT) return goHome(); sfx('click'); showCard(
 const hutLine = () => !VISIT && S.tut >= 9 && !meetingPip() && (S.home || 0) < 3 ? `<span class="q2"><b>YOUR HUT: STEP ${(S.home || 0) + 1} OF 3</b>${homeStep().text}</span>` : '';
 function drawQuest() { drawQuestMain(); const w = questWait() || (!VISIT && S.tut >= 9 && S.quest >= 5 && S.q2 === 1 && S.potDay >= 0 && S.potDay < S.day ? 'Tap the metal pot by the ship. The fresh water is ready.' : ''), qt = $('quest').querySelector('.qt'); if (w && qt) qt.textContent = w; const h = hutLine(); if (h) $('quest').insertAdjacentHTML('beforeend', h); }
 function drawQuestMain() {
-  if (meetingPip()) { $('quest').innerHTML = `<i>Tap for help</i><b>MEET PIP</b><span class="qt">Cross the little bridge at the back of your island. Help Pip with his lemonade.</span>`; return; }
+  if (meetingPip()) { $('quest').innerHTML = `<i>Tap for help</i><b>MEET PIP</b><span class="qt">Cross the little bridge at the back of your island. Say hello to Pip.</span>`; return; }
   if (VISIT) { $('quest').innerHTML = `<i>Tap to go home</i><b>VISITING ${VISIT.name.toUpperCase()}'S ISLAND</b><span class="qt">Say hi, water their garden, or leave a gift.</span>`; return; }
   if (S.tut === 1 || tutActive()) { $('quest').innerHTML = `<i>Tap for help</i><b>GETTING STARTED</b><span class="qt">${S.tut === 1 ? 'Nana Gale is coming to say hello.' : TUT[S.tut].text}</span>`; return; }
   if (S.quest < 5) $('quest').innerHTML = `<i>Tap for help</i><b>CHAPTER 1: THE WIND BELL</b><span class="qt">${QUEST1[S.quest]}${S.quest === 1 ? ` (${S.relics} of 3 found)` : ''}</span>`;
@@ -3096,6 +3085,7 @@ function stallGame(goods) { if (stall3 || cine || !goods.length) return; target 
 
 // --- neighbors ---
 function talk(id) {
+  if (id === 'pip' && meetingPip()) { S.helped = [...(S.helped || []), 'pip']; save(); drawHud(); } // meeting Pip is just saying hello
   const n = NEIGHBORS[id], firstToday = S.talked[id] !== S.day;
   if (firstToday) { S.talked[id] = S.day; S.hearts[id] = Math.min(10, S.hearts[id]+1); chime(698); goal('talk'); }
   if (heartScene(id)) return;

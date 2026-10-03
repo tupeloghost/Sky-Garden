@@ -54,10 +54,6 @@ const KNOWHOW = [
     real:'In 2004, scientists in France built a machine to throw discs at water. The best throw had the front edge tipped up about 20 degrees. Spin keeps the stone steady.',
     today:'At a lake, pick a flat round stone. Throw it low and fast, and flick your wrist as you let go.' },
   // learned by helping a neighbor with their craft (shown right after you help)
-  { id:'pricing', act:'help', n:99, icon:'🍋', term:'DEMAND', title:'The best price is in the middle',
-    did:'You helped Pip try different prices for his lemonade.',
-    real:'Too high, and almost nobody buys. Too low, and you earn very little on each cup. How many people want something at a price is called <b>demand</b>.',
-    today:'Airlines and ride apps change their prices all day as demand goes up and down. That is called dynamic pricing.' },
   { id:'sisters', act:'help', n:99, icon:'🌽', term:'THE THREE SISTERS', title:'Corn, beans, and squash help each other grow',
     did:'You helped Nana plant corn, beans, and squash together.',
     real:'They are called the <b>Three Sisters</b>. The corn is a pole for the beans to climb. The beans feed the soil. The squash leaves shade the ground.',
