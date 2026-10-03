@@ -5113,7 +5113,8 @@ function usePiece(o) {
   if (b.p === 'planter' || b.p === 'potplant') return pickSeeds(`pl${b.x},${b.z}`);
   if (b.p === 'hedge') { if (!canCarry('fiber')) return bagFull(); if (!daily(`hg${b.x},${b.z}`)) { toast('You already trimmed this hedge today.'); return; }
     gain('fiber', 1, o.position.clone(), true); sfx('swish'); toast(`+1 grass. ${TAP_FACTS.hedge}`); return; }
-  if (['fence','wallw','walls','bwall'].includes(b.p)) { b.c = PAINTS[(b.c == null ? 0 : PAINTS.indexOf(b.c)) + 1 === PAINTS.length ? 0 : (b.c == null ? 1 : PAINTS.indexOf(b.c) + 1)]; drawBuilds(); save(); sfx('click'); toast(`You painted the ${p.name.toLowerCase()}. Tap again for another color.`); return; }
+  if (b.p === 'bed' && b.t != null) return useTile(b.t); // the frame of a raised bed works like its soil
+  if (['fence','wallw','walls','bwall','gwall'].includes(b.p)) { b.c = PAINTS[(b.c == null ? 0 : PAINTS.indexOf(b.c)) + 1 === PAINTS.length ? 0 : (b.c == null ? 1 : PAINTS.indexOf(b.c) + 1)]; drawBuilds(); save(); sfx('click'); toast(`You painted the ${p.name.toLowerCase()}. Tap again for another color.`); return; }
   if (b.p === 'deck') { danceT = 2.4; player.position.set(b.x, 0, b.z); [523,659,784,659].forEach((f,i) => setTimeout(() => chime(f), i*280)); toast('You dance on the floor!'); return; }
   if (b.p === 'arch') return factCard('YOUR ISLAND', 'The arch', TAP_FACTS.arch, 'arch');
   if (b.p === 'statue') return factCard('YOUR ISLAND', 'Statue of Pip', TAP_FACTS.statue, 'statue');
@@ -5157,7 +5158,7 @@ function drawBuilds() {
   (S.builds || []).filter(b => LIMITS_ON || b.p !== 'chest').forEach(b => { const m = pieceModel(b.p, b); m.position.set(b.x, 0, b.z); m.rotation.y = b.len ? b.a : (b.r || 0) * Math.PI/2; buildGroup.add(m);
     if (!m.userData.kind) m.userData = { kind:'piece', b }; else m.userData.b = b;
     if (b.p === 'chest' && b.band) [-.2,.2].forEach(z => m.add(mesh(new THREE.BoxGeometry(.84,.06,.05), mat(0xd9a441, { metalness:.55, roughness:.4 }), 0, .3, z*1.35)));
-    if (b.c) m.traverse(o => { if (o.isMesh && o.material?.color && !o.material.isMeshBasicMaterial) { o.material = o.material.clone(); o.material.color.lerp(new THREE.Color(b.c), .7); } });
+    if (b.c) m.traverse(o => { if (o.isMesh && o.material?.color && !o.material.isMeshBasicMaterial && !o.material.transparent) { /* paint the frame, not the glass */ o.material = o.material.clone(); o.material.color.lerp(new THREE.Color(b.c), .7); } });
     if (b.off) m.traverse(o => { if (lampLights.includes(o)) { o.visible = false; lampLights.splice(lampLights.indexOf(o), 1); } else if (o.isMesh && o.material?.isMeshBasicMaterial && o.material.visible !== false) { o.material = o.material.clone(); o.material.color.set(0x8a8290); } }); });
   if (typeof tameOutlines === 'function' && outline) tameOutlines();
 }
