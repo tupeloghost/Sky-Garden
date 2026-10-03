@@ -539,6 +539,7 @@ const pickupGroup = new THREE.Group(); scene.add(pickupGroup);
 const nodes = [];
 const addNode = (kind, ore, x, y, z, i) => { const g = new THREE.Group(); g.position.set(x, y, z); g.userData = { kind, ore, key:`${ore}${i}` };
   if (kind === 'claypit') { const m = mesh(sph(.5), mat(0xb8653f), 0, 0, 0); m.scale.set(1.3, .22, 1); g.add(m); g.add(mesh(sph(.2), mat(0x9c4f30), .3, .06, .1)); }
+  else if (kind === 'sandpit') { const m = mesh(sph(.55), mat(0xead9a6), 0, 0, 0); m.scale.set(1.3, .18, 1.05); g.add(m); for (let k = 0; k < 4; k++) g.add(mesh(sph(.12), mat(0xdcc68a), Math.cos(k * 1.7) * .35, .05, Math.sin(k * 1.7) * .3)); g.add(mesh(new THREE.TorusGeometry(.12, .035, 6, 12), mat(0xffd9e0), -.2, .07, .2).rotateX(Math.PI / 2)); } /* pale sand, with a little shell in it */
   else { const r = mesh(new THREE.DodecahedronGeometry(.45), mat(ore === 'copper' ? 0x8f8a92 : 0x5f5a68), 0, .3, 0); r.rotation.set(i, i*2, 0); g.add(r);
     for (let k=0;k<5;k++){ const a = k*1.3; g.add(mesh(sph(.08), mat(ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, ore === 'tin' ? { metalness:.6, roughness:.3 } : {}), Math.cos(a)*.38, .3 + Math.sin(k)*.2, Math.sin(a)*.38)); } }
   scene.add(g); nodes.push(g); };
@@ -546,6 +547,7 @@ const addNode = (kind, ore, x, y, z, i) => { const g = new THREE.Group(); g.posi
 [[5.5,-4.8],[6,1.8]].forEach(([x,z],i) => addNode('claypit', 'clay', ORCH_POS.x + x, ORCH_POS.y, ORCH_POS.z + z, i + 2));
 [[-5.5,-3],[-2,-6.2],[4.2,-5.4]].forEach(([x,z],i) => addNode('ore', 'copper', ORCH_POS.x + x, ORCH_POS.y, ORCH_POS.z + z, i));
 addNode('ore', 'tin', WIND_POS.x + 5, WIND_POS.y, WIND_POS.z - 4.5, 0);
+[[-6.6,2.6],[2.4,6.2],[-3.8,5.6]].forEach(([x,z],i) => addNode('sandpit', 'sand', ORCH_POS.x + x, ORCH_POS.y, ORCH_POS.z + z, i));
 const kiln = new THREE.Group(); kiln.position.set(-5.9, 0, 2.1); kiln.userData.kind = 'kiln'; scene.add(kiln);
 const kilnDome = mesh(new THREE.SphereGeometry(.75, 18, 10, 0, Math.PI*2, 0, Math.PI/2), mat(0xc0703f), 0, 0, 0); kiln.add(kilnDome);
 kiln.add(mesh(new THREE.CylinderGeometry(.16,.2,.5,10), mat(0x9c4f30), .2, .85, -.2));
@@ -4299,10 +4301,10 @@ function drawUsed() { try {
     if (k === 'bush') o.scale.setScalar(usedToday(o) ? .68 : 1); });
   placeNodes(); } catch {} }
 // clay and ore turn up in new places each morning, and a patch you have dug is gone until tomorrow
-const NODE_SPOTS = { clay:[[0,-7.5,1.1],[0,3.0,-7.45],[0,-5.2,-6.2],[0,7.7,-.6],[0,4.3,-6.9],[0,-7.8,1.9],[1,5.5,-4.8],[1,6,1.8],[1,-6.4,1.5],[1,-1.5,6.6],[1,1.5,-6.8],[1,6.6,-1.6]], copper:[[1,-5.5,-3],[1,-2,-6.2],[1,4.2,-5.4],[1,-6.8,-.6],[1,.8,-7],[1,3.4,6.4]], tin:[[2,5,-4.5],[2,-5.2,-3.6],[2,-3.5,5.2],[2,5.6,2.4]] };
-function placeNodes() { const base = [new THREE.Vector3(), ORCH_POS, WIND_POS], on = n => (n.userData.kind === 'claypit' ? potteryOn() : bronzeOn()) && !usedToday(n);
+const NODE_SPOTS = { clay:[[0,-7.5,1.1],[0,3.0,-7.45],[0,-5.2,-6.2],[0,7.7,-.6],[0,4.3,-6.9],[0,-7.8,1.9],[1,5.5,-4.8],[1,6,1.8],[1,-6.4,1.5],[1,-1.5,6.6],[1,1.5,-6.8],[1,6.6,-1.6]], copper:[[1,-5.5,-3],[1,-2,-6.2],[1,4.2,-5.4],[1,-6.8,-.6],[1,.8,-7],[1,3.4,6.4]], tin:[[2,5,-4.5],[2,-5.2,-3.6],[2,-3.5,5.2],[2,5.6,2.4]], sand:[[1,-6.6,2.6],[1,2.4,6.2],[1,-3.8,5.6],[1,6.8,-.2],[1,-1,6.8],[1,5.8,3.6],[1,-6.2,-1.4]] };
+function placeNodes() { const base = [new THREE.Vector3(), ORCH_POS, WIND_POS], on = n => (n.userData.kind === 'claypit' ? potteryOn() : n.userData.kind === 'sandpit' ? !!S.stations.furnace : bronzeOn()) && !usedToday(n);
   nodes.forEach(n => n.visible = false); const taken = [];
-  nodes.forEach((n, i) => { if (!on(n)) return; const ore = n.userData.ore, isl = ore === 'clay' ? (i < 2 ? 0 : 1) : ore === 'copper' ? 1 : 2, pool = NODE_SPOTS[ore].filter(sp => sp[0] === isl);
+  nodes.forEach((n, i) => { if (!on(n)) return; const ore = n.userData.ore, isl = ore === 'clay' ? (i < 2 ? 0 : 1) : ore === 'copper' || ore === 'sand' ? 1 : 2, pool = NODE_SPOTS[ore].filter(sp => sp[0] === isl);
     let spot = null; for (let t = 0; t < pool.length; t++) { const sp = pool[(S.day * 5 + i * 3 + t) % pool.length], x = base[isl].x + sp[1], z = base[isl].z + sp[2]; if (taken.some(q => Math.hypot(q[0] - x, q[1] - z) < 1.5) || nearThing(x, z) || groundAt(x, base[isl].y, z) === null) continue; spot = [x, z]; break; }
     if (spot) { n.position.set(spot[0], base[isl].y, spot[1]); taken.push(spot); } else taken.push([n.position.x, n.position.z]); n.visible = true; }); }
 function chopTree(t) {
@@ -4370,7 +4372,7 @@ const AGES = [
   { id:'stone', name:'Stone Age', done:() => S.tools.axe && S.tools.pick },
   { id:'pottery', name:'Pottery Age', done:() => !!S.stations.kiln, get soon() { return !potteryOn(); } },
   { id:'bronze', name:'Bronze Age', done:() => !!S.stations.furnace, get soon() { return !bronzeOn(); } },
-  { id:'glass', name:'Glass Age', soon:true },
+  { id:'glass', name:'Glass Age', done:() => !!S.stations.glass, get soon() { return !S.stations.furnace; } },
   { id:'iron', name:'Iron Age', soon:true },
 ];
 function agesHtml() {
@@ -4440,9 +4442,9 @@ function gatherNode(n) {
   if (kind === 'ore' && !S.tools.pick) { toast('You need a stone pickaxe to dig ore. Make 1 at the tree stump workbench.'); return; }
   if (S.chopped[key] === S.day) { toast('Nothing left here today. It fills back in by tomorrow.'); return; }
   if (!canCarry(ore)) return bagFull();
-  S.chopped[key] = S.day; const amt = kind === 'claypit' ? 2 : 1;
-  sfx(kind === 'claypit' ? 'squelch' : 'ting'); for (let i=0;i<amt;i++) bagAdd(ore); burst(n.position.clone(), kind === 'claypit' ? 0xb8653f : ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, 12); floatText(`+${amt} ${icon(ore)} ${plural(ore, amt)}`, n.position.clone()); swingT = .5; save(); drawHud(); drawUsed();
-  toast(`${kind === 'claypit' ? 'Clay is soft, wet earth that can be shaped and fired.' : ore === 'copper' ? 'Copper ore has those green streaks. Smelt it in a furnace.' : 'Tin is rare. People once traded it across whole continents.'}`);
+  S.chopped[key] = S.day; const soft = kind === 'claypit' || kind === 'sandpit', amt = soft ? 2 : 1;
+  sfx(kind === 'claypit' ? 'squelch' : kind === 'sandpit' ? 'swish' : 'ting'); for (let i=0;i<amt;i++) bagAdd(ore); burst(n.position.clone(), kind === 'claypit' ? 0xb8653f : kind === 'sandpit' ? 0xead9a6 : ore === 'copper' ? 0x3fbf8f : 0xc9c9d9, 12); floatText(`+${amt} ${icon(ore)} ${plural(ore, amt)}`, n.position.clone()); swingT = .5; save(); drawHud(); drawUsed();
+  toast(`${kind === 'claypit' ? 'Clay is soft, wet earth that can be shaped and fired.' : kind === 'sandpit' ? 'Sand is mostly tiny grains of quartz. Melt it hot enough and it turns into glass.' : ore === 'copper' ? 'Copper ore has those green streaks. Smelt it in a furnace.' : 'Tin is rare. People once traded it across whole continents.'}`);
 }
 // the kiln: keep the fire just right
 function useKiln() {
@@ -4479,7 +4481,31 @@ function kilnGame(what) { if (kiln3 || cine) return; hideCard(); target = null; 
 // the furnace: find the bronze recipe yourself
 // the furnace: pump the bellows until copper melts, mix in tin (the first time, find the right amount), then pour an ingot. Nothing leaves your bag until the ingot is poured
 let furn3 = null;
-function useFurnace() { const needs = { copper:2, tin:1, log:2 }; if (furn3 || cine) return;
+// the furnace makes 2 things: bronze, and (once you have sand) glass
+function useFurnace() { if (furn3 || cine) return;
+  showCard(`<div class="kicker">THE FURNACE</div><h2>What will you make?</h2><div class="jlist"><button data-fu="bronze" class="craft">Bronze ingot ${needChips({ copper:2, tin:1, log:2 })}</button><button data-fu="glass" class="craft">Glass ${needChips({ sand:3, log:1 })}</button></div>${S.stations.glass ? '' : '<p class="sub">Sand comes from the pale patches on Orchard Isle.</p>'}`, 'Close');
+  document.querySelectorAll('[data-fu]').forEach(b => b.onclick = () => b.dataset.fu === 'bronze' ? bronzeFurnace() : glassGame()); }
+// glassblowing: fill a glowing gob of glass with your breath, and keep turning so it does not droop
+function glassGame() { const needs = { sand:3, log:1 };
+  if (!enough(needs)) return toast(`To make glass you need ${needText(needs)}. Scoop sand from the pale patches on Orchard Isle.`);
+  if (!canCarry('glass')) return bagFull();
+  Object.entries(needs).forEach(([k, n]) => bagAdd(k, -n)); save(); drawHud();
+  let r = 9, sag = 0, blow = false, won = false;
+  tryIt('THE FURNACE', '🫧 Blow glass', 'Hold <b>Blow</b> to fill the hot glass with air. Tap <b>Turn</b> often, or it droops. Then tap <b>Finish</b> inside the dotted rings.',
+    `<svg viewBox="0 0 300 150" ${SVGW}><rect width="300" height="150" rx="10" fill="#2a2030"/><rect x="0" y="71" width="152" height="8" rx="3" fill="#8d97a1"/><circle cx="186" cy="75" r="33" fill="none" stroke="#fff6e6" stroke-width="1.5" stroke-dasharray="4 4" opacity=".75"/><circle cx="186" cy="75" r="39" fill="none" stroke="#fff6e6" stroke-width="1.5" stroke-dasharray="4 4" opacity=".75"/><ellipse id="gbG" cx="159" cy="75" rx="9" ry="9" fill="#ffb347"/><ellipse id="gbH" cx="155" cy="70" rx="3" ry="2" fill="#fff3c4" opacity=".7"/></svg>
+     <div class="chips" style="justify-content:center"><button id="gbB">Blow</button><button id="gbT" class="ghost">Turn</button><button id="gbD" class="ghost">Finish</button></div>`,
+    ['Glass is mostly sand.', 'Pure sand melts at about 1,720°C, hotter than old furnaces could reach.', 'Roman glassmakers mixed in soda from a natural salt called natron, so it melts far cooler.', 'Blowing glass through a pipe was invented in the 1st century BC, in what is now Syria and Lebanon.', 'Within about 100 years, a glass cup in Rome cost 1 copper coin.'],
+    t => { const b = t.el('gbB'); b.onpointerdown = e => { e.preventDefault(); if (!won) blow = true; }; ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => { blow = false; }));
+      t.el('gbT').onclick = () => { if (won) return; sag = Math.max(0, sag - 14); tone(330, { dur:.05, vol:.03 }); };
+      t.el('gbD').onclick = () => { if (won) return; if (r < 33) return t.tip('Too small. Blow a little more, out to the dotted rings.'); if (r > 39) return t.tip('Too big. Next time, stop sooner.'); if (sag > 10) return t.tip('It is drooping. Turn it, then finish.');
+        won = true; blow = false; bagAdd('glass', 1); const first = !S.stations.glass; S.stations.glass = true; S.glassMade = (S.glassMade || 0) + 1; save(); drawHud(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 110));
+        t.el('gbG').setAttribute('fill', '#cfeaff'); t.tip(`<b>A glass bubble.</b> It cools from orange to clear. +1 glass.${first ? '<br><b>The Glass Age begins.</b> Build glass lanterns and window walls.' : ''}`); t.reveal(); };
+      t.loop(dt => { if (won) return; if (blow) r += 13 * dt; sag += dt * (5 + r / 7);
+        if (r > 44) { r = 9; sag = 0; blow = false; sfx('click'); t.tip('<b>Pop!</b> Too much air. You gather a fresh gob from the furnace.'); }
+        if (sag > 28) { r = 9; sag = 0; blow = false; sfx('click'); t.tip('<b>It drooped</b> and fell off the pipe. You gather a fresh gob. Keep turning.'); }
+        const g = t.el('gbG'); if (!g) return; g.setAttribute('cx', (150 + r).toFixed(1)); g.setAttribute('cy', (75 + sag * .6).toFixed(1)); g.setAttribute('rx', r.toFixed(1)); g.setAttribute('ry', (r * (1 + sag / 50)).toFixed(1));
+        const h = t.el('gbH'); h.setAttribute('cx', (150 + r * .7).toFixed(1)); h.setAttribute('cy', (75 + sag * .6 - r * .5).toFixed(1)); }); }); }
+function bronzeFurnace() { const needs = { copper:2, tin:1, log:2 }; if (furn3 || cine) return;
   if (!enough(needs)) return toast(`To make bronze you need ${needText(needs)}. No tin? Buy it from Pip.`);
   closeDialog(); hideCard(); target = null; pending = null;
   const V = (x, y, z) => new THREE.Vector3(x, y, z), fp = furnace.position.clone(), mouth = fp.clone().add(V(0, .45, .62)), oldCol = furnaceGlow.material.color.getHex();
@@ -4719,6 +4745,8 @@ const PIECES = [
   { id:'chest', grp:'garden',   name:'Storage Chest',  cost:{ log:4, stone:2 } },
   { id:'blamp', grp:'lights',   name:'Bronze Lantern', cost:{ bronze:1, stone:1 }, age:'furnace' },
   { id:'statue', grp:'garden',  name:'Statue of Pip',  cost:{ bronze:2, stone:4 }, age:'furnace' },
+  { id:'glamp', grp:'lights',   name:'Glass Lantern',  cost:{ glass:1, log:1 }, age:'glass' },
+  { id:'gwall', grp:'walls',    name:'Window Wall',    cost:{ glass:2, log:2 }, age:'glass' },
 ];
 const lampLights = [];
 function pieceModel(id, hung) {
@@ -4750,6 +4778,12 @@ function pieceModel(id, hung) {
     const cage = mesh(new THREE.OctahedronGeometry(.28), glow(0xc9b6ff), 0, 1.75, 0); cage.scale.y = 1.3; g.add(cage); g.add(mesh(new THREE.OctahedronGeometry(.1), glow(0xffe07a), 0, 2.2, 0));
     const lh = halo(0xc9b6ff, 2.6, 0); lh.position.y = 1.75; g.add(lh); lampLights.push(lh);
     for (let i = 0; i < 8; i++) { const f = mesh(sph(.035), new THREE.MeshBasicMaterial({ color:0xf6ff9a, transparent:true, opacity:0 })); g.add(f); lanternFF.push(f); } }
+  if (id === 'glamp') { const gl = new THREE.MeshStandardMaterial({ color:0xd8f0ff, transparent:true, opacity:.35, roughness:.05, metalness:.1 });
+    g.add(mesh(new THREE.CylinderGeometry(.05,.07,1.1,8), dark, 0, .55, 0)); g.add(mesh(new THREE.BoxGeometry(.36,.06,.36), dark, 0, 1.12, 0)); g.add(mesh(new THREE.BoxGeometry(.32,.4,.32), gl, 0, 1.35, 0)); g.add(mesh(new THREE.BoxGeometry(.24,.32,.24), glow(0xffe7b0), 0, 1.35, 0)); [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([x,z]) => g.add(mesh(new THREE.BoxGeometry(.03,.42,.03), dark, x * .16, 1.35, z * .16)));
+    g.add(mesh(new THREE.ConeGeometry(.26,.18,4), dark, 0, 1.64, 0).rotateY(Math.PI/4)); const lh = halo(0xffd88a, 2.4, 0); lh.position.y = 1.35; g.add(lh); lampLights.push(lh); }
+  if (id === 'gwall') { const gl = new THREE.MeshStandardMaterial({ color:0xcfeaff, transparent:true, opacity:.38, roughness:.05, metalness:.1 });
+    [[0,.05,1,.1],[0,1.15,1,.1],[-.47,.6,.08,1.1],[.47,.6,.08,1.1],[0,.6,.06,1.1],[0,.6,1,.06]].forEach(([x,y,w,h]) => g.add(mesh(new THREE.BoxGeometry(w,h,.1), wood, x, y, 0)));
+    [[-.24,.33],[.24,.33],[-.24,.88],[.24,.88]].forEach(([x,y]) => g.add(mesh(new THREE.BoxGeometry(.4,.48,.03), gl, x, y, 0))); }
   if (id === 'chest') { g.add(mesh(new THREE.BoxGeometry(.8,.42,.52), wood, 0, .21, 0)); const lid = mesh(new THREE.CylinderGeometry(.26,.26,.8,12,1,false,0,Math.PI), mat(0xd9a066), 0, .42, 0); lid.rotation.z = Math.PI/2; g.add(lid);
     [-.28,.28].forEach(x => { g.add(mesh(new THREE.BoxGeometry(.06,.44,.54), dark, x, .22, 0)); }); g.add(mesh(new THREE.BoxGeometry(.12,.14,.04), mat(0xd9a441, { metalness:.5, roughness:.4 }), 0, .38, .27)); g.userData.kind = 'chest'; }
   if (id === 'arch') { [-.45,.45].forEach(x => g.add(mesh(new THREE.BoxGeometry(.1,1.6,.1), mat(0xfff1d6), x, .8, 0))); const top = mesh(new THREE.TorusGeometry(.45,.05,6,16,Math.PI), mat(0xfff1d6), 0, 1.6, 0); g.add(top);
@@ -4990,7 +5024,7 @@ function usePiece(o) {
   if (b.p === 'path' || b.p === 'bpath') return toast(TAP_FACTS.path);
   if (b.p === 'hammock') return napMenu(o);
   if (b.p === 'bench') return benchGame(o, new THREE.Vector3(b.x, 0, b.z), (b.r || 0) * Math.PI/2);
-  if (b.p === 'lamp' || b.p === 'blamp' || b.p === 'flantern') { b.off = !b.off; drawBuilds(); save(); sfx('click'); toast(b.off ? 'Lamp off.' : 'Lamp on. It glows at night.'); return; }
+  if (b.p === 'lamp' || b.p === 'blamp' || b.p === 'glamp' || b.p === 'flantern') { b.off = !b.off; drawBuilds(); save(); sfx('click'); toast(b.off ? 'Lamp off.' : 'Lamp on. It glows at night.'); return; }
   if (b.p === 'planter' || b.p === 'potplant') return pickSeeds(`pl${b.x},${b.z}`);
   if (b.p === 'hedge') { if (!canCarry('fiber')) return bagFull(); if (!daily(`hg${b.x},${b.z}`)) { toast('You already trimmed this hedge today.'); return; }
     gain('fiber', 1, o.position.clone(), true); sfx('swish'); toast(`+1 grass. ${TAP_FACTS.hedge}`); return; }
@@ -5218,7 +5252,7 @@ function arrive(o) {
   if (k === 'pet') return petPet();
   if (k === 'deco') return o.userData.use(o);
   if (k === 'piece') return usePiece(o);
-  if ((k === 'claypit' || k === 'ore') && o.visible) return gatherNode(o);
+  if ((k === 'claypit' || k === 'sandpit' || k === 'ore') && o.visible) return gatherNode(o);
   if (k === 'kiln') return useKiln();
   if (k === 'furnace') return useFurnace();
   if (k === 'buildsite') return useBuildSite();
@@ -7383,7 +7417,7 @@ function nearLabel(o) { const k = o.userData.kind, u = o.userData;
     bush:'Bush: tap to cut grass', dig:'Gold sparkle: tap to dig', fruitTree:'Fruit tree: tap to pick', dock:'Dock: tap to fish',
     door:'Doormat: tap to go outside', roomdoor:'Doormat: tap to go outside', bed:'Your bed: tap to sleep', shelf:'Shelf: tap to see Collections', kiln:'Kiln: tap to fire clay', furnace:'Furnace: tap to melt metal',
     ship2:'The ship: tap to fly home', pot:'Metal pot: tap to fill', windmill:'Windmill: tap to look', easel:"Lumen's easel: tap to sort the moons", darkroom:"Lumen's dark room: tap to look inside",
-    visitor:'A traveler: tap to talk', stakes:'Fence stakes: tap to grow your garden' })[k] || (k === 'claypit' ? 'Clay: tap to scoop' : k === 'ore' ? 'Ore: tap to dig' : null); }
+    visitor:'A traveler: tap to talk', stakes:'Fence stakes: tap to grow your garden' })[k] || (k === 'claypit' ? 'Clay: tap to scoop' : k === 'sandpit' ? 'Sand: tap to scoop' : k === 'ore' ? 'Ore: tap to dig' : null); }
 function nearTick(dt) { if (!nearEl) { nearEl = document.createElement('div'); nearEl.className = 'neartag'; document.body.appendChild(nearEl); }
   const off = !playing || cine || fish3 || buildMode || (flight && flight.on) || $('veil').classList.contains('show') || $('dialog').classList.contains('show') || document.querySelector('.presents');
   if (off) { nearEl.style.opacity = 0; nearObj = null; return; }
@@ -7503,7 +7537,7 @@ try { const hr = KIT.hr, ringOf = (g, r, y, n, c1 = 0xd8cfc0, c2 = 0xbfb6a8, h =
   if (squareBits && squareBits.fnt) { squareBits.water.userData.keep = true; squareBits.drops.forEach(d => d.userData.keep = true); bake(squareBits.fnt); }
   [workbench, kiln, furnace, sundial, darkroom].forEach(o => { if (o === kiln) kilnMouth.userData.keep = kilnDome.userData.keep = true; if (o === furnace) furnaceGlow.userData.keep = true; if (o === sundial) gnomon.userData.keep = true; bake(o); }); if (lighthouse) { lighthouse.userData.pivot.userData.keep = true; bake(lighthouse); }
 } catch (e) { console.warn('detail', e); }
-window.__sg = { VERSION, get swing3() { return swing3; }, get bush3() { return bush3; }, cutBush, bushes, get tree3() { return tree3; }, fruitTrees, useFruitTree, get stall3() { return stall3; }, stallGame, get furn3() { return furn3; }, useFurnace, drawStations, get kiln3() { return kiln3; }, kilnGame, useKiln, makeCraft, CRAFTS, get fire3() { return fire3; }, useCampfire, get ham3() { return ham3; }, napMenu, drawBuilds, buildGroup, get bench3() { return bench3; }, sitBench, squareBits, planterSeed, toy, TOYS, drawToys, dandSprouts, get skip3() { return skip3; }, get dand3() { return dand3; }, dandGame, get ball() { return { h:ballH, vy:ballVy, ups:ballUps }; }, getPending:() => pending, findRoute, solidPt, getRoute:() => route, drawUsed, placeNodes, nodes, getTarget:() => target && target.toArray(), walkY, groundAt, questWait, questTarget, openDialog, closeDialog, drawTile, cropModel, bugModel, critter, scene, openFiles, FILE, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { VERSION, glassGame, bronzeFurnace, nodes, get swing3() { return swing3; }, get bush3() { return bush3; }, cutBush, bushes, get tree3() { return tree3; }, fruitTrees, useFruitTree, get stall3() { return stall3; }, stallGame, get furn3() { return furn3; }, useFurnace, drawStations, get kiln3() { return kiln3; }, kilnGame, useKiln, makeCraft, CRAFTS, get fire3() { return fire3; }, useCampfire, get ham3() { return ham3; }, napMenu, drawBuilds, buildGroup, get bench3() { return bench3; }, sitBench, squareBits, planterSeed, toy, TOYS, drawToys, dandSprouts, get skip3() { return skip3; }, get dand3() { return dand3; }, dandGame, get ball() { return { h:ballH, vy:ballVy, ups:ballUps }; }, getPending:() => pending, findRoute, solidPt, getRoute:() => route, drawUsed, placeNodes, nodes, getTarget:() => target && target.toArray(), walkY, groundAt, questWait, questTarget, openDialog, closeDialog, drawTile, cropModel, bugModel, critter, scene, openFiles, FILE, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
