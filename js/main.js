@@ -3905,17 +3905,25 @@ function useFruitTree(t) {
   return fruitGame(t); }
 // picking fruit: get up close and find the ripe one by its color. Lift and twist: a ripe one comes away, an unripe one holds on
 let tree3 = null;
+// which way to look at something so nothing stands between the camera and it: tries 16 sides, starting from where the camera is now
+function clearSide(c, dist, up, skip, wide = 1.1, ys = [.1, .7]) { const V = (x, y, z) => new THREE.Vector3(x, y, z), a0 = Math.atan2(camera.position.z - c.z, camera.position.x - c.x), rc = new THREE.Raycaster(), hide = player.visible; rc.camera = camera; player.visible = false;
+  const blocks = h => h.object.visible && !(skip && skip.getObjectById(h.object.id)) && h.object.material && h.object.material.visible !== false && !h.object.material.transparent && !h.object.isSprite;
+  let pick = null; for (let k = 0; k < 16 && !pick; k++) { const a = a0 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * Math.PI / 8, d = V(Math.cos(a), 0, Math.sin(a)), cp = c.clone().addScaledVector(d, dist).add(V(0, up, 0)), sd = V(d.z, 0, -d.x);
+    const clear = [-wide, 0, wide].every(o => { for (const y of ys) { const p = c.clone().addScaledVector(sd, o).add(V(0, y, 0)), dir = cp.clone().sub(p), len = dir.length(); rc.set(p.clone().addScaledVector(dir.normalize(), .25), dir); rc.far = len - .25 + .4;
+      if (rc.intersectObjects(scene.children, true).some(blocks)) return false; } return true; });
+    const roomy = clear && [-.6, -.3, 0, .3, .6].every(ha => [.15, .45, .75].every(va => { const f = c.clone().sub(cp).setY(0).normalize().applyAxisAngle(V(0, 1, 0), ha), dir = f.multiplyScalar(Math.cos(va)).add(V(0, -Math.sin(va), 0)).normalize(); rc.set(cp, dir); rc.far = 1.8; return !rc.intersectObjects(scene.children, true).some(blocks); })); /* nothing filling the edges of the view either */
+    if (roomy && !solidPt(c.x + d.x * 2, c.z + d.z * 2)) pick = d; }
+  player.visible = hide; return pick || V(Math.cos(a0), 0, Math.sin(a0)); }
+// how much is crowding a camera at cp looking at look: rays fanned across the view, counting things closer than 2.2
+function crowd(cp, look) { const rc = new THREE.Raycaster(), hide = player.visible, f = look.clone().sub(cp).normalize(), r = new THREE.Vector3().crossVectors(f, new THREE.Vector3(0, 1, 0)).normalize(), u = new THREE.Vector3().crossVectors(r, f); let n = 0; rc.camera = camera; player.visible = false;
+  for (let x = -.6; x <= .61; x += .3) for (let y = -.45; y <= .46; y += .3) { rc.set(cp, f.clone().addScaledVector(r, x).addScaledVector(u, y).normalize()); rc.far = 2.2; if (rc.intersectObjects(scene.children, true).some(h => h.object.visible && h.object.material && h.object.material.visible !== false && !h.object.material.transparent && !h.object.isSprite)) n++; }
+  player.visible = hide; return n; }
 function fruitGame(t) { if (tree3 || cine) return; target = null; pending = null;
   const kind = t.userData.fruitKind, apple = kind === 'apple', fr = t.userData.fruits, F = fr.children.filter(c => c.isMesh), V = (x, y, z) => new THREE.Vector3(x, y, z), tp = t.getWorldPosition(V(0, 0, 0));
   const UNRIPE = apple ? [0x8fbf4a, 0xa7c454, 0xb27a3e, 0xc7b85a] : [0x9cbf55, 0xb8c766, 0xd9b25a, 0xd6c070] /* one is almost there: blushing, but still green underneath */, ripeI = Math.floor(Math.random() * F.length), olds = F.map(f => f.material);
   F.forEach((f, n) => { f.material = f.material.clone(); f.material.color.setHex(n === ripeI ? (apple ? 0xe8463c : 0xffa34d) : UNRIPE[n % UNRIPE.length]); f.userData.orig = f.position.clone(); });
   const fw = new THREE.Vector3(); fr.getWorldPosition(fw);
-  const toCam = (() => { const a0 = Math.atan2(camera.position.z - tp.z, camera.position.x - tp.x), rc = new THREE.Raycaster(), hide = player.visible; rc.camera = camera; player.visible = false; /* pick a side of the tree where nothing stands between the camera and the fruit */
-    let pick = null; for (let k = 0; k < 16 && !pick; k++) { const a = a0 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * Math.PI / 8, d = V(Math.cos(a), 0, Math.sin(a)), c = fw.clone().addScaledVector(d, 3.6).add(V(0, .3, 0)), sd = V(d.z, 0, -d.x);
-      const clear = [-1.1, 0, 1.1].every(o => { for (const y of [.1, .7]) { const p = fw.clone().addScaledVector(sd, o).add(V(0, y, 0)), dir = c.clone().sub(p), len = dir.length(); rc.set(p.clone().addScaledVector(dir.normalize(), .25), dir); rc.far = len - .25 + .4;
-        if (rc.intersectObjects(scene.children, true).some(h => h.object.visible && !t.getObjectById(h.object.id) && h.object.material && h.object.material.visible !== false && !h.object.material.transparent)) return false; } return true; });
-      if (clear && !solidPt(fw.x + d.x * 2, fw.z + d.z * 2)) pick = d; }
-    player.visible = hide; return pick || V(Math.cos(a0), 0, Math.sin(a0)); })(), side = V(toCam.z, 0, -toCam.x);
+  const toCam = clearSide(fw, 3.6, .3, t), side = V(toCam.z, 0, -toCam.x);
   { const lc = fr.worldToLocal(fw.clone().addScaledVector(toCam, 3)), a0 = Math.atan2(lc.z, lc.x); // bring all the fruit round to the side facing you, a little bigger, so every one can be seen and tapped
     F.forEach((f, n) => { const a = a0 + (n - 3.5) * .3, h = .1 + ((n * 37) % 7) * .1; f.position.set(Math.cos(a) * 1.08, h, Math.sin(a) * 1.08); f.userData.home = f.position.clone(); f.userData.sc = f.scale.x; f.scale.setScalar(f.scale.x * 1.35); }); }
   player.position.copy(tp).addScaledVector(toCam, .4).addScaledVector(side, 2.4); player.position.y = groundAt(player.position.x, tp.y + .5, player.position.z) ?? tp.y; player.rotation.y = Math.atan2(-side.x, -side.z); cine = { hold:true }; document.body.classList.add('in-cine');
@@ -4316,25 +4324,29 @@ function cutBush(b) {
 // cutting grass: long grass grows up around the bush. Swipe across it to cut it, then gather it up
 let bush3 = null;
 function bushGame(b) { if (bush3 || cine) return; target = null; pending = null;
-  const V = (x, y, z) => new THREE.Vector3(x, y, z), bp = b.getWorldPosition(V(0, 0, 0)), gy = groundAt(bp.x, bp.y + .5, bp.z) ?? 0, toCam = V(camera.position.x - bp.x, 0, camera.position.z - bp.z).normalize(), side = V(toCam.z, 0, -toCam.x), N = 7;
-  player.position.set(bp.x, gy, bp.z).addScaledVector(toCam, .9).addScaledVector(side, 1.4); player.rotation.y = Math.atan2(bp.x - player.position.x, bp.z - player.position.z); cine = { hold:true }; document.body.classList.add('in-cine');
+  const V = (x, y, z) => new THREE.Vector3(x, y, z), bp = b.getWorldPosition(V(0, 0, 0)), gy = groundAt(bp.x, bp.y + .5, bp.z) ?? 0, toCam = clearSide(V(bp.x, gy, bp.z), 3.2, 2.2, b, 1.4, [.2, .9]), side = V(toCam.z, 0, -toCam.x);
+  player.position.set(bp.x, gy, bp.z).addScaledVector(toCam, 4.2).addScaledVector(side, .6); /* just behind the camera, out of the picture */ player.rotation.y = Math.atan2(bp.x - player.position.x, bp.z - player.position.z); cine = { hold:true }; document.body.classList.add('in-cine');
   const green = [mat(0x6fae5a), mat(0x86c06a), mat(0x5a9a4a)], tufts = [];
-  for (let i = 0; i < N; i++) { const a = (i - 3) * .32, r = .95 + (i % 2) * .25, p = V(bp.x, gy, bp.z).addScaledVector(toCam, Math.cos(a) * r).addScaledVector(side, Math.sin(a) * r * 1.6), g = new THREE.Group(); g.position.copy(p);
-    const blades = []; for (let k = 0; k < 9; k++) { const bl = mesh(new THREE.ConeGeometry(.045, .8, 4), green[k % 3], (k % 3 - 1) * .07, .4, (Math.floor(k / 3) - 1) * .07); bl.rotation.z = (k % 3 - 1) * .22; bl.rotation.x = (Math.floor(k / 3) - 1) * .2; g.add(bl); blades.push(bl); }
-    const hit = new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, .7, 8), new THREE.MeshBasicMaterial({ visible:false })); hit.position.y = .35; g.add(hit); scene.add(g); tufts.push({ g, blades, hit, cut:false, t:0 }); }
+  const spots = []; for (let n = 0; n < 40 && spots.length < 7; n++) { const a = ((n % 9) - 4) * .3 + (n >= 9 ? .15 : 0), r = .95 + Math.floor(n / 9) * .2 + (n % 2) * .15, p = V(bp.x, gy, bp.z).addScaledVector(toCam, Math.cos(a) * r).addScaledVector(side, Math.sin(a) * r * 1.6);
+    if (solidPt(p.x, p.z) || groundAt(p.x, gy + .5, p.z) === null || spots.some(q => q.distanceTo(p) < .4)) continue; const gp = groundAt(p.x, gy + .5, p.z); if (Math.abs(gp - gy) > .3) continue; spots.push(p); } /* only where nothing else stands */
+  for (let i = 0; i < spots.length; i++) { const p = spots[i], g = new THREE.Group(); g.position.copy(p);
+    const blades = []; for (let k = 0; k < 9; k++) { const bl = mesh(new THREE.ConeGeometry(.045, .8 - (k % 4) * .08, 4).translate(0, .4 - (k % 4) * .04, 0), green[k % 3], (k % 3 - 1) * .07, 0, (Math.floor(k / 3) - 1) * .07); bl.rotation.z = -(k % 3 - 1) * .25; bl.rotation.x = (Math.floor(k / 3) - 1) * .22; /* leans out from the base, like real grass */ g.add(bl); blades.push(bl); }
+    const hit = new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, .7, 8), new THREE.MeshBasicMaterial({ visible:false })); hit.position.y = .35; g.add(hit); const stubs = new THREE.Group(); for (let k = 0; k < 9; k++) stubs.add(mesh(new THREE.CylinderGeometry(.016, .02, .07, 5), green[k % 3], (k % 3 - 1) * .07, .035, (Math.floor(k / 3) - 1) * .07)); stubs.visible = false; g.add(stubs);
+    scene.add(g); tufts.push({ g, blades, hit, stubs, cut:false, t:0 }); }
+  const N = tufts.length;
   const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="bsMsg">Long grass has grown up around the bush.<br>Swipe your finger across it to cut it.</p><div class="fhbtns"><button id="bsDone" class="ghost">Done</button></div>`; document.body.appendChild(hud);
   const msg = h => { const e = $('bsMsg'); if (e) e.innerHTML = h; };
   let cutN = 0, down = false, finished = false, last = performance.now(), raf;
   const cv = renderer.domElement, hits = tufts.map(q => q.hit);
-  const slice = e => { ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ptr, camera); ray.intersectObjects(hits, false).forEach(h => { const q = tufts.find(q => q.hit === h.object); if (q && !q.cut) { q.cut = true; cutN++; sfx('swish'); tone(700 + cutN * 40, { dur:.05, vol:.03 }); burst(q.g.position.clone().setY(gy + .35), 0x86c06a, 6); msg(`Cut: <b>${cutN}</b> of ${N}`); if (cutN === N) done(); } }); };
+  const slice = e => { ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ptr, camera); ray.intersectObjects(hits, false).forEach(h => { const q = tufts.find(q => q.hit === h.object); if (q && !q.cut) { q.cut = true; cutN++; sfx('swish'); tone(700 + cutN * 40, { dur:.05, vol:.03 }); burst(q.g.position.clone().setY(gy + .35), 0x86c06a, 14); msg(`Cut: <b>${cutN}</b> of ${N}`); if (cutN === N) done(); } }); };
   const mv = e => { if (down) slice(e); }, up = () => { down = false; };
   const press = e => { down = true; slice(e); };
   cv.addEventListener('pointermove', mv); addEventListener('pointerup', up);
   const done = () => { finished = true; S.chopped[b.userData.key] = S.day; gain('fiber', 2, bp.clone().setY(gy + .6), true); drawUsed(); save(); [523, 659, 784].forEach((f, i) => setTimeout(() => chime(f), i * 110));
-    msg(`<b>All cut. +2 grass.</b><br>Grass grows from the bottom of each blade, not the tip.<br>That is why it grows back after it is cut or grazed.`); $('bsDone').textContent = 'Close'; $('bsDone').className = ''; };
+    msg(`<b>All cut. +2 grass.</b><br>Real life: rice, wheat and corn are all grasses.<br>Rice alone gives people 1 of every 5 calories they eat.`); $('bsDone').textContent = 'Close'; $('bsDone').className = ''; };
   const end = () => { cancelAnimationFrame(raf); cv.removeEventListener('pointermove', mv); removeEventListener('pointerup', up); hud.remove(); tufts.forEach(q => scene.remove(q.g)); bush3 = null; cine = null; document.body.classList.remove('in-cine'); snapCam(); if (finished) hintToast(); };
   $('bsDone').onclick = end;
-  const step = dt => { tufts.forEach((q, i) => { if (q.cut) { q.t = Math.min(1, q.t + dt * 2.5); q.blades.forEach((bl, k) => { bl.scale.y = 1 - q.t * .75; bl.position.y = .4 * (1 - q.t * .75); }); } else q.blades.forEach((bl, k) => { bl.rotation.x = Math.sin(performance.now() / 600 + i + k) * .08; }); });
+  const step = dt => { tufts.forEach((q, i) => { if (q.cut) { q.t = Math.min(1, q.t + dt * 2.5); q.stubs.visible = true; q.blades.forEach(bl => { bl.visible = false; }); } /* the cut blades fly off in the green burst, leaving short flat stubs */ else q.blades.forEach((bl, k) => { bl.rotation.x = (Math.floor(k / 3) - 1) * .22 + Math.sin(performance.now() / 600 + i + k) * .08; }); });
     camera.position.lerp(V(bp.x, gy, bp.z).addScaledVector(toCam, 3.2).setY(gy + 2.2), 1 - Math.pow(.02, dt)); camera.lookAt(bp.x, gy + .3, bp.z); };
   const loop = () => { const n = performance.now(), dt = Math.min(.05, (n - last) / 1000); last = n; step(dt); if (bush3) raf = requestAnimationFrame(loop); };
   bush3 = { press, end, step, get state() { return { cutN, finished }; }, tuftPoint:i => tufts[i].g.position.clone().setY(gy + .35) }; loop(); }
@@ -6596,7 +6608,7 @@ var toyBall, ballV = new THREE.Vector3(), ballPrev = new THREE.Vector3(), toySwi
   const g = new THREE.Group(); g.position.set(-2.6, 0, 5.7); g.scale.setScalar(1.7); toyPuffs = []; /* big enough to spot from across the meadow */
   [[0,0,.5],[.3,.12,.38],[-.22,.2,.42]].forEach(([x, z, h]) => { g.add(mesh(new THREE.CylinderGeometry(.012,.016,h,5), mat(0x6fae5a), x, h / 2, z)); const pf = new THREE.Group(); pf.position.set(x, h, z); pf.add(mesh(sph(.035), mat(0xd9cfa6))); for (let i = 0; i < 14; i++) { const a = i * 2.4, b = Math.acos(1 - 2 * (i + .5) / 14), d = mesh(sph(.022), mat(0xffffff), Math.sin(b) * Math.cos(a) * .1, Math.cos(b) * .1, Math.sin(b) * Math.sin(a) * .1); pf.add(d); } g.add(pf); toyPuffs.push(pf); });
   [[-.1,-.15],[.2,-.1]].forEach(([x, z]) => { const lf = mesh(sph(.09), mat(0x5fae6b), x, .03, z); lf.scale.set(1.6, .2, .7); g.add(lf); });
-  const hb = hitBox(.9, .8, .8); hb.position.y = .4; g.add(hb); deco(hb, () => dandGame()); hb.userData.label = 'Dandelions: tap to blow';
+  const hb = hitBox(.9, .8, .8); hb.position.y = .4; g.add(hb); deco(hb, () => dandGame()); Object.defineProperty(hb.userData, 'label', { get:() => puffsLeft() > 0 ? 'Dandelions: tap to blow' : 'Dandelions: blown, new puffs tomorrow', enumerable:true });
   scene.add(g); lateClicks.push(g); }
 var dandSprouts = [];
 { // dandelions you planted: where a seed you blew came down, a yellow one grows (the newest 5)
@@ -7074,6 +7086,7 @@ function sitBench(b) { const wp = new THREE.Vector3(); b.getWorldPosition(wp); i
 let bench3 = null;
 function benchGame(b, wp, ry) { if (bench3 || cine) return; closeDialog(); hideCard(); target = null; pending = null;
   const V = (x, y, z) => new THREE.Vector3(x, y, z), f = V(Math.sin(ry), 0, Math.cos(ry)), sd = V(f.z, 0, -f.x), gy = wp.y;
+  const cs = [1, -1].map(k => [k, crowd(wp.clone().addScaledVector(f, -.9).addScaledVector(sd, 2.6 * k).setY(gy + 2.7), wp.clone().addScaledVector(f, 1.3).setY(gy + .2))]).sort((x, y) => x[1] - y[1])[0][0]; /* the more open side */
   sitting = b; player.position.copy(wp); player.rotation.y = ry; cine = { hold:true }; document.body.classList.add('in-cine');
   const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="bnMsg">Time passes 3 times faster while you sit.<br>Tap the ground in front of you to toss crumbs.</p><div class="fhbtns"><button id="bnUp" class="ghost">Get up</button></div>`; document.body.appendChild(hud);
   const msg = t => { const m = $('bnMsg'); if (m) m.innerHTML = t; };
@@ -7103,7 +7116,7 @@ function benchGame(b, wp, ry) { if (bench3 || cine) return; closeDialog(); hideC
         else if (c) { const dir = c.p.clone().sub(g.position).setY(0); if (dir.length() < .12) { b.st = 'peck'; b.t = 0; b.c = c; } else { g.rotation.y = Math.atan2(dir.x, dir.z); g.position.addScaledVector(dir.normalize(), dt * .9); g.position.y = gy + Math.abs(Math.sin(b.t * 9)) * .04; g.userData.head.position.z = .14 + Math.sin(b.t * 9) * .03; } }
         else { g.userData.head.position.z = .14 + Math.sin(b.t * 5) * .03; if (Math.random() < dt * .3) g.rotation.y += (Math.random() - .5) * 2; } } }
     if (!told && fed >= 6) { told = true; chime(988); msg('<b>The pigeons trust you now.</b><br>In a 2011 study in Paris, wild pigeons learned which person fed them and which one chased them.<br>They still knew them apart after the 2 people swapped coats.'); }
-    camera.position.lerp(wp.clone().addScaledVector(f, -.9).addScaledVector(sd, 2.6).setY(gy + 2.7), 1 - Math.pow(.02, dt)); camera.lookAt(wp.clone().addScaledVector(f, 1.3).setY(gy + .2)); }; // beside and above you, so the ground in front of the bench shows
+    camera.position.lerp(wp.clone().addScaledVector(f, -.9).addScaledVector(sd, 2.6 * cs).setY(gy + 2.7), 1 - Math.pow(.02, dt)); camera.lookAt(wp.clone().addScaledVector(f, 1.3).setY(gy + .2)); }; // beside and above you, so the ground in front of the bench shows
   const loop = () => { const n = performance.now(), dt = Math.min(.05, (n - last) / 1000); last = n; step(dt); raf = requestAnimationFrame(loop); };
   bench3 = { press, end, step, get state() { return { fed, birds:birds.length, crumbs:crumbs.length, scared, told }; } }; loop(); }
 // each morning, two neighbors post something they'd love. Bring it for coins and a warmer friendship.
