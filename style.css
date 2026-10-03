@@ -400,3 +400,9 @@ body.on-title #goalArrow, body.in-setup #goalArrow, .building #goalArrow { displ
 .itile em.mup { color:#2e9e5b; } .itile em.mdn { color:#d0563b; }
 /* the picked option in a row of choice chips (carving faces, time capsule lines) */
 .card .chips button.on { background:#ff8fa3; color:#fff; box-shadow:0 3px 0 #d96b80; }
+/* the Spooky Countdown's 30 doors */
+.advent { display:grid; grid-template-columns:repeat(6, 1fr); gap:6px; margin-top:10px; }
+.advent button { padding:8px 0; font-weight:800; background:#3b2a4a; color:#c9b6ff; border-radius:10px; box-shadow:none; }
+.advent button.ready { background:#ff8c2a; color:#fff; animation:advPulse 1.2s ease-in-out infinite; }
+.advent button.open { background:#fff3d6; color:#3b2a4a; }
+@keyframes advPulse { 50% { transform:scale(1.08); } }
