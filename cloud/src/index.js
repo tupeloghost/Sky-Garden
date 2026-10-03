@@ -7,6 +7,8 @@
 // POST /feedback { mood, text, where, day, player } -> { ok }   (playtest notes)
 // GET  /visit?code=FRIEND          -> a friend's public island (no private data)
 // POST /gift   { key, code, kind: 'gift'|'water'|'capsule', item } -> one of each per friend per day
+// POST /sold { key, items:{ item:qty } } -> adds to today's shared market totals
+// GET  /prices                     -> what every player sold yesterday and today, per item
 // GET  /inbox?key=KEY              -> gifts and waterings waiting for you (marks them delivered)
 // POST /contribute { key, goal, n } and GET /community?goal=ID   (shared community goals)
 // POST /brand { key, shop, logo }  and GET /brand?code=FRIEND     (a player's shop name and logo)
@@ -172,6 +174,21 @@ export default {
       return json({ ok: true }, 200, origin);
     }
 
+    // shared market: each sale at a crate adds to today's total for that item; every island reads yesterday + today
+    if (request.method === 'POST' && url.pathname === '/sold') {
+      let b; try { b = JSON.parse(await request.text()); } catch { return json({ error: 'bad json' }, 400, origin); }
+      if (!KEY_RE.test(b.key || '') || !b.items || typeof b.items !== 'object') return json({ error: 'bad request' }, 400, origin);
+      const id = await hashKey(b.key), me = await env.DB.prepare('SELECT id FROM saves WHERE id = ?').bind(id).first();
+      if (!me) return json({ error: 'not found' }, 404, origin);
+      const rows = Object.entries(b.items).filter(([k, n]) => ITEM_RE.test(k) && Number.isInteger(n) && n > 0).slice(0, 20).map(([k, n]) => [k, Math.min(n, 99)]); // capped, so one island can't swing the whole market
+      if (rows.length) await env.DB.batch(rows.map(([k, n]) => env.DB.prepare('INSERT INTO market_day (day, item, qty) VALUES (?1, ?2, ?3) ON CONFLICT (day, item) DO UPDATE SET qty = qty + ?3').bind(today(), k, n)));
+      return json({ ok: true }, 200, origin);
+    }
+    if (request.method === 'GET' && url.pathname === '/prices') {
+      const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+      const { results } = await env.DB.prepare('SELECT item, SUM(qty) AS qty FROM market_day WHERE day IN (?1, ?2) GROUP BY item').bind(today(), y).all();
+      return json({ sold: Object.fromEntries(results.map(r => [r.item, r.qty])) }, 200, origin);
+    }
     if (request.method === 'GET' && url.pathname === '/inbox') {
       const key = url.searchParams.get('key') || '';
       if (!KEY_RE.test(key)) return json({ error: 'bad key' }, 400, origin);
