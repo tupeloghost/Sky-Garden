@@ -398,3 +398,5 @@ body.on-title #goalArrow, body.in-setup #goalArrow, .building #goalArrow { displ
 /* shared market price arrows on the sell tiles */
 .itile em.mup, .itile em.mdn { font-style:normal; font-weight:800; font-size:10px; }
 .itile em.mup { color:#2e9e5b; } .itile em.mdn { color:#d0563b; }
+/* the picked option in a row of choice chips (carving faces, time capsule lines) */
+.card .chips button.on { background:#ff8fa3; color:#fff; box-shadow:0 3px 0 #d96b80; }
