@@ -7,7 +7,7 @@ const BUTTERFLIES = [
 ];
 // short, checked real-life notes for things you tap around the islands
 const TAP_FACTS = {
-  seeds:'The Svalbard Global Seed Vault in Norway keeps more than 1 million seed samples from around the world, frozen inside a mountain.',
+  seeds:'The Svalbard Global Seed Vault in Norway keeps more than 1.4 million seed samples from around the world, frozen inside a mountain.',
   sunflower:'A big sunflower head can hold over 1,000 seeds, packed in spirals.',
   mushroom:'Some real mushrooms glow in the dark. It is called bioluminescence, which means living light. People once called the glow foxfire.',
   column:'Real Greek temples were ringed with columns like these. The Parthenon in Athens, finished in 438 BC, has 46 outer columns.',
