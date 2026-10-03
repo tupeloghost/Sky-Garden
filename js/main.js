@@ -3909,11 +3909,16 @@ function fruitGame(t) { if (tree3 || cine) return; target = null; pending = null
   const kind = t.userData.fruitKind, apple = kind === 'apple', fr = t.userData.fruits, F = fr.children.filter(c => c.isMesh), V = (x, y, z) => new THREE.Vector3(x, y, z), tp = t.getWorldPosition(V(0, 0, 0));
   const UNRIPE = apple ? [0x8fbf4a, 0xa7c454, 0xb27a3e, 0xc7b85a] : [0x9cbf55, 0xb8c766, 0xd9b25a, 0xd6c070] /* one is almost there: blushing, but still green underneath */, ripeI = Math.floor(Math.random() * F.length), olds = F.map(f => f.material);
   F.forEach((f, n) => { f.material = f.material.clone(); f.material.color.setHex(n === ripeI ? (apple ? 0xe8463c : 0xffa34d) : UNRIPE[n % UNRIPE.length]); f.userData.orig = f.position.clone(); });
-  const camAt = tp.clone().add(V(0, 0, 0)), toCam = V(camera.position.x - tp.x, 0, camera.position.z - tp.z).normalize(), side = V(toCam.z, 0, -toCam.x);
   const fw = new THREE.Vector3(); fr.getWorldPosition(fw);
-  { const lc = fr.worldToLocal(camera.position.clone().setY(fw.y)), a0 = Math.atan2(lc.z, lc.x); // bring all the fruit round to the side facing you, a little bigger, so every one can be seen and tapped
+  const toCam = (() => { const a0 = Math.atan2(camera.position.z - tp.z, camera.position.x - tp.x), rc = new THREE.Raycaster(), hide = player.visible; rc.camera = camera; player.visible = false; /* pick a side of the tree where nothing stands between the camera and the fruit */
+    let pick = null; for (let k = 0; k < 16 && !pick; k++) { const a = a0 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * Math.PI / 8, d = V(Math.cos(a), 0, Math.sin(a)), c = fw.clone().addScaledVector(d, 3.6).add(V(0, .3, 0)), sd = V(d.z, 0, -d.x);
+      const clear = [-1.1, 0, 1.1].every(o => { for (const y of [.1, .7]) { const p = fw.clone().addScaledVector(sd, o).add(V(0, y, 0)), dir = c.clone().sub(p), len = dir.length(); rc.set(p.clone().addScaledVector(dir.normalize(), .25), dir); rc.far = len - .25 + .4;
+        if (rc.intersectObjects(scene.children, true).some(h => h.object.visible && !t.getObjectById(h.object.id) && h.object.material && h.object.material.visible !== false && !h.object.material.transparent)) return false; } return true; });
+      if (clear && !solidPt(fw.x + d.x * 2, fw.z + d.z * 2)) pick = d; }
+    player.visible = hide; return pick || V(Math.cos(a0), 0, Math.sin(a0)); })(), side = V(toCam.z, 0, -toCam.x);
+  { const lc = fr.worldToLocal(fw.clone().addScaledVector(toCam, 3)), a0 = Math.atan2(lc.z, lc.x); // bring all the fruit round to the side facing you, a little bigger, so every one can be seen and tapped
     F.forEach((f, n) => { const a = a0 + (n - 3.5) * .3, h = .1 + ((n * 37) % 7) * .1; f.position.set(Math.cos(a) * 1.08, h, Math.sin(a) * 1.08); f.userData.home = f.position.clone(); f.userData.sc = f.scale.x; f.scale.setScalar(f.scale.x * 1.35); }); }
-  player.position.copy(tp).addScaledVector(toCam, .7).addScaledVector(side, 1.6); player.position.y = groundAt(player.position.x, tp.y + .5, player.position.z) ?? tp.y; player.rotation.y = Math.atan2(-toCam.x, -toCam.z); cine = { hold:true }; document.body.classList.add('in-cine');
+  player.position.copy(tp).addScaledVector(toCam, .4).addScaledVector(side, 2.4); player.position.y = groundAt(player.position.x, tp.y + .5, player.position.z) ?? tp.y; player.rotation.y = Math.atan2(-side.x, -side.z); cine = { hold:true }; document.body.classList.add('in-cine');
   const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="frMsg">Only 1 ${ITEMS[kind].name.toLowerCase()} is ripe today.<br>Tap the one you think is ready to lift and twist it.</p><div class="fhbtns"><button id="frDone" class="ghost">Done</button></div>`; document.body.appendChild(hud);
   const msg = h => { const e = $('frMsg'); if (e) e.innerHTML = h; };
   let state = 'pick', wob = null, wobT = 0, drop = null, dropT = 0, tries = 0, last = performance.now(), raf, tt = 0;
