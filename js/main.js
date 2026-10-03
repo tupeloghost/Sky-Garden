@@ -2934,7 +2934,7 @@ function drawQuestMain() {
 
 // ============ ACTIONS ============
 // farming: one tap tills and plants, watering soaks the whole row, and picking sweeps up ripe neighbors
-const rowOf = i => S.tiles.map((_, j) => j).filter(j => Math.floor(j / 3) === Math.floor(i / 3));
+const rowOf = i => S.tiles[i]?.bed ? [i] : S.tiles.map((_, j) => j).filter(j => !S.tiles[j].bed && Math.floor(j / 3) === Math.floor(i / 3)); // a garden row works together; each raised bed stands alone
 function useTile(i) {
   const t = S.tiles[i], pos = tileGroups[i].position, fx = (txt) => floatText(txt, pos.clone());
   if (t.s === 0) {
@@ -2954,13 +2954,14 @@ function useTile(i) {
     const c = CROPS[t.c];
     if (t.d >= c.days) {
       const ripe = [i, ...rowOf(i).filter(j => j !== i && S.tiles[j].s === 2 && S.tiles[j].d >= CROPS[S.tiles[j].c].days)];
-      let got = 0; const counts = {};
+      let got = 0, big = 0; const counts = {};
       for (const j of ripe) { const tj = S.tiles[j], k = tj.c; if (!canCarry(k)) break;
         bagAdd(k); got++; counts[k] = (counts[k] || 0) + 1; goal('pick'); communityAdd('harvest');
         if (S.mode === 'garden' && Math.random() < .2 && canCarry(k)) { bagAdd(k); counts[k]++; }
-        S.tiles[j] = { s:1, w:tj.w }; burst(tileGroups[j].position, CROPS[k].color); drawTile(j); }
+        if (Math.random() < .125 && canCarry(k)) { bagAdd(k); counts[k]++; big++; burst(tileGroups[j].position.clone().setY(tileGroups[j].position.y + .4), 0xffd23f, 26); } // now and then a crop comes up huge, worth 2
+        S.tiles[j] = { s:1, w:tj.w, bed:tj.bed, p:tj.p }; burst(tileGroups[j].position, CROPS[k].color, 16); drawTile(j); }
       if (!got) return bagFull();
-      sfx('pick'); fx(Object.entries(counts).map(([k,n]) => `+${n} ${icon(k)}`).join('  '));
+      sfx('pick'); fx(Object.entries(counts).map(([k,n]) => `+${n} ${icon(k)}`).join('  ')); if (big) { [784, 988, 1175].forEach((f, n) => setTimeout(() => chime(f), n * 90)); toast(big > 1 ? `${big} huge ones! Each counts as 2.` : 'A huge one! It counts as 2.'); }
       if (tutActive()) toast(`You picked a ${c.name}!`);
     }
     else if (!t.w) {
@@ -4376,16 +4377,72 @@ function chopTree(t) {
   if (!S.tools.axe) { toast('You need a stone axe to chop trees. Make 1 at the tree stump workbench.'); return; }
   const key = t.userData.key; if (S.chopped[key] === S.day) { toast('This tree needs to rest. Come back tomorrow.'); return; }
   if (!canCarry('log')) return bagFull();
-  S.chopped[key] = S.day; t.userData.shake = 1; sfx('chop');
-  if (S.chopDay !== S.day) { S.chopDay = S.day; S.chopN = 0; } if (++S.chopN === 7) karma('harmony', -1); const wp = new THREE.Vector3(); t.getWorldPosition(wp);
-  const nl = S.tools.bronzeAxe ? 4 : 3; gain('log', nl, wp.setY(wp.y + 1), true); hintToast(); goal('chop'); drawUsed();
+  chopGame(t);
 }
+// chopping is a timing game: tap as the swing ring lines up with the notch. Clean cuts deepen the notch; a run with no misses earns a bonus log. A bronze axe needs fewer cuts and is more forgiving
+let chop3 = null;
+function chopGame(t) { if (chop3 || cine) return; target = null; pending = null;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z), tp = t.getWorldPosition(V(0, 0, 0)), gy = groundAt(tp.x, tp.y + .5, tp.z) ?? tp.y, toCam = clearSide(V(tp.x, gy + .6, tp.z), 2.8, .7, t, .6, [0, .5]), side = V(toCam.z, 0, -toCam.x);
+  player.position.set(tp.x, gy, tp.z).addScaledVector(toCam, 3.8).addScaledVector(side, .5); player.rotation.y = Math.atan2(tp.x - player.position.x, tp.z - player.position.z); cine = { hold:true }; document.body.classList.add('in-cine');
+  const bronze = !!S.tools.bronzeAxe, need = bronze ? 2 : 3, tol = bronze ? .13 : .085, notchY = .55, g = new THREE.Group(); g.position.set(tp.x, gy, tp.z); scene.add(g);
+  const band = mesh(new THREE.TorusGeometry(.27, .035, 8, 28), glow(0xffa94d), 0, notchY, 0); band.rotation.x = Math.PI / 2; g.add(band); const bh = halo(0xffa94d, .9, .5); bh.position.y = notchY; g.add(bh);
+  const ring = mesh(new THREE.TorusGeometry(.3, .03, 8, 28), glow(0xffffff), 0, 1, 0); ring.rotation.x = Math.PI / 2; g.add(ring);
+  const wedge = new THREE.Group(); wedge.position.set(toCam.x * .3, notchY, toCam.z * .3); g.add(wedge); wedge.lookAt(tp.x + toCam.x * 5, gy + notchY, tp.z + toCam.z * 5); /* the notch: a pale wedge of fresh wood cut into the trunk, growing with each clean cut */
+  { const sh = new THREE.Shape(); sh.moveTo(-.16, .07); sh.lineTo(.16, .07); sh.lineTo(0, -.05); sh.closePath(); wedge.add(mesh(new THREE.ShapeGeometry(sh), fine(0xf1d6a8), 0, 0, .02)); wedge.add(mesh(new THREE.ShapeGeometry(sh), fine(0x8a6040), 0, .012, .015)); } wedge.scale.setScalar(.01);
+  const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="chMsg">Tap when the white ring lines up with the orange notch.</p><div class="fhbtns"><button id="chDone" class="ghost">Done</button></div>`; document.body.appendChild(hud);
+  const msg = h => { const e = $('chMsg'); if (e) e.innerHTML = h; };
+  let ph = 0, cuts = 0, misses = 0, finished = false, last = performance.now(), raf, flash = 0;
+  const ringY = () => .15 + (1 - Math.cos(ph)) * .55; // the swing ring rides up and down the trunk
+  const press = () => { if (finished) return; const off = Math.abs(ringY() - notchY);
+    if (off < tol) { cuts++; sfx('chop'); t.userData.shake = 1; tone(380 + cuts * 60, { dur:.06, vol:.05 }); burst(V(tp.x + toCam.x * .3, gy + notchY, tp.z + toCam.z * .3), 0xe6c08a, 18); flash = 1; wedge.scale.setScalar(cuts / need);
+      if (cuts >= need) return done(); msg(`<b>Clean cut!</b> ${cuts} of ${need}`); }
+    else { misses++; tone(150, { dur:.08, vol:.05, type:'square' }); t.userData.shake = .35; msg(off < tol * 2.2 ? '<b>So close.</b> Wait for the ring to meet the notch.' : '<b>Thunk.</b> Wait for the ring to meet the notch.'); } };
+  const done = () => { finished = true; ring.visible = false; const perfect = misses === 0, n = (bronze ? 4 : 3) + (perfect ? 1 : 0);
+    S.chopped[t.userData.key] = S.day; if (S.chopDay !== S.day) { S.chopDay = S.day; S.chopN = 0; } if (++S.chopN === 7) karma('harmony', -1);
+    gain('log', n, tp.clone().setY(gy + 1), true); hintToast(); goal('chop'); drawUsed(); save(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 100)); t.userData.shake = 1.4;
+    const first = !S.seenChop; S.seenChop = true; save();
+    msg(`<b>+${n} logs.</b>${perfect ? ' A perfect felling: +1 bonus log.' : ''}${first ? '<br>Real life: fallers cut a wedge, called a notch, on the side they want the tree to fall toward.<br>Then they cut from the back. A strip of wood left in between, the hinge, steers the fall.' : ''}`); $('chDone').textContent = 'Close'; $('chDone').className = ''; };
+  const end = () => { cancelAnimationFrame(raf); hud.remove(); scene.remove(g); chop3 = null; cine = null; document.body.classList.remove('in-cine'); snapCam(); };
+  $('chDone').onclick = end;
+  const step = dt => { if (!finished) ph += dt * (bronze ? 2.6 : 3.1) * (1 + cuts * .12); ring.position.y = ringY(); const near = Math.abs(ring.position.y - notchY) < tol; ring.material.color.setHex(near ? 0xfff3a0 : 0xffffff); ring.scale.setScalar(near ? 1.12 : 1);
+    flash = Math.max(0, flash - dt * 3); band.scale.setScalar(1 + flash * .3);
+    camera.position.lerp(V(tp.x, gy, tp.z).addScaledVector(toCam, 3.3).addScaledVector(side, .35).setY(gy + 1.1), 1 - Math.pow(.02, dt)); camera.lookAt(tp.x, gy + .6, tp.z); };
+  const loop = () => { const n = performance.now(), dt = Math.min(.05, (n - last) / 1000); last = n; step(dt); if (chop3) raf = requestAnimationFrame(loop); };
+  chop3 = { press, end, step, get state() { return { cuts, misses, finished, ringY:ringY(), notchY, tol }; } }; loop(); }
 function mineRock(r) {
   if (!S.tools.pick) { toast('You need a stone pickaxe to break rocks. Make 1 at the tree stump workbench.'); return; }
   const key = r.userData.key; if (S.chopped[key] === S.day) { toast('You got all the stone from this rock today. Try again tomorrow.'); return; }
   if (!canCarry('stone')) return bagFull();
-  S.chopped[key] = S.day; sfx('stone'); const ns = S.tools.bronzePick ? 5 : 3; gain('stone', ns, r.position.clone(), true); hintToast(); goal('mine'); drawUsed();
+  mineGame(r);
 }
+// breaking a rock: a glowing weak spot shows on the rock, then moves. Hit it to crack the rock; quick hits earn a bonus stone. A bronze pickaxe needs fewer hits
+let mine3 = null;
+function mineGame(r) { if (mine3 || cine) return; target = null; pending = null;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z), rp = r.getWorldPosition(V(0, 0, 0)); r.geometry.computeBoundingSphere(); const rr = r.geometry.boundingSphere.radius * r.scale.x, gy = groundAt(rp.x, rp.y + 1, rp.z) ?? rp.y - rr * .5;
+  const toCam = clearSide(V(rp.x, gy + rr * .5, rp.z), 2.4 + rr, .9, r, .5, [0, .5]), side = V(toCam.z, 0, -toCam.x);
+  player.position.set(rp.x, gy, rp.z).addScaledVector(toCam, 3.6 + rr).addScaledVector(side, .5); player.rotation.y = Math.atan2(rp.x - player.position.x, rp.z - player.position.z); cine = { hold:true }; document.body.classList.add('in-cine');
+  const bronze = !!S.tools.bronzePick, need = bronze ? 2 : 3, g = new THREE.Group(); scene.add(g);
+  const spot = new THREE.Group(), vis = new THREE.Group(); spot.add(vis); vis.add(mesh(sph(.07), glow(0xfff3a0))); const sh = halo(0xffd23f, .6, .8); vis.add(sh); /* only the glow pulses and fades; the tap area stays full size */ const hit = new THREE.Mesh(sph(.24), new THREE.MeshBasicMaterial({ visible:false })); spot.add(hit); g.add(spot);
+  const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="mnMsg">Tap the glowing weak spot before it moves.</p><div class="fhbtns"><button id="mnDone" class="ghost">Done</button></div>`; document.body.appendChild(hud);
+  const msg = h => { const e = $('mnMsg'); if (e) e.innerHTML = h; };
+  let hits = 0, quick = 0, finished = false, last = performance.now(), raf, age = 0, life = 1.3, base = r.position.clone(), jolt = 0; const cracks = [];
+  const place = () => { const a = (Math.random() - .5) * 1.6, up = .25 + Math.random() * .5, d = V(toCam.x, 0, toCam.z).applyAxisAngle(V(0, 1, 0), a); spot.position.copy(rp).addScaledVector(d, rr * .92 * Math.cos(up)).add(V(0, rr * .92 * Math.sin(up) - rr * .1, 0)); age = 0; };
+  const crack = () => { for (let k = 0; k < 3; k++) { const c = mesh(new THREE.BoxGeometry(.008, .08 + Math.random() * .08, .01), fine(0x4a4060), 0, 0, 0); cracks.push(c); c.position.copy(spot.position).add(V((Math.random() - .5) * .1, (Math.random() - .5) * .1, (Math.random() - .5) * .1)); c.lookAt(camera.position); c.rotateZ(Math.random() * 3); g.add(c); } };
+  const press = e => { if (finished) return; ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ptr, camera);
+    spot.updateMatrixWorld(true); if (!ray.intersectObject(hit, false).length) { tone(900, { dur:.03, vol:.03 }); msg('<b>Clink.</b> Hit the glowing spot.'); return; }
+    hits++; if (age < .6) quick++; sfx('stone'); jolt = 1; crack(); burst(spot.position.clone(), 0xb3aabb, 16); tone(300 + hits * 70, { dur:.07, vol:.05 });
+    if (hits >= need) return done(); msg(`<b>Crack!</b> ${hits} of ${need}${age < .6 ? ' Quick!' : ''}`); place(); };
+  const done = () => { finished = true; spot.visible = false; cracks.forEach(c => c.visible = false); burst(rp.clone().setY(gy + rr * .5), 0xb3aabb, 30); /* the rock splits */ const fast = quick === hits, n = (bronze ? 5 : 3) + (fast ? 1 : 0);
+    S.chopped[r.userData.key] = S.day; gain('stone', n, rp.clone(), true); hintToast(); goal('mine'); drawUsed(); save(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => chime(f), i * 100));
+    const first = !S.seenMine; S.seenMine = true; save();
+    msg(`<b>+${n} stone.</b>${fast ? ' Every hit was quick: +1 bonus stone.' : ''}${first ? '<br>Real life: Roman quarry workers split big stones by cutting a row of holes along a line and hammering in iron wedges.<br>The stone cracked along the line.' : ''}`); $('mnDone').textContent = 'Close'; $('mnDone').className = ''; };
+  const end = () => { cancelAnimationFrame(raf); hud.remove(); scene.remove(g); r.position.copy(base); mine3 = null; cine = null; document.body.classList.remove('in-cine'); snapCam(); };
+  $('mnDone').onclick = end;
+  const step = dt => { if (!finished) { age += dt; if (age > life) place(); const k = 1 + Math.sin(performance.now() / 90) * .25; vis.scale.setScalar(k * (age > life - .3 ? Math.max(.15, (life - age) / .3) : 1)); }
+    jolt = Math.max(0, jolt - dt * 5); r.position.set(base.x + (Math.random() - .5) * .05 * jolt, base.y, base.z + (Math.random() - .5) * .05 * jolt);
+    camera.position.lerp(V(rp.x, gy, rp.z).addScaledVector(toCam, 2.4 + rr).addScaledVector(side, .3).setY(gy + rr + .9), 1 - Math.pow(.02, dt)); camera.lookAt(rp.x, gy + rr * .45, rp.z); };
+  const loop = () => { const n = performance.now(), dt = Math.min(.05, (n - last) / 1000); last = n; step(dt); if (mine3) raf = requestAnimationFrame(loop); };
+  place(); mine3 = { press, end, step, spotAt:() => spot.position.clone(), get state() { return { hits, quick, finished, age }; } }; loop(); }
 function cutBush(b) {
   const key = b.userData.key; if (S.chopped[key] === S.day) { toast('You already cut grass here today.'); return; }
   if (!canCarry('fiber')) return bagFull();
@@ -5287,6 +5344,8 @@ renderer.domElement.addEventListener('pointerdown', e => {
   if (dand3) { dand3.press(); return; }
   if (tree3) { tree3.press(e); return; }
   if (bush3) { bush3.press(e); return; }
+  if (chop3) { chop3.press(e); return; }
+  if (mine3) { mine3.press(e); return; }
   if (bench3) { bench3.press(e); return; }
   if (ham3) { ham3.press(); return; }
   if (canFly()) { flight.down = true; flight.at = performance.now(); flight.x = e.clientX; flight.y = e.clientY; }
@@ -7636,7 +7695,7 @@ try { const hr = KIT.hr, ringOf = (g, r, y, n, c1 = 0xd8cfc0, c2 = 0xbfb6a8, h =
   if (squareBits && squareBits.fnt) { squareBits.water.userData.keep = true; squareBits.drops.forEach(d => d.userData.keep = true); bake(squareBits.fnt); }
   [workbench, kiln, furnace, sundial, darkroom].forEach(o => { if (o === kiln) kilnMouth.userData.keep = kilnDome.userData.keep = true; if (o === furnace) furnaceGlow.userData.keep = true; if (o === sundial) gnomon.userData.keep = true; bake(o); }); if (lighthouse) { lighthouse.userData.pivot.userData.keep = true; bake(lighthouse); }
 } catch (e) { console.warn('detail', e); }
-window.__sg = { VERSION, showLobes, lobes, LIGHT_K, renderer, sun, hemi, THREE, roofPlans, sunroomPlans, sunroomHarvest, furnCraft, CRAFTS, housePlans, drawHouse, upgradeMenu, drawSites, siteGroups, villageCut,  glassGame, bronzeFurnace, nodes, get swing3() { return swing3; }, get bush3() { return bush3; }, cutBush, bushes, get tree3() { return tree3; }, fruitTrees, useFruitTree, get stall3() { return stall3; }, stallGame, get furn3() { return furn3; }, useFurnace, drawStations, get kiln3() { return kiln3; }, kilnGame, useKiln, makeCraft, CRAFTS, get fire3() { return fire3; }, useCampfire, get ham3() { return ham3; }, napMenu, drawBuilds, buildGroup, get bench3() { return bench3; }, sitBench, squareBits, planterSeed, toy, TOYS, drawToys, dandSprouts, get skip3() { return skip3; }, get dand3() { return dand3; }, dandGame, get ball() { return { h:ballH, vy:ballVy, ups:ballUps }; }, getPending:() => pending, findRoute, solidPt, getRoute:() => route, drawUsed, placeNodes, nodes, getTarget:() => target && target.toArray(), walkY, groundAt, questWait, questTarget, openDialog, closeDialog, drawTile, cropModel, bugModel, critter, scene, openFiles, FILE, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, walkObj:o=>{ const wp = new THREE.Vector3(); o.getWorldPosition(wp); if (o === house || o === buildSite) wp.z += 2.6; target = wp; pending = o; }, getTarget:() => target, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
+window.__sg = { VERSION, get chop3() { return chop3; }, get mine3() { return mine3; }, chopTree, mineRock, showLobes, lobes, LIGHT_K, renderer, sun, hemi, THREE, roofPlans, sunroomPlans, sunroomHarvest, furnCraft, CRAFTS, housePlans, drawHouse, upgradeMenu, drawSites, siteGroups, villageCut,  glassGame, bronzeFurnace, nodes, get swing3() { return swing3; }, get bush3() { return bush3; }, cutBush, bushes, get tree3() { return tree3; }, fruitTrees, useFruitTree, get stall3() { return stall3; }, stallGame, get furn3() { return furn3; }, useFurnace, drawStations, get kiln3() { return kiln3; }, kilnGame, useKiln, makeCraft, CRAFTS, get fire3() { return fire3; }, useCampfire, get ham3() { return ham3; }, napMenu, drawBuilds, buildGroup, get bench3() { return bench3; }, sitBench, squareBits, planterSeed, toy, TOYS, drawToys, dandSprouts, get skip3() { return skip3; }, get dand3() { return dand3; }, dandGame, get ball() { return { h:ballH, vy:ballVy, ups:ballUps }; }, getPending:() => pending, findRoute, solidPt, getRoute:() => route, drawUsed, placeNodes, nodes, getTarget:() => target && target.toArray(), walkY, groundAt, questWait, questTarget, openDialog, closeDialog, drawTile, cropModel, bugModel, critter, scene, openFiles, FILE, museumDesk, useBakery, useTemple, useSite, birthdayParty, shipChoice, useFurnace, reflectCard, setRain:v => { raining = v; }, setDate:d => { dateOverride = d; }, noteFind, useCrate, openMoveGame, openMailbox, openGoals, furnShop, quiet, newTodayCard, helpDone, loftWindow, drawHouse, drawHomeInside, housePlans, useBuildSite, house, homeSize, drawHome, HELP, modePicker, endSetup, PLAY, RELIC_PLAY, shopCard, shopEarn, drawShop, shopData, crate, swingGame, skipGame, toyBall, ballV, museumWing, drawMuseum, MUSEUM, enterRoom, exitRoom, ROOMS, thanksCheck, openSound, openSettings, solidAt, exitHut, lanterns, SQ, pickAt, tappables, camera, decos,  openSquare, wishFountain, openNotice, pipCart, drawSquare, frame:() => tickFrame(), flight, devTryLegend, founderDrip, fDay, fGot, MODCTX, mythMenu, mythSighting, mythKind, mythCount, mythReveal, mp, drawShrooms, mythPower, mythAppear, mythOn, openKeeper, drawKeepers, drawWorld, syncTrust, keeperLevel, finishTrial, currentTrial, LH, switchIsland, testerTools, TESTSLOT, choosePet, drawPet, petPet, balloonTo, balloonMenu, openPresents, get pet() { return pet; }, openTownHall, helperGrow, openHelperTree, drawHelperTree, redeemTester, openMissions, openWall, missionCheck, seedShop, bringVisitor, talkPerson, drawPeople, peopleNewDay, personGift, peopleGroup, giftPicker, openFriends, spawnBugs, swingNet, bugGroup, fishing3D, get fish3() { return fish3; }, goSleep, shipChoice, voyage, marketDay, drawShip, get cine() { return cine; }, openMarket, brandEditor, designStudio, buyListing, openProduct, get myCode() { return myCode; }, expandCard, showLobes, lobes, onLand, chooseDilemma, startDilemma, deliverLetters, openStory, DILEMMAS, maybeNewToday, playDays, arrive, decos, get sitting() { return sitting; }, featureOn, FEATURES, useKiln, kilnGame, useFurnace, bronzePuzzle, gatherNode, nodes, get stations() { return S.stations; }, screenOf:(x,z) => { const v = new THREE.Vector3(x,0,z).project(camera); return { clientX:(v.x+1)/2*innerWidth, clientY:(1-v.y)/2*innerHeight }; }, setBuildMode, buildTap, get buildMode() { return buildMode; }, PIECES, useWorkbench, useBuildSite, usePickup, chopTree, mineRock, cutBush, homeStep, woodTrees, rocks, bushes, drawHome, birthdayParty, isPartyDay, islandYear, ageBand, openFeedback, birthdayPicker, openMailbox, visitWater, visitGift, checkInbox, communityHtml, get visiting() { return VISIT; }, get __homeDockVisible() { return homeDock.visible; }, save, drawHud, snapCam, CROPS, ITEMS, FURN, AHA_ORDER, BUILDINGS, RECIPES, BOOKS, SAYINGS, FINDS, get dateOverride() { return dateOverride; }, setDate:d => { dateOverride = d; applySeason(); drawHud(); }, festival, moon, season, S, sleep, useTile, useCrate, dig, useSundial, openBell, talk, openJournal, openBag, SFX, ambience, enterHut, exitHut, useSpot, usePot, useShip, fishing, starPuzzle, ropePuzzle, useFruitTree, fruitTrees, player, applySeason, drawRoom, useSign, walkTo:(x,y,z)=>{ target=new THREE.Vector3(x,y,z); pending=null; }, walkObj:o=>{ const wp = new THREE.Vector3(); o.getWorldPosition(wp); if (o === house || o === buildSite) wp.z += 2.6; target = wp; pending = o; }, getTarget:() => target, npcs, groundAt, walkables, useSign2, useWindmill, gearPuzzle, leverPuzzle, WIND_POS, useStakes, useBoulder, NIGHT_POS, useEasel, useDarkroom, useCrystals, moonPuzzle, useBakery, useLibrary, useMusicHall, useTemple, useGreatBell, useFrame, useSite, useObservatory, traceStars, flyTo, useShip, CONSTELLATIONS, OH, openGoals, furnShop, goal };
 
 // developer mode: add #dev to the address, or tap the title 5 times
 { let taps = 0; document.querySelector('.title h1').addEventListener('click', () => { if (++taps >= 5 && LOCALDEV && !devOn()) { try { localStorage.setItem('sg.dev', 'true'); } catch {} import('./dev.js?v=' + Date.now()); toast('Developer mode on.'); } }); }
