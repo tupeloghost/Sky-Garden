@@ -232,23 +232,29 @@ const LEAF_GEO = new THREE.SphereGeometry(.5, 8, 5); // one leaf shape, stretche
 const GRASS = [0x8fdc8a, 0x7fd07a, 0xdcbb62, 0xeef3ff]; // fall is a golden meadow, not sand
 function island(r, x, y, z, o = {}) {
   const g = new THREE.Group(); g.position.set(x,y,z);
-  const topGeo = new THREE.CylinderGeometry(r, r*.97, 1, 48, 1, false); { const P = topGeo.attributes.position, col = [];
-    for (let i = 0; i < P.count; i++) { const d = Math.hypot(P.getX(i), P.getZ(i)) / r, f = P.getY(i) > .49 ? 1.07 - .16 * d * d : .86; col.push(f, f, f); }
-    topGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); }
+  // a gently wavy outline, different on every island (only ever pulled in, never out past r), so the edge is not a perfect circle
+  const ph = x * .37 + z * .21 + r, wob = o.hidden ? () => 1 : a => 1 - .012 * (1 + Math.sin(3 * a + ph)) - .007 * (1 + Math.sin(7 * a + ph * 2.3)) - .004 * (1 + Math.sin(13 * a + ph * 1.7)); /* at most 4.6% in, so bridge ends still land on ground */
+  const bend = geo => { const P = geo.attributes.position; for (let i = 0; i < P.count; i++) { const px = P.getX(i), pz = P.getZ(i), k = wob(Math.atan2(pz, px)); P.setX(i, px * k); P.setZ(i, pz * k); } geo.computeVertexNormals(); return geo; };
+  // the top: a fine polar mesh so the grass can carry broad soft patches of deeper and lighter green, darker toward the edge
+  const topGeo = new THREE.RingGeometry(.001, r, 96, 22); topGeo.rotateX(-Math.PI / 2); bend(topGeo); { const P = topGeo.attributes.position, col = [], n = (px, pz) => .5 + .25 * Math.sin(px * .55 + ph) * Math.cos(pz * .48 - ph) + .25 * Math.sin((px + pz) * .23 + ph * 3);
+    for (let i = 0; i < P.count; i++) { const px = P.getX(i), pz = P.getZ(i), d = Math.hypot(px, pz) / r, f = 1.07 - .16 * d * d, p = n(px, pz), lift = (p - .5) * .42;
+      col.push(f * (1 + lift * .55), f * (1 + lift * .85), f * (1 + lift * .15)); }
+    topGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); topGeo.setAttribute('uv', new THREE.Float32BufferAttribute(Array.from({ length:P.count }, (_, i) => [P.getX(i) / (2 * r) + .5, P.getZ(i) / (2 * r) + .5]).flat(), 2)); }
   const topMat = o.mat || mat(0x8fdc8a); topMat.vertexColors = true; if (!topMat.map && !lowGfx) topMat.map = tx('meadow', Math.round(r * 1.2), Math.round(r * 1.2));
-  const top = mesh(topGeo, topMat, 0, -.5, 0); g.add(top);
-  g.add(mesh(new THREE.CylinderGeometry(r*.97, r*.9, .6, 48), mat(0xb98a63, { map:tx('earth', Math.round(r), 1) }), 0, -1.3, 0));
-  const rock = mesh(new THREE.ConeGeometry(r*.9, r*.8, 48), mat(0x9c7fa8, { map:tx('stone', Math.round(r), 3) }), 0, -1.6 - r*.4, 0); rock.rotation.x = Math.PI; g.add(rock);
+  const top = mesh(topGeo, topMat, 0, 0, 0); g.add(top);
+  g.add(mesh(bend(new THREE.CylinderGeometry(r*.97, r*.9, .6, 96)), mat(0xb98a63, { map:tx('earth', Math.round(r), 1) }), 0, -1.3, 0));
+  const rock = mesh(bend(new THREE.ConeGeometry(r*.9, r*.8, 96)), mat(0x9c7fa8, { map:tx('stone', Math.round(r), 3) }), 0, -1.6 - r*.4, 0); rock.rotation.x = Math.PI; g.add(rock);
   for (let i = 0; i < Math.round(r * 1.1); i++) { const a = i * 2.9 + r, d = r * (.5 + (i % 3) * .14), ck = mesh(new THREE.DodecahedronGeometry(.28 + (i % 4) * .1), mat(i % 2 ? 0x8a6f96 : 0xa98fb5), Math.cos(a) * d, -1.75 - (1 - d / r) * r * .72, Math.sin(a) * d); ck.rotation.set(i, i * 2, i * 3); g.add(ck); } // chunks of rock jutting from the underside
   const lipMat = topMat.clone(); lipMat.vertexColors = false; lipMat.color.multiplyScalar(.9); // the rim matches the deeper edge color
-  const lip = mesh(new THREE.TorusGeometry(r - .05, .3, 10, 72), lipMat, 0, -.14, 0); lip.rotation.x = Math.PI/2; lip.userData.keep = true; g.add(lip);
+  const lip = o.hidden ? mesh(new THREE.TorusGeometry(r - .05, .3, 10, 72), lipMat, 0, -.14, 0) : mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length:96 }, (_, i) => { const a = i / 96 * Math.PI * 2, k = (r - .05) * wob(a); return new THREE.Vector3(Math.cos(a) * k, Math.sin(a) * k, 0); }), true), 192, .3, 10, true), lipMat, 0, -.14, 0); lip.rotation.x = Math.PI/2; lip.userData.keep = true; g.add(lip); // a soft rounded rim that follows the wavy edge
+  { const side = mesh(bend(new THREE.CylinderGeometry(r, r*.97, 1, 96, 1, true)), lipMat, 0, -.5, 0); side.userData.keep = true; g.add(side); } // the grassy band down the side, the same color as the rim
   for (let i=0;i<Math.round(r*1.4);i++){ const a = i*2.39, rr = r*(.45 + (i%4)*.1), len = 1 + (i%5)*.45, vine = i%3 === 0;
     const root = mesh(new THREE.CylinderGeometry(.035, .012, len, 5), mat(vine ? 0x5fb85c : 0x7a5236), Math.cos(a)*rr, -1.7 - len/2 - (1 - rr/r)*r*.5, Math.sin(a)*rr);
     root.rotation.z = Math.sin(i)*.15; g.add(root);
     if (vine) root.add(mesh(sph(.08), mat(0x7fd88a), 0, -len/2, 0)); }
   if (!o.mat && !lowGfx) { const hr = i => { const v = Math.sin((i + r * 9.1 + x) * 127.1) * 43758.5; return v - Math.floor(v); }, bits = new THREE.Group(), n = Math.round(r * 9);
-    for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * Math.PI * 2 + hr(i) * .08, bl = mesh(new THREE.ConeGeometry(.03 + hr(i + 5) * .025, .14 + hr(i + 9) * .16, 4), lipMat, Math.cos(a) * (r + .24), -.1 - hr(i + 2) * .1, Math.sin(a) * (r + .24)); bl.rotation.set(Math.PI + Math.sin(a) * .9, 0, -Math.cos(a) * .9); bl.castShadow = false; bits.add(bl); } // blades of grass hanging over the edge
-    const pm = [mat(0xcfc6b6), mat(0xb3aabb)]; for (let i = 0; i < Math.round(r * 2.2); i++) { const a = hr(i + 30) * 6.28, d = r * (.72 + hr(i + 40) * .24), pb = mesh(new THREE.DodecahedronGeometry(.05 + hr(i + 50) * .05), pm[i % 2], Math.cos(a) * d, .03, Math.sin(a) * d); pb.rotation.set(i, i * 2, 0); pb.scale.y = .6; pb.castShadow = false; bits.add(pb); } // pebbles near the edge
+    for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * Math.PI * 2 + hr(i) * .08, bl = mesh(new THREE.ConeGeometry(.03 + hr(i + 5) * .025, .14 + hr(i + 9) * .16, 4), lipMat, Math.cos(a) * (r * wob(a) + .24), -.1 - hr(i + 2) * .1, Math.sin(a) * (r * wob(a) + .24)); bl.rotation.set(Math.PI + Math.sin(a) * .9, 0, -Math.cos(a) * .9); bl.castShadow = false; bits.add(bl); } // blades of grass hanging over the edge
+    const pm = [mat(0xcfc6b6), mat(0xb3aabb)]; for (let i = 0; i < Math.round(r * 2.2); i++) { const a = hr(i + 30) * 6.28, d = r * wob(a) * (.72 + hr(i + 40) * .24), pb = mesh(new THREE.DodecahedronGeometry(.05 + hr(i + 50) * .05), pm[i % 2], Math.cos(a) * d, .03, Math.sin(a) * d); pb.rotation.set(i, i * 2, 0); pb.scale.y = .6; pb.castShadow = false; bits.add(pb); } // pebbles near the edge
     g.add(bake(bits)); }
   bake(g); scene.add(g); if (!o.hidden) walkables.push(top); return { g, top, lip, r };
 }
