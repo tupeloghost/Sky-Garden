@@ -64,7 +64,7 @@ const SAVE_KEY = 'sg.save', MUTE_KEY = 'sg.muted';
 
 const NEIGHBORS = {
   nana: { name:'Nana Gale', lines:[
-    "The wind is gentle today. Good day to plant.",
+    "I knitted the bridge a scarf. Pip says bridges do not get cold. Pip has never been a bridge.",
     "Before the Great Gust, you could walk from here to the Old Heart without getting your feet cloudy.",
     "Water your crops each day, dear. Rain does it for you, if you are lucky.",
     "Every season has its own crops. Plant what the sky wants, not what you want.",
@@ -87,7 +87,7 @@ const NEIGHBORS = {
   drizzle: { name:'Captain Drizzle', lines:[
     "Ahoy! Mind the edge. It is a long way down, and I should know.",
     "I once sailed through a cloud so thick, the fish swam in the air. True story. Mostly.",
-    "Rain is just the sky giving back what it borrowed.",
+    "I named my compass Steve. Steve has never been wrong. Steve is a better sailor than me.",
     "Pick fruit from the trees every day. They like the attention.",
     "The cloud stream by the dock is full of fish. Cast a line!",
     "A captain never gets lost. He just explores by accident.",
