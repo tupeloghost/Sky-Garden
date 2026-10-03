@@ -1919,7 +1919,7 @@ const starMat = new THREE.PointsMaterial({ color:0xffffff, size:2, sizeAttenuati
 const stars = new THREE.Points(starGeo, starMat); scene.add(stars);
 // Real meteor showers on their real peak nights (International Meteor Organization calendar). Facts checked against the IMO and the American Meteor Society.
 const SHOWERS = [
-  { name:'Quadrantids', m:1, d:3, zhr:80, fact:'Named after Quadrans Muralis, a constellation that was dropped from star maps in 1922. The dust comes from an asteroid, 2003 EH1.' },
+  { name:'Quadrantids', m:1, d:3, zhr:80, fact:'Named after Quadrans Muralis, a constellation left off the official list of 88 in 1922. The dust comes from an asteroid, 2003 EH1.' },
   { name:'Lyrids', m:4, d:22, zhr:18, fact:'Dust from Comet Thatcher, last seen in 1861. It hits the air at 49 km a second.' },
   { name:'Eta Aquariids', m:5, d:6, zhr:50, fact:"Dust from Halley's Comet. You meet that same dust again every October, as the Orionids." },
   { name:'Perseids', m:8, d:13, zhr:100, fact:'Dust from Comet Swift-Tuttle, hitting the air at 59 km a second.' },
