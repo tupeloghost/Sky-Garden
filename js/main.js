@@ -4087,13 +4087,13 @@ function fishing3D(d = dock, o = {}) {
     m.userData = { f, size, vx:(Math.random()-.5)*.6, vz:(Math.random()-.5)*.6 }; pool.add(m); return m; };
   let shadows = table.length ? [newShadow(), newShadow(), newShadow()] : [];
   // the on-screen controls
-  const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="fhMsg">${secret ? 'The secret spot. The big ones live here.' : 'Tap Cast. A big shadow means a big fish.'}</p>
+  const hud = document.createElement('div'); hud.className = 'fishhud'; hud.innerHTML = `<p id="fhMsg">${secret ? 'The secret spot. The big ones live here.' : 'Tap the water right next to a shadow to cast there.<br>A big shadow means a big fish.'}</p>
     <div id="fhReel" class="fhreel" hidden><div class="fhmeter"><b id="fhM"></b></div><div class="fhbar"><i id="fhZ"></i><span id="fhF">🐟</span></div></div>
     <div class="fhbtns"><button id="fhAct">Cast</button>${night && !secret ? '<button id="fhSecret" class="ghost">Find the secret spot</button>' : ''}<button id="fhDone" class="ghost">Done</button></div>`;
   document.body.appendChild(hud);
   const msg = t => { $('fhMsg').textContent = t; }, act = $('fhAct'), setAct = (l, dis) => { act.textContent = l; act.disabled = !!dis; act.style.opacity = dis ? .5 : 1; };
-  let state = 'ready', t0 = 0, now = 0, last = performance.now(), raf, cur = null, nextNibble = 0, biteAt = 0, holding = false, zone = .3, zoneV = 0, fishX = .5, fishT = .5, fishNext = 0, meter = .3, reelTick = 0, caught = null, arc = 0;
-  const bobHome = () => W(V(3.9 + Math.sin(arc) * .2, -.3, Math.cos(arc) * .3));
+  let state = 'ready', t0 = 0, now = 0, last = performance.now(), raf, cur = null, nextNibble = 0, biteAt = 0, holding = false, zone = .3, zoneV = 0, fishX = .5, fishT = .5, fishNext = 0, meter = .3, reelTick = 0, caught = null, arc = 0, aimP = null;
+  const bobHome = () => aimP ? aimP.clone() : W(V(3.9 + Math.sin(arc) * .2, -.3, Math.cos(arc) * .3)); // where you tapped on the water, or straight out from the dock
   const splash = (p, big) => { burst(p.clone().setY(p.y + .05), 0xdff3ff, big ? 10 : 3); };
   const drawLine = (end, sag) => { const a = new THREE.Vector3(); tip.getWorldPosition(a); const pts = lineGeo.attributes.position;
     for (let i = 0; i < 16; i++) { const k = i / 15, p = a.clone().lerp(end, k); p.y -= Math.sin(k * Math.PI) * sag; pts.setXYZ(i, p.x, p.y, p.z); } pts.needsUpdate = true; };
@@ -4117,10 +4117,13 @@ function fishing3D(d = dock, o = {}) {
     }, 900);
   };
   const lose = why => { state = 'ready'; msg(why); setAct('Cast again'); bob.visible = false; line.visible = false; bang.visible = false; $('fhReel').hidden = true; tone(300, { to:140, dur:.4, vol:.05 }); };
-  const press = on => {
+  const press = (on, e) => {
     if (!on) { holding = false; return; }
     if (state === 'reel') { holding = true; return; }
-    if (state === 'ready') { if (!table.length) return msg('Nothing is biting here right now.'); state = 'casting'; t0 = now; sfx('cast'); arc = Math.random() * 6; S.t = Math.min(.99, S.t + 10/(60*18)); drawHud(); msg(''); setAct('Wait...', true); return; }
+    if (state === 'ready') { if (!table.length) return msg('Nothing is biting here right now.'); aimP = null;
+      if (e) { ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ptr, camera); const wp = pool.getWorldPosition(V(0, 0, 0)), hit = V(0, 0, 0);
+        if (ray.ray.intersectPlane(new THREE.Plane(V(0, 1, 0), -(wp.y + .02)), hit)) { const lp = pool.worldToLocal(hit.clone()); if (Math.hypot(lp.x, lp.z) < 2.3) aimP = hit.setY(wp.y - .02); else return msg('Tap on the water to cast there.'); } }
+      state = 'casting'; t0 = now; sfx('cast'); arc = Math.random() * 6; S.t = Math.min(.99, S.t + 10/(60*18)); drawHud(); msg(''); setAct('Wait...', true); return; }
     if (state === 'wait') return lose('Too soon! The fish swam off.');
     if (state === 'bite') { state = 'reel'; meter = .45; zone = .35; zoneV = 0; fishX = .5; fishNext = 0; holding = true; bang.visible = false; $('fhReel').hidden = false; msg('Hold to reel! Keep the fish inside the green zone.'); setAct('Hold to reel'); }
   };
@@ -4133,11 +4136,11 @@ function fishing3D(d = dock, o = {}) {
     rod.rotation.x = .9 + (state === "reel" ? Math.sin(now*18)*.05 - .25 : 0);
     if (state === 'casting') { const k = Math.min(1, (now - t0) / .6), a = new THREE.Vector3(); tip.getWorldPosition(a); const e = bobHome();
       bob.visible = line.visible = true; bob.position.copy(a.lerp(e, k)).setY(bob.position.y + Math.sin(k*Math.PI) * 1.2); drawLine(bob.position, .2);
-      if (k >= 1) { state = 'wait'; splash(bob.position, false); sfx('splash'); const near = shadows.reduce((b, s) => !b || s.userData.size > 0 && Math.random() < .5 ? s : b, null); cur = near ? { shadow:near, f:near.userData.f, size:near.userData.size } : null;
+      if (k >= 1) { state = 'wait'; splash(bob.position, false); sfx('splash'); const bl = pool.worldToLocal(bob.position.clone()); let near = null, bd = aimP ? 1.3 : 9; shadows.forEach(sh => { const d2 = Math.hypot(sh.position.x - bl.x, sh.position.z - bl.z); if (d2 < bd) { bd = d2; near = sh; } }); if (!aimP && Math.random() < .5) near = shadows[Math.floor(Math.random() * shadows.length)] || near; cur = near ? { shadow:near, f:near.userData.f, size:near.userData.size } : null; // the fish closest to your bobber is the one that comes
         nextNibble = now + 1.2 + Math.random(); biteAt = now + 2.6 + Math.random()*3.2; msg('Wait for it... a shadow is coming.'); } }
     if (state === 'wait' || state === 'bite') { const e = bobHome(); bob.position.copy(e); bob.position.y += Math.sin(now*3)*.02;
       if (state === 'wait') { if (now > nextNibble) { tone(900, { dur:.05, vol:.025 }); splash(bob.position, false); nextNibble = now + .7 + Math.random()*1.2; } if (now < nextNibble - .55 && now > nextNibble - .75) bob.position.y -= .06;
-        if (now > biteAt && cur) { state = 'bite'; t0 = now; splash(bob.position, true); sfx('splash'); tone(220, { to:110, dur:.25, vol:.08 }); msg('It bit! Tap Hook it!'); setAct('Hook it!'); bang.visible = true; } }
+        if (now > biteAt + 1.5 && !cur) lose('Nothing came. Cast right next to a shadow.'); else if (now > biteAt && cur) { state = 'bite'; t0 = now; splash(bob.position, true); sfx('splash'); tone(220, { to:110, dur:.25, vol:.08 }); msg('It bit! Tap Hook it!'); setAct('Hook it!'); bang.visible = true; } }
       if (state === 'bite') { bob.position.y -= .12; bang.position.copy(bob.position).setY(bob.position.y + .9 + Math.sin(now*20)*.05); if (now - t0 > 1.1) lose('Too slow. It slipped off the hook.'); }
       drawLine(bob.position, .15); }
     if (state === 'reel') { const f = cur.f, e = bobHome();
@@ -4166,7 +4169,7 @@ function fishing3D(d = dock, o = {}) {
   if ($('fhSecret')) $('fhSecret').onclick = () => { end(); starPuzzle({ title:'Find the secret spot', text:'The big fish rest under the 1 star that never moves. Find it.',
     done:() => { const first = !S.used.includes('stars'); const go = () => { hideCard(); fishing3D(d, { secret:true }); }; first ? showRecall('stars', go) : go(); } }); };
   fish3 = { press, end };
-  window.__sgFish = () => ({ state, fishX, zone, zw: cur ? .42 - cur.f.fight*.16 : 0, meter, shadows:shadows.length }); // read-only, for testing
+  window.__sgFishShadows = () => shadows.map(sh => ({ w:pool.localToWorld(sh.position.clone()), size:sh.userData.size, id:sh.userData.f.id })); window.__sgFishCur = () => cur && { id:cur.f.id, size:cur.size }; window.__sgFish = () => ({ state, fishX, zone, zw: cur ? .42 - cur.f.fight*.16 : 0, meter, shadows:shadows.length }); // read-only, for testing
   loop();
 }
 let holdUp = false;
@@ -5080,7 +5083,7 @@ renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
 renderer.domElement.addEventListener('touchstart', e => e.preventDefault(), { passive:false });
 ['gesturestart', 'dblclick', 'selectstart'].forEach(ev => document.addEventListener(ev, e => { if (!e.target.closest || !e.target.closest('input,textarea,select')) e.preventDefault(); }, { passive:false })); // a long press is for flying, not a menu
 renderer.domElement.addEventListener('pointerdown', e => {
-  if (fish3) { fish3.press(true); return; }
+  if (fish3) { fish3.press(true, e); return; }
   if (swing3) { swing3.press(); return; }
   if (skip3) { skip3.press(); return; }
   if (dand3) { dand3.press(); return; }
