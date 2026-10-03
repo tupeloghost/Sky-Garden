@@ -4,7 +4,7 @@ const ICONS = {
   apple:'🍎', peach:'🍑',
   minnow:'🐟', trout:'🐟', puffer:'🐡', moonray:'🐟', koi:'🐠', sunfish:'🐠', frostchar:'🐟', guppy:'🐠', lanterneel:'🐟',
   jam:'🍯', crisp:'🥧', tea:'🍵', soup:'🥣', saltfish:'🐟', candy:'🍬',
-  flour:'🌾', stick:'🥢', stone:'🪨', fiber:'🌱', log:'🪵', clay:'🟤', brick:'🧱', pot:'🏺', copper:'🟢', tin:'⚪', bronze:'🟠', sand:'🟨', glass:'🔷',
+  flour:'🌾', stick:'🥢', stone:'🪨', fiber:'🌱', log:'🪵', clay:'🟤', brick:'🧱', pot:'🏺', copper:'🟢', tin:'⚪', bronze:'🟠', sand:'🟨', glass:'🔷', honey:'🍯',
   cacao:'🍫', coffee:'☕', vanilla:'🌸', saffron:'🌷', tea:'🍃', olive:'🫒',
   honeybee:'🐝', ladybird:'🐞', dragonfly:'🪽', hopper:'🦗', cicada:'🦗', stagbeetle:'🪲', mantis:'🦗', firefly:'✨', lunamoth:'🦋', springtail:'🐜', brimstone:'🦋', paintedlady:'🦋', purpleemperor:'🦋', morpho:'🦋',
   rug:'🟣', fern:'🪴', lamp:'🏮', table:'🪑', armchair:'🛋️', bookshelf:'📚', globe:'🌐', rocker:'🪑', sign:'🍀', mushroom:'🍄', cake:'🎂', painting:'🖼️', amphora:'🏺', mirror:'🪞', vase:'🏺', terrarium:'🪴',

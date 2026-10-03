@@ -31,6 +31,7 @@ const ITEMS = {
   bronze: { name:'Bronze Ingot',   sell:0,  kind:'material' },
   sand:   { name:'Sand',           sell:0,  kind:'material' },
   glass:  { name:'Glass',          sell:0,  kind:'material' },
+  honey:  { name:'Jar of Honey',   sell:40, kind:'fruit' },
   moonray:{ name:'Manta Ray',      sell:150, kind:'fish' },
   koi:       { name:'Koi',           sell:45,  kind:'fish' },
   sunfish:   { name:'Ocean Sunfish', sell:60,  kind:'fish' },
