@@ -1,2 +1,2 @@
 // Written automatically on every commit (see .git/hooks/pre-commit). Do not edit by hand.
-export const VERSION = { n:229, date:'2026-10-02 20:52' };
+export const VERSION = { n:230, date:'2026-10-02 20:57' };
