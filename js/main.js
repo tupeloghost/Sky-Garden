@@ -6956,7 +6956,7 @@ const TOYS = {
     tryIt("THE TWINS' BURROW", '⛏️ Under your feet', 'Hold Dig to dig straight down. Watch the layers.',
       `<svg viewBox="0 0 300 130" ${SVGW}><rect width="300" height="20" fill="#dff1fb"/><rect y="20" width="300" height="18" fill="#3e2a1c"/><rect y="38" width="300" height="52" fill="#a7784a"/><rect y="90" width="300" height="40" fill="#9aa3ad"/><rect y="20" width="300" height="4" fill="#6fae5a"/><path id="shHole" d="" fill="#1f1610"/><text id="shL" x="290" y="0" text-anchor="end" font-size="12" font-weight="800" fill="#fff6e6"></text></svg>
        <div class="chips" style="justify-content:center"><button id="shGo">Dig</button></div>`,
-      ['That dark top layer is topsoil. Most of the life in soil lives there.', '2.5 cm of it takes 500 years or more to form.'],
+      ['That dark top layer is topsoil. Most of the life in soil lives there.', '2.5 cm of it can take hundreds of years to form, often around 500.'],
       t => { const b = t.el('shGo'); b.onpointerdown = e => { e.preventDefault(); digging = true; }; ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => { digging = false; }));
         t.loop(dt => { if (!digging || depth >= 100) return; depth = Math.min(100, depth + dt * 30); if (Math.random() < dt * 4) sfx('swish'); t.el('shHole').setAttribute('d', `M135 20 h30 v${depth.toFixed(0)} h-30Z`);
           const L = depth < 18 ? 0 : depth < 70 ? 1 : 2; if (L >= told) { const y = [31, 66, 112][L], w = ['<b>Topsoil.</b> Dark, full of roots and worms.', '<b>Subsoil.</b> Paler, and almost no roots.', '<b>Rock.</b> The shovel stops here.'][L]; t.el('shL').setAttribute('y', y); t.el('shL').textContent = ['Topsoil', 'Subsoil', 'Rock'][L]; t.tip(w); chime(520 + L * 120); told = L + 1; if (L === 2) { depth = 100; t.reveal(); } } }); }); },
@@ -7002,7 +7002,7 @@ const TOYS = {
   rings() { const R = [9, 16, 26, 31, 42, 50, 54, 64, 70]; let done = false;
     tryIt("SAGE'S GARDEN", "🌳 Sage's tree", 'A branch came down in the wind. 1 ring grew in a drought year. Tap it.',
       `<svg viewBox="0 0 300 160" ${SVGW}><circle cx="150" cy="80" r="76" fill="#7a5236"/>${[...R].reverse().map((r, k) => `<circle data-g="${R.length - 1 - k}" cx="150" cy="80" r="${r}" fill="${(R.length - 1 - k) % 2 ? '#e9c99a' : '#dcb47e'}" stroke="#a9773f" stroke-width="1.5" style="cursor:pointer"/>`).join('')}</svg>`,
-      ['A tree adds 1 ring each year.', 'A wide ring means a good, wet year. A thin ring means a hard, dry one.', 'Scientists match ring patterns in old beams to date buildings to the exact year.', 'It is called dendrochronology.'],
+      ['A tree adds 1 ring each year.', 'A wide ring means a good, wet year. A thin ring means a hard, dry one.', 'Scientists match ring patterns in old beams to find the exact year the tree was cut.', 'It is called dendrochronology.'],
       t => t.on('[data-g]', c => { if (done) return; const g = +c.dataset.g; if (g !== 6) { sfx('click'); return t.tip(g === 0 ? 'That is the middle: the first year. Look for the thinnest band.' : 'That ring is wide: a good year. Look for the thinnest band.'); } done = true; c.setAttribute('fill', '#ffc857'); chime(660); t.tip(`<b>Ring 7.</b> The branch barely grew that year. It was ${R.length - 7} years before it fell.`); t.reveal(); })); },
   picture() { let len = 0, lp = null;
     tryIt("ON NANA'S WALL", '🖼️ The dusty picture', 'The glass is dusty. Rub it clean with your finger.',
